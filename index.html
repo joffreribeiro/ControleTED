@@ -1282,6 +1282,9 @@
             dFinal.setMonth(dFinal.getMonth() + (isNaN(mFinal) ? 0 : mFinal));
             const mesFinal = dFinal.getMonth() + 1;
             const anoFinal = dFinal.getFullYear();
+            // Preencher campos somente leitura com MM/AAAA
+            document.getElementById('mesInicio').value = String(mesInicio).padStart(2,'0') + '/' + anoInicio;
+            document.getElementById('mesFinal').value = String(mesFinal).padStart(2,'0') + '/' + anoFinal;
 
             if (!meta || isNaN(mInicio) || isNaN(mFinal)) {
                 alert('⚠️ Preencha todos os campos corretamente!');
@@ -1416,18 +1419,43 @@
                     ganttDiv.innerHTML = renderGanttGenerico([], true);
                 }
             } else {
-                tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => `
+                // Calcular MM/AAAA dinamicamente a partir da 1ª descentralização e M offsets (compatível com registros antigos)
+                let baseDate;
+                if (window.tedSelecionado.primeiraDescentralizacao) {
+                    baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                    baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+                }
+
+                tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => {
+                    let inicioStr = '';
+                    let finalStr = '';
+                    if (baseDate && !isNaN(meta.mInicio) && !isNaN(meta.mFinal)) {
+                        const dI = new Date(baseDate);
+                        dI.setMonth(dI.getMonth() + meta.mInicio);
+                        inicioStr = `${String(dI.getMonth()+1).padStart(2,'0')}/${dI.getFullYear()}`;
+                        const dF = new Date(baseDate);
+                        dF.setMonth(dF.getMonth() + meta.mFinal);
+                        finalStr = `${String(dF.getMonth()+1).padStart(2,'0')}/${dF.getFullYear()}`;
+                    } else {
+                        // Fallback para dados já armazenados com anoInicio/anoFinal
+                        inicioStr = `${String(meta.mesInicio).padStart(2,'0')}/${meta.anoInicio ?? ''}`;
+                        finalStr = `${String(meta.mesFinal).padStart(2,'0')}/${meta.anoFinal ?? ''}`;
+                    }
+
+                    return `
                     <tr style="background: ${index % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
                         <td style="padding: 0.75rem; border: 1px solid #ddd;">${meta.meta}</td>
                         <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mInicio}</td>
                         <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mFinal}</td>
-                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${String(meta.mesInicio).padStart(2,'0')}/${meta.anoInicio}</td>
-                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${String(meta.mesFinal).padStart(2,'0')}/${meta.anoFinal}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${inicioStr}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${finalStr}</td>
                         <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
                             <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerMeta(${meta.id})">Remover</button>
                         </td>
                     </tr>
-                `).join('');
+                    `;
+                }).join('');
                 
                 if (ganttDiv) {
                     ganttDiv.innerHTML = renderGanttGenerico(window.tedSelecionado.metas, true);
