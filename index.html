@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle TED - Sistema de Execução Descentralizada</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #1f2937;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --light: #f3f4f6;
+            --border: #e5e7eb;
+            --text: #374151;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f9fafb;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Navbar */
+        nav {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav h1 {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        nav button {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        nav button:hover {
+            background: #dc2626;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Abas */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--text);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .card h3 {
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-small {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--text);
+            margin-top: 0.25rem;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 0.875rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .badge-planejamento {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-execucao {
+            background: #dbeafe;
+            color: #0c2d6b;
+        }
+
+        .badge-concluido {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-suspenso {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: var(--secondary);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: flex-end;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav>
+        <h1>📋 Controle TED</h1>
+        <button onclick="logout()">Sair</button>
+    </nav>
+
+    <!-- Container Principal -->
+    <div class="container">
+        <!-- Abas -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('teds')">TEDs</button>
+            <button class="tab-btn" onclick="switchTab('novo')">Novo TED</button>
+            <button class="tab-btn" onclick="switchTab('detalhes')">Detalhes TED</button>
+        </div>
+
+        <!-- TAB 1: Dashboard -->
+        <div id="dashboard" class="tab-content active">
+            <div class="card">
+                <h2>Resumo Geral</h2>
+                <div class="grid">
+                    <div class="stat-card">
+                        <div class="label">Total de TEDs</div>
+                        <div class="value" id="totalTeds">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Em Execução</div>
+                        <div class="value" id="tedsExecucao">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Orçamento Total</div>
+                        <div class="value" id="orcamentoTotal">R$ 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Total Gasto</div>
+                        <div class="value" id="totalGasto">R$ 0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>TEDs Recentes</h2>
+                <div id="tedsRecentes" class="empty-state">
+                    <p>Nenhum TED cadastrado ainda</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Listar TEDs -->
+        <div id="teds" class="tab-content">
+            <div class="card">
+                <h2>Seus Termos de Execução</h2>
+                <div id="listaTeds">
+                    <div class="empty-state">
+                        <p>Nenhum TED cadastrado</p>
+                        <button class="btn btn-primary" onclick="switchTab('novo')">Criar Primeiro TED</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Novo TED -->
+        <div id="novo" class="tab-content">
+            <div class="card">
+                <h2>Criar Novo TED</h2>
+                <form onsubmit="criarTED(event)">
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Plano de Trabalho *</label>
+                            <input type="text" id="planoTrabalho" placeholder="Ex: 2024" required>
+                        </div>
+                        <div class="form-group">
+                            <label>TED *</label>
+                            <input type="text" id="numTed" placeholder="Ex: 001" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Código do Plano de Ação *</label>
+                            <input type="text" id="codigoPlano" placeholder="Código" required>
+                        </div>
+                        <div class="form-group">
+                            <label>UP Responsável pela Execução *</label>
+                            <input type="text" id="upResponsavel" placeholder="UP" required>
+                        </div>
+                    </div>
+
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>EG Executora *</label>
+                            <input type="text" id="egExecutora" placeholder="EG" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nº TED - SIAFI *</label>
+                            <input type="text" id="numTedSiafi" placeholder="SIAFI" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nota do Sistema do TED *</label>
+                            <input type="text" id="notaSistema" placeholder="Nota" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidade Descentralizadora *</label>
+                            <input type="text" id="unidadeDesc" placeholder="Unidade" required>
+                        </div>
+                    </div>
+
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>UG Descentralizadora *</label>
+                            <input type="text" id="ugDesc" placeholder="UG" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor do TED (R$) *</label>
+                            <input type="number" id="valorTed" placeholder="0.00" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Vigilância em Meses *</label>
+                            <input type="number" id="vigilancia" placeholder="Meses" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Início de Vigência *</label>
+                            <input type="date" id="inicioVigencia" required>
+                        </div>
+                    </div>
+
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Fim de Vigência *</label>
+                            <input type="date" id="fimVigencia" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Jd Descentralização *</label>
+                            <input type="text" id="jdDescentralizacao" placeholder="JD" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Objetivo *</label>
+                            <input type="text" id="objetivo" placeholder="Objetivo" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Criar TED</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB 4: Detalhes TED -->
+        <div id="detalhes" class="tab-content">
+            <div class="card">
+                <h2>Detalhes do TED</h2>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Selecione um TED:</label>
+                    <select id="seletorTED" onchange="carregarDetalhes(this.value)" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; width: 100%;">
+                        <option value="">-- Escolha um TED --</option>
+                    </select>
+                </div>
+
+                <div id="tedsDetalheContainer" style="display: none;">
+                    <!-- CADASTRO DE OBJETOS -->
+                    <div style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                        <h3 style="margin: 0 0 1rem 0;">📦 Cadastro de Objetos</h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Objeto *</label>
+                                <input type="text" id="objeto" placeholder="Ex: Computador" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor Unitário (R$) *</label>
+                                <input type="number" id="valorUnitario" placeholder="0.00" step="0.01" min="0" required>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="adicionarObjeto()" style="align-self: flex-end; min-width: 120px;">Adicionar</button>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                            <thead>
+                                <tr style="background: #2c5aa0; color: white;">
+                                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Objeto</th>
+                                    <th style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">Valor Unitário</th>
+                                    <th style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">Valor Total</th>
+                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaObjetos">
+                                <tr><td colspan="4" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- CADASTRO DE METAS -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                        <h3 style="margin: 0 0 1rem 0;">🎯 Cadastro de Metas</h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Meta *</label>
+                                <input type="text" id="meta" placeholder="Ex: Entrega" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M Início *</label>
+                                <input type="number" id="mInicio" placeholder="0" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M Final *</label>
+                                <input type="number" id="mFinal" placeholder="0" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mês Início *</label>
+                                <input type="number" id="mesInicio" placeholder="1" min="1" max="12" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarMeta()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Mês Final *</label>
+                                <input type="number" id="mesFinal" placeholder="12" min="1" max="12" required>
+                            </div>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                            <thead>
+                                <tr style="background: #2c5aa0; color: white;">
+                                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Meta</th>
+                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Início</th>
+                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Final</th>
+                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início</th>
+                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Final</th>
+                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaMetas">
+                                <tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes -->
+    <div id="modalDetalhes" class="modal" onclick="fecharModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header" id="modalTitulo">Detalhes do TED</div>
+            <div id="modalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
+                <button class="btn btn-primary" onclick="editarTED()">Editar</button>
+                <button class="btn btn-danger" onclick="deletarTED()">Deletar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Armazenamento Local (LocalStorage)
+        const STORAGE_KEY = 'ted_sistema';
+
+        // Dados Iniciais
+        let dados = {
+            teds: [],
+            proxiId: 1
+        };
+
+        // Inicializar
+        function inicializar() {
+            const salvo = localStorage.getItem(STORAGE_KEY);
+            if (salvo) {
+                dados = JSON.parse(salvo);
+            }
+            atualizarDashboard();
+            atualizarListaTEDs();
+            atualizarSeletorTED();
+        }
+
+        // Trocar Abas
+        function switchTab(tabName) {
+            // Ocultar todas as abas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Mostrar aba selecionada
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Criar TED
+        function criarTED(event) {
+            event.preventDefault();
+
+            const ted = {
+                id: dados.proxiId++,
+                planoTrabalho: document.getElementById('planoTrabalho').value,
+                numTed: document.getElementById('numTed').value,
+                codigoPlano: document.getElementById('codigoPlano').value,
+                upResponsavel: document.getElementById('upResponsavel').value,
+                egExecutora: document.getElementById('egExecutora').value,
+                numTedSiafi: document.getElementById('numTedSiafi').value,
+                notaSistema: document.getElementById('notaSistema').value,
+                unidadeDesc: document.getElementById('unidadeDesc').value,
+                ugDesc: document.getElementById('ugDesc').value,
+                valorTed: parseFloat(document.getElementById('valorTed').value) || 0,
+                vigilancia: parseInt(document.getElementById('vigilancia').value) || 0,
+                inicioVigencia: document.getElementById('inicioVigencia').value,
+                fimVigencia: document.getElementById('fimVigencia').value,
+                jdDescentralizacao: document.getElementById('jdDescentralizacao').value,
+                objetivo: document.getElementById('objetivo').value,
+                gasto: 0,
+                progressoFisico: 0,
+                objetos: [],
+                metas: [],
+                marcos: [],
+                despesas: [],
+                dataCriacao: new Date().toLocaleDateString('pt-BR')
+            };
+
+            dados.teds.push(ted);
+            salvarDados();
+
+            // Mostrar sucesso
+            alert('✅ TED criado com sucesso!');
+            event.target.reset();
+            switchTab('teds');
+            atualizarListaTEDs();
+            atualizarDashboard();
+        }
+
+        // Atualizar Dashboard
+        function atualizarDashboard() {
+            document.getElementById('totalTeds').textContent = dados.teds.length;
+            const tedsEmExecucao = dados.teds.filter(t => {
+                const hoje = new Date();
+                const inicio = new Date(t.inicioVigencia);
+                const fim = new Date(t.fimVigencia);
+                return hoje >= inicio && hoje <= fim;
+            }).length;
+            document.getElementById('tedsExecucao').textContent = tedsEmExecucao;
+
+            const valorTotal = dados.teds.reduce((sum, t) => sum + t.valorTed, 0);
+            const gastoTotal = dados.teds.reduce((sum, t) => sum + t.gasto, 0);
+
+            document.getElementById('orcamentoTotal').textContent = 'R$ ' + valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('totalGasto').textContent = 'R$ ' + gastoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+            // TEDs Recentes
+            const recentes = dados.teds.slice(-3).reverse();
+            const html = recentes.length === 0 
+                ? '<p>Nenhum TED cadastrado</p>'
+                : recentes.map(t => `
+                    <div class="card" style="margin: 0 0 1rem 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <h3>TED ${t.numTed} - ${t.objetivo}</h3>
+                                <p style="color: var(--text); font-size: 0.875rem;">
+                                    ${t.unidadeDesc} • Responsável: ${t.responsavel} • ${t.dataCriacao}
+                                </p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-small" style="margin-top: 1rem;" onclick="abrirDetalhes(${t.id})">Ver Detalhes</button>
+                    </div>
+                `).join('');
+            document.getElementById('tedsRecentes').innerHTML = html;
+        }
+
+        // Atualizar Lista de TEDs
+        function atualizarListaTEDs() {
+            if (dados.teds.length === 0) {
+                document.getElementById('listaTeds').innerHTML = '<div class="empty-state"><p>Nenhum TED cadastrado</p></div>';
+                return;
+            }
+
+            const html = dados.teds.map(t => {
+                const hoje = new Date();
+                const inicio = new Date(t.inicioVigencia);
+                const fim = new Date(t.fimVigencia);
+                const emExecucao = hoje >= inicio && hoje <= fim;
+                const diasRestantes = Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24));
+                const percentualGasto = t.valorTed > 0 ? Math.round((t.gasto / t.valorTed) * 100) : 0;
+                
+                return `
+                    <div class="card" style="margin: 0 0 1rem 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                            <div style="flex: 1;">
+                                <h3>TED ${t.numTed}</h3>
+                                <p style="font-size: 0.875rem; color: var(--text); margin: 0.5rem 0 0 0;">${t.objetivo}</p>
+                            </div>
+                            <span class="badge ${emExecucao ? 'badge-execucao' : 'badge-planejamento'}">${emExecucao ? 'EM EXECUÇÃO' : 'ENCERRADO'}</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                            <div>
+                                <p style="margin: 0; color: var(--text);">Valor: <strong>R$ ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></p>
+                                <p style="margin: 0.5rem 0 0 0; color: var(--text);">Responsável: <strong>${t.responsavel}</strong></p>
+                            </div>
+                            <div>
+                                <p style="margin: 0; color: var(--text);">Vigência: ${inicio.toLocaleDateString('pt-BR')} a ${fim.toLocaleDateString('pt-BR')}</p>
+                                <p style="margin: 0.5rem 0 0 0; color: var(--text);">Dias restantes: <strong>${Math.max(0, diasRestantes)}</strong></p>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                                <span>Execução Financeira</span>
+                                <span><strong>${percentualGasto}%</strong></span>
+                            </div>
+                            <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden;">
+                                <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--text); margin: 0.5rem 0 0 0;">Gasto: R$ ${t.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                        </div>
+
+                        <button class="btn btn-primary btn-small" onclick="abrirDetalhes(${t.id})" style="width: 100%;">Ver Detalhes</button>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('listaTeds').innerHTML = html;
+        }
+
+        // Abrir Detalhes
+        function abrirDetalhes(id) {
+            const ted = dados.teds.find(t => t.id === id);
+            if (!ted) return;
+
+            const inicio = new Date(ted.inicioVigencia);
+            const fim = new Date(ted.fimVigencia);
+            const hoje = new Date();
+            const emExecucao = hoje >= inicio && hoje <= fim;
+            const percentualGasto = ted.valorTed > 0 ? Math.round((ted.gasto / ted.valorTed) * 100) : 0;
+
+            document.getElementById('modalTitulo').textContent = `TED ${ted.numTed} - ${ted.objetivo}`;
+            document.getElementById('modalBody').innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Plano de Trabalho</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.planoTrabalho}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">TED</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.numTed}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Código do Plano de Ação</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.codigoPlano}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Status</p>
+                        <p style="margin: 0;"><span class="badge ${emExecucao ? 'badge-execucao' : 'badge-planejamento'}">${emExecucao ? 'EM EXECUÇÃO' : 'ENCERRADO'}</span></p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">UP Responsável pela Execução</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.upResponsavel}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">EG Executora</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.egExecutora}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Nº TED - SIAFI</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.numTedSiafi}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Nota do Sistema do TED</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.notaSistema}</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Unidade Descentralizadora</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.unidadeDesc}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">UG Descentralizadora</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.ugDesc}</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Valor do TED</p>
+                        <p style="margin: 0; font-size: 1.25rem; font-weight: bold; color: var(--primary);">R$ ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Vigilância (Meses)</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.vigilancia}</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Início da Vigência</p>
+                        <p style="margin: 0; font-weight: 500;">${inicio.toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Fim da Vigência</p>
+                        <p style="margin: 0; font-weight: 500;">${fim.toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Jd Descentralização</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.jdDescentralizacao}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Objetivo</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.objetivo}</p>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                        <span>Execução Financeira</span>
+                        <span><strong>${percentualGasto}%</strong></span>
+                    </div>
+                    <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
+                        <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
+                    </div>
+                    <p style="margin: 0; font-size: 0.75rem; color: var(--text);">Gasto: R$ ${ted.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                </div>
+
+                <p style="margin: 0; font-size: 0.75rem; color: var(--text);">Criado em: ${ted.dataCriacao}</p>
+            `;
+
+            document.getElementById('modalDetalhes').classList.add('active');
+            window.tedAtual = id;
+        }
+
+        // Deletar TED
+        function deletarTED() {
+            if (!confirm('Tem certeza que deseja deletar este TED?')) return;
+
+            dados.teds = dados.teds.filter(t => t.id !== window.tedAtual);
+            salvarDados();
+            fecharModal();
+            atualizarListaTEDs();
+            atualizarDashboard();
+            alert('✅ TED deletado com sucesso!');
+        }
+
+        // Editar TED
+        function editarTED() {
+            alert('⚠️ Edição será implementada na próxima versão');
+        }
+
+        // FUNÇÕES PARA DETALHES TED
+        // Carregar seletor de TEDs na aba detalhes
+        function atualizarSeletorTED() {
+            const seletor = document.getElementById('seletorTED');
+            seletor.innerHTML = '<option value="">-- Escolha um TED --</option>';
+            
+            dados.teds.forEach(ted => {
+                const option = document.createElement('option');
+                option.value = ted.id;
+                option.textContent = `TED ${ted.numTed} - ${ted.objetivo}`;
+                seletor.appendChild(option);
+            });
+        }
+
+        // Carregar detalhes do TED selecionado
+        function carregarDetalhes(tedId) {
+            if (!tedId) {
+                document.getElementById('tedsDetalheContainer').style.display = 'none';
+                return;
+            }
+
+            window.tedSelecionado = dados.teds.find(t => t.id == tedId);
+            if (!window.tedSelecionado) return;
+
+            document.getElementById('tedsDetalheContainer').style.display = 'block';
+            atualizarTabelaObjetos();
+            atualizarTabelaMetas();
+        }
+
+        // OBJETOS
+        function adicionarObjeto() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const objeto = document.getElementById('objeto').value.trim();
+            const valorUnitario = parseFloat(document.getElementById('valorUnitario').value);
+
+            if (!objeto || !valorUnitario || valorUnitario <= 0) {
+                alert('⚠️ Preencha todos os campos corretamente!');
+                return;
+            }
+
+            if (!window.tedSelecionado.objetos) {
+                window.tedSelecionado.objetos = [];
+            }
+
+            window.tedSelecionado.objetos.push({
+                id: Date.now(),
+                objeto: objeto,
+                valorUnitario: valorUnitario,
+                valorTotal: valorUnitario
+            });
+
+            salvarDados();
+            atualizarTabelaObjetos();
+            document.getElementById('objeto').value = '';
+            document.getElementById('valorUnitario').value = '';
+        }
+
+        function removerObjeto(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
+            salvarDados();
+            atualizarTabelaObjetos();
+        }
+
+        function atualizarTabelaObjetos() {
+            const tbody = document.getElementById('tabelaObjetos');
+            
+            if (!window.tedSelecionado || !window.tedSelecionado.objetos || window.tedSelecionado.objetos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>';
+                return;
+            }
+
+            let totalValor = 0;
+            tbody.innerHTML = window.tedSelecionado.objetos.map(obj => {
+                totalValor += obj.valorTotal;
+                return `
+                    <tr style="background: ${window.tedSelecionado.objetos.indexOf(obj) % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${obj.objeto}</td>
+                        <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
+                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerObjeto(${obj.id})">Remover</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML += `
+                <tr style="background: #e8f4f8; font-weight: bold; border: 1px solid #ddd;">
+                    <td colspan="2" style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">TOTAL:</td>
+                    <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;"></td>
+                </tr>
+            `;
+        }
+
+        // METAS
+        function adicionarMeta() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const meta = document.getElementById('meta').value.trim();
+            const mInicio = parseInt(document.getElementById('mInicio').value);
+            const mFinal = parseInt(document.getElementById('mFinal').value);
+            const mesInicio = parseInt(document.getElementById('mesInicio').value);
+            const mesFinal = parseInt(document.getElementById('mesFinal').value);
+
+            if (!meta || !mInicio || !mFinal || !mesInicio || !mesFinal) {
+                alert('⚠️ Preencha todos os campos corretamente!');
+                return;
+            }
+
+            if (!window.tedSelecionado.metas) {
+                window.tedSelecionado.metas = [];
+            }
+
+            window.tedSelecionado.metas.push({
+                id: Date.now(),
+                meta: meta,
+                mInicio: mInicio,
+                mFinal: mFinal,
+                mesInicio: mesInicio,
+                mesFinal: mesFinal
+            });
+
+            salvarDados();
+            atualizarTabelaMetas();
+            document.getElementById('meta').value = '';
+            document.getElementById('mInicio').value = '';
+            document.getElementById('mFinal').value = '';
+            document.getElementById('mesInicio').value = '1';
+            document.getElementById('mesFinal').value = '12';
+        }
+
+        function removerMeta(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.metas = window.tedSelecionado.metas.filter(m => m.id !== id);
+            salvarDados();
+            atualizarTabelaMetas();
+        }
+
+        function atualizarTabelaMetas() {
+            const tbody = document.getElementById('tabelaMetas');
+            
+            if (!window.tedSelecionado || !window.tedSelecionado.metas || window.tedSelecionado.metas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => `
+                <tr style="background: ${index % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${meta.meta}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mInicio}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mFinal}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mesInicio}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mesFinal}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
+                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerMeta(${meta.id})">Remover</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Fechar Modal
+        function fecharModal(event) {
+            if (event && event.target !== document.getElementById('modalDetalhes')) return;
+            document.getElementById('modalDetalhes').classList.remove('active');
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                alert('Até logo! 👋');
+            }
+        }
+
+        // Salvar Dados
+        function salvarDados() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+        }
+
+        // Iniciar ao carregar a página
+        window.onload = inicializar;
+    </script>
+</body>
+</html>

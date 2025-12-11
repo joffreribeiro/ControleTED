@@ -1,0 +1,28 @@
+{
+  "name": "ted-controle-frontend",
+  "version": "1.0.0",
+  "description": "Frontend para sistema de controle de Termos de Execução Descentralizada",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.15.0",
+    "axios": "^1.5.0",
+    "tailwindcss": "^3.3.0",
+    "recharts": "^2.10.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/node": "^20.8.0",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.0",
+    "@vitejs/plugin-react": "^4.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  }
+}

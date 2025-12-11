@@ -1,0 +1,38 @@
+Node Modules and build artifacts
+
+# Dependencies
+node_modules/
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+build/
+out/
+
+# Database
+*.sqlite
+*.db
+
+# OS specific
+Thumbs.db
+.AppleDouble
+.LSOverride
