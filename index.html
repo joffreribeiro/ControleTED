@@ -346,26 +346,7 @@
 
         /* Garantir que sticky funcione */
         .table-wrapper table {
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        /* Sticky columns */
-        table td.sticky-col,
-        table th.sticky-col {
-            position: -webkit-sticky;
-            position: sticky;
-            z-index: 10;
-        }
-
-        table thead th.sticky-col {
-            z-index: 30;
-        }
-
-        /* Última coluna sticky com shadow para separar do Gantt */
-        table td.sticky-col.last-sticky,
-        table th.sticky-col.last-sticky {
-            box-shadow: 4px 0 0 0 #000;
+            border-collapse: collapse;
         }
 
         /* Responsive */
@@ -771,12 +752,12 @@
                             <table id="tabelaFinanceiraCompleta" style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.75rem; min-width: 1400px;">
                                 <thead>
                                     <tr style="background: #2c5aa0; color: white;">
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 0; background: #2c5aa0; z-index: 30;">ND</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 60px; background: #2c5aa0; z-index: 30;">UP</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 120px; background: #2c5aa0; z-index: 30;">M</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 170px; background: #2c5aa0; z-index: 30;">Mês Desc.</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; position: sticky; left: 260px; background: #2c5aa0; z-index: 30;">Valor (R$)</th>
-                                        <th class="sticky-col last-sticky" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; position: sticky; left: 360px; background: #2c5aa0; z-index: 30;">Ação</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">ND</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">UP</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">M</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Mês Desc.</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Valor (R$)</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0;">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaFinanceira">
@@ -820,11 +801,11 @@
                             <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
                                 <thead>
                                     <tr style="background: #2c5aa0; color: white;">
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 0; background: #2c5aa0; z-index: 30;">ND</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 60px; background: #2c5aa0; z-index: 30;">UP</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; position: sticky; left: 120px; background: #2c5aa0; z-index: 30;">Valor Previsto</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; position: sticky; left: 230px; background: #2c5aa0; z-index: 30;">Valor Realizado</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; position: sticky; left: 340px; background: #2c5aa0; z-index: 30; border-right: 3px solid #000;">Saldo</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">ND</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">UP</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Valor Previsto</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Valor Realizado</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Saldo</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaExecFinanceira">
@@ -1753,14 +1734,14 @@
 
             // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
             let headerRow1 = tableElement.querySelector('thead tr');
-            let headerHTML = '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 0px; background: #2c5aa0; z-index: 30; min-width: 100px;">Fase</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 102px; background: #2c5aa0; z-index: 30; min-width: 100px;">Objeto</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 204px; background: #2c5aa0; z-index: 30; min-width: 60px;">Qtde</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 266px; background: #2c5aa0; z-index: 30; min-width: 70px;">M Início</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 338px; background: #2c5aa0; z-index: 30; min-width: 70px;">M Final</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 410px; background: #2c5aa0; z-index: 30; min-width: 90px;">Mês Início</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 502px; background: #2c5aa0; z-index: 30; min-width: 90px;">Mês Final</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col last-sticky" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 594px; background: #2c5aa0; z-index: 30; min-width: 90px;">Ação</th>';
+            let headerHTML = '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 100px;">Fase</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 100px;">Objeto</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 60px;">Qtde</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 70px;">M Início</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 70px;">M Final</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 90px;">Mês Início</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 90px;">Mês Final</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 90px;">Ação</th>';
             
             let firstAnoFis = true;
             anos.forEach(a => {
