@@ -1812,15 +1812,15 @@
                 headerRow2.remove();
             }
 
-            // Atualizar primeiro cabeçalho com anos
+            // Atualizar primeiro cabeçalho com anos e rowspan nas colunas fixas
             let headerRow1 = tableCompleta.querySelector('thead tr:nth-child(1)');
-            let headerHTML = '<th style="padding: 0.75rem; border: 1px solid #ddd;">ND</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">M</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>';
+            let headerHTML = '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">ND</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">M</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>';
             
             anos.forEach(a => {
                 headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
@@ -1832,7 +1832,7 @@
             headerRow2 = document.createElement('tr');
             headerRow2.style.background = '#4b7ed0';
             headerRow2.style.color = 'white';
-            let headerRow2HTML = '<th colspan="7" style="padding: 0.75rem; border: 1px solid #ddd;"></th>';
+            let headerRow2HTML = '';
             meses.forEach(m => {
                 headerRow2HTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;">${m.label}</th>`;
             });
