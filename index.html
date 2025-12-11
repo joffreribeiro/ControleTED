@@ -551,10 +551,10 @@
                     </div>
 
                     <!-- CADASTRO DE METAS -->
-                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
                         <h3 style="margin: 0 0 1rem 0;">🎯 Cadastro de Metas</h3>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>Meta *</label>
                                 <input type="text" id="meta" placeholder="Ex: Entrega" required>
@@ -571,34 +571,234 @@
                                 <label>Mês Início *</label>
                                 <input type="number" id="mesInicio" placeholder="1" min="1" max="12" required>
                             </div>
+                            <div class="form-group">
+                                <label>Mês Final *</label>
+                                <input type="number" id="mesFinal" placeholder="12" min="1" max="12" required>
+                            </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="visibility: hidden;">.</label>
                                 <button type="button" class="btn btn-primary" onclick="adicionarMeta()" style="width: 100%; height: 37px;">Adicionar</button>
                             </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <div style="flex: 1; min-width: 360px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                    <thead>
+                                        <tr style="background: #2c5aa0; color: white;">
+                                            <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Meta</th>
+                                            <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Início</th>
+                                            <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Final</th>
+                                            <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início</th>
+                                            <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Final</th>
+                                            <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelaMetas">
+                                        <tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="ganttMetas" style="min-width: 420px; overflow-x: auto;"></div>
+                        </div>
+                    </div>
+
+                    <!-- CADASTRO FÍSICO -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0;">🏗️ Cadastro Físico</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Fase *</label>
+                                <input type="text" id="faseFisico" placeholder="Ex: Fase 1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Objeto *</label>
+                                <input type="text" id="objetoFisico" placeholder="Ex: Obra" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M Início *</label>
+                                <input type="number" id="mInicioFisico" min="0" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M Final *</label>
+                                <input type="number" id="mFinalFisico" min="0" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mês Início *</label>
+                                <input type="number" id="mesInicioFisico" min="1" max="12" placeholder="1" required>
+                            </div>
                             <div class="form-group">
                                 <label>Mês Final *</label>
-                                <input type="number" id="mesFinal" placeholder="12" min="1" max="12" required>
+                                <input type="number" id="mesFinalFisico" min="1" max="12" placeholder="12" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarFisico()" style="width: 100%; height: 37px;">Adicionar</button>
                             </div>
                         </div>
 
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
                             <thead>
                                 <tr style="background: #2c5aa0; color: white;">
-                                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Meta</th>
-                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Início</th>
-                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Final</th>
-                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início</th>
-                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Final</th>
-                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Fase</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">M Início</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">M Final</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Início</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Final</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Ação</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabelaMetas">
-                                <tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>
+                            <tbody id="tabelaFisicos">
+                                <tr><td colspan="7" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro físico</td></tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- EXECUÇÃO FÍSICA -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0;">📈 Execução Física</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Objeto *</label>
+                                <input type="text" id="objetoExecFisica" placeholder="Ex: Obra" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Qtd Prevista *</label>
+                                <input type="number" id="qtdPrevista" min="0" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Qtd Entregue *</label>
+                                <input type="number" id="qtdEntregue" min="0" placeholder="0" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarExecFisica()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <div style="flex: 1; min-width: 360px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                    <thead>
+                                        <tr style="background: #2c5aa0; color: white;">
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Prevista</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Entregue</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Saldo</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Execução (%)</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelaExecFisica">
+                                        <tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução física</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="ganttExecFisica" style="min-width: 420px; overflow-x: auto;"></div>
+                        </div>
+                    </div>
+
+                    <!-- CADASTRO FINANCEIRA -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0;">💰 Cadastro Financeira</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Nº *</label>
+                                <input type="text" id="numFinanceiro" placeholder="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M *</label>
+                                <input type="number" id="mFinanceiro" min="0" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mês Descentralização *</label>
+                                <input type="number" id="mesDescFinanceiro" min="1" max="12" placeholder="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Ano Desc. *</label>
+                                <input type="number" id="anoDescFinanceiro" min="1900" placeholder="2025" required>
+                            </div>
+                            <div class="form-group">
+                                <label>UG *</label>
+                                <input type="text" id="ugFinanceiro" placeholder="UG" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor (R$) *</label>
+                                <input type="number" id="valorFinanceiro" min="0" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarFinanceiro()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <div style="flex: 1; min-width: 360px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                    <thead>
+                                        <tr style="background: #2c5aa0; color: white;">
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">Nº</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">M</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelaFinanceira">
+                                        <tr><td colspan="7" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="ganttFinanceira" style="min-width: 420px; overflow-x: auto;"></div>
+                        </div>
+                    </div>
+
+                    <!-- EXECUÇÃO FINANCEIRA -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 1rem 0;">📊 Execução Financeira</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Nº *</label>
+                                <input type="text" id="numExecFin" placeholder="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>UG *</label>
+                                <input type="text" id="ugExecFin" placeholder="UG" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor Realizado (R$) *</label>
+                                <input type="number" id="valorRealizadoFin" min="0" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarExecFinanceira()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                            <thead>
+                                <tr style="background: #2c5aa0; color: white;">
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Nº</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor Realizado</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Saldo</th>
+                                    <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaExecFinanceira">
+                                <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- GANTT 60 MESES -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                        <h3 style="margin: 0 0 1rem 0;">📅 Cronograma (Gantt 60 meses)</h3>
+                        <p style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text);">Início = 1ª descentralização (mês/ano) + 60 meses.</p>
+                        <div id="ganttContainer" style="overflow-x: auto;"></div>
                     </div>
                 </div>
             </div>
@@ -637,6 +837,7 @@
             atualizarDashboard();
             atualizarListaTEDs();
             atualizarSeletorTED();
+            atualizarGantt();
         }
 
         // Trocar Abas
@@ -679,6 +880,10 @@
                 progressoFisico: 0,
                 objetos: [],
                 metas: [],
+                fisicos: [],
+                execFisicas: [],
+                financeiros: [],
+                execFinanceiras: [],
                 marcos: [],
                 despesas: [],
                 dataCriacao: new Date().toLocaleDateString('pt-BR')
@@ -686,6 +891,7 @@
 
             dados.teds.push(ted);
             salvarDados();
+            atualizarSeletorTED();
 
             // Mostrar sucesso
             alert('✅ TED criado com sucesso!');
@@ -938,9 +1144,22 @@
             window.tedSelecionado = dados.teds.find(t => t.id == tedId);
             if (!window.tedSelecionado) return;
 
+            // Garantir arrays
+            window.tedSelecionado.objetos = window.tedSelecionado.objetos || [];
+            window.tedSelecionado.metas = window.tedSelecionado.metas || [];
+            window.tedSelecionado.fisicos = window.tedSelecionado.fisicos || [];
+            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas || [];
+            window.tedSelecionado.financeiros = window.tedSelecionado.financeiros || [];
+            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras || [];
+
             document.getElementById('tedsDetalheContainer').style.display = 'block';
             atualizarTabelaObjetos();
             atualizarTabelaMetas();
+            atualizarTabelaFisicos();
+            atualizarTabelaExecFisica();
+            atualizarTabelaFinanceira();
+            atualizarTabelaExecFinanceira();
+            atualizarGantt();
         }
 
         // OBJETOS
@@ -1078,6 +1297,295 @@
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mesFinal}</td>
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
                         <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerMeta(${meta.id})">Remover</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // CADASTRO FÍSICO
+        function adicionarFisico() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const fase = document.getElementById('faseFisico').value.trim();
+            const objeto = document.getElementById('objetoFisico').value.trim();
+            const mInicio = parseInt(document.getElementById('mInicioFisico').value);
+            const mFinal = parseInt(document.getElementById('mFinalFisico').value);
+            const mesInicio = parseInt(document.getElementById('mesInicioFisico').value);
+            const mesFinal = parseInt(document.getElementById('mesFinalFisico').value);
+
+            if (!fase || !objeto || isNaN(mInicio) || isNaN(mFinal) || isNaN(mesInicio) || isNaN(mesFinal)) {
+                alert('⚠️ Preencha todos os campos do cadastro físico');
+                return;
+            }
+
+            window.tedSelecionado.fisicos.push({
+                id: Date.now(), fase, objeto, mInicio, mFinal, mesInicio, mesFinal
+            });
+            salvarDados();
+            atualizarTabelaFisicos();
+            document.getElementById('faseFisico').value = '';
+            document.getElementById('objetoFisico').value = '';
+            document.getElementById('mInicioFisico').value = '';
+            document.getElementById('mFinalFisico').value = '';
+            document.getElementById('mesInicioFisico').value = '';
+            document.getElementById('mesFinalFisico').value = '';
+        }
+
+        function removerFisico(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(f => f.id !== id);
+            salvarDados();
+            atualizarTabelaFisicos();
+        }
+
+        function atualizarTabelaFisicos() {
+            const tbody = document.getElementById('tabelaFisicos');
+            if (!window.tedSelecionado || !window.tedSelecionado.fisicos.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro físico</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = window.tedSelecionado.fisicos.map((f, i) => `
+                <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.fase}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.objeto}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mInicio}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mFinal}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesInicio}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesFinal}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
+                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFisico(${f.id})">Remover</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // EXECUÇÃO FÍSICA
+        function adicionarExecFisica() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const objeto = document.getElementById('objetoExecFisica').value.trim();
+            const qtdPrevista = parseFloat(document.getElementById('qtdPrevista').value);
+            const qtdEntregue = parseFloat(document.getElementById('qtdEntregue').value);
+
+            if (!objeto || isNaN(qtdPrevista) || isNaN(qtdEntregue)) {
+                alert('⚠️ Preencha todos os campos da execução física');
+                return;
+            }
+
+            const saldo = Math.max(0, qtdPrevista - qtdEntregue);
+            const execPerc = qtdPrevista > 0 ? Math.min(100, Math.round((qtdEntregue / qtdPrevista) * 100)) : 0;
+
+            window.tedSelecionado.execFisicas.push({
+                id: Date.now(), objeto, qtdPrevista, qtdEntregue, saldo, execPerc
+            });
+            salvarDados();
+            atualizarTabelaExecFisica();
+            document.getElementById('objetoExecFisica').value = '';
+            document.getElementById('qtdPrevista').value = '';
+            document.getElementById('qtdEntregue').value = '';
+        }
+
+        function removerExecFisica(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas.filter(f => f.id !== id);
+            salvarDados();
+            atualizarTabelaExecFisica();
+        }
+
+        function atualizarTabelaExecFisica() {
+            const tbody = document.getElementById('tabelaExecFisica');
+            if (!window.tedSelecionado || !window.tedSelecionado.execFisicas.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução física</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = window.tedSelecionado.execFisicas.map((f, i) => `
+                <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.objeto}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.qtdPrevista}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.qtdEntregue}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.saldo}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.execPerc}%</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
+                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerExecFisica(${f.id})">Remover</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // CADASTRO FINANCEIRO
+        function adicionarFinanceiro() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const numero = document.getElementById('numFinanceiro').value.trim();
+            const m = parseInt(document.getElementById('mFinanceiro').value);
+            const mesDesc = parseInt(document.getElementById('mesDescFinanceiro').value);
+            const anoDesc = parseInt(document.getElementById('anoDescFinanceiro').value);
+            const ug = document.getElementById('ugFinanceiro').value.trim();
+            const valor = parseFloat(document.getElementById('valorFinanceiro').value);
+
+            if (!numero || isNaN(m) || isNaN(mesDesc) || isNaN(anoDesc) || !ug || isNaN(valor)) {
+                alert('⚠️ Preencha todos os campos do cadastro financeiro');
+                return;
+            }
+
+            window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, ug, valor });
+            salvarDados();
+            atualizarTabelaFinanceira();
+            atualizarGantt();
+            document.getElementById('numFinanceiro').value = '';
+            document.getElementById('mFinanceiro').value = '';
+            document.getElementById('mesDescFinanceiro').value = '';
+            document.getElementById('anoDescFinanceiro').value = '';
+            document.getElementById('ugFinanceiro').value = '';
+            document.getElementById('valorFinanceiro').value = '';
+        }
+
+        function removerFinanceiro(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
+            salvarDados();
+            atualizarTabelaFinanceira();
+            atualizarGantt();
+        }
+
+        function atualizarTabelaFinanceira() {
+            const tbody = document.getElementById('tabelaFinanceira');
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => `
+                <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.m}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesDesc}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.anoDesc}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
+                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // EXECUÇÃO FINANCEIRA
+        function adicionarExecFinanceira() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const numero = document.getElementById('numExecFin').value.trim();
+            const ug = document.getElementById('ugExecFin').value.trim();
+            const valorRealizado = parseFloat(document.getElementById('valorRealizadoFin').value);
+            if (!numero || !ug || isNaN(valorRealizado)) {
+                alert('⚠️ Preencha todos os campos da execução financeira');
+                return;
+            }
+
+            const saldo = 0;
+            window.tedSelecionado.execFinanceiras.push({ id: Date.now(), numero, ug, valorRealizado, saldo });
+            salvarDados();
+            atualizarTabelaExecFinanceira();
+            atualizarGantt();
+            document.getElementById('numExecFin').value = '';
+            document.getElementById('ugExecFin').value = '';
+            document.getElementById('valorRealizadoFin').value = '';
+        }
+
+        function removerExecFinanceira(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras.filter(f => f.id !== id);
+            salvarDados();
+            atualizarTabelaExecFinanceira();
+            atualizarGantt();
+        }
+
+        // GANTT 60 MESES
+        function atualizarGantt() {
+            const container = document.getElementById('ganttContainer');
+            if (!container) return;
+
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros || window.tedSelecionado.financeiros.length === 0) {
+                container.innerHTML = '<p style="color: var(--text);">Cadastre ao menos uma descentralização para gerar o cronograma.</p>';
+                return;
+            }
+
+            const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
+                if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
+                return a.mesDesc - b.mesDesc;
+            });
+            const start = primeiros[0];
+            const startDate = new Date(start.anoDesc, start.mesDesc - 1, 15);
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear() });
+            }
+
+            // Agrupar por ano para cabeçalho semelhante ao modelo
+            const anos = [];
+            meses.forEach((m, idx) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            let html = '<table style="min-width: 900px; width: 100%; border-collapse: collapse; font-size: 0.8rem;">';
+            html += '<thead>';
+            html += '<tr style="background: #2c5aa0; color: white;">';
+            anos.forEach(a => {
+                html += `<th style="padding: 0.4rem; border: 1px solid #ddd; text-align: center;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            html += '</tr>';
+            html += '<tr style="background: #4b7ed0; color: white;">';
+            meses.forEach(m => {
+                html += `<th style="padding: 0.35rem; border: 1px solid #ddd; text-align: center;">${m.label}</th>`;
+            });
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody>';
+            html += '<tr>' + meses.map(()=>'<td style="height: 28px; border: 1px solid #ddd; background: #f7fbff;"></td>').join('') + '</tr>';
+            html += '<tr>' + meses.map(()=>'<td style="height: 28px; border: 1px solid #ddd;"></td>').join('') + '</tr>';
+            html += '</tbody></table>';
+
+            container.innerHTML = html;
+        }
+
+        function atualizarTabelaExecFinanceira() {
+            const tbody = document.getElementById('tabelaExecFinanceira');
+            if (!window.tedSelecionado || !window.tedSelecionado.execFinanceiras.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = window.tedSelecionado.execFinanceiras.map((f, i) => `
+                <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valorRealizado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
+                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerExecFinanceira(${f.id})">Remover</button>
                     </td>
                 </tr>
             `).join('');
