@@ -660,14 +660,14 @@
                             <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
                                 <thead>
                                     <tr style="background: #2c5aa0; color: white;">
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 0; background: #2c5aa0; z-index: 30;">Fase</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 100px; background: #2c5aa0; z-index: 30;">Objeto</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 200px; background: #2c5aa0; z-index: 30;">Qtde</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 260px; background: #2c5aa0; z-index: 30;">M Início</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 330px; background: #2c5aa0; z-index: 30;">M Final</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 400px; background: #2c5aa0; z-index: 30;">Mês Início (MM/AAAA)</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 540px; background: #2c5aa0; z-index: 30;">Mês Final (MM/AAAA)</th>
-                                        <th class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 680px; background: #2c5aa0; z-index: 30; border-right: 3px solid #000;">Ação</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Fase</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Objeto</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Qtde</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">M Início</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">M Final</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Mês Início (MM/AAAA)</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Mês Final (MM/AAAA)</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaFisicos">
@@ -1497,11 +1497,8 @@
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Final</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>';
             
-            let firstAnoMeta = true;
             anos.forEach(a => {
-                const extraBorder = firstAnoMeta ? ' border-left: 4px solid #000;' : '';
-                firstAnoMeta = false;
-                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd;${extraBorder} text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
             });
             
             headerRow1.innerHTML = headerHTML;
@@ -1517,11 +1514,8 @@
             headerRow2.style.background = '#4b7ed0';
             headerRow2.style.color = 'white';
             let headerRow2HTML = '';
-            let firstMonthMeta = true;
             meses.forEach(m => {
-                const extraBorder = firstMonthMeta ? ' border-left: 4px solid #000;' : '';
-                firstMonthMeta = false;
-                headerRow2HTML += `<th style=\"padding: 0.75rem; border: 1px solid #ddd;${extraBorder} text-align: center; font-size: 0.75rem; font-weight: bold;\">${m.label}</th>`;
+                headerRow2HTML += `<th style=\"padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;\">${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableElement.querySelector('thead').appendChild(headerRow2);
@@ -1567,9 +1561,8 @@
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoPeríodo = mesIdx >= meta.mInicio && mesIdx <= meta.mFinal;
                     const cor = estaNoPeríodo ? '#4CAF50' : 'transparent';
-                    const extraBorder = firstCellMeta ? ' border-left: 4px solid #000;' : '';
                     firstCellMeta = false;
-                    html += `<td style=\"padding: 0.75rem 0; border: 1px solid #ddd;${extraBorder} background: ${cor};\"></td>`;
+                    html += `<td style=\"padding: 0.75rem 0; border: 1px solid #ddd; background: ${cor};\"></td>`;
                 });
                 
                 html += '</tr>';
@@ -1745,9 +1738,8 @@
             
             let firstAnoFis = true;
             anos.forEach(a => {
-                const extraBorder = firstAnoFis ? ' border-left: 4px solid #000;' : '';
                 firstAnoFis = false;
-                headerHTML += `<th style="padding: 0.5rem; border: 1px solid #ddd;${extraBorder} text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
             });
             
             headerRow1.innerHTML = headerHTML;
@@ -1765,9 +1757,8 @@
             let headerRow2HTML = '';
             let firstMonthFis = true;
             meses.forEach(m => {
-                const extraBorder = firstMonthFis ? ' border-left: 4px solid #000;' : '';
                 firstMonthFis = false;
-                headerRow2HTML += `<th style="padding: 0.5rem; border: 1px solid #ddd;${extraBorder} text-align: center; font-size: 0.7rem; font-weight: bold; background: #4b7ed0;">${m.label}</th>`;
+                headerRow2HTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; font-weight: bold; background: #4b7ed0;">${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableElement.querySelector('thead').appendChild(headerRow2);
@@ -1799,14 +1790,14 @@
                 }
 
                 let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg}; position: sticky; left: 0px; z-index: 10;">${f.fase}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg}; position: sticky; left: 102px; z-index: 10;">${f.objeto}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg}; position: sticky; left: 204px; z-index: 10;">${f.qtde ?? ''}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg}; position: sticky; left: 266px; z-index: 10;">${f.mInicio}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg}; position: sticky; left: 338px; z-index: 10;">${f.mFinal}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg}; position: sticky; left: 410px; z-index: 10;">${inicioStr}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg}; position: sticky; left: 502px; z-index: 10;">${finalStr}</td>
-                    <td class="sticky-col last-sticky" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg}; position: sticky; left: 594px; z-index: 10;">
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.fase}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.objeto}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.qtde ?? ''}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.mInicio}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.mFinal}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${inicioStr}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${finalStr}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
                         <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="removerFisico(${f.id})">Remover</button>
                     </td>`;
                 
@@ -1815,9 +1806,8 @@
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoPeríodo = mesIdx >= f.mInicio && mesIdx <= f.mFinal;
                     const cor = estaNoPeríodo ? '#4CAF50' : 'transparent';
-                    const extraBorder = firstCellFis ? ' border-left: 4px solid #000;' : '';
                     firstCellFis = false;
-                    html += `<td style=\"padding: 0.5rem 0; border: 1px solid #ddd;${extraBorder} background: ${cor};\"></td>`;
+                    html += `<td style=\"padding: 0.5rem 0; border: 1px solid #ddd; background: ${cor};\"></td>`;
                 });
                 
                 html += '</tr>';
@@ -1906,9 +1896,8 @@
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>';
             let firstAnoExecFis = true;
             anos.forEach(a => {
-                const extraBorder = firstAnoExecFis ? ' border-left: 4px solid #000;' : '';
                 firstAnoExecFis = false;
-                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd;${extraBorder} text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
             });
             headerRow1.innerHTML = headerHTML;
 
@@ -1920,9 +1909,8 @@
             let headerRow2HTML = '';
             let firstMonthExecFis = true;
             meses.forEach(m => {
-                const extraBorder = firstMonthExecFis ? ' border-left: 4px solid #000;' : '';
                 firstMonthExecFis = false;
-                headerRow2HTML += `<th style="padding: 0.75rem; border: 1px solid #ddd;${extraBorder} text-align: center; font-size: 0.75rem; font-weight: bold;">${m.label}</th>`;
+                headerRow2HTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;">${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableElement.querySelector('thead').appendChild(headerRow2);
@@ -2110,9 +2098,8 @@
             
             let firstAnoFis = true;
             anos.forEach(a => {
-                const extraBorder = firstAnoFis ? ' border-left: 4px solid #000;' : '';
                 firstAnoFis = false;
-                headerHTML += `<th style="padding: 0.5rem; border: 1px solid #ddd;${extraBorder} text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
             });
             
             headerRow1.innerHTML = headerHTML;
@@ -2406,13 +2393,13 @@
                 if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ano:m.ano, count:1}); else anos[anos.length-1].count += 1;
             });
 
-            // Cabeçalho com rowspan e sticky
+            // Cabeçalho com rowspan
             let hr1 = tableEl.querySelector('thead tr');
-            let hdr = '<th rowspan="2" class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; position: sticky; left: 0px; background: #2c5aa0; z-index: 30; min-width: 60px;">ND</th>'+
-                      '<th rowspan="2" class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; position: sticky; left: 62px; background: #2c5aa0; z-index: 30; min-width: 60px;">UP</th>'+
-                      '<th rowspan="2" class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; position: sticky; left: 124px; background: #2c5aa0; z-index: 30; min-width: 110px;">Valor Previsto</th>'+
-                      '<th rowspan="2" class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; position: sticky; left: 236px; background: #2c5aa0; z-index: 30; min-width: 110px;">Valor Realizado</th>'+
-                      '<th rowspan="2" class="sticky-col last-sticky" style="padding:0.5rem; border:1px solid #ddd; text-align:right; position: sticky; left: 348px; background: #2c5aa0; z-index: 30; min-width: 110px;">Saldo</th>';
+            let hdr = '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; background: #2c5aa0; min-width: 60px;">ND</th>'+
+                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; background: #2c5aa0; min-width: 60px;">UP</th>'+
+                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background: #2c5aa0; min-width: 110px;">Valor Previsto</th>'+
+                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background: #2c5aa0; min-width: 110px;">Valor Realizado</th>'+
+                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background: #2c5aa0; min-width: 110px;">Saldo</th>';
             
             anos.forEach(a=>{ 
                 hdr += `<th style="padding:0.5rem; border:1px solid #ddd; background:#2c5aa0; color:white; text-align:center; font-weight:bold;" colspan="${a.count}">${a.ano}</th>`; 
@@ -2475,11 +2462,11 @@
 
                 const bg = idx%2===0?'#f9f9f9':'#fff';
                 let html = `<tr style="background:${bg}; border:1px solid #ddd;">`+
-                           `<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; background:${bg}; position: sticky; left: 0; z-index: 10;">${nd}</td>`+
-                           `<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; background:${bg}; position: sticky; left: 62px; z-index: 10;">${up}</td>`+
-                           `<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg}; position: sticky; left: 124px; z-index: 10;">R$ ${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg}; position: sticky; left: 236px; z-index: 10;">R$ ${realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td class="sticky-col last-sticky" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg}; position: sticky; left: 348px; z-index: 10;">R$ ${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                           `<td style="padding:0.5rem; border:1px solid #ddd; background:${bg};">${nd}</td>`+
+                           `<td style="padding:0.5rem; border:1px solid #ddd; background:${bg};">${up}</td>`+
+                           `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg};">R$ ${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg};">R$ ${realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg};">R$ ${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
 
                 meses.forEach((_,i)=>{
                     const val = mapaMes.get(i);
@@ -2495,11 +2482,11 @@
 
             // Linha de total por ND/UP e por mês
             let totalRow = '<tr style="background:#e8f4f8; font-weight:bold; border:1px solid #ddd;">';
-            totalRow += '<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; background:#e8f4f8; position: sticky; left: 0; z-index: 10;">TOTAL</td>';
-            totalRow += '<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; background:#e8f4f8; position: sticky; left: 62px; z-index: 10;"></td>';
-            totalRow += `<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8; position: sticky; left: 124px; z-index: 10;">R$ ${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += `<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8; position: sticky; left: 236px; z-index: 10;">R$ ${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += `<td class="sticky-col last-sticky" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8; position: sticky; left: 348px; z-index: 10;">R$ ${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += '<td style="padding:0.5rem; border:1px solid #ddd; background:#e8f4f8;">TOTAL</td>';
+            totalRow += '<td style="padding:0.5rem; border:1px solid #ddd; background:#e8f4f8;"></td>';
+            totalRow += `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8;">R$ ${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8;">R$ ${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8;">R$ ${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
             meses.forEach((_, idx) => {
                 const val = totalMeses.get(idx);
                 const cellBg = val ? '#e0f2fe' : 'transparent';
