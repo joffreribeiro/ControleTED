@@ -1291,16 +1291,20 @@
         }
 
         function renderGanttGenerico(dados, usarMeses = false) {
-            if (!window.tedSelecionado || !window.tedSelecionado.financeiros || window.tedSelecionado.financeiros.length === 0) {
+            if (!window.tedSelecionado) {
                 return '<p style="color: var(--text); font-size: 0.875rem; margin: 0;">Sem dados</p>';
             }
 
-            const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
-                if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
-                return a.mesDesc - b.mesDesc;
-            });
-            const start = primeiros[0];
-            const startDate = new Date(start.anoDesc, start.mesDesc - 1, 15);
+            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
+                startDate = new Date(dataDesc + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 15);
+            } else {
+                return '<p style="color: var(--text); font-size: 0.875rem; margin: 0;">Data de descentralização não definida</p>';
+            }
 
             const meses = [];
             for (let i = 0; i < 60; i++) {
@@ -1581,13 +1585,22 @@
                 return;
             }
 
-            // Calcular meses do Gantt baseado na PRIMEIRA descentralização
-            const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
-                if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
-                return a.mesDesc - b.mesDesc;
-            });
-            const start = primeiros[0];
-            const startDate = new Date(start.anoDesc, start.mesDesc - 1, 1);
+            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
+                startDate = new Date(dataDesc + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                // Fallback para primeira descentralização dos registros financeiros
+                const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
+                    if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
+                    return a.mesDesc - b.mesDesc;
+                });
+                const start = primeiros[0];
+                startDate = new Date(start.anoDesc, start.mesDesc - 1, 1);
+            }
 
             const meses = [];
             for (let i = 0; i < 60; i++) {
