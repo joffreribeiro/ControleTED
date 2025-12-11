@@ -492,12 +492,8 @@
                             <input type="date" id="fimVigencia" required>
                         </div>
                         <div class="form-group">
-                            <label>1ª Descentralização - Mês *</label>
-                            <input type="number" id="primeiroMesDesc" min="1" max="12" placeholder="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label>1ª Descentralização - Ano *</label>
-                            <input type="number" id="primeiroAnoDesc" min="1900" placeholder="2025" required>
+                            <label>1ª Descentralização *</label>
+                            <input type="date" id="primeiraDescentralizacao" required>
                         </div>
                         <div class="form-group">
                             <label>Objetivo *</label>
@@ -865,6 +861,12 @@
         function criarTED(event) {
             event.preventDefault();
 
+            // Extrair mês e ano da data de descentralização
+            const dataDesc = document.getElementById('primeiraDescentralizacao').value;
+            const dateObj = new Date(dataDesc + 'T00:00:00');
+            const primeiroMesDesc = dateObj.getMonth() + 1; // getMonth() retorna 0-11
+            const primeiroAnoDesc = dateObj.getFullYear();
+
             const ted = {
                 id: dados.proxiId++,
                 planoTrabalho: document.getElementById('planoTrabalho').value,
@@ -880,8 +882,9 @@
                 vigilancia: parseInt(document.getElementById('vigilancia').value) || 0,
                 inicioVigencia: document.getElementById('inicioVigencia').value,
                 fimVigencia: document.getElementById('fimVigencia').value,
-                primeiroMesDesc: parseInt(document.getElementById('primeiroMesDesc').value) || 1,
-                primeiroAnoDesc: parseInt(document.getElementById('primeiroAnoDesc').value) || new Date().getFullYear(),
+                primeiraDescentralizacao: dataDesc,
+                primeiroMesDesc: primeiroMesDesc,
+                primeiroAnoDesc: primeiroAnoDesc,
                 objetivo: document.getElementById('objetivo').value,
                 gasto: 0,
                 progressoFisico: 0,
