@@ -1561,6 +1561,31 @@
             select.innerHTML = options;
         }
 
+        function atualizarOpcoesObjetoExecFisica() {
+            const select = document.getElementById('objetoExecFisica');
+            if (!select) return;
+
+            if (!window.tedSelecionado) {
+                select.innerHTML = '<option value="">Selecione um TED</option>';
+                select.disabled = true;
+                return;
+            }
+
+            const fisicos = window.tedSelecionado.fisicos || [];
+            const objetosUnicos = Array.from(new Set(fisicos.map(f => f.objeto).filter(Boolean)));
+
+            if (!objetosUnicos.length) {
+                select.innerHTML = '<option value="">Cadastre o físico primeiro</option>';
+                select.disabled = true;
+                return;
+            }
+
+            select.disabled = false;
+            let options = '<option value="">-- escolha um objeto --</option>';
+            options += objetosUnicos.map(o => `<option value="${o}">${o}</option>`).join('');
+            select.innerHTML = options;
+        }
+
         // CADASTRO FÍSICO
         function adicionarFisico() {
             if (!window.tedSelecionado) {
