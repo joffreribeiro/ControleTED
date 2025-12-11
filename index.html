@@ -1283,6 +1283,9 @@
             const mesFinal = dFinal.getMonth() + 1;
             const anoFinal = dFinal.getFullYear();
             // Preencher campos somente leitura com MM/AAAA
+            document.getElementById('mesInicioFisico').value = String(mesInicio).padStart(2,'0') + '/' + anoInicio;
+            document.getElementById('mesFinalFisico').value = String(mesFinal).padStart(2,'0') + '/' + anoFinal;
+            // Preencher campos somente leitura com MM/AAAA
             document.getElementById('mesInicio').value = String(mesInicio).padStart(2,'0') + '/' + anoInicio;
             document.getElementById('mesFinal').value = String(mesFinal).padStart(2,'0') + '/' + anoFinal;
 
@@ -1562,15 +1565,15 @@
                 }
             });
 
-            // Atualizar cabeçalho
+            // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
             let headerRow1 = tableElement.querySelector('thead tr');
-            let headerHTML = '<th style="padding: 0.75rem; border: 1px solid #ddd;">Fase</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">M Início</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">M Final</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Início</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Final</th>';
-            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Ação</th>';
+            let headerHTML = '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Fase</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">M Início</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">M Final</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Mês Início</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Mês Final</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Ação</th>';
             
             anos.forEach(a => {
                 headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
@@ -1588,7 +1591,7 @@
             headerRow2 = document.createElement('tr');
             headerRow2.style.background = '#4b7ed0';
             headerRow2.style.color = 'white';
-            let headerRow2HTML = '<th colspan="7" style="padding: 0.75rem; border: 1px solid #ddd;"></th>';
+            let headerRow2HTML = '';
             meses.forEach(m => {
                 headerRow2HTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;">${m.label}</th>`;
             });
@@ -1596,15 +1599,38 @@
             tableElement.querySelector('thead').appendChild(headerRow2);
 
             // Criar linhas de dados
+            // Calcular MM/AAAA dinamicamente a partir da 1ª descentralização e offsets M
+            let baseDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            }
+
             tbody.innerHTML = window.tedSelecionado.fisicos.map((f, i) => {
                 const bg = i % 2 === 0 ? '#f9f9f9' : '#fff';
+
+                let inicioStr = '';
+                let finalStr = '';
+                if (baseDate && !isNaN(f.mInicio) && !isNaN(f.mFinal)) {
+                    const dI = new Date(baseDate);
+                    dI.setMonth(dI.getMonth() + f.mInicio);
+                    inicioStr = `${String(dI.getMonth()+1).padStart(2,'0')}/${dI.getFullYear()}`;
+                    const dF = new Date(baseDate);
+                    dF.setMonth(dF.getMonth() + f.mFinal);
+                    finalStr = `${String(dF.getMonth()+1).padStart(2,'0')}/${dF.getFullYear()}`;
+                } else {
+                    inicioStr = `${String(f.mesInicio).padStart(2,'0')}/${f.anoInicio ?? ''}`;
+                    finalStr = `${String(f.mesFinal).padStart(2,'0')}/${f.anoFinal ?? ''}`;
+                }
+
                 let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.fase}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.objeto}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mInicio}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mFinal}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${String(f.mesInicio).padStart(2,'0')}/${f.anoInicio}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${String(f.mesFinal).padStart(2,'0')}/${f.anoFinal}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${inicioStr}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${finalStr}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
                         <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFisico(${f.id})">Remover</button>
                     </td>`;
