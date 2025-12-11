@@ -365,14 +365,7 @@
         /* Última coluna sticky com shadow para separar do Gantt */
         table td.sticky-col.last-sticky,
         table th.sticky-col.last-sticky {
-            box-shadow: none;
-            border-right: 4px solid #000;
-        }
-        
-        /* Força linha preta antes do Gantt em todas as tabelas */
-        table thead th:not(.sticky-col):first-of-type,
-        table tbody td:not(.sticky-col):first-of-type {
-            border-left: 4px solid #000 !important;
+            box-shadow: 4px 0 0 0 #000;
         }
 
         /* Responsive */
@@ -2134,10 +2127,10 @@
             headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; position: sticky; left: 268px; background: #2c5aa0; z-index: 30; min-width: 100px;">Valor (R$)</th>';
             headerHTML += '<th rowspan="2" class="sticky-col last-sticky" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; position: sticky; left: 370px; background: #2c5aa0; z-index: 30; min-width: 90px;">Ação</th>';
             
-            let firstAnoFin = true;
+            let firstAnoFis = true;
             anos.forEach(a => {
-                const extraBorder = firstAnoFin ? ' border-left: 4px solid #000;' : '';
-                firstAnoFin = false;
+                const extraBorder = firstAnoFis ? ' border-left: 4px solid #000;' : '';
+                firstAnoFis = false;
                 headerHTML += `<th style="padding: 0.5rem; border: 1px solid #ddd;${extraBorder} text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
             });
             
@@ -2148,11 +2141,8 @@
             headerRow2.style.background = '#4b7ed0';
             headerRow2.style.color = 'white';
             let headerRow2HTML = '';
-            let firstMonthFin = true;
             meses.forEach(m => {
-                const extraBorder = firstMonthFin ? ' border-left: 4px solid #000;' : '';
-                firstMonthFin = false;
-                headerRow2HTML += `<th style="padding: 0.5rem; border: 1px solid #ddd;${extraBorder} text-align: center; font-size: 0.7rem; font-weight: bold; background: #4b7ed0;">${m.label}</th>`;
+                headerRow2HTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; font-weight: bold; background: #4b7ed0;">${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableCompleta.querySelector('thead').appendChild(headerRow2);
@@ -2174,13 +2164,10 @@
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar o mês/ano da descentralização
-                let firstCellFin = true;
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoMes = f.mesDesc === mesInfo.mes && f.anoDesc === mesInfo.fullYear;
                     const cor = estaNoMes ? '#4CAF50' : 'transparent';
-                    const extraBorder = firstCellFin ? ' border-left: 4px solid #000;' : '';
-                    firstCellFin = false;
-                    html += `<td style=\"padding: 0.5rem 0; border: 1px solid #ddd;${extraBorder} background: ${cor};\"></td>`;
+                    html += `<td style="padding: 0.5rem 0; border: 1px solid #ddd; background: ${cor};"></td>`;
                 });
                 
                 html += '</tr>';
@@ -2188,11 +2175,8 @@
             }).join('');
 
             // Linha total
-            let firstTotalCellFin = true;
             const totalCells = meses.map(() => {
-                const extraBorder = firstTotalCellFin ? ' border-left: 4px solid #000;' : '';
-                firstTotalCellFin = false;
-                return `<td style=\"padding: 0.5rem; border: 1px solid #ddd;${extraBorder}\"></td>`;
+                return `<td style="padding: 0.5rem; border: 1px solid #ddd;"></td>`;
             }).join('');
             
             tbody.innerHTML += `
@@ -2449,11 +2433,8 @@
                       '<th rowspan="2" class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; position: sticky; left: 236px; background: #2c5aa0; z-index: 30; min-width: 110px;">Valor Realizado</th>'+
                       '<th rowspan="2" class="sticky-col last-sticky" style="padding:0.5rem; border:1px solid #ddd; text-align:right; position: sticky; left: 348px; background: #2c5aa0; z-index: 30; min-width: 110px;">Saldo</th>';
             
-            let firstAnoExec = true;
             anos.forEach(a=>{ 
-                const extraBorder = firstAnoExec ? ' border-left: 4px solid #000;' : '';
-                firstAnoExec = false;
-                hdr += `<th style="padding:0.5rem; border:1px solid #ddd;${extraBorder} background:#2c5aa0; color:white; text-align:center; font-weight:bold;" colspan="${a.count}">${a.ano}</th>`; 
+                hdr += `<th style="padding:0.5rem; border:1px solid #ddd; background:#2c5aa0; color:white; text-align:center; font-weight:bold;" colspan="${a.count}">${a.ano}</th>`; 
             });
             hr1.innerHTML = hdr;
 
@@ -2463,11 +2444,8 @@
             hr2.style.background = '#4b7ed0';
             hr2.style.color = 'white';
             let hdr2 = '';
-            let firstMonthExec = true;
             meses.forEach(m => { 
-                const extraBorder = firstMonthExec ? ' border-left: 4px solid #000;' : '';
-                firstMonthExec = false;
-                hdr2 += `<th style="padding:0.5rem; border:1px solid #ddd;${extraBorder} text-align:center; font-size:0.7rem; font-weight:bold; background: #4b7ed0;">${m.label}</th>`; 
+                hdr2 += `<th style="padding:0.5rem; border:1px solid #ddd; text-align:center; font-size:0.7rem; font-weight:bold; background: #4b7ed0;">${m.label}</th>`; 
             });
             hr2.innerHTML = hdr2;
             tableEl.querySelector('thead').appendChild(hr2);
@@ -2522,13 +2500,10 @@
                            `<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg}; position: sticky; left: 236px; z-index: 10;">R$ ${realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
                            `<td class="sticky-col last-sticky" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg}; position: sticky; left: 348px; z-index: 10;">R$ ${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
 
-                let firstCellExec = true;
                 meses.forEach((_,i)=>{
                     const val = mapaMes.get(i);
                     const cellBg = val ? '#e0f2fe' : 'transparent';
-                    const extraBorder = firstCellExec ? ' border-left: 4px solid #000;' : '';
-                    firstCellExec = false;
-                    html += `<td style=\"padding:0.25rem; border:1px solid #ddd;${extraBorder} text-align:right; background:${cellBg}; font-size:0.7rem;\">${val?('R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2})):''}</td>`;
+                    html += `<td style="padding:0.25rem; border:1px solid #ddd; text-align:right; background:${cellBg}; font-size:0.7rem;">${val?('R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2})):''}</td>`;
                 });
 
                 html += '</tr>';
@@ -2544,13 +2519,10 @@
             totalRow += `<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8; position: sticky; left: 124px; z-index: 10;">R$ ${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
             totalRow += `<td class="sticky-col" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8; position: sticky; left: 236px; z-index: 10;">R$ ${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
             totalRow += `<td class="sticky-col last-sticky" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8; position: sticky; left: 348px; z-index: 10;">R$ ${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            let firstTotalExec = true;
             meses.forEach((_, idx) => {
                 const val = totalMeses.get(idx);
                 const cellBg = val ? '#e0f2fe' : 'transparent';
-                const extraBorder = firstTotalExec ? ' border-left: 4px solid #000;' : '';
-                firstTotalExec = false;
-                totalRow += `<td style=\"padding:0.25rem; border:1px solid #ddd;${extraBorder} text-align:right; background:${cellBg}; font-size:0.7rem;\">${val ? 'R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}</td>`;
+                totalRow += `<td style="padding:0.25rem; border:1px solid #ddd; text-align:right; background:${cellBg}; font-size:0.7rem;">${val ? 'R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}</td>`;
             });
             totalRow += '</tr>';
 
