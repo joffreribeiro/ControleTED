@@ -802,6 +802,15 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <div id="resumoExecFinanceira" style="margin-top: 0.75rem; font-size: 0.875rem; display: grid; row-gap: 0.35rem; max-width: 480px;">
+                            <div><strong>Previsto Anual:</strong> <span id="resExecPrevisto">R$ 0,00</span></div>
+                            <div><strong>A Receber ano anterior:</strong> <span id="resExecReceberAnterior">R$ 0,00</span></div>
+                            <div><strong>Recebido Anual:</strong> <span id="resExecRecebido">R$ 0,00</span></div>
+                            <div><strong>Devolvido:</strong> <span id="resExecDevolvido">R$ 0,00</span></div>
+                            <div><strong>Saldo Anual:</strong> <span id="resExecSaldo">R$ 0,00</span></div>
+                            <div><strong>Liquidação:</strong> <span id="resExecLiquidacao">0%</span></div>
+                        </div>
                     </div>
 
                     <!-- GANTT 60 MESES -->
@@ -809,6 +818,7 @@
                         <h3 style="margin: 0 0 1rem 0;">📅 Cronograma (Gantt 60 meses)</h3>
                         <p style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text);">Início = 1ª descentralização (mês/ano) + 60 meses.</p>
                         <div id="ganttContainer" style="overflow-x: auto;"></div>
+                        <div id="previstoAnualResumo" style="margin-top: 0.75rem; font-size: 0.9rem; font-weight: 600;">Previsto Anual: <span id="previstoAnualValor">R$ 0,00</span></div>
                     </div>
                 </div>
             </div>
@@ -1968,6 +1978,7 @@
             salvarDados();
             atualizarTabelaFinanceira();
             atualizarGantt();
+            atualizarTabelaExecFinanceira();
             document.getElementById('numFinanceiro').value = '';
             document.getElementById('mFinanceiro').value = '';
             document.getElementById('mesDescFinanceiro').value = '';
@@ -1982,12 +1993,15 @@
             salvarDados();
             atualizarTabelaFinanceira();
             atualizarGantt();
+            atualizarTabelaExecFinanceira();
         }
 
         function atualizarTabelaFinanceira() {
             const tbody = document.getElementById('tabelaFinanceira');
             const headerGantt = document.getElementById('ganttHeaderFinanceira');
             const tableCompleta = document.getElementById('tabelaFinanceiraCompleta');
+            const previstoAnualSpan = document.getElementById('previstoAnualValor');
+            let totalValor = 0;
             
             if (!window.tedSelecionado || !window.tedSelecionado.financeiros.length) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
@@ -1995,6 +2009,7 @@
                     headerGantt.innerHTML = 'CRONOGRAMA';
                     headerGantt.setAttribute('colspan', '60');
                 }
+                if (previstoAnualSpan) previstoAnualSpan.textContent = 'R$ 0,00';
                 return;
             }
 
@@ -2075,13 +2090,15 @@
             // Criar linhas de dados
             tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => {
                 const bg = i % 2 === 0 ? '#f9f9f9' : '#fff';
+                const valorNum = parseFloat(f.valor) || 0;
+                totalValor += valorNum;
                 let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.m}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesDesc}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.anoDesc}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.up || f.ug}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
                         <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
                     </td>`;
@@ -2096,6 +2113,23 @@
                 html += '</tr>';
                 return html;
             }).join('');
+
+            // Linha total
+            tbody.innerHTML += `
+                <tr style="background: #e8f4f8; font-weight: bold; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">TOTAL</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;"></td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;"></td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;"></td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;"></td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;"></td>
+                </tr>
+            `;
+
+            if (previstoAnualSpan) {
+                previstoAnualSpan.textContent = `R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            }
         }
 
         // EXECUÇÃO FINANCEIRA
@@ -2149,9 +2183,25 @@
         function atualizarTabelaExecFinanceira() {
             const tbody = document.getElementById('tabelaExecFinanceira');
             const tableEl = tbody.closest('table');
+            const resumoPrev = document.getElementById('resExecPrevisto');
+            const resumoReceberAnt = document.getElementById('resExecReceberAnterior');
+            const resumoRecebido = document.getElementById('resExecRecebido');
+            const resumoDevolvido = document.getElementById('resExecDevolvido');
+            const resumoSaldo = document.getElementById('resExecSaldo');
+            const resumoLiquidacao = document.getElementById('resExecLiquidacao');
+
+            const setResumoZeros = () => {
+                if (resumoPrev) resumoPrev.textContent = 'R$ 0,00';
+                if (resumoReceberAnt) resumoReceberAnt.textContent = 'R$ 0,00';
+                if (resumoRecebido) resumoRecebido.textContent = 'R$ 0,00';
+                if (resumoDevolvido) resumoDevolvido.textContent = 'R$ 0,00';
+                if (resumoSaldo) resumoSaldo.textContent = 'R$ 0,00';
+                if (resumoLiquidacao) resumoLiquidacao.textContent = '0%';
+            };
 
             if (!window.tedSelecionado) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
+                setResumoZeros();
                 return;
             }
 
@@ -2211,8 +2261,13 @@
 
             if (chaves.size === 0) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Nenhum dado financeiro</td></tr>';
+                setResumoZeros();
                 return;
             }
+
+            let totalPrevisto = 0;
+            let totalRealizado = 0;
+            const totalMeses = new Map();
 
             const linhas = Array.from(chaves).map((chave, idx) => {
                 const [nd, up] = chave.split('||');
@@ -2222,12 +2277,19 @@
                 const realizado = execList.reduce((s,e)=>s+(parseFloat(e.valor || e.valorRealizado)||0),0);
                 const saldo = previsto - realizado;
 
+                totalPrevisto += previsto;
+                totalRealizado += realizado;
+
                 const mapaMes = new Map();
                 execList.forEach(e => {
                     if (!e.data) return;
                     const d = new Date(e.data + 'T00:00:00');
                     const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
                     if (diff>=0 && diff<60) mapaMes.set(diff, (mapaMes.get(diff)||0) + (parseFloat(e.valor || e.valorRealizado)||0));
+                });
+
+                mapaMes.forEach((val, idxMes) => {
+                    totalMeses.set(idxMes, (totalMeses.get(idxMes) || 0) + val);
                 });
 
                 let html = `<tr style="background:${idx%2===0?'#f9f9f9':'#fff'}; border:1px solid #ddd;">`+
@@ -2248,7 +2310,36 @@
                 return html;
             }).join('');
 
-            tbody.innerHTML = linhas;
+            const totalSaldo = totalPrevisto - totalRealizado;
+
+            // Linha de total por ND/UP e por mês
+            let totalRow = '<tr style="background:#e8f4f8; font-weight:bold; border:1px solid #ddd;">';
+            totalRow += '<td style="padding:0.75rem; border:1px solid #ddd;">TOTAL</td>';
+            totalRow += '<td style="padding:0.75rem; border:1px solid #ddd;"></td>';
+            totalRow += `<td style="padding:0.75rem; border:1px solid #ddd; text-align:right;">R$ ${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td style="padding:0.75rem; border:1px solid #ddd; text-align:right;">R$ ${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td style="padding:0.75rem; border:1px solid #ddd; text-align:right;">R$ ${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += '<td style="padding:0.75rem; border:1px solid #ddd;"></td>';
+            meses.forEach((_, idx) => {
+                const val = totalMeses.get(idx);
+                const bg = val ? '#e0f2fe' : 'transparent';
+                totalRow += `<td style="padding:0.25rem; border:1px solid #ddd; text-align:right; background:${bg};">${val ? 'R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}</td>`;
+            });
+            totalRow += '</tr>';
+
+            tbody.innerHTML = linhas + totalRow;
+
+            const aReceberAnterior = 0;
+            const devolvido = 0;
+            const saldoAnual = totalPrevisto + aReceberAnterior - totalRealizado - devolvido;
+            const liquidacaoPerc = totalPrevisto > 0 ? ((totalRealizado / totalPrevisto) * 100) : 0;
+
+            if (resumoPrev) resumoPrev.textContent = `R$ ${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoReceberAnt) resumoReceberAnt.textContent = `R$ ${aReceberAnterior.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoRecebido) resumoRecebido.textContent = `R$ ${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoDevolvido) resumoDevolvido.textContent = `R$ ${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoSaldo) resumoSaldo.textContent = `R$ ${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
         }
 
         // Fechar Modal
