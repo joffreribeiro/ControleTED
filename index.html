@@ -733,26 +733,24 @@
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                            <div style="flex: 1; min-width: 360px;">
-                                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
-                                    <thead>
-                                        <tr style="background: #2c5aa0; color: white;">
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">Nº</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">M</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tabelaFinanceira">
-                                        <tr><td colspan="7" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div id="ganttFinanceira" style="min-width: 420px; overflow-x: auto;"></div>
+                        <div style="overflow-x: auto;">
+                            <table id="tabelaFinanceiraCompleta" style="width: 100%; border-collapse: collapse; font-size: 0.75rem; min-width: 1400px;">
+                                <thead>
+                                    <tr style="background: #2c5aa0; color: white;">
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Nº</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">M</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
+                                        <th colspan="60" id="ganttHeaderFinanceira" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #4b7ed0;">CRONOGRAMA</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaFinanceira">
+                                    <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -1564,32 +1562,98 @@
 
         function atualizarTabelaFinanceira() {
             const tbody = document.getElementById('tabelaFinanceira');
-            const ganttDiv = document.getElementById('ganttFinanceira');
+            const headerGantt = document.getElementById('ganttHeaderFinanceira');
             
             if (!window.tedSelecionado || !window.tedSelecionado.financeiros.length) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
-                if (ganttDiv) {
-                    ganttDiv.innerHTML = renderGanttGenerico([]);
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
+                if (headerGantt) {
+                    headerGantt.innerHTML = 'CRONOGRAMA';
+                    headerGantt.setAttribute('colspan', '60');
                 }
-            } else {
-                tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => `
-                    <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
-                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.m}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesDesc}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.anoDesc}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
-                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
-                        </td>
-                    </tr>
-                `).join('');
-                
-                if (ganttDiv) {
-                    ganttDiv.innerHTML = renderGanttGenerico(window.tedSelecionado.financeiros);
-                }
+                return;
             }
+
+            // Calcular meses do Gantt
+            const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
+                if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
+                return a.mesDesc - b.mesDesc;
+            });
+            const start = primeiros[0];
+            const startDate = new Date(start.anoDesc, start.mesDesc - 1, 15);
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth() + 1, fullYear: d.getFullYear() });
+            }
+
+            // Agrupar por ano
+            const anos = [];
+            meses.forEach((m, idx) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            // Criar cabeçalho com anos
+            let headerHTML = '';
+            anos.forEach(a => {
+                headerHTML += `<th style="padding: 0.3rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; background: #2c5aa0; color: white;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            headerGantt.innerHTML = headerHTML;
+            headerGantt.removeAttribute('colspan');
+
+            // Criar segunda linha do cabeçalho com meses
+            const tableCompleta = document.getElementById('tabelaFinanceiraCompleta');
+            let headerRow2 = tableCompleta.querySelector('thead tr:nth-child(2)');
+            if (!headerRow2) {
+                headerRow2 = document.createElement('tr');
+                headerRow2.style.background = '#4b7ed0';
+                headerRow2.style.color = 'white';
+                headerRow2.innerHTML = '<th colspan="7" style="padding: 0.3rem; border: 1px solid #ddd;"></th>';
+                meses.forEach(m => {
+                    headerRow2.innerHTML += `<th style="padding: 0.3rem; border: 1px solid #ddd; text-align: center; font-size: 0.65rem;">${m.label}</th>`;
+                });
+                tableCompleta.querySelector('thead').appendChild(headerRow2);
+            }
+
+            // Criar linhas de dados
+            tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => {
+                const bg = i % 2 === 0 ? '#f9f9f9' : '#fff';
+                let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.m}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesDesc}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.anoDesc}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
+                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
+                    </td>`;
+                
+                // Adicionar células do Gantt
+                meses.forEach((mesInfo, mesIdx) => {
+                    let destaque = false;
+                    if (f.mInicio !== undefined && f.mFinal !== undefined) {
+                        if (mesIdx >= f.mInicio && mesIdx <= f.mFinal) {
+                            destaque = true;
+                        }
+                    } else if (f.mesDesc === mesInfo.mes && f.anoDesc === mesInfo.fullYear) {
+                        destaque = true;
+                    }
+                    
+                    const cor = destaque ? '#4CAF50' : bg;
+                    html += `<td style="padding: 0.75rem 0; border: 1px solid #ddd; background: ${cor};"></td>`;
+                });
+                
+                html += '</tr>';
+                return html;
+            }).join('');
         }
 
         // EXECUÇÃO FINANCEIRA
