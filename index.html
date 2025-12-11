@@ -2329,15 +2329,70 @@
 
             tbody.innerHTML = linhas + totalRow;
 
-            const aReceberAnterior = 0;
-            const devolvido = 0;
-            const saldoAnual = totalPrevisto + aReceberAnterior - totalRealizado - devolvido;
-            const liquidacaoPerc = totalPrevisto > 0 ? ((totalRealizado / totalPrevisto) * 100) : 0;
+            // Calcular valores anuais baseados no ano corrente
+            const anoAtual = new Date().getFullYear();
+            
+            // Previsto Anual: soma do cadastro financeiro do ano corrente
+            const previstoAnual = cad
+                .filter(f => f.anoDesc === anoAtual)
+                .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+            
+            // Recebido Anual: soma dos valores positivos recebidos no ano corrente
+            const recebidoAnual = execs
+                .filter(e => {
+                    if (!e.data) return false;
+                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return ano === anoAtual && valor > 0;
+                })
+                .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+            
+            // Devolvido: soma dos valores negativos do ano corrente
+            const devolvido = Math.abs(execs
+                .filter(e => {
+                    if (!e.data) return false;
+                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return ano === anoAtual && valor < 0;
+                })
+                .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
+            
+            // A Receber ano anterior: calcular saldo do ano anterior
+            const anoAnterior = anoAtual - 1;
+            const previstoAnoAnterior = cad
+                .filter(f => f.anoDesc === anoAnterior)
+                .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+            
+            const recebidoAnoAnterior = execs
+                .filter(e => {
+                    if (!e.data) return false;
+                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return ano === anoAnterior && valor > 0;
+                })
+                .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+            
+            const devolvidoAnoAnterior = Math.abs(execs
+                .filter(e => {
+                    if (!e.data) return false;
+                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return ano === anoAnterior && valor < 0;
+                })
+                .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
+            
+            const aReceberAnterior = previstoAnoAnterior - recebidoAnoAnterior - devolvidoAnoAnterior;
+            
+            // Saldo Anual: previsto + a receber anterior - recebido - devolvido
+            const saldoAnual = previstoAnual + aReceberAnterior - recebidoAnual - devolvido;
+            
+            // Liquidação percentual
+            const liquidacaoPerc = previstoAnual > 0 ? ((recebidoAnual / previstoAnual) * 100) : 0;
 
-            if (resumoPrev) resumoPrev.textContent = `R$ ${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoPrev) resumoPrev.textContent = `R$ ${previstoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
             if (resumoReceberAnt) resumoReceberAnt.textContent = `R$ ${aReceberAnterior.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            if (resumoRecebido) resumoRecebido.textContent = `R$ ${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            if (resumoDevolvido) resumoDevolvido.textContent = `R$ ${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoRecebido) resumoRecebido.textContent = `R$ ${recebidoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoDevolvido) resumoDevolvido.textContent = `-R$ ${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
             if (resumoSaldo) resumoSaldo.textContent = `R$ ${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
             if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
         }
