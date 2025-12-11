@@ -608,14 +608,18 @@
                     <!-- CADASTRO FÍSICO -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
                         <h3 style="margin: 0 0 1rem 0;">🏗️ Cadastro Físico</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>Fase *</label>
                                 <input type="text" id="faseFisico" placeholder="Ex: Fase 1" required>
                             </div>
                             <div class="form-group">
                                 <label>Objeto *</label>
-                                <input type="text" id="objetoFisico" placeholder="Ex: Obra" required>
+                                <select id="objetoFisico" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Qtde *</label>
+                                <input type="number" id="qtdeFisico" min="0" step="0.01" placeholder="0" required>
                             </div>
                             <div class="form-group">
                                 <label>M Início *</label>
@@ -645,6 +649,7 @@
                                     <tr style="background: #2c5aa0; color: white;">
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">Fase</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Qtde</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">M Início</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">M Final</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Início (MM/AAAA)</th>
@@ -1168,6 +1173,7 @@
 
             document.getElementById('tedsDetalheContainer').style.display = 'block';
             atualizarTabelaObjetos();
+            atualizarOpcoesObjetoFisico();
             atualizarTabelaMetas();
             atualizarTabelaFisicos();
             atualizarTabelaExecFisica();
@@ -1206,6 +1212,7 @@
 
             salvarDados();
             atualizarTabelaObjetos();
+            atualizarOpcoesObjetoFisico();
             document.getElementById('objeto').value = '';
             document.getElementById('qtdeObjeto').value = '';
             document.getElementById('valorUnitario').value = '';
@@ -1216,6 +1223,7 @@
             window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
             salvarDados();
             atualizarTabelaObjetos();
+            atualizarOpcoesObjetoFisico();
         }
 
         function atualizarTabelaObjetos() {
@@ -1532,6 +1540,29 @@
             }).join('');
         }
 
+        function atualizarOpcoesObjetoFisico() {
+            const select = document.getElementById('objetoFisico');
+            if (!select) return;
+
+            if (!window.tedSelecionado) {
+                select.innerHTML = '<option value="">Selecione um TED</option>';
+                select.disabled = true;
+                return;
+            }
+
+            const objs = window.tedSelecionado.objetos || [];
+            if (!objs.length) {
+                select.innerHTML = '<option value="">Cadastre um objeto primeiro</option>';
+                select.disabled = true;
+                return;
+            }
+
+            select.disabled = false;
+            let options = '<option value="">-- escolha um objeto --</option>';
+            options += objs.map(o => `<option value="${o.objeto}">${o.objeto}</option>`).join('');
+            select.innerHTML = options;
+        }
+
         // CADASTRO FÍSICO
         function adicionarFisico() {
             if (!window.tedSelecionado) {
@@ -1540,7 +1571,8 @@
             }
 
             const fase = document.getElementById('faseFisico').value.trim();
-            const objeto = document.getElementById('objetoFisico').value.trim();
+            const objeto = document.getElementById('objetoFisico').value;
+            const qtde = parseFloat(document.getElementById('qtdeFisico').value);
             const mInicio = parseInt(document.getElementById('mInicioFisico').value);
             const mFinal = parseInt(document.getElementById('mFinalFisico').value);
             // Calcular mês/ano a partir da 1ª descentralização + M (offset em meses)
@@ -1562,18 +1594,24 @@
             const mesFinal = dFinal.getMonth() + 1;
             const anoFinal = dFinal.getFullYear();
 
-            if (!fase || !objeto || isNaN(mInicio) || isNaN(mFinal)) {
+            if (!fase || !objeto || isNaN(qtde) || qtde < 0 || isNaN(mInicio) || isNaN(mFinal)) {
                 alert('⚠️ Preencha todos os campos do cadastro físico');
                 return;
             }
 
+            if (!window.tedSelecionado.objetos || !window.tedSelecionado.objetos.length) {
+                alert('⚠️ Cadastre um objeto primeiro para selecionar.');
+                return;
+            }
+
             window.tedSelecionado.fisicos.push({
-                id: Date.now(), fase, objeto, mInicio, mFinal, mesInicio, anoInicio, mesFinal, anoFinal
+                id: Date.now(), fase, objeto, qtde, mInicio, mFinal, mesInicio, anoInicio, mesFinal, anoFinal
             });
             salvarDados();
             atualizarTabelaFisicos();
             document.getElementById('faseFisico').value = '';
             document.getElementById('objetoFisico').value = '';
+            document.getElementById('qtdeFisico').value = '';
             document.getElementById('mInicioFisico').value = '';
             document.getElementById('mFinalFisico').value = '';
             document.getElementById('mesInicioFisico').value = '';
@@ -1635,6 +1673,7 @@
             let headerRow1 = tableElement.querySelector('thead tr');
             let headerHTML = '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Fase</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Qtde</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">M Início</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">M Final</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Mês Início</th>';
@@ -1693,6 +1732,7 @@
                 let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.fase}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.objeto}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.qtde ?? ''}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mInicio}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mFinal}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${inicioStr}</td>
