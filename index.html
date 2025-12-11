@@ -778,20 +778,25 @@
                             </div>
                         </div>
 
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
-                            <thead>
-                                <tr style="background: #2c5aa0; color: white;">
-                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">Nº</th>
-                                    <th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>
-                                    <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor Realizado</th>
-                                    <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Saldo</th>
-                                    <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaExecFinanceira">
-                                <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>
-                            </tbody>
-                        </table>
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <div style="flex: 1; min-width: 360px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                    <thead>
+                                        <tr style="background: #2c5aa0; color: white;">
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">Nº</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor Realizado</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Saldo</th>
+                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelaExecFinanceira">
+                                        <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="ganttExecFinanceira" style="min-width: 420px; overflow-x: auto;"></div>
+                        </div>
                     </div>
 
                     <!-- GANTT 60 MESES -->
@@ -1280,26 +1285,80 @@
             atualizarTabelaMetas();
         }
 
+        function renderGanttGenerico() {
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros || window.tedSelecionado.financeiros.length === 0) {
+                return '<p style="color: var(--text); font-size: 0.875rem; margin: 0;">Sem dados</p>';
+            }
+
+            const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
+                if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
+                return a.mesDesc - b.mesDesc;
+            });
+            const start = primeiros[0];
+            const startDate = new Date(start.anoDesc, start.mesDesc - 1, 15);
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear() });
+            }
+
+            const anos = [];
+            meses.forEach((m, idx) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            let html = '<table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.75rem;">';
+            html += '<thead>';
+            html += '<tr style="background: #2c5aa0; color: white;">';
+            anos.forEach(a => {
+                html += `<th style="padding: 0.3rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            html += '</tr>';
+            html += '<tr style="background: #4b7ed0; color: white;">';
+            meses.forEach(m => {
+                html += `<th style="padding: 0.25rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem;">${m.label}</th>`;
+            });
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody>';
+            html += '<tr>' + meses.map(()=>'<td style="height: 24px; border: 1px solid #ddd; background: #f7fbff;"></td>').join('') + '</tr>';
+            html += '</tbody></table>';
+
+            return html;
+        }
+
         function atualizarTabelaMetas() {
             const tbody = document.getElementById('tabelaMetas');
+            const ganttDiv = document.getElementById('ganttMetas');
             
             if (!window.tedSelecionado || !window.tedSelecionado.metas || window.tedSelecionado.metas.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>';
-                return;
+            } else {
+                tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => `
+                    <tr style="background: ${index % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${meta.meta}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mInicio}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mFinal}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mesInicio}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mesFinal}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
+                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerMeta(${meta.id})">Remover</button>
+                        </td>
+                    </tr>
+                `).join('');
             }
-
-            tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => `
-                <tr style="background: ${index % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
-                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${meta.meta}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mInicio}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mFinal}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mesInicio}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mesFinal}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerMeta(${meta.id})">Remover</button>
-                    </td>
-                </tr>
-            `).join('');
+            
+            if (ganttDiv) {
+                ganttDiv.innerHTML = renderGanttGenerico();
+            }
         }
 
         // CADASTRO FÍSICO
@@ -1401,23 +1460,28 @@
 
         function atualizarTabelaExecFisica() {
             const tbody = document.getElementById('tabelaExecFisica');
+            const ganttDiv = document.getElementById('ganttExecFisica');
+            
             if (!window.tedSelecionado || !window.tedSelecionado.execFisicas.length) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução física</td></tr>';
-                return;
+            } else {
+                tbody.innerHTML = window.tedSelecionado.execFisicas.map((f, i) => `
+                    <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.objeto}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.qtdPrevista}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.qtdEntregue}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.saldo}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.execPerc}%</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
+                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerExecFisica(${f.id})">Remover</button>
+                        </td>
+                    </tr>
+                `).join('');
             }
-
-            tbody.innerHTML = window.tedSelecionado.execFisicas.map((f, i) => `
-                <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
-                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.objeto}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.qtdPrevista}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.qtdEntregue}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.saldo}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.execPerc}%</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerExecFisica(${f.id})">Remover</button>
-                    </td>
-                </tr>
-            `).join('');
+            
+            if (ganttDiv) {
+                ganttDiv.innerHTML = renderGanttGenerico();
+            }
         }
 
         // CADASTRO FINANCEIRO
@@ -1461,24 +1525,29 @@
 
         function atualizarTabelaFinanceira() {
             const tbody = document.getElementById('tabelaFinanceira');
+            const ganttDiv = document.getElementById('ganttFinanceira');
+            
             if (!window.tedSelecionado || !window.tedSelecionado.financeiros.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
-                return;
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
+            } else {
+                tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => `
+                    <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.m}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesDesc}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.anoDesc}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
+                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
+                        </td>
+                    </tr>
+                `).join('');
             }
-
-            tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => `
-                <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
-                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.m}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesDesc}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.anoDesc}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
-                    </td>
-                </tr>
-            `).join('');
+            
+            if (ganttDiv) {
+                ganttDiv.innerHTML = renderGanttGenerico();
+            }
         }
 
         // EXECUÇÃO FINANCEIRA
@@ -1524,71 +1593,32 @@
                 return;
             }
 
-            const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
-                if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
-                return a.mesDesc - b.mesDesc;
-            });
-            const start = primeiros[0];
-            const startDate = new Date(start.anoDesc, start.mesDesc - 1, 15);
-
-            const meses = [];
-            for (let i = 0; i < 60; i++) {
-                const d = new Date(startDate);
-                d.setMonth(d.getMonth() + i);
-                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
-                const ano2 = String(d.getFullYear()).slice(-2);
-                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear() });
-            }
-
-            // Agrupar por ano para cabeçalho semelhante ao modelo
-            const anos = [];
-            meses.forEach((m, idx) => {
-                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
-                    anos.push({ ano: m.ano, count: 1 });
-                } else {
-                    anos[anos.length-1].count += 1;
-                }
-            });
-
-            let html = '<table style="min-width: 900px; width: 100%; border-collapse: collapse; font-size: 0.8rem;">';
-            html += '<thead>';
-            html += '<tr style="background: #2c5aa0; color: white;">';
-            anos.forEach(a => {
-                html += `<th style="padding: 0.4rem; border: 1px solid #ddd; text-align: center;" colspan="${a.count}">${a.ano}</th>`;
-            });
-            html += '</tr>';
-            html += '<tr style="background: #4b7ed0; color: white;">';
-            meses.forEach(m => {
-                html += `<th style="padding: 0.35rem; border: 1px solid #ddd; text-align: center;">${m.label}</th>`;
-            });
-            html += '</tr>';
-            html += '</thead>';
-            html += '<tbody>';
-            html += '<tr>' + meses.map(()=>'<td style="height: 28px; border: 1px solid #ddd; background: #f7fbff;"></td>').join('') + '</tr>';
-            html += '<tr>' + meses.map(()=>'<td style="height: 28px; border: 1px solid #ddd;"></td>').join('') + '</tr>';
-            html += '</tbody></table>';
-
-            container.innerHTML = html;
+            container.innerHTML = renderGanttGenerico();
         }
 
         function atualizarTabelaExecFinanceira() {
             const tbody = document.getElementById('tabelaExecFinanceira');
+            const ganttDiv = document.getElementById('ganttExecFinanceira');
+            
             if (!window.tedSelecionado || !window.tedSelecionado.execFinanceiras.length) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>';
-                return;
+            } else {
+                tbody.innerHTML = window.tedSelecionado.execFinanceiras.map((f, i) => `
+                    <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valorRealizado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
+                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerExecFinanceira(${f.id})">Remover</button>
+                        </td>
+                    </tr>
+                `).join('');
             }
-
-            tbody.innerHTML = window.tedSelecionado.execFinanceiras.map((f, i) => `
-                <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
-                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valorRealizado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerExecFinanceira(${f.id})">Remover</button>
-                    </td>
-                </tr>
-            `).join('');
+            
+            if (ganttDiv) {
+                ganttDiv.innerHTML = renderGanttGenerico();
+            }
         }
 
         // Fechar Modal
