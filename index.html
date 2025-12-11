@@ -492,8 +492,12 @@
                             <input type="date" id="fimVigencia" required>
                         </div>
                         <div class="form-group">
-                            <label>Jd Descentralização *</label>
-                            <input type="text" id="jdDescentralizacao" placeholder="JD" required>
+                            <label>1ª Descentralização - Mês *</label>
+                            <input type="number" id="primeiroMesDesc" min="1" max="12" placeholder="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>1ª Descentralização - Ano *</label>
+                            <input type="number" id="primeiroAnoDesc" min="1900" placeholder="2025" required>
                         </div>
                         <div class="form-group">
                             <label>Objetivo *</label>
@@ -876,7 +880,8 @@
                 vigilancia: parseInt(document.getElementById('vigilancia').value) || 0,
                 inicioVigencia: document.getElementById('inicioVigencia').value,
                 fimVigencia: document.getElementById('fimVigencia').value,
-                jdDescentralizacao: document.getElementById('jdDescentralizacao').value,
+                primeiroMesDesc: parseInt(document.getElementById('primeiroMesDesc').value) || 1,
+                primeiroAnoDesc: parseInt(document.getElementById('primeiroAnoDesc').value) || new Date().getFullYear(),
                 objetivo: document.getElementById('objetivo').value,
                 gasto: 0,
                 progressoFisico: 0,
