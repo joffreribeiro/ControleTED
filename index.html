@@ -744,11 +744,10 @@
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
-                                        <th colspan="60" id="ganttHeaderFinanceira" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #4b7ed0;">CRONOGRAMA</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaFinanceira">
-                                    <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>
+                                    <tr><td colspan="7" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1563,6 +1562,7 @@
         function atualizarTabelaFinanceira() {
             const tbody = document.getElementById('tabelaFinanceira');
             const headerGantt = document.getElementById('ganttHeaderFinanceira');
+            const tableCompleta = document.getElementById('tabelaFinanceiraCompleta');
             
             if (!window.tedSelecionado || !window.tedSelecionado.financeiros.length) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
@@ -1573,13 +1573,13 @@
                 return;
             }
 
-            // Calcular meses do Gantt
+            // Calcular meses do Gantt baseado na PRIMEIRA descentralização
             const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
                 if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
                 return a.mesDesc - b.mesDesc;
             });
             const start = primeiros[0];
-            const startDate = new Date(start.anoDesc, start.mesDesc - 1, 15);
+            const startDate = new Date(start.anoDesc, start.mesDesc - 1, 1);
 
             const meses = [];
             for (let i = 0; i < 60; i++) {
@@ -1587,12 +1587,17 @@
                 d.setMonth(d.getMonth() + i);
                 const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
-                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth() + 1, fullYear: d.getFullYear() });
+                meses.push({ 
+                    label: `${mes}/${ano2}`, 
+                    ano: d.getFullYear(), 
+                    mes: d.getMonth() + 1,
+                    fullYear: d.getFullYear()
+                });
             }
 
             // Agrupar por ano
             const anos = [];
-            meses.forEach((m, idx) => {
+            meses.forEach((m) => {
                 if (!anos.length || anos[anos.length-1].ano !== m.ano) {
                     anos.push({ ano: m.ano, count: 1 });
                 } else {
@@ -1600,27 +1605,38 @@
                 }
             });
 
-            // Criar cabeçalho com anos
-            let headerHTML = '';
+            // Remover segundo cabeçalho se existir
+            let headerRow2 = tableCompleta.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) {
+                headerRow2.remove();
+            }
+
+            // Atualizar primeiro cabeçalho com anos
+            let headerRow1 = tableCompleta.querySelector('thead tr:nth-child(1)');
+            let headerHTML = '<th style="padding: 0.75rem; border: 1px solid #ddd;">Nº</th>';
+            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">M</th>';
+            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>';
+            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>';
+            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>';
+            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>';
+            headerHTML += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>';
+            
             anos.forEach(a => {
-                headerHTML += `<th style="padding: 0.3rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; background: #2c5aa0; color: white;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
             });
-            headerGantt.innerHTML = headerHTML;
-            headerGantt.removeAttribute('colspan');
+            
+            headerRow1.innerHTML = headerHTML;
 
             // Criar segunda linha do cabeçalho com meses
-            const tableCompleta = document.getElementById('tabelaFinanceiraCompleta');
-            let headerRow2 = tableCompleta.querySelector('thead tr:nth-child(2)');
-            if (!headerRow2) {
-                headerRow2 = document.createElement('tr');
-                headerRow2.style.background = '#4b7ed0';
-                headerRow2.style.color = 'white';
-                headerRow2.innerHTML = '<th colspan="7" style="padding: 0.3rem; border: 1px solid #ddd;"></th>';
-                meses.forEach(m => {
-                    headerRow2.innerHTML += `<th style="padding: 0.3rem; border: 1px solid #ddd; text-align: center; font-size: 0.65rem;">${m.label}</th>`;
-                });
-                tableCompleta.querySelector('thead').appendChild(headerRow2);
-            }
+            headerRow2 = document.createElement('tr');
+            headerRow2.style.background = '#4b7ed0';
+            headerRow2.style.color = 'white';
+            let headerRow2HTML = '<th colspan="7" style="padding: 0.75rem; border: 1px solid #ddd;"></th>';
+            meses.forEach(m => {
+                headerRow2HTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;">${m.label}</th>`;
+            });
+            headerRow2.innerHTML = headerRow2HTML;
+            tableCompleta.querySelector('thead').appendChild(headerRow2);
 
             // Criar linhas de dados
             tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => {
@@ -1636,18 +1652,10 @@
                         <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
                     </td>`;
                 
-                // Adicionar células do Gantt
+                // Adicionar células do Gantt - destacar o mês/ano da descentralização
                 meses.forEach((mesInfo, mesIdx) => {
-                    let destaque = false;
-                    if (f.mInicio !== undefined && f.mFinal !== undefined) {
-                        if (mesIdx >= f.mInicio && mesIdx <= f.mFinal) {
-                            destaque = true;
-                        }
-                    } else if (f.mesDesc === mesInfo.mes && f.anoDesc === mesInfo.fullYear) {
-                        destaque = true;
-                    }
-                    
-                    const cor = destaque ? '#4CAF50' : bg;
+                    const estaNoMes = f.mesDesc === mesInfo.mes && f.anoDesc === mesInfo.fullYear;
+                    const cor = estaNoMes ? '#4CAF50' : 'transparent';
                     html += `<td style="padding: 0.75rem 0; border: 1px solid #ddd; background: ${cor};"></td>`;
                 });
                 
