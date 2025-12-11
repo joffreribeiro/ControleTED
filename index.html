@@ -708,26 +708,22 @@
                     <!-- CADASTRO FINANCEIRA -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
                         <h3 style="margin: 0 0 1rem 0;">💰 Cadastro Financeira</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
                                 <input type="text" id="numFinanceiro" placeholder="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>UP *</label>
+                                <input type="text" id="upFinanceiro" placeholder="UP" required>
                             </div>
                             <div class="form-group">
                                 <label>M *</label>
                                 <input type="number" id="mFinanceiro" min="0" placeholder="0" required>
                             </div>
                             <div class="form-group">
-                                <label>Mês Descentralização (auto) *</label>
-                                <input type="number" id="mesDescFinanceiro" min="1" max="12" placeholder="calculado" readonly required>
-                            </div>
-                            <div class="form-group">
-                                <label>Ano Desc. (auto) *</label>
-                                <input type="number" id="anoDescFinanceiro" min="1900" placeholder="calculado" readonly required>
-                            </div>
-                            <div class="form-group">
-                                <label>UP *</label>
-                                <input type="text" id="upFinanceiro" placeholder="UP" required>
+                                <label>Mês Desc. (auto) *</label>
+                                <input type="text" id="mesDescFinanceiro" placeholder="MM/AAAA" readonly required>
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$) *</label>
@@ -744,10 +740,9 @@
                                 <thead>
                                     <tr style="background: #2c5aa0; color: white;">
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">ND</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">UP</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">M</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">UP</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
                                     </tr>
@@ -1976,11 +1971,9 @@
             d.setMonth(d.getMonth() + (isNaN(m) ? 0 : m));
             const mesDesc = d.getMonth() + 1;
             const anoDesc = d.getFullYear();
-            // preencher campos somente leitura
+            // preencher campo somente leitura com formato MM/AAAA
             const mesDescInput = document.getElementById('mesDescFinanceiro');
-            const anoDescInput = document.getElementById('anoDescFinanceiro');
-            if (mesDescInput) mesDescInput.value = String(mesDesc).padStart(2,'0');
-            if (anoDescInput) anoDescInput.value = String(anoDesc);
+            if (mesDescInput) mesDescInput.value = String(mesDesc).padStart(2,'0') + '/' + anoDesc;
 
             window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, up, valor });
             salvarDados();
@@ -1991,7 +1984,6 @@
             document.getElementById('numFinanceiro').value = '';
             document.getElementById('mFinanceiro').value = '';
             document.getElementById('mesDescFinanceiro').value = '';
-            document.getElementById('anoDescFinanceiro').value = '';
             document.getElementById('upFinanceiro').value = '';
             document.getElementById('valorFinanceiro').value = '';
         }
@@ -2073,10 +2065,9 @@
             // Atualizar primeiro cabeçalho com anos e rowspan nas colunas fixas
             let headerRow1 = tableCompleta.querySelector('thead tr:nth-child(1)');
             let headerHTML = '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">ND</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">UP</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">M</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">UP</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>';
             
@@ -2102,12 +2093,12 @@
                 const bg = i % 2 === 0 ? '#f9f9f9' : '#fff';
                 const valorNum = parseFloat(f.valor) || 0;
                 totalValor += valorNum;
+                const mesDescStr = String(f.mesDesc).padStart(2, '0') + '/' + f.anoDesc;
                 let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.m}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesDesc}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.anoDesc}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.up || f.ug}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.m}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${mesDescStr}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
                         <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
