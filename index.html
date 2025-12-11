@@ -523,10 +523,14 @@
                     <div style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
                         <h3 style="margin: 0 0 1rem 0;">📦 Cadastro de Objetos</h3>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>Objeto *</label>
                                 <input type="text" id="objeto" placeholder="Ex: Computador" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Qtde *</label>
+                                <input type="number" id="qtdeObjeto" placeholder="0" min="0" step="1" required>
                             </div>
                             <div class="form-group">
                                 <label>Valor Unitário (R$) *</label>
@@ -539,13 +543,14 @@
                             <thead>
                                 <tr style="background: #2c5aa0; color: white;">
                                     <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Objeto</th>
+                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Qtde</th>
                                     <th style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">Valor Unitário</th>
                                     <th style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">Valor Total</th>
                                     <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelaObjetos">
-                                <tr><td colspan="4" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>
+                                <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1182,9 +1187,10 @@
             }
 
             const objeto = document.getElementById('objeto').value.trim();
+            const qtde = parseInt(document.getElementById('qtdeObjeto').value);
             const valorUnitario = parseFloat(document.getElementById('valorUnitario').value);
 
-            if (!objeto || !valorUnitario || valorUnitario <= 0) {
+            if (!objeto || !qtde || qtde <= 0 || !valorUnitario || valorUnitario <= 0) {
                 alert('⚠️ Preencha todos os campos corretamente!');
                 return;
             }
@@ -1196,13 +1202,15 @@
             window.tedSelecionado.objetos.push({
                 id: Date.now(),
                 objeto: objeto,
+                qtde: qtde,
                 valorUnitario: valorUnitario,
-                valorTotal: valorUnitario
+                valorTotal: valorUnitario * qtde
             });
 
             salvarDados();
             atualizarTabelaObjetos();
             document.getElementById('objeto').value = '';
+            document.getElementById('qtdeObjeto').value = '';
             document.getElementById('valorUnitario').value = '';
         }
 
@@ -1217,7 +1225,7 @@
             const tbody = document.getElementById('tabelaObjetos');
             
             if (!window.tedSelecionado || !window.tedSelecionado.objetos || window.tedSelecionado.objetos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>';
                 return;
             }
 
@@ -1227,6 +1235,7 @@
                 return `
                     <tr style="background: ${window.tedSelecionado.objetos.indexOf(obj) % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
                         <td style="padding: 0.75rem; border: 1px solid #ddd;">${obj.objeto}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${obj.qtde}</td>
                         <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
@@ -1238,7 +1247,7 @@
 
             tbody.innerHTML += `
                 <tr style="background: #e8f4f8; font-weight: bold; border: 1px solid #ddd;">
-                    <td colspan="2" style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">TOTAL:</td>
+                    <td colspan="3" style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">TOTAL:</td>
                     <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd;"></td>
                 </tr>
