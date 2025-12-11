@@ -765,15 +765,19 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
-                                <input type="text" id="numExecFin" placeholder="1" required>
+                                <select id="numExecFin" required>
+                                    <option value="">-- Selecione --</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>UP *</label>
-                                <input type="text" id="upExecFin" placeholder="UP" required>
+                                <select id="upExecFin" required>
+                                    <option value="">-- Selecione --</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$) *</label>
-                                <input type="number" id="valorExecFin" min="0" step="0.01" placeholder="0.00" required>
+                                <input type="number" id="valorExecFin" step="0.01" placeholder="0.00" required>
                             </div>
                             <div class="form-group">
                                 <label>Data *</label>
@@ -794,7 +798,6 @@
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor Previsto</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor Realizado</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Saldo</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaExecFinanceira">
@@ -818,7 +821,11 @@
                         <h3 style="margin: 0 0 1rem 0;">📅 Cronograma (Gantt 60 meses)</h3>
                         <p style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text);">Início = 1ª descentralização (mês/ano) + 60 meses.</p>
                         <div id="ganttContainer" style="overflow-x: auto;"></div>
-                        <div id="previstoAnualResumo" style="margin-top: 0.75rem; font-size: 0.9rem; font-weight: 600;">Previsto Anual: <span id="previstoAnualValor">R$ 0,00</span></div>
+                        
+                        <!-- Resumo Anual por Ano -->
+                        <div id="resumoAnualPorAno" style="margin-top: 1.5rem; overflow-x: auto;">
+                            <!-- Será preenchido dinamicamente -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1188,6 +1195,7 @@
             atualizarOpcoesObjetoExecFisica();
             atualizarTabelaExecFisica();
             atualizarTabelaFinanceira();
+            atualizarOpcoesExecFinanceira();
             atualizarTabelaExecFinanceira();
             atualizarGantt();
         }
@@ -1977,6 +1985,7 @@
             window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, up, valor });
             salvarDados();
             atualizarTabelaFinanceira();
+            atualizarOpcoesExecFinanceira();
             atualizarGantt();
             atualizarTabelaExecFinanceira();
             document.getElementById('numFinanceiro').value = '';
@@ -1992,6 +2001,7 @@
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
             salvarDados();
             atualizarTabelaFinanceira();
+            atualizarOpcoesExecFinanceira();
             atualizarGantt();
             atualizarTabelaExecFinanceira();
         }
@@ -2133,6 +2143,36 @@
         }
 
         // EXECUÇÃO FINANCEIRA
+        function atualizarOpcoesExecFinanceira() {
+            const selectND = document.getElementById('numExecFin');
+            const selectUP = document.getElementById('upExecFin');
+            
+            if (!selectND || !selectUP) return;
+            
+            if (!window.tedSelecionado) {
+                selectND.innerHTML = '<option value="">-- Selecione um TED --</option>';
+                selectUP.innerHTML = '<option value="">-- Selecione um TED --</option>';
+                return;
+            }
+            
+            const cad = window.tedSelecionado.financeiros || [];
+            if (!cad.length) {
+                selectND.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
+                selectUP.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
+                return;
+            }
+            
+            // ND únicos
+            const ndsUnicos = Array.from(new Set(cad.map(f => f.numero)));
+            selectND.innerHTML = '<option value="">-- Selecione ND --</option>' +
+                ndsUnicos.map(nd => `<option value="${nd}">${nd}</option>`).join('');
+            
+            // UP únicos
+            const upsUnicos = Array.from(new Set(cad.map(f => f.up || f.ug)));
+            selectUP.innerHTML = '<option value="">-- Selecione UP --</option>' +
+                upsUnicos.map(up => `<option value="${up}">${up}</option>`).join('');
+        }
+        
         function adicionarExecFinanceira() {
             if (!window.tedSelecionado) {
                 alert('⚠️ Selecione um TED primeiro!');
@@ -2148,6 +2188,14 @@
                 alert('⚠️ Preencha todos os campos da execução financeira');
                 return;
             }
+            
+            // Verificar se ND+UP existe no cadastro
+            const cad = window.tedSelecionado.financeiros || [];
+            const existe = cad.some(f => String(f.numero) === nd && String(f.up || f.ug) === up);
+            if (!existe) {
+                alert('⚠️ A combinação ND+UP informada não existe no cadastro financeiro!');
+                return;
+            }
 
             window.tedSelecionado.execFinanceiras.push({ id: Date.now(), nd, up, valor, data });
             salvarDados();
@@ -2159,9 +2207,12 @@
             document.getElementById('dataExecFin').value = '';
         }
 
-        function removerExecFinanceira(id) {
+        function removerExecFinanceira(nd, up, data) {
             if (!window.tedSelecionado) return;
-            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras.filter(f => f.id !== id);
+            // Remove apenas a execução específica (mesma ND+UP+data)
+            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras.filter(f => 
+                !(String(f.nd || f.numero) === nd && String(f.up || f.ug) === up && f.data === data)
+            );
             salvarDados();
             atualizarTabelaExecFinanceira();
             atualizarGantt();
@@ -2170,14 +2221,105 @@
         // GANTT 60 MESES
         function atualizarGantt() {
             const container = document.getElementById('ganttContainer');
+            const resumoContainer = document.getElementById('resumoAnualPorAno');
+            
             if (!container) return;
 
             if (!window.tedSelecionado || !window.tedSelecionado.financeiros || window.tedSelecionado.financeiros.length === 0) {
                 container.innerHTML = '<p style="color: var(--text);">Cadastre ao menos uma descentralização para gerar o cronograma.</p>';
+                if (resumoContainer) resumoContainer.innerHTML = '';
                 return;
             }
 
             container.innerHTML = renderGanttGenerico([]);
+            
+            // Gerar resumo anual por ano
+            if (resumoContainer) {
+                const cad = window.tedSelecionado.financeiros || [];
+                const execs = window.tedSelecionado.execFinanceiras || [];
+                
+                // Obter todos os anos únicos (do cadastro e execuções)
+                const anosSet = new Set();
+                cad.forEach(f => anosSet.add(f.anoDesc));
+                execs.forEach(e => {
+                    if (e.data) {
+                        const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                        anosSet.add(ano);
+                    }
+                });
+                
+                const anosOrdenados = Array.from(anosSet).sort();
+                
+                if (anosOrdenados.length === 0) {
+                    resumoContainer.innerHTML = '';
+                    return;
+                }
+                
+                // Criar tabela com resumo anual
+                let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-top: 1rem;">';
+                html += '<thead><tr style="background: #2c5aa0; color: white;">';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Previsto Anual</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">A Receber ano anterior</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Recebido Anual</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Devolvido</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Saldo Anual</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Liquidação (%)</th>';
+                html += '</tr></thead><tbody>';
+                
+                let saldoAcumulado = 0;
+                
+                anosOrdenados.forEach((ano, idx) => {
+                    // Previsto do ano
+                    const previsto = cad
+                        .filter(f => f.anoDesc === ano)
+                        .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+                    
+                    // Recebido (valores positivos) do ano
+                    const recebido = execs
+                        .filter(e => {
+                            if (!e.data) return false;
+                            const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                            const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                            return anoExec === ano && valor > 0;
+                        })
+                        .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+                    
+                    // Devolvido (valores negativos) do ano
+                    const devolvido = Math.abs(execs
+                        .filter(e => {
+                            if (!e.data) return false;
+                            const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                            const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                            return anoExec === ano && valor < 0;
+                        })
+                        .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
+                    
+                    // A receber do ano anterior é o saldo acumulado do ano anterior
+                    const aReceberAnterior = saldoAcumulado;
+                    
+                    // Saldo = previsto + a receber anterior - recebido - devolvido
+                    const saldo = previsto + aReceberAnterior - recebido - devolvido;
+                    saldoAcumulado = saldo; // atualizar para próximo ano
+                    
+                    // Liquidação
+                    const liquidacao = previsto > 0 ? ((recebido / previsto) * 100) : 0;
+                    
+                    const bg = idx % 2 === 0 ? '#f9f9f9' : '#fff';
+                    html += `<tr style="background: ${bg};">`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; font-weight: bold;">${ano}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${previsto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${aReceberAnterior.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right; color: ${devolvido > 0 ? '#ef4444' : 'inherit'};">-R$ ${devolvido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right; font-weight: bold;">R$ ${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${liquidacao.toFixed(2)}%</td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+                resumoContainer.innerHTML = html;
+            }
         }
 
         function atualizarTabelaExecFinanceira() {
@@ -2235,8 +2377,7 @@
                       '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd;">UP</th>'+
                       '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd; text-align:right;">Valor Previsto</th>'+
                       '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd; text-align:right;">Valor Realizado</th>'+
-                      '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd; text-align:right;">Saldo</th>'+
-                      '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd; text-align:center;">Ação</th>';
+                      '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd; text-align:right;">Saldo</th>';
             anos.forEach(a=>{ hdr += `<th style="padding:0.75rem; border:1px solid #ddd; background:#2c5aa0; color:white; text-align:center; font-weight:bold;" colspan="${a.count}">${a.ano}</th>`; });
             hr1.innerHTML = hdr;
 
@@ -2297,8 +2438,7 @@
                            `<td style=\"padding:0.75rem; border:1px solid #ddd;\">${up}</td>`+
                            `<td style=\"padding:0.75rem; border:1px solid #ddd; text-align:right;\">R$ ${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
                            `<td style=\"padding:0.75rem; border:1px solid #ddd; text-align:right;\">R$ ${realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td style=\"padding:0.75rem; border:1px solid #ddd; text-align:right;\">R$ ${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td style=\"padding:0.75rem; border:1px solid #ddd; text-align:center;\"></td>`;
+                           `<td style=\"padding:0.75rem; border:1px solid #ddd; text-align:right;\">R$ ${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
 
                 meses.forEach((_,i)=>{
                     const val = mapaMes.get(i);
@@ -2319,7 +2459,6 @@
             totalRow += `<td style="padding:0.75rem; border:1px solid #ddd; text-align:right;">R$ ${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
             totalRow += `<td style="padding:0.75rem; border:1px solid #ddd; text-align:right;">R$ ${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
             totalRow += `<td style="padding:0.75rem; border:1px solid #ddd; text-align:right;">R$ ${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += '<td style="padding:0.75rem; border:1px solid #ddd;"></td>';
             meses.forEach((_, idx) => {
                 const val = totalMeses.get(idx);
                 const bg = val ? '#e0f2fe' : 'transparent';
