@@ -1211,6 +1211,7 @@
             salvarDados();
             atualizarTabelaObjetos();
             atualizarOpcoesObjetoFisico();
+            atualizarOpcoesObjetoExecFisica();
             document.getElementById('objeto').value = '';
             document.getElementById('qtdeObjeto').value = '';
             document.getElementById('valorUnitario').value = '';
@@ -1222,6 +1223,7 @@
             salvarDados();
             atualizarTabelaObjetos();
             atualizarOpcoesObjetoFisico();
+            atualizarOpcoesObjetoExecFisica();
         }
 
         function atualizarTabelaObjetos() {
@@ -1571,11 +1573,12 @@
                 return;
             }
 
-            const fisicos = window.tedSelecionado.fisicos || [];
-            const objetosUnicos = Array.from(new Set(fisicos.map(f => f.objeto).filter(Boolean)));
+            const objs = window.tedSelecionado.objetos || [];
+            const nomes = objs.map(o => o.objeto).filter(Boolean);
+            const objetosUnicos = Array.from(new Set(nomes));
 
             if (!objetosUnicos.length) {
-                select.innerHTML = '<option value="">Cadastre o físico primeiro</option>';
+                select.innerHTML = '<option value="">Cadastre um objeto primeiro</option>';
                 select.disabled = true;
                 return;
             }
@@ -1874,9 +1877,9 @@
 
             // Agrupar execuções por objeto e por mês
             const execs = window.tedSelecionado.execFisicas || [];
-            const fisicos = window.tedSelecionado.fisicos || [];
-            // Objetos registrados no cadastro físico
-            const objetosUnicos = Array.from(new Set(fisicos.map(f => f.objeto)));
+            const objetosCad = window.tedSelecionado.objetos || [];
+            // Objetos registrados no cadastro de objetos
+            const objetosUnicos = Array.from(new Set(objetosCad.map(o => o.objeto)));
 
             if (!objetosUnicos.length) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Cadastre o físico para listar objetos</td></tr>';
@@ -1884,7 +1887,7 @@
             }
 
             const linhas = objetosUnicos.map((obj, i) => {
-                const prevista = fisicos.filter(f => f.objeto === obj).reduce((s, f) => s + (parseFloat(f.qtde) || 0), 0);
+                const prevista = objetosCad.filter(o => o.objeto === obj).reduce((s, o) => s + (parseFloat(o.qtde) || 0), 0);
                 const entregasObj = execs.filter(e => e.objeto === obj);
                 const entregueTotal = entregasObj.reduce((s, e) => s + (parseFloat(e.qtde) || 0), 0);
                 const saldo = Math.max(0, prevista - entregueTotal);
