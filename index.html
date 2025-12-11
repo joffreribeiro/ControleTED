@@ -667,18 +667,18 @@
                     <!-- EXECUÇÃO FÍSICA -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
                         <h3 style="margin: 0 0 1rem 0;">📈 Execução Física</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>Objeto *</label>
-                                <input type="text" id="objetoExecFisica" placeholder="Ex: Obra" required>
+                                <select id="objetoExecFisica" required></select>
                             </div>
                             <div class="form-group">
-                                <label>Qtd Prevista *</label>
-                                <input type="number" id="qtdPrevista" min="0" placeholder="0" required>
+                                <label>Qtde *</label>
+                                <input type="number" id="qtdeExec" min="0" step="0.01" placeholder="0" required>
                             </div>
                             <div class="form-group">
-                                <label>Qtd Entregue *</label>
-                                <input type="number" id="qtdEntregue" min="0" placeholder="0" required>
+                                <label>Data *</label>
+                                <input type="date" id="dataExec" required>
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="visibility: hidden;">.</label>
@@ -686,25 +686,22 @@
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                            <div style="flex: 1; min-width: 360px;">
-                                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
-                                    <thead>
-                                        <tr style="background: #2c5aa0; color: white;">
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Prevista</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Entregue</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Saldo</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Execução (%)</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tabelaExecFisica">
-                                        <tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução física</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div id="ganttExecFisica" style="min-width: 420px; overflow-x: auto;"></div>
+                        <div style="overflow-x: auto; border: 1px solid #ddd; border-radius: 0.25rem;">
+                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                <thead>
+                                    <tr style="background: #2c5aa0; color: white;">
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Prevista</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Entregue</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Saldo</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Execução (%)</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaExecFisica">
+                                    <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução física</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -1176,6 +1173,7 @@
             atualizarOpcoesObjetoFisico();
             atualizarTabelaMetas();
             atualizarTabelaFisicos();
+            atualizarOpcoesObjetoExecFisica();
             atualizarTabelaExecFisica();
             atualizarTabelaFinanceira();
             atualizarTabelaExecFinanceira();
@@ -1751,6 +1749,9 @@
                 html += '</tr>';
                 return html;
             }).join('');
+
+            // Atualizar opções de Execução Física (objetos únicos do cadastro físico)
+            atualizarOpcoesObjetoExecFisica();
         }
 
         // EXECUÇÃO FÍSICA
@@ -1760,26 +1761,21 @@
                 return;
             }
 
-            const objeto = document.getElementById('objetoExecFisica').value.trim();
-            const qtdPrevista = parseFloat(document.getElementById('qtdPrevista').value);
-            const qtdEntregue = parseFloat(document.getElementById('qtdEntregue').value);
+            const objeto = document.getElementById('objetoExecFisica').value;
+            const qtde = parseFloat(document.getElementById('qtdeExec').value);
+            const data = document.getElementById('dataExec').value;
 
-            if (!objeto || isNaN(qtdPrevista) || isNaN(qtdEntregue)) {
+            if (!objeto || isNaN(qtde) || qtde < 0 || !data) {
                 alert('⚠️ Preencha todos os campos da execução física');
                 return;
             }
 
-            const saldo = Math.max(0, qtdPrevista - qtdEntregue);
-            const execPerc = qtdPrevista > 0 ? Math.min(100, Math.round((qtdEntregue / qtdPrevista) * 100)) : 0;
-
-            window.tedSelecionado.execFisicas.push({
-                id: Date.now(), objeto, qtdPrevista, qtdEntregue, saldo, execPerc
-            });
+            window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto, qtde, data });
             salvarDados();
             atualizarTabelaExecFisica();
             document.getElementById('objetoExecFisica').value = '';
-            document.getElementById('qtdPrevista').value = '';
-            document.getElementById('qtdEntregue').value = '';
+            document.getElementById('qtdeExec').value = '';
+            document.getElementById('dataExec').value = '';
         }
 
         function removerExecFisica(id) {
@@ -1791,31 +1787,114 @@
 
         function atualizarTabelaExecFisica() {
             const tbody = document.getElementById('tabelaExecFisica');
-            const ganttDiv = document.getElementById('ganttExecFisica');
-            
-            if (!window.tedSelecionado || !window.tedSelecionado.execFisicas.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução física</td></tr>';
-                if (ganttDiv) {
-                    ganttDiv.innerHTML = renderGanttGenerico([]);
-                }
-            } else {
-                tbody.innerHTML = window.tedSelecionado.execFisicas.map((f, i) => `
-                    <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
-                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.objeto}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.qtdPrevista}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.qtdEntregue}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.saldo}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.execPerc}%</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
-                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerExecFisica(${f.id})">Remover</button>
-                        </td>
-                    </tr>
-                `).join('');
-                
-                if (ganttDiv) {
-                    ganttDiv.innerHTML = renderGanttGenerico(window.tedSelecionado.execFisicas);
-                }
+            const tableElement = tbody.closest('table');
+
+            if (!window.tedSelecionado) {
+                tbody.innerHTML = '<tr><td colspan="67" style="padding: 1rem; text-align: center; color: var(--text);">Selecione um TED</td></tr>';
+                return;
             }
+
+            // Base do cronograma (60 meses)
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth() + 1, fullYear: d.getFullYear() });
+            }
+
+            const anos = [];
+            meses.forEach(m => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            // Cabeçalho com rowspan nas colunas fixas
+            let headerRow1 = tableElement.querySelector('thead tr');
+            let headerHTML = '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Prevista</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Entregue</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Saldo</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Execução (%)</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>';
+            anos.forEach(a => {
+                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            headerRow1.innerHTML = headerHTML;
+
+            let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) headerRow2.remove();
+            headerRow2 = document.createElement('tr');
+            headerRow2.style.background = '#4b7ed0';
+            headerRow2.style.color = 'white';
+            let headerRow2HTML = '';
+            meses.forEach(m => {
+                headerRow2HTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;">${m.label}</th>`;
+            });
+            headerRow2.innerHTML = headerRow2HTML;
+            tableElement.querySelector('thead').appendChild(headerRow2);
+
+            // Agrupar execuções por objeto e por mês
+            const execs = window.tedSelecionado.execFisicas || [];
+            const fisicos = window.tedSelecionado.fisicos || [];
+            // Objetos registrados no cadastro físico
+            const objetosUnicos = Array.from(new Set(fisicos.map(f => f.objeto)));
+
+            if (!objetosUnicos.length) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Cadastre o físico para listar objetos</td></tr>';
+                return;
+            }
+
+            const linhas = objetosUnicos.map((obj, i) => {
+                const prevista = fisicos.filter(f => f.objeto === obj).reduce((s, f) => s + (parseFloat(f.qtde) || 0), 0);
+                const entregasObj = execs.filter(e => e.objeto === obj);
+                const entregueTotal = entregasObj.reduce((s, e) => s + (parseFloat(e.qtde) || 0), 0);
+                const saldo = Math.max(0, prevista - entregueTotal);
+                const execPerc = prevista > 0 ? Math.min(100, Math.round((entregueTotal / prevista) * 100)) : 0;
+
+                // Mapa mês->quantidade entregue
+                const mapaMes = new Map();
+                entregasObj.forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    // calcular índice relativo
+                    const diffMonths = (d.getFullYear() - startDate.getFullYear()) * 12 + (d.getMonth() - startDate.getMonth());
+                    if (diffMonths >= 0 && diffMonths < 60) {
+                        mapaMes.set(diffMonths, (mapaMes.get(diffMonths) || 0) + (parseFloat(e.qtde) || 0));
+                    }
+                });
+
+                let html = `<tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${obj}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${prevista}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${entregueTotal}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${saldo}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${execPerc}%</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;"></td>`;
+
+                meses.forEach((_, idx) => {
+                    const val = mapaMes.get(idx) || '';
+                    const bg = val ? '#d1fae5' : 'transparent';
+                    html += `<td style="padding: 0.25rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${val ? val : ''}</td>`;
+                });
+                html += '</tr>';
+                return html;
+            }).join('');
+
+            tbody.innerHTML = linhas;
         }
 
         // CADASTRO FINANCEIRO
