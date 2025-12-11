@@ -366,6 +366,13 @@
         table td.sticky-col.last-sticky,
         table th.sticky-col.last-sticky {
             box-shadow: none;
+            border-right: 4px solid #000;
+        }
+        
+        /* Força linha preta antes do Gantt em todas as tabelas */
+        table thead th:not(.sticky-col):first-of-type,
+        table tbody td:not(.sticky-col):first-of-type {
+            border-left: 4px solid #000 !important;
         }
 
         /* Responsive */
