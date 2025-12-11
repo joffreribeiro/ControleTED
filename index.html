@@ -2101,12 +2101,12 @@
 
             // Atualizar primeiro cabeçalho com anos e rowspan nas colunas fixas
             let headerRow1 = tableCompleta.querySelector('thead tr:nth-child(1)');
-            let headerHTML = '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 0px; background: #2c5aa0; z-index: 30; min-width: 60px;">ND</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 62px; background: #2c5aa0; z-index: 30; min-width: 60px;">UP</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 124px; background: #2c5aa0; z-index: 30; min-width: 50px;">M</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; position: sticky; left: 176px; background: #2c5aa0; z-index: 30; min-width: 90px;">Mês Desc.</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; position: sticky; left: 268px; background: #2c5aa0; z-index: 30; min-width: 100px;">Valor (R$)</th>';
-            headerHTML += '<th rowspan="2" class="sticky-col last-sticky" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; position: sticky; left: 370px; background: #2c5aa0; z-index: 30; min-width: 90px;">Ação</th>';
+            let headerHTML = '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 60px;">ND</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 60px;">UP</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 50px;">M</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 90px;">Mês Desc.</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0; min-width: 100px;">Valor (R$)</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; min-width: 90px;">Ação</th>';
             
             let firstAnoFis = true;
             anos.forEach(a => {
@@ -2135,12 +2135,12 @@
                 totalValor += valorNum;
                 const mesDescStr = String(f.mesDesc).padStart(2, '0') + '/' + f.anoDesc;
                 let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg}; position: sticky; left: 0px; z-index: 10;">${f.numero}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg}; position: sticky; left: 62px; z-index: 10;">${f.up || f.ug}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg}; position: sticky; left: 124px; z-index: 10;">${f.m}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg}; position: sticky; left: 176px; z-index: 10;">${mesDescStr}</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: ${bg}; position: sticky; left: 268px; z-index: 10;">R$ ${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td class="sticky-col last-sticky" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg}; position: sticky; left: 370px; z-index: 10;">
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.numero}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.up || f.ug}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.m}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${mesDescStr}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: ${bg};">R$ ${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
                         <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
                     </td>`;
                 
@@ -2162,12 +2162,12 @@
             
             tbody.innerHTML += `
                 <tr style="background: #e8f4f8; font-weight: bold; border: 1px solid #ddd;">
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8; position: sticky; left: 0px; z-index: 10;">TOTAL</td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8; position: sticky; left: 62px; z-index: 10;"></td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8; position: sticky; left: 124px; z-index: 10;"></td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8; position: sticky; left: 176px; z-index: 10;"></td>
-                    <td class="sticky-col" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #e8f4f8; position: sticky; left: 268px; z-index: 10;">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td class="sticky-col last-sticky" style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8; position: sticky; left: 370px; z-index: 10;"></td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;">TOTAL</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #e8f4f8;">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
                     ${totalCells}
                 </tr>
             `;
