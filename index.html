@@ -718,16 +718,16 @@
                                 <input type="number" id="mFinanceiro" min="0" placeholder="0" required>
                             </div>
                             <div class="form-group">
-                                <label>Mês Descentralização *</label>
-                                <input type="number" id="mesDescFinanceiro" min="1" max="12" placeholder="1" required>
+                                <label>Mês Descentralização (auto) *</label>
+                                <input type="number" id="mesDescFinanceiro" min="1" max="12" placeholder="calculado" readonly required>
                             </div>
                             <div class="form-group">
-                                <label>Ano Desc. *</label>
-                                <input type="number" id="anoDescFinanceiro" min="1900" placeholder="2025" required>
+                                <label>Ano Desc. (auto) *</label>
+                                <input type="number" id="anoDescFinanceiro" min="1900" placeholder="calculado" readonly required>
                             </div>
                             <div class="form-group">
-                                <label>UG *</label>
-                                <input type="text" id="ugFinanceiro" placeholder="UG" required>
+                                <label>UP *</label>
+                                <input type="text" id="upFinanceiro" placeholder="UP" required>
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$) *</label>
@@ -747,7 +747,7 @@
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">M</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">UP</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
                                     </tr>
@@ -762,18 +762,22 @@
                     <!-- EXECUÇÃO FINANCEIRA -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h3 style="margin: 0 0 1rem 0;">📊 Execução Financeira</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
                                 <input type="text" id="numExecFin" placeholder="1" required>
                             </div>
                             <div class="form-group">
-                                <label>UG *</label>
-                                <input type="text" id="ugExecFin" placeholder="UG" required>
+                                <label>UP *</label>
+                                <input type="text" id="upExecFin" placeholder="UP" required>
                             </div>
                             <div class="form-group">
-                                <label>Valor Realizado (R$) *</label>
-                                <input type="number" id="valorRealizadoFin" min="0" step="0.01" placeholder="0.00" required>
+                                <label>Valor (R$) *</label>
+                                <input type="number" id="valorExecFin" min="0" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Data *</label>
+                                <input type="date" id="dataExecFin" required>
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="visibility: hidden;">.</label>
@@ -781,24 +785,22 @@
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                            <div style="flex: 1; min-width: 360px;">
-                                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
-                                    <thead>
-                                        <tr style="background: #2c5aa0; color: white;">
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">ND</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor Realizado</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Saldo</th>
-                                            <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tabelaExecFinanceira">
-                                        <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div id="ganttExecFinanceira" style="min-width: 420px; overflow-x: auto;"></div>
+                        <div style="overflow-x: auto; border: 1px solid #ddd; border-radius: 0.25rem;">
+                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                <thead>
+                                    <tr style="background: #2c5aa0; color: white;">
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">ND</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">UP</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor Previsto</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor Realizado</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Saldo</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaExecFinanceira">
+                                    <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -1934,17 +1936,35 @@
 
             const numero = document.getElementById('numFinanceiro').value.trim();
             const m = parseInt(document.getElementById('mFinanceiro').value);
-            const mesDesc = parseInt(document.getElementById('mesDescFinanceiro').value);
-            const anoDesc = parseInt(document.getElementById('anoDescFinanceiro').value);
-            const ug = document.getElementById('ugFinanceiro').value.trim();
+            const up = document.getElementById('upFinanceiro').value.trim();
             const valor = parseFloat(document.getElementById('valorFinanceiro').value);
 
-            if (!numero || isNaN(m) || isNaN(mesDesc) || isNaN(anoDesc) || !ug || isNaN(valor)) {
+            if (!numero || isNaN(m) || !up || isNaN(valor)) {
                 alert('⚠️ Preencha todos os campos do cadastro financeiro');
                 return;
             }
 
-            window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, ug, valor });
+            // Calcular Mês/Ano automaticamente a partir da 1ª descentralização + M
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                alert('⚠️ Defina a 1ª descentralização para calcular Mês/Ano.');
+                return;
+            }
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + (isNaN(m) ? 0 : m));
+            const mesDesc = d.getMonth() + 1;
+            const anoDesc = d.getFullYear();
+            // preencher campos somente leitura
+            const mesDescInput = document.getElementById('mesDescFinanceiro');
+            const anoDescInput = document.getElementById('anoDescFinanceiro');
+            if (mesDescInput) mesDescInput.value = String(mesDesc).padStart(2,'0');
+            if (anoDescInput) anoDescInput.value = String(anoDesc);
+
+            window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, up, valor });
             salvarDados();
             atualizarTabelaFinanceira();
             atualizarGantt();
@@ -1952,7 +1972,7 @@
             document.getElementById('mFinanceiro').value = '';
             document.getElementById('mesDescFinanceiro').value = '';
             document.getElementById('anoDescFinanceiro').value = '';
-            document.getElementById('ugFinanceiro').value = '';
+            document.getElementById('upFinanceiro').value = '';
             document.getElementById('valorFinanceiro').value = '';
         }
 
@@ -2031,7 +2051,7 @@
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">M</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Mês Desc.</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">UG</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">UP</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Valor (R$)</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>';
             
@@ -2060,7 +2080,7 @@
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.m}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesDesc}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.anoDesc}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.up || f.ug}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
                         <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
@@ -2085,22 +2105,24 @@
                 return;
             }
 
-            const numero = document.getElementById('numExecFin').value.trim();
-            const ug = document.getElementById('ugExecFin').value.trim();
-            const valorRealizado = parseFloat(document.getElementById('valorRealizadoFin').value);
-            if (!numero || !ug || isNaN(valorRealizado)) {
+            const nd = document.getElementById('numExecFin').value.trim();
+            const up = document.getElementById('upExecFin').value.trim();
+            const valor = parseFloat(document.getElementById('valorExecFin').value);
+            const data = document.getElementById('dataExecFin').value;
+
+            if (!nd || !up || isNaN(valor) || !data) {
                 alert('⚠️ Preencha todos os campos da execução financeira');
                 return;
             }
 
-            const saldo = 0;
-            window.tedSelecionado.execFinanceiras.push({ id: Date.now(), numero, ug, valorRealizado, saldo });
+            window.tedSelecionado.execFinanceiras.push({ id: Date.now(), nd, up, valor, data });
             salvarDados();
             atualizarTabelaExecFinanceira();
             atualizarGantt();
             document.getElementById('numExecFin').value = '';
-            document.getElementById('ugExecFin').value = '';
-            document.getElementById('valorRealizadoFin').value = '';
+            document.getElementById('upExecFin').value = '';
+            document.getElementById('valorExecFin').value = '';
+            document.getElementById('dataExecFin').value = '';
         }
 
         function removerExecFinanceira(id) {
@@ -2126,30 +2148,107 @@
 
         function atualizarTabelaExecFinanceira() {
             const tbody = document.getElementById('tabelaExecFinanceira');
-            const ganttDiv = document.getElementById('ganttExecFinanceira');
-            
-            if (!window.tedSelecionado || !window.tedSelecionado.execFinanceiras.length) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>';
-                if (ganttDiv) {
-                    ganttDiv.innerHTML = renderGanttGenerico([]);
-                }
-            } else {
-                tbody.innerHTML = window.tedSelecionado.execFinanceiras.map((f, i) => `
-                    <tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
-                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.numero}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.ug}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.valorRealizado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${f.saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
-                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerExecFinanceira(${f.id})">Remover</button>
-                        </td>
-                    </tr>
-                `).join('');
-                
-                if (ganttDiv) {
-                    ganttDiv.innerHTML = renderGanttGenerico(window.tedSelecionado.execFinanceiras);
-                }
+            const tableEl = tbody.closest('table');
+
+            if (!window.tedSelecionado) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
+                return;
             }
+
+            // Base (60 meses)
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i=0;i<60;i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({label:`${mes}/${ano2}`, ano:d.getFullYear(), mes:d.getMonth()+1, fullYear:d.getFullYear()});
+            }
+
+            const anos = [];
+            meses.forEach(m => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ano:m.ano, count:1}); else anos[anos.length-1].count += 1;
+            });
+
+            // Cabeçalho com rowspan
+            let hr1 = tableEl.querySelector('thead tr');
+            let hdr = '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd;">ND</th>'+
+                      '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd;">UP</th>'+
+                      '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd; text-align:right;">Valor Previsto</th>'+
+                      '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd; text-align:right;">Valor Realizado</th>'+
+                      '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd; text-align:right;">Saldo</th>'+
+                      '<th rowspan="2" style="padding:0.75rem; border:1px solid #ddd; text-align:center;">Ação</th>';
+            anos.forEach(a=>{ hdr += `<th style="padding:0.75rem; border:1px solid #ddd; background:#2c5aa0; color:white; text-align:center; font-weight:bold;" colspan="${a.count}">${a.ano}</th>`; });
+            hr1.innerHTML = hdr;
+
+            let hr2 = tableEl.querySelector('thead tr:nth-child(2)');
+            if (hr2) hr2.remove();
+            hr2 = document.createElement('tr');
+            hr2.style.background = '#4b7ed0';
+            hr2.style.color = 'white';
+            let hdr2 = '';
+            meses.forEach(m => { hdr2 += `<th style=\"padding:0.75rem; border:1px solid #ddd; text-align:center; font-size:0.75rem; font-weight:bold;\">${m.label}</th>`; });
+            hr2.innerHTML = hdr2;
+            tableEl.querySelector('thead').appendChild(hr2);
+
+            const cad = window.tedSelecionado.financeiros || [];
+            const execs = window.tedSelecionado.execFinanceiras || [];
+
+            // Conjunto de chaves ND+UP presentes em cadastro ou execução
+            const chaves = new Set([
+                ...cad.map(f => `${f.numero}||${f.up || f.ug}`),
+                ...execs.map(e => `${e.nd || e.numero}||${e.up || e.ug}`)
+            ].filter(Boolean));
+
+            if (chaves.size === 0) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Nenhum dado financeiro</td></tr>';
+                return;
+            }
+
+            const linhas = Array.from(chaves).map((chave, idx) => {
+                const [nd, up] = chave.split('||');
+                const previsto = cad.filter(f => String(f.numero)===nd && String(f.up || f.ug)===up)
+                                    .reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                const execList = execs.filter(e => String(e.nd || e.numero)===nd && String(e.up || e.ug)===up);
+                const realizado = execList.reduce((s,e)=>s+(parseFloat(e.valor || e.valorRealizado)||0),0);
+                const saldo = previsto - realizado;
+
+                const mapaMes = new Map();
+                execList.forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
+                    if (diff>=0 && diff<60) mapaMes.set(diff, (mapaMes.get(diff)||0) + (parseFloat(e.valor || e.valorRealizado)||0));
+                });
+
+                let html = `<tr style="background:${idx%2===0?'#f9f9f9':'#fff'}; border:1px solid #ddd;">`+
+                           `<td style=\"padding:0.75rem; border:1px solid #ddd;\">${nd}</td>`+
+                           `<td style=\"padding:0.75rem; border:1px solid #ddd;\">${up}</td>`+
+                           `<td style=\"padding:0.75rem; border:1px solid #ddd; text-align:right;\">R$ ${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td style=\"padding:0.75rem; border:1px solid #ddd; text-align:right;\">R$ ${realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td style=\"padding:0.75rem; border:1px solid #ddd; text-align:right;\">R$ ${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td style=\"padding:0.75rem; border:1px solid #ddd; text-align:center;\"></td>`;
+
+                meses.forEach((_,i)=>{
+                    const val = mapaMes.get(i);
+                    const bg = val ? '#e0f2fe' : 'transparent';
+                    html += `<td style=\"padding:0.25rem; border:1px solid #ddd; text-align:right; background:${bg};\">${val?('R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2})):''}</td>`;
+                });
+
+                html += '</tr>';
+                return html;
+            }).join('');
+
+            tbody.innerHTML = linhas;
         }
 
         // Fechar Modal
