@@ -1319,25 +1319,25 @@
             html += '<thead>';
             html += '<tr style="background: #2c5aa0; color: white;">';
             anos.forEach(a => {
-                html += `<th style="padding: 0.3rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem;" colspan="${a.count}">${a.ano}</th>`;
+                html += `<th style="padding: 0.75rem 0.3rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; line-height: 1;" colspan="${a.count}">${a.ano}</th>`;
             });
             html += '</tr>';
             html += '<tr style="background: #4b7ed0; color: white;">';
             meses.forEach(m => {
-                html += `<th style="padding: 0.25rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem;">${m.label}</th>`;
+                html += `<th style="padding: 0.75rem 0.25rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; line-height: 1;">${m.label}</th>`;
             });
             html += '</tr>';
             html += '</thead>';
             html += '<tbody>';
             
-            // Se não há dados, mostrar linha vazia
+            // Se não há dados, mostrar linha vazia alinhada com a altura da tabela
             if (!dados || dados.length === 0) {
-                html += '<tr>' + meses.map(()=>'<td style="height: 37px; border: 1px solid #ddd; background: #f9f9f9;"></td>').join('') + '</tr>';
+                html += '<tr><td colspan="60" style="padding: 1rem; text-align: center; color: var(--text); border: 1px solid #ddd;">Sem registros</td></tr>';
             } else {
-                // Criar uma linha para cada item de dados
+                // Criar uma linha para cada item de dados - altura total = padding + conteúdo
                 dados.forEach((item, idx) => {
                     const bg = idx % 2 === 0 ? '#f9f9f9' : '#fff';
-                    html += '<tr>';
+                    html += '<tr style="height: 1px;">';
                     
                     meses.forEach((mesInfo, mesIdx) => {
                         let destaque = false;
@@ -1356,7 +1356,7 @@
                         }
                         
                         const cor = destaque ? '#4CAF50' : bg;
-                        html += `<td style="height: 37px; border: 1px solid #ddd; background: ${cor};"></td>`;
+                        html += `<td style="padding: 0.75rem 0; border: 1px solid #ddd; background: ${cor};"></td>`;
                     });
                     
                     html += '</tr>';
