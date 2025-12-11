@@ -573,12 +573,12 @@
                                 <input type="number" id="mFinal" placeholder="0" min="0" required>
                             </div>
                             <div class="form-group">
-                                <label>Mês Início *</label>
-                                <input type="number" id="mesInicio" placeholder="1" min="1" max="12" required>
+                                <label>Mês Início (auto) *</label>
+                                <input type="number" id="mesInicio" placeholder="calculado" min="1" max="12" readonly required>
                             </div>
                             <div class="form-group">
-                                <label>Mês Final *</label>
-                                <input type="number" id="mesFinal" placeholder="12" min="1" max="12" required>
+                                <label>Mês Final (auto) *</label>
+                                <input type="number" id="mesFinal" placeholder="calculado" min="1" max="12" readonly required>
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="visibility: hidden;">.</label>
@@ -594,8 +594,8 @@
                                             <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Meta</th>
                                             <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Início</th>
                                             <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Final</th>
-                                            <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início</th>
-                                            <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Final</th>
+                                            <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início (MM/AAAA)</th>
+                                            <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Final (MM/AAAA)</th>
                                             <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
                                         </tr>
                                     </thead>
@@ -629,12 +629,12 @@
                                 <input type="number" id="mFinalFisico" min="0" placeholder="0" required>
                             </div>
                             <div class="form-group">
-                                <label>Mês Início *</label>
-                                <input type="number" id="mesInicioFisico" min="1" max="12" placeholder="1" required>
+                                <label>Mês Início (auto) *</label>
+                                <input type="number" id="mesInicioFisico" min="1" max="12" placeholder="calculado" readonly required>
                             </div>
                             <div class="form-group">
-                                <label>Mês Final *</label>
-                                <input type="number" id="mesFinalFisico" min="1" max="12" placeholder="12" required>
+                                <label>Mês Final (auto) *</label>
+                                <input type="number" id="mesFinalFisico" min="1" max="12" placeholder="calculado" readonly required>
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="visibility: hidden;">.</label>
@@ -650,8 +650,8 @@
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">M Início</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">M Final</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Início</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Final</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Início (MM/AAAA)</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Mês Final (MM/AAAA)</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd;">Ação</th>
                                     </tr>
                                 </thead>
@@ -1264,10 +1264,26 @@
             const meta = document.getElementById('meta').value.trim();
             const mInicio = parseInt(document.getElementById('mInicio').value);
             const mFinal = parseInt(document.getElementById('mFinal').value);
-            const mesInicio = parseInt(document.getElementById('mesInicio').value);
-            const mesFinal = parseInt(document.getElementById('mesFinal').value);
+            // Calcular mês/ano a partir da 1ª descentralização + M (offset em meses)
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                alert('⚠️ Defina a 1ª descentralização no TED para usar M como referência.');
+                return;
+            }
+            const dInicio = new Date(startDate);
+            dInicio.setMonth(dInicio.getMonth() + (isNaN(mInicio) ? 0 : mInicio));
+            const mesInicio = dInicio.getMonth() + 1;
+            const anoInicio = dInicio.getFullYear();
+            const dFinal = new Date(startDate);
+            dFinal.setMonth(dFinal.getMonth() + (isNaN(mFinal) ? 0 : mFinal));
+            const mesFinal = dFinal.getMonth() + 1;
+            const anoFinal = dFinal.getFullYear();
 
-            if (!meta || !mInicio || !mFinal || !mesInicio || !mesFinal) {
+            if (!meta || isNaN(mInicio) || isNaN(mFinal)) {
                 alert('⚠️ Preencha todos os campos corretamente!');
                 return;
             }
@@ -1282,7 +1298,9 @@
                 mInicio: mInicio,
                 mFinal: mFinal,
                 mesInicio: mesInicio,
-                mesFinal: mesFinal
+                anoInicio: anoInicio,
+                mesFinal: mesFinal,
+                anoFinal: anoFinal
             });
 
             salvarDados();
@@ -1290,8 +1308,8 @@
             document.getElementById('meta').value = '';
             document.getElementById('mInicio').value = '';
             document.getElementById('mFinal').value = '';
-            document.getElementById('mesInicio').value = '1';
-            document.getElementById('mesFinal').value = '12';
+            document.getElementById('mesInicio').value = '';
+            document.getElementById('mesFinal').value = '';
         }
 
         function removerMeta(id) {
@@ -1403,8 +1421,8 @@
                         <td style="padding: 0.75rem; border: 1px solid #ddd;">${meta.meta}</td>
                         <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mInicio}</td>
                         <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mFinal}</td>
-                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mesInicio}</td>
-                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mesFinal}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${String(meta.mesInicio).padStart(2,'0')}/${meta.anoInicio}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${String(meta.mesFinal).padStart(2,'0')}/${meta.anoFinal}</td>
                         <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
                             <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerMeta(${meta.id})">Remover</button>
                         </td>
@@ -1428,16 +1446,32 @@
             const objeto = document.getElementById('objetoFisico').value.trim();
             const mInicio = parseInt(document.getElementById('mInicioFisico').value);
             const mFinal = parseInt(document.getElementById('mFinalFisico').value);
-            const mesInicio = parseInt(document.getElementById('mesInicioFisico').value);
-            const mesFinal = parseInt(document.getElementById('mesFinalFisico').value);
+            // Calcular mês/ano a partir da 1ª descentralização + M (offset em meses)
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                alert('⚠️ Defina a 1ª descentralização no TED para usar M como referência.');
+                return;
+            }
+            const dInicio = new Date(startDate);
+            dInicio.setMonth(dInicio.getMonth() + (isNaN(mInicio) ? 0 : mInicio));
+            const mesInicio = dInicio.getMonth() + 1;
+            const anoInicio = dInicio.getFullYear();
+            const dFinal = new Date(startDate);
+            dFinal.setMonth(dFinal.getMonth() + (isNaN(mFinal) ? 0 : mFinal));
+            const mesFinal = dFinal.getMonth() + 1;
+            const anoFinal = dFinal.getFullYear();
 
-            if (!fase || !objeto || isNaN(mInicio) || isNaN(mFinal) || isNaN(mesInicio) || isNaN(mesFinal)) {
+            if (!fase || !objeto || isNaN(mInicio) || isNaN(mFinal)) {
                 alert('⚠️ Preencha todos os campos do cadastro físico');
                 return;
             }
 
             window.tedSelecionado.fisicos.push({
-                id: Date.now(), fase, objeto, mInicio, mFinal, mesInicio, mesFinal
+                id: Date.now(), fase, objeto, mInicio, mFinal, mesInicio, anoInicio, mesFinal, anoFinal
             });
             salvarDados();
             atualizarTabelaFisicos();
@@ -1541,8 +1575,8 @@
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${f.objeto}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mInicio}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mFinal}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesInicio}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${f.mesFinal}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${String(f.mesInicio).padStart(2,'0')}/${f.anoInicio}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${String(f.mesFinal).padStart(2,'0')}/${f.anoFinal}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">
                         <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerFisico(${f.id})">Remover</button>
                     </td>`;
