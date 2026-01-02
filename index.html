@@ -569,8 +569,8 @@
 
                     <div class="grid">
                         <div class="form-group">
-                            <label>EG Executora *</label>
-                            <input type="text" id="egExecutora" placeholder="EG" required>
+                            <label>UG Executora *</label>
+                            <input type="text" id="egExecutora" placeholder="UG" required>
                         </div>
                         <div class="form-group">
                             <label>Nº TED - SIAFI *</label>
@@ -596,7 +596,7 @@
                             <input type="number" id="valorTed" placeholder="0.00" step="0.01" min="0" required>
                         </div>
                         <div class="form-group">
-                            <label>Vigilância em Meses *</label>
+                            <label>Vigência em Meses *</label>
                             <input type="number" id="vigilancia" placeholder="Meses" min="0" required>
                         </div>
                         <div class="form-group">
@@ -615,8 +615,8 @@
                             <input type="date" id="primeiraDescentralizacao" required>
                         </div>
                         <div class="form-group">
-                            <label>Objetivo *</label>
-                            <input type="text" id="objetivo" placeholder="Objetivo" required>
+                            <label>Objeto *</label>
+                            <input type="text" id="objetivo" placeholder="Objeto" required>
                         </div>
                     </div>
 
@@ -1195,7 +1195,7 @@
                         <p style="margin: 0; font-weight: 500;">${ted.upResponsavel}</p>
                     </div>
                     <div>
-                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">EG Executora</p>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">UG Executora</p>
                         <p style="margin: 0; font-weight: 500;">${ted.egExecutora}</p>
                     </div>
                     <div>
@@ -1225,7 +1225,7 @@
                         <p style="margin: 0; font-size: 1.25rem; font-weight: bold; color: var(--primary);">R$ ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
                     </div>
                     <div>
-                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Vigilância (Meses)</p>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Vigência (Meses)</p>
                         <p style="margin: 0; font-weight: 500;">${ted.vigilancia}</p>
                     </div>
                 </div>
@@ -1240,11 +1240,11 @@
                         <p style="margin: 0; font-weight: 500;">${fim.toLocaleDateString('pt-BR')}</p>
                     </div>
                     <div>
-                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Jd Descentralização</p>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">1ª Descentralização</p>
                         <p style="margin: 0; font-weight: 500;">${ted.jdDescentralizacao}</p>
                     </div>
                     <div>
-                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Objetivo</p>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Objeto</p>
                         <p style="margin: 0; font-weight: 500;">${ted.objetivo}</p>
                     </div>
                 </div>
@@ -1366,7 +1366,7 @@
                     <div class="value" data-field="upResponsavel">${ted.upResponsavel}</div>
                 </div>
                 <div class="ted-info-item">
-                    <label>EG Executora</label>
+                    <label>UG Executora</label>
                     <div class="value" data-field="egExecutora">${ted.egExecutora}</div>
                 </div>
                 <div class="ted-info-item">
@@ -1390,7 +1390,7 @@
                     <div class="value" data-field="valorTed">R$ ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
                 </div>
                 <div class="ted-info-item">
-                    <label>Vigilância (Meses)</label>
+                    <label>Vigência (Meses)</label>
                     <div class="value" data-field="vigilancia">${ted.vigilancia}</div>
                 </div>
                 <div class="ted-info-item">
@@ -1402,11 +1402,11 @@
                     <div class="value" data-field="fimVigencia">${fim.toLocaleDateString('pt-BR')}</div>
                 </div>
                 <div class="ted-info-item">
-                    <label>Jd Descentralização</label>
+                    <label>1ª Descentralização</label>
                     <div class="value" data-field="jdDescentralizacao">${ted.jdDescentralizacao}</div>
                 </div>
                 <div class="ted-info-item" style="grid-column: 1 / -1;">
-                    <label>Objetivo</label>
+                    <label>Objeto</label>
                     <div class="value" data-field="objetivo">${ted.objetivo}</div>
                 </div>
             `;
@@ -1451,7 +1451,7 @@
                     <input type="text" data-field="upResponsavel" value="${ted.upResponsavel}">
                 </div>
                 <div class="ted-info-item">
-                    <label>EG Executora</label>
+                    <label>UG Executora</label>
                     <input type="text" data-field="egExecutora" value="${ted.egExecutora}">
                 </div>
                 <div class="ted-info-item">
@@ -1475,19 +1475,23 @@
                     <input type="number" step="0.01" data-field="valorTed" value="${ted.valorTed}">
                 </div>
                 <div class="ted-info-item">
-                    <label>Vigilância (Meses)</label>
-                    <input type="number" data-field="vigilancia" value="${ted.vigilancia}">
+                    <label>Vigência (Meses)</label>
+                    <input type="number" data-field="vigilancia" value="${ted.vigilancia}" oninput="atualizarFimVigencia()">
                 </div>
                 <div class="ted-info-item">
                     <label>Data de Assinatura</label>
-                    <input type="date" data-field="dataAssinatura" value="${ted.dataAssinatura}">
+                    <input type="date" data-field="dataAssinatura" value="${ted.dataAssinatura}" oninput="atualizarFimVigencia()">
                 </div>
                 <div class="ted-info-item">
-                    <label>Jd Descentralização</label>
+                    <label>Fim da Vigência</label>
+                    <input type="text" id="fimVigenciaEdit" readonly style="background:#fff; color:var(--text);">
+                </div>
+                <div class="ted-info-item">
+                    <label>1ª Descentralização</label>
                     <input type="text" data-field="jdDescentralizacao" value="${ted.jdDescentralizacao}">
                 </div>
                 <div class="ted-info-item" style="grid-column: 1 / -1;">
-                    <label>Objetivo</label>
+                    <label>Objeto</label>
                     <input type="text" data-field="objetivo" value="${ted.objetivo}">
                 </div>
             `;
@@ -1496,6 +1500,9 @@
             document.getElementById('btnEditarTED').style.display = 'none';
             document.getElementById('btnSalvarTED').style.display = 'inline-block';
             document.getElementById('btnCancelarTED').style.display = 'inline-block';
+            
+            // Atualiza o campo de fim da vigência ao abrir o modo de edição
+            atualizarFimVigencia();
         }
 
         function salvarEdicaoTED() {
@@ -1547,6 +1554,33 @@
             document.getElementById('btnEditarTED').style.display = 'inline-block';
             document.getElementById('btnSalvarTED').style.display = 'none';
             document.getElementById('btnCancelarTED').style.display = 'none';
+        }
+
+        // Calcula e atualiza o campo de Fim da Vigência (Inicio = Data de Assinatura + 1 mês)
+        function atualizarFimVigencia() {
+            const infoGrid = document.getElementById('tedInfoGrid');
+            if (!infoGrid) return;
+            const dataEl = infoGrid.querySelector('[data-field="dataAssinatura"]');
+            const vigEl = infoGrid.querySelector('[data-field="vigilancia"]');
+            const fimField = document.getElementById('fimVigenciaEdit');
+            if (!fimField) return;
+
+            const dataStr = dataEl ? dataEl.value : '';
+            const vig = vigEl ? parseInt(vigEl.value, 10) : NaN;
+
+            if (!dataStr || isNaN(vig)) {
+                fimField.value = '';
+                return;
+            }
+
+            const d = new Date(dataStr);
+            // Início da Vigência = dataAssinatura + 1 mês
+            d.setMonth(d.getMonth() + 1 + (isNaN(vig) ? 0 : vig));
+
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            fimField.value = `${day}/${month}/${year}`;
         }
 
         // OBJETOS
