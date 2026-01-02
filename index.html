@@ -580,7 +580,7 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
             <button class="tab-btn" onclick="switchTab('teds')">TEDs</button>
-            <button class="tab-btn" onclick="switchTab('novo')">Novo TED</button>
+            <button id="tab-novo" class="tab-btn" onclick="switchTab('novo')" style="display:none;">Novo TED</button>
             <button class="tab-btn" onclick="switchTab('detalhes')">Detalhes TED</button>
         </div>
 
@@ -620,6 +620,9 @@
         <div id="teds" class="tab-content">
             <div class="card">
                 <h2>Seus Termos de Execução</h2>
+                <div style="text-align: right; margin-bottom: 0.75rem;">
+                    <button class="btn btn-primary" onclick="switchTab('novo')">Criar Novo TED</button>
+                </div>
                 <div id="listaTeds">
                     <div class="empty-state">
                         <p>Nenhum TED cadastrado</p>
@@ -696,15 +699,15 @@
                     <div class="grid">
                         <div class="form-group">
                             <label>Início de Vigência *</label>
-                            <input type="date" id="inicioVigencia" required>
+                            <input type="date" id="inicioVigencia" onchange="calcularFimVigencia()" required>
                         </div>
                         <div class="form-group">
                             <label>Vigência em Meses *</label>
-                            <input type="number" id="vigencia" placeholder="Meses" min="0" required>
+                            <input type="number" id="vigencia" placeholder="Meses" min="0" oninput="calcularFimVigencia()" required>
                         </div>
                         <div class="form-group">
                             <label>Fim de Vigência *</label>
-                            <input type="date" id="fimVigencia" required>
+                            <input type="date" id="fimVigencia" readonly required>
                         </div>
                         <div class="form-group">
                             <label>1ª Descentralização *</label>
@@ -1277,13 +1280,12 @@
                     <div class="card" style="margin: 0 0 1rem 0;">
                         <div style="display: flex; justify-content: space-between; align-items: start;">
                             <div>
-                                <h3>TED ${t.numTed} - ${t.objetivo}</h3>
+                                <h3><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${t.id}); return false;" style="color:inherit; text-decoration:none;">TED ${t.numTed} - ${t.objetivo}</a></h3>
                                 <p style="color: var(--text); font-size: 0.875rem;">
                                     ${t.unidadeDesc} • Responsável: ${t.responsavel} • ${t.dataCriacao}
                                 </p>
                             </div>
                         </div>
-                        <button class="btn btn-primary btn-small" style="margin-top: 1rem;" onclick="abrirDetalhes(${t.id})">Ver Detalhes</button>
                     </div>
                 `).join('');
             document.getElementById('tedsRecentes').innerHTML = html;
@@ -1308,7 +1310,7 @@
                     <div class="card" style="margin: 0 0 1rem 0;">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
                             <div style="flex: 1;">
-                                <h3>TED ${t.numTed}</h3>
+                                <h3><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${t.id}); return false;" style="color:inherit; text-decoration:none;">TED ${t.numTed}</a></h3>
                                 <p style="font-size: 0.875rem; color: var(--text); margin: 0.5rem 0 0 0;">${t.objetivo}</p>
                             </div>
                             <span class="badge ${emExecucao ? 'badge-execucao' : 'badge-planejamento'}">${emExecucao ? 'EM EXECUÇÃO' : 'ENCERRADO'}</span>
@@ -1336,7 +1338,7 @@
                             <p style="font-size: 0.75rem; color: var(--text); margin: 0.5rem 0 0 0;">Gasto: R$ ${t.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
                         </div>
 
-                        <button class="btn btn-primary btn-small" onclick="abrirDetalhes(${t.id})" style="width: 100%;">Ver Detalhes</button>
+                        
                     </div>
                 `;
             }).join('');
@@ -1816,6 +1818,27 @@
                 const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
                 document.getElementById('mesFinal').value = `${meses[mesFinal - 1]}/${anoFinal}`;
             }
+        }
+
+        // Calcular Fim de Vigência automaticamente (Início + Vigência em meses)
+        function calcularFimVigencia() {
+            const inicioEl = document.getElementById('inicioVigencia');
+            const vigenciaEl = document.getElementById('vigencia');
+            const fimEl = document.getElementById('fimVigencia');
+            if (!inicioEl || !vigenciaEl || !fimEl) return;
+
+            const inicioVal = inicioEl.value;
+            const meses = parseInt(vigenciaEl.value, 10);
+            if (!inicioVal || isNaN(meses)) return;
+
+            const d = new Date(inicioVal + 'T00:00:00');
+            const fim = new Date(d);
+            fim.setMonth(fim.getMonth() + meses);
+
+            const yyyy = fim.getFullYear();
+            const mm = String(fim.getMonth() + 1).padStart(2, '0');
+            const dd = String(fim.getDate()).padStart(2, '0');
+            fimEl.value = `${yyyy}-${mm}-${dd}`;
         }
 
         // Calcular meses automaticamente para Físico
