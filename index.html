@@ -561,7 +561,10 @@
                             <label>Objeto *</label>
                             <input type="text" id="objetivo" placeholder="Objeto" required>
                         </div>
-                        
+                        <div class="form-group">
+                            <label>Valor do TED (R$) *</label>
+                            <input type="number" id="valorTed" placeholder="0.00" step="0.01" min="0" required>
+                        </div>
                      </div>
 
                     <div class="grid">
@@ -613,19 +616,13 @@
                             <label>Fim de Vigência *</label>
                             <input type="date" id="fimVigencia" required>
                         </div>
-                    </div>
-
-                    <div class="grid">
-                        <div class="form-group">
-                            <label>Valor do TED (R$) *</label>
-                            <input type="number" id="valorTed" placeholder="0.00" step="0.01" min="0" required>
-                        </div>
                         <div class="form-group">
                             <label>1ª Descentralização *</label>
                             <input type="date" id="primeiraDescentralizacao" required>
                         </div>
-                        
                     </div>
+
+                    
 
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Criar TED</button>
                 </form>
