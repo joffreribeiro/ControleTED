@@ -849,10 +849,14 @@
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
                         <h3 style="margin: 0 0 1rem 0;">🎯 Cadastro de Metas</h3>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>Meta *</label>
                                 <input type="text" id="meta" placeholder="Ex: Entrega" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Descrição</label>
+                                <input type="text" id="descricaoMeta" placeholder="Descrição da meta">
                             </div>
                             <div class="form-group">
                                 <label>M Início *</label>
@@ -881,6 +885,7 @@
                                 <thead>
                                     <tr style="background: #2c5aa0; color: white;">
                                         <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Meta</th>
+                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Descrição</th>
                                         <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Início</th>
                                         <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Final</th>
                                         <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início (MM/AAAA)</th>
@@ -889,7 +894,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaMetas">
-                                    <tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>
+                                    <tr><td colspan="7" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -985,7 +990,6 @@
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Entregue</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Saldo</th>
                                         <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Execução (%)</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaExecFisica">
@@ -1009,11 +1013,11 @@
                             </div>
                             <div class="form-group">
                                 <label>M *</label>
-                                <input type="number" id="mFinanceiro" min="0" placeholder="0" required>
+                                <input type="number" id="mFinanceiro" min="0" placeholder="0" required oninput="calcularMesFinanceiro()">
                             </div>
                             <div class="form-group">
                                 <label>Mês Desc. (auto) *</label>
-                                <input type="text" id="mesDescFinanceiro" placeholder="MM/AAAA" readonly required>
+                                <input type="text" id="mesDescFinanceiro" placeholder="MMM/AAAA" readonly required>
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$) *</label>
@@ -1831,6 +1835,7 @@
             }
 
             const meta = document.getElementById('meta').value.trim();
+            const descricao = document.getElementById('descricaoMeta').value.trim();
             const mInicio = parseInt(document.getElementById('mInicio').value);
             const mFinal = parseInt(document.getElementById('mFinal').value);
             
@@ -1867,6 +1872,7 @@
             window.tedSelecionado.metas.push({
                 id: Date.now(),
                 meta: meta,
+                descricao: descricao,
                 mInicio: mInicio,
                 mFinal: mFinal,
                 mesInicio: mesInicio,
@@ -1878,6 +1884,7 @@
             salvarDados();
             atualizarTabelaMetas();
             document.getElementById('meta').value = '';
+            document.getElementById('descricaoMeta').value = '';
             document.getElementById('mInicio').value = '';
             document.getElementById('mFinal').value = '';
             document.getElementById('mesInicio').value = '';
@@ -1890,6 +1897,7 @@
             if (!meta) return;
             
             document.getElementById('meta').value = meta.meta;
+            document.getElementById('descricaoMeta').value = meta.descricao || '';
             document.getElementById('mInicio').value = meta.mInicio;
             document.getElementById('mFinal').value = meta.mFinal;
             
@@ -2041,6 +2049,7 @@
             // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
             let headerRow1 = tableElement.querySelector('thead tr');
             let headerHTML = '<th rowspan="2" style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Meta</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Descrição</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Início</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Final</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início</th>';
@@ -2100,6 +2109,7 @@
 
                 let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
                     <td style="padding: 0.75rem; border: 1px solid #ddd;">${meta.meta}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${meta.descricao || ''}</td>
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mInicio}</td>
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mFinal}</td>
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${inicioStr}</td>
@@ -2471,7 +2481,6 @@
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Entregue</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Saldo</th>';
             headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Execução (%)</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>';
             let firstAnoExecFis = true;
             anos.forEach(a => {
                 firstAnoExecFis = false;
@@ -2528,13 +2537,12 @@
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${prevista}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${entregueTotal}</td>
                     <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${saldo}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${execPerc}%</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;"></td>`;
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${execPerc}%</td>`;
 
                 meses.forEach((_, idx) => {
                     const val = mapaMes.get(idx) || '';
                     const bg = val ? '#d1fae5' : 'transparent';
-                    html += `<td style="padding: 0.25rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${val ? val : ''}</td>`;
+                    html += `<td style="padding: 0.25rem; border: 1px solid #ddd; text-align: center; background: ${bg}; cursor: pointer;" onclick="editarValorExecFisica('${obj}', ${idx})" title="Clique para editar">${val ? val : ''}</td>`;
                 });
                 html += '</tr>';
                 return html;
@@ -2544,6 +2552,31 @@
         }
 
         // CADASTRO FINANCEIRO
+        // Calcular mês automaticamente para Financeiro
+        function calcularMesFinanceiro() {
+            if (!window.tedSelecionado) return;
+            
+            const m = parseInt(document.getElementById('mFinanceiro').value);
+            
+            if (isNaN(m)) return;
+            
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                return;
+            }
+            
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + m);
+            const mesDesc = d.getMonth() + 1;
+            const anoDesc = d.getFullYear();
+            const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+            document.getElementById('mesDescFinanceiro').value = `${meses[mesDesc - 1]}/${anoDesc}`;
+        }
+
         function adicionarFinanceiro() {
             if (!window.tedSelecionado) {
                 alert('⚠️ Selecione um TED primeiro!');
@@ -2570,13 +2603,11 @@
                 alert('⚠️ Defina a 1ª descentralização para calcular Mês/Ano.');
                 return;
             }
+            
             const d = new Date(startDate);
-            d.setMonth(d.getMonth() + (isNaN(m) ? 0 : m));
+            d.setMonth(d.getMonth() + m);
             const mesDesc = d.getMonth() + 1;
             const anoDesc = d.getFullYear();
-            // preencher campo somente leitura com formato MM/AAAA
-            const mesDescInput = document.getElementById('mesDescFinanceiro');
-            if (mesDescInput) mesDescInput.value = String(mesDesc).padStart(2,'0') + '/' + anoDesc;
 
             window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, up, valor });
             salvarDados();
@@ -2714,11 +2745,12 @@
             tableCompleta.querySelector('thead').appendChild(headerRow2);
 
             // Criar linhas de dados
+            const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
             tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => {
                 const bg = i % 2 === 0 ? '#f9f9f9' : '#fff';
                 const valorNum = parseFloat(f.valor) || 0;
                 totalValor += valorNum;
-                const mesDescStr = String(f.mesDesc).padStart(2, '0') + '/' + f.anoDesc;
+                const mesDescStr = `${mesesNome[f.mesDesc - 1]}/${f.anoDesc}`;
                 let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
                     <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.numero}</td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.up || f.ug}</td>
@@ -3070,7 +3102,7 @@
                 meses.forEach((_,i)=>{
                     const val = mapaMes.get(i);
                     const cellBg = val ? '#e0f2fe' : 'transparent';
-                    html += `<td style="padding:0.25rem; border:1px solid #ddd; text-align:right; background:${cellBg}; font-size:0.7rem;">${val?('R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2})):''}</td>`;
+                    html += `<td style="padding:0.25rem; border:1px solid #ddd; text-align:right; background:${cellBg}; font-size:0.7rem; cursor: pointer;" onclick="editarValorExecFinanceira('${nd}', '${up}', ${i})" title="Clique para editar">${val?('R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2})):''}</td>`;
                 });
 
                 html += '</tr>';
@@ -3161,6 +3193,134 @@
             if (resumoDevolvido) resumoDevolvido.textContent = `-R$ ${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
             if (resumoSaldo) resumoSaldo.textContent = `R$ ${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
             if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
+        }
+
+        // Editar valor da Execução Física
+        function editarValorExecFisica(objeto, indiceMes) {
+            if (!window.tedSelecionado) return;
+            
+            // Calcular a data correspondente ao índice do mês
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                alert('⚠️ Data de descentralização não definida');
+                return;
+            }
+            
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + indiceMes);
+            const dataFormatada = d.toISOString().split('T')[0];
+            
+            // Buscar execuções existentes neste mês para este objeto
+            const execs = window.tedSelecionado.execFisicas || [];
+            const execsDoMes = execs.filter(e => {
+                if (!e.data || e.objeto !== objeto) return false;
+                const ed = new Date(e.data + 'T00:00:00');
+                const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
+                return diff === indiceMes;
+            });
+            
+            const valorAtual = execsDoMes.reduce((s, e) => s + (parseFloat(e.qtde) || 0), 0);
+            const novoValor = prompt(`Editar quantidade entregue de "${objeto}" em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\nValor atual: ${valorAtual}\nDigite o novo valor:`, valorAtual);
+            
+            if (novoValor === null) return;
+            
+            const qtde = parseFloat(novoValor);
+            if (isNaN(qtde) || qtde < 0) {
+                alert('⚠️ Valor inválido');
+                return;
+            }
+            
+            // Remover execuções antigas deste mês/objeto
+            window.tedSelecionado.execFisicas = execs.filter(e => {
+                if (!e.data || e.objeto !== objeto) return true;
+                const ed = new Date(e.data + 'T00:00:00');
+                const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
+                return diff !== indiceMes;
+            });
+            
+            // Adicionar nova execução se valor > 0
+            if (qtde > 0) {
+                window.tedSelecionado.execFisicas.push({
+                    id: Date.now(),
+                    objeto: objeto,
+                    qtde: qtde,
+                    data: dataFormatada
+                });
+            }
+            
+            salvarDados();
+            atualizarTabelaExecFisica();
+        }
+
+        // Editar valor da Execução Financeira
+        function editarValorExecFinanceira(nd, up, indiceMes) {
+            if (!window.tedSelecionado) return;
+            
+            // Calcular a data correspondente ao índice do mês
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                alert('⚠️ Data de descentralização não definida');
+                return;
+            }
+            
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + indiceMes);
+            const dataFormatada = d.toISOString().split('T')[0];
+            
+            // Buscar execuções existentes neste mês para este ND/UP
+            const execs = window.tedSelecionado.execFinanceiras || [];
+            const execsDoMes = execs.filter(e => {
+                if (!e.data) return false;
+                if (String(e.nd || e.numero) !== nd || String(e.up || e.ug) !== up) return false;
+                const ed = new Date(e.data + 'T00:00:00');
+                const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
+                return diff === indiceMes;
+            });
+            
+            const valorAtual = execsDoMes.reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+            const novoValor = prompt(`Editar valor de ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\nValor atual: R$ ${valorAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2})}\nDigite o novo valor:`, valorAtual);
+            
+            if (novoValor === null) return;
+            
+            const valor = parseFloat(novoValor);
+            if (isNaN(valor)) {
+                alert('⚠️ Valor inválido');
+                return;
+            }
+            
+            // Remover execuções antigas deste mês/ND/UP
+            window.tedSelecionado.execFinanceiras = execs.filter(e => {
+                if (!e.data) return true;
+                if (String(e.nd || e.numero) !== nd || String(e.up || e.ug) !== up) return true;
+                const ed = new Date(e.data + 'T00:00:00');
+                const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
+                return diff !== indiceMes;
+            });
+            
+            // Adicionar nova execução se valor != 0
+            if (valor !== 0) {
+                window.tedSelecionado.execFinanceiras.push({
+                    id: Date.now(),
+                    nd: nd,
+                    numero: nd,
+                    up: up,
+                    ug: up,
+                    valor: valor,
+                    valorRealizado: valor,
+                    data: dataFormatada
+                });
+            }
+            
+            salvarDados();
+            atualizarTabelaExecFinanceira();
         }
 
         // Fechar Modal
