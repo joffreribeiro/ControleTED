@@ -1,101 +1,147 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle TED - Sistema de Execução Descentralizada</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        // Exibir informações do TED
+        function exibirInfoTED() {
+            if (!window.tedSelecionado) return;
 
-        :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --secondary: #1f2937;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --light: #f3f4f6;
-            --border: #e5e7eb;
-            --text: #374151;
-        }
+            const ted = window.tedSelecionado;
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background-color: #f9fafb;
-            color: var(--text);
-            line-height: 1.6;
-        }
+            // Calcular datas a partir de campos existentes
+            let inicio = null;
+            let fim = null;
+            if (ted.inicioVigencia) {
+                inicio = new Date(ted.inicioVigencia);
+            }
+            if (inicio && !isNaN(ted.vigilancia)) {
+                fim = new Date(inicio);
+                fim.setMonth(fim.getMonth() + (isNaN(parseInt(ted.vigilancia, 10)) ? 0 : parseInt(ted.vigilancia, 10)));
+            }
 
-        /* Navbar */
-        nav {
-            background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+            const formatDate = (d) => {
+                if (!d || isNaN(d)) return '';
+                return d.toLocaleDateString('pt-BR');
+            };
 
-        nav h1 {
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
+            const infoGrid = document.getElementById('tedInfoGrid');
+            infoGrid.innerHTML = `
+                <div class="ted-info-item">
+                    <label>Plano de Trabalho</label>
+                    <div class="value" data-field="planoTrabalho">${ted.planoTrabalho || ''}</div>
+                // Exibir informações do TED
+            function exibirInfoTED() {
+                if (!window.tedSelecionado) return;
 
-        nav button {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 0.5rem 1.5rem;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            font-weight: 600;
-        }
+                const ted = window.tedSelecionado;
 
-        nav button:hover {
-            background: #dc2626;
-        }
+                // Calcular datas a partir de campos existentes
+                let inicio = null;
+                let fim = null;
+                if (ted.inicioVigencia) {
+                    inicio = new Date(ted.inicioVigencia);
+                }
+                if (inicio && !isNaN(ted.vigilancia)) {
+                    fim = new Date(inicio);
+                    fim.setMonth(fim.getMonth() + (isNaN(parseInt(ted.vigilancia, 10)) ? 0 : parseInt(ted.vigilancia, 10)));
+                }
 
-        /* Main Container */
-        .container {
-            max-width: 95%;
-            margin: 0 auto;
-            padding: 1.5rem;
-        }
+                const formatDate = (d) => {
+                    if (!d || isNaN(d)) return '';
+                    return d.toLocaleDateString('pt-BR');
+                };
 
-        /* Abas */
-        .tabs {
-            display: flex;
-            gap: 1rem;
-            border-bottom: 2px solid var(--border);
-            margin-bottom: 2rem;
-        }
+                const infoGrid = document.getElementById('tedInfoGrid');
+                infoGrid.innerHTML = `
+                    <div class="ted-info-item">
+                        <label>Plano de Trabalho</label>
+                        <div class="value" data-field="planoTrabalho">${ted.planoTrabalho || ''}</div>
+                    // Exibir informações do TED (versão única e ordenada)
+                    function exibirInfoTED() {
+                        if (!window.tedSelecionado) return;
 
-        .tab-btn {
-            background: none;
-            border: none;
-            padding: 1rem 1.5rem;
-            font-size: 1rem;
-            cursor: pointer;
-            color: var(--text);
-            border-bottom: 3px solid transparent;
-            margin-bottom: -2px;
-            transition: all 0.3s;
-        }
+                        const ted = window.tedSelecionado;
 
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
+                        // Calcular datas a partir de campos existentes
+                        let inicio = null;
+                        let fim = null;
+                        if (ted.inicioVigencia) {
+                            inicio = new Date(ted.inicioVigencia);
+                        }
+                        if (inicio && !isNaN(ted.vigilancia)) {
+                            fim = new Date(inicio);
+                            fim.setMonth(fim.getMonth() + (isNaN(parseInt(ted.vigilancia, 10)) ? 0 : parseInt(ted.vigilancia, 10)));
+                        }
 
-        .tab-btn:hover {
-            color: var(--primary);
+                        const formatDate = (d) => {
+                            if (!d || isNaN(d)) return '';
+                            return d.toLocaleDateString('pt-BR');
+                        };
+
+                        const infoGrid = document.getElementById('tedInfoGrid');
+                        infoGrid.innerHTML = `
+                            <div class="ted-info-item">
+                                <label>Plano de Trabalho</label>
+                                <div class="value" data-field="planoTrabalho">${ted.planoTrabalho || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>TED</label>
+                                <div class="value" data-field="numTed">${ted.numTed || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Objeto</label>
+                                <div class="value" data-field="objetivo">${ted.objetivo || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Valor do TED (R$)</label>
+                                <div class="value" data-field="valorTed">R$ ${Number(ted.valorTed || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                            </div>
+
+                            <div class="ted-info-item">
+                                <label>Código do Plano de Ação</label>
+                                <div class="value" data-field="codigoPlano">${ted.codigoPlano || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Nº TED - SIAFI</label>
+                                <div class="value" data-field="numTedSiafi">${ted.numTedSiafi || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Nota do Sistema do TED</label>
+                                <div class="value" data-field="notaSistema">${ted.notaSistema || ''}</div>
+                            </div>
+
+                            <div class="ted-info-item">
+                                <label>UP Responsável</label>
+                                <div class="value" data-field="upResponsavel">${ted.upResponsavel || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>UG Executora</label>
+                                <div class="value" data-field="egExecutora">${ted.egExecutora || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Unidade Descentralizadora</label>
+                                <div class="value" data-field="unidadeDesc">${ted.unidadeDesc || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>UG Descentralizadora</label>
+                                <div class="value" data-field="ugDesc">${ted.ugDesc || ''}</div>
+                            </div>
+
+                            <div class="ted-info-item">
+                                <label>Vigência (Meses)</label>
+                                <div class="value" data-field="vigilancia">${ted.vigilancia ?? ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Início da Vigência</label>
+                                <div class="value" data-field="inicioVigencia">${inicio ? formatDate(inicio) : ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Fim da Vigência</label>
+                                <div class="value" data-field="fimVigencia">${fim ? formatDate(fim) : ''}</div>
+                            </div>
+
+                            <div class="ted-info-item">
+                                <label>1ª Descentralização</label>
+                                <div class="value" data-field="primeiraDescentralizacao">${ted.primeiraDescentralizacao || ''}</div>
+                            </div>
+                        `;
+                    }
         }
 
         .tab-content {
@@ -431,26 +477,6 @@
             margin-bottom: 0.25rem;
         }
 
-        .ted-info-item .value {
-            font-size: 1rem;
-            font-weight: 600;
-        }
-
-        .ted-info-item input,
-        .ted-info-item select {
-            background: rgba(255, 255, 255, 0.95);
-            color: var(--text);
-            border: none;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
-            width: 100%;
-            font-size: 0.875rem;
-        }
-
-        .ted-edit-mode .ted-info-item {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -602,8 +628,8 @@
                             <label>UG Descentralizadora *</label>
                             <input type="text" id="ugDesc" placeholder="UG" required>
                         </div>
-                        
-                        
+                    </div>
+                        <div class="grid">
                         <div class="form-group">
                             <label>Início de Vigência *</label>
                             <input type="date" id="inicioVigencia" required>
@@ -642,21 +668,6 @@
                 </div>
 
                 <div id="tedsDetalheContainer" style="display: none;">
-                    <!-- INFORMAÇÕES DO TED -->
-                    <div class="ted-info-section" id="tedInfoSection">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h3 style="margin: 0;">📋 Informações do TED</h3>
-                            <div>
-                                <button id="btnEditarTED" class="btn btn-secondary" onclick="toggleEditarTED()" style="background: rgba(255,255,255,0.2); color: white; padding: 0.5rem 1rem;">✏️ Editar</button>
-                                <button id="btnSalvarTED" class="btn btn-primary" onclick="salvarEdicaoTED()" style="display: none; padding: 0.5rem 1rem; margin-left: 0.5rem;">💾 Salvar</button>
-                                <button id="btnCancelarTED" class="btn btn-secondary" onclick="cancelarEdicaoTED()" style="display: none; background: rgba(255,255,255,0.2); color: white; padding: 0.5rem 1rem; margin-left: 0.5rem;">✖ Cancelar</button>
-                            </div>
-                        </div>
-                        <div class="ted-info-grid" id="tedInfoGrid">
-                            <!-- Será preenchido dinamicamente -->
-                        </div>
-                    </div>
-
                     <!-- CADASTRO DE OBJETOS -->
                     <div style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
                         <h3 style="margin: 0 0 1rem 0;">📦 Cadastro de Objetos</h3>
@@ -1322,9 +1333,6 @@
 
             document.getElementById('tedsDetalheContainer').style.display = 'block';
             
-            // Exibir informações do TED
-            exibirInfoTED();
-            
             atualizarTabelaObjetos();
             atualizarOpcoesObjetoFisico();
             atualizarTabelaMetas();
@@ -1335,256 +1343,6 @@
             atualizarOpcoesExecFinanceira();
             atualizarTabelaExecFinanceira();
             atualizarGantt();
-        }
-
-        // Exibir informações do TED
-        function exibirInfoTED() {
-            if (!window.tedSelecionado) return;
-            
-            const ted = window.tedSelecionado;
-            const inicio = new Date(ted.dataAssinatura);
-            inicio.setMonth(inicio.getMonth() + 1);
-            const fim = new Date(inicio);
-            fim.setMonth(fim.getMonth() + ted.vigilancia);
-            
-            const infoGrid = document.getElementById('tedInfoGrid');
-            infoGrid.innerHTML = `
-                <div class="ted-info-item">
-                    <label>Plano de Trabalho</label>
-                    <div class="value" data-field="planoTrabalho">${ted.planoTrabalho}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>TED</label>
-                    <div class="value" data-field="numTed">${ted.numTed}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>Código do Plano de Ação</label>
-                    <div class="value" data-field="codigoPlano">${ted.codigoPlano}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>Status</label>
-                    <div class="value" data-field="status">${ted.status}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>UP Responsável</label>
-                    <div class="value" data-field="upResponsavel">${ted.upResponsavel}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>UG Executora</label>
-                    <div class="value" data-field="egExecutora">${ted.egExecutora}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>Nº TED - SIAFI</label>
-                    <div class="value" data-field="siafi">${ted.siafi}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>Nota do Sistema do TED</label>
-                    <div class="value" data-field="notaSistema">${ted.notaSistema}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>Unidade Descentralizadora</label>
-                    <div class="value" data-field="ugDescentralizadora">${ted.ugDescentralizadora}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>UG Descentralizadora</label>
-                    <div class="value" data-field="ugDescentralizadoraCodigo">${ted.ugDescentralizadoraCodigo}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>Valor do TED</label>
-                    <div class="value" data-field="valorTed">R$ ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>Vigência (Meses)</label>
-                    <div class="value" data-field="vigilancia">${ted.vigilancia}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>Início da Vigência</label>
-                    <div class="value" data-field="inicioVigencia">${inicio.toLocaleDateString('pt-BR')}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>Fim da Vigência</label>
-                    <div class="value" data-field="fimVigencia">${fim.toLocaleDateString('pt-BR')}</div>
-                </div>
-                <div class="ted-info-item">
-                    <label>1ª Descentralização</label>
-                    <div class="value" data-field="jdDescentralizacao">${ted.jdDescentralizacao}</div>
-                </div>
-                <div class="ted-info-item" style="grid-column: 1 / -1;">
-                    <label>Objeto</label>
-                    <div class="value" data-field="objetivo">${ted.objetivo}</div>
-                </div>
-            `;
-        }
-
-        // Toggle modo de edição
-        let tedBackup = null;
-        
-        function toggleEditarTED() {
-            if (!window.tedSelecionado) return;
-            
-            // Fazer backup antes de editar
-            tedBackup = JSON.parse(JSON.stringify(window.tedSelecionado));
-            
-            const infoGrid = document.getElementById('tedInfoGrid');
-            const ted = window.tedSelecionado;
-            
-            infoGrid.innerHTML = `
-                <div class="ted-info-item">
-                    <label>Plano de Trabalho</label>
-                    <input type="text" data-field="planoTrabalho" value="${ted.planoTrabalho}">
-                </div>
-                <div class="ted-info-item">
-                    <label>TED</label>
-                    <input type="text" data-field="numTed" value="${ted.numTed}">
-                </div>
-                <div class="ted-info-item">
-                    <label>Código do Plano de Ação</label>
-                    <input type="text" data-field="codigoPlano" value="${ted.codigoPlano}">
-                </div>
-                <div class="ted-info-item">
-                    <label>Status</label>
-                    <select data-field="status">
-                        <option value="Planejamento" ${ted.status === 'Planejamento' ? 'selected' : ''}>Planejamento</option>
-                        <option value="Em Execução" ${ted.status === 'Em Execução' ? 'selected' : ''}>Em Execução</option>
-                        <option value="Concluído" ${ted.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
-                        <option value="Suspenso" ${ted.status === 'Suspenso' ? 'selected' : ''}>Suspenso</option>
-                    </select>
-                </div>
-                <div class="ted-info-item">
-                    <label>UP Responsável</label>
-                    <input type="text" data-field="upResponsavel" value="${ted.upResponsavel}">
-                </div>
-                <div class="ted-info-item">
-                    <label>UG Executora</label>
-                    <input type="text" data-field="egExecutora" value="${ted.egExecutora}">
-                </div>
-                <div class="ted-info-item">
-                    <label>Nº TED - SIAFI</label>
-                    <input type="text" data-field="siafi" value="${ted.siafi}">
-                </div>
-                <div class="ted-info-item">
-                    <label>Nota do Sistema do TED</label>
-                    <input type="text" data-field="notaSistema" value="${ted.notaSistema}">
-                </div>
-                <div class="ted-info-item">
-                    <label>Unidade Descentralizadora</label>
-                    <input type="text" data-field="ugDescentralizadora" value="${ted.ugDescentralizadora}">
-                </div>
-                <div class="ted-info-item">
-                    <label>UG Descentralizadora</label>
-                    <input type="text" data-field="ugDescentralizadoraCodigo" value="${ted.ugDescentralizadoraCodigo}">
-                </div>
-                <div class="ted-info-item">
-                    <label>Valor do TED (R$)</label>
-                    <input type="number" step="0.01" data-field="valorTed" value="${ted.valorTed}">
-                </div>
-                <div class="ted-info-item">
-                    <label>Vigência (Meses)</label>
-                    <input type="number" data-field="vigilancia" value="${ted.vigilancia}" oninput="atualizarFimVigencia()">
-                </div>
-                <div class="ted-info-item">
-                    <label>Data de Assinatura</label>
-                    <input type="date" data-field="dataAssinatura" value="${ted.dataAssinatura}" oninput="atualizarFimVigencia()">
-                </div>
-                <div class="ted-info-item">
-                    <label>Fim da Vigência</label>
-                    <input type="text" id="fimVigenciaEdit" readonly style="background:#fff; color:var(--text);">
-                </div>
-                <div class="ted-info-item">
-                    <label>1ª Descentralização</label>
-                    <input type="text" data-field="jdDescentralizacao" value="${ted.jdDescentralizacao}">
-                </div>
-                <div class="ted-info-item" style="grid-column: 1 / -1;">
-                    <label>Objeto</label>
-                    <input type="text" data-field="objetivo" value="${ted.objetivo}">
-                </div>
-            `;
-            
-            document.getElementById('tedInfoSection').classList.add('ted-edit-mode');
-            document.getElementById('btnEditarTED').style.display = 'none';
-            document.getElementById('btnSalvarTED').style.display = 'inline-block';
-            document.getElementById('btnCancelarTED').style.display = 'inline-block';
-            
-            // Atualiza o campo de fim da vigência ao abrir o modo de edição
-            atualizarFimVigencia();
-        }
-
-        function salvarEdicaoTED() {
-            if (!window.tedSelecionado) return;
-            
-            const infoGrid = document.getElementById('tedInfoGrid');
-            const inputs = infoGrid.querySelectorAll('[data-field]');
-            
-            inputs.forEach(input => {
-                const field = input.getAttribute('data-field');
-                let value = input.value;
-                
-                // Converter tipos apropriados
-                if (field === 'valorTed') {
-                    value = parseFloat(value);
-                } else if (field === 'vigilancia') {
-                    value = parseInt(value);
-                }
-                
-                window.tedSelecionado[field] = value;
-            });
-            
-            salvarDados();
-            atualizarListaTeds();
-            atualizarDashboard();
-            atualizarSeletorTED();
-            exibirInfoTED();
-            
-            document.getElementById('tedInfoSection').classList.remove('ted-edit-mode');
-            document.getElementById('btnEditarTED').style.display = 'inline-block';
-            document.getElementById('btnSalvarTED').style.display = 'none';
-            document.getElementById('btnCancelarTED').style.display = 'none';
-            
-            tedBackup = null;
-            
-            alert('✅ Informações do TED atualizadas com sucesso!');
-        }
-
-        function cancelarEdicaoTED() {
-            if (tedBackup) {
-                // Restaurar dados do backup
-                Object.assign(window.tedSelecionado, tedBackup);
-                tedBackup = null;
-            }
-            
-            exibirInfoTED();
-            
-            document.getElementById('tedInfoSection').classList.remove('ted-edit-mode');
-            document.getElementById('btnEditarTED').style.display = 'inline-block';
-            document.getElementById('btnSalvarTED').style.display = 'none';
-            document.getElementById('btnCancelarTED').style.display = 'none';
-        }
-
-        // Calcula e atualiza o campo de Fim da Vigência (Inicio = Data de Assinatura + 1 mês)
-        function atualizarFimVigencia() {
-            const infoGrid = document.getElementById('tedInfoGrid');
-            if (!infoGrid) return;
-            const dataEl = infoGrid.querySelector('[data-field="dataAssinatura"]');
-            const vigEl = infoGrid.querySelector('[data-field="vigilancia"]');
-            const fimField = document.getElementById('fimVigenciaEdit');
-            if (!fimField) return;
-
-            const dataStr = dataEl ? dataEl.value : '';
-            const vig = vigEl ? parseInt(vigEl.value, 10) : NaN;
-
-            if (!dataStr || isNaN(vig)) {
-                fimField.value = '';
-                return;
-            }
-
-            const d = new Date(dataStr);
-            // Início da Vigência = dataAssinatura + 1 mês
-            d.setMonth(d.getMonth() + 1 + (isNaN(vig) ? 0 : vig));
-
-            const day = String(d.getDate()).padStart(2, '0');
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const year = d.getFullYear();
-            fimField.value = `${day}/${month}/${year}`;
         }
 
         // OBJETOS
