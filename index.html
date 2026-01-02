@@ -173,6 +173,32 @@
             font-size: 0.875rem;
         }
 
+        /* Icon Buttons */
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.25rem 0.5rem;
+            transition: transform 0.2s, opacity 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            transform: scale(1.2);
+            opacity: 0.8;
+        }
+
+        .btn-icon.delete {
+            color: var(--danger);
+        }
+
+        .btn-icon.edit {
+            color: var(--primary);
+        }
+
         /* Forms */
         .form-group {
             margin-bottom: 1.5rem;
@@ -1254,6 +1280,19 @@
             atualizarOpcoesObjetoExecFisica();
         }
 
+        function editarObjeto(id) {
+            if (!window.tedSelecionado) return;
+            const obj = window.tedSelecionado.objetos.find(o => o.id === id);
+            if (!obj) return;
+            
+            document.getElementById('objeto').value = obj.objeto;
+            document.getElementById('qtdeObjeto').value = obj.qtde;
+            document.getElementById('valorUnitario').value = obj.valorUnitario;
+            
+            // Remover o objeto antigo para ser substituído pelo novo ao salvar
+            removerObjeto(id);
+        }
+
         function atualizarTabelaObjetos() {
             const tbody = document.getElementById('tabelaObjetos');
             
@@ -1272,7 +1311,8 @@
                         <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
-                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerObjeto(${obj.id})">Remover</button>
+                            <button class="btn-icon edit" title="Editar" onclick="editarObjeto(${obj.id})">✏️</button>
+                            <button class="btn-icon delete" title="Remover" onclick="removerObjeto(${obj.id})">🗑️</button>
                         </td>
                     </tr>
                 `;
@@ -1356,6 +1396,21 @@
             window.tedSelecionado.metas = window.tedSelecionado.metas.filter(m => m.id !== id);
             salvarDados();
             atualizarTabelaMetas();
+        }
+
+        function editarMeta(id) {
+            if (!window.tedSelecionado) return;
+            const meta = window.tedSelecionado.metas.find(m => m.id === id);
+            if (!meta) return;
+            
+            document.getElementById('meta').value = meta.meta;
+            document.getElementById('mInicio').value = meta.mInicio;
+            document.getElementById('mFinal').value = meta.mFinal;
+            document.getElementById('mesInicio').value = meta.mesInicio;
+            document.getElementById('mesFinal').value = meta.mesFinal;
+            
+            // Remover a meta antiga para ser substituída pela nova ao salvar
+            removerMeta(id);
         }
 
         function renderGanttGenerico(dados, usarMeses = false) {
@@ -1553,7 +1608,8 @@
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${inicioStr}</td>
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${finalStr}</td>
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerMeta(${meta.id})">Remover</button>
+                        <button class="btn-icon edit" title="Editar" onclick="editarMeta(${meta.id})">✏️</button>
+                        <button class="btn-icon delete" title="Remover" onclick="removerMeta(${meta.id})">🗑️</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -1681,6 +1737,23 @@
             atualizarTabelaFisicos();
         }
 
+        function editarFisico(id) {
+            if (!window.tedSelecionado) return;
+            const fisico = window.tedSelecionado.fisicos.find(f => f.id === id);
+            if (!fisico) return;
+            
+            document.getElementById('faseFisico').value = fisico.fase;
+            document.getElementById('objetoFisico').value = fisico.objeto;
+            document.getElementById('qtdeFisico').value = fisico.qtde || '';
+            document.getElementById('mInicioFisico').value = fisico.mInicio;
+            document.getElementById('mFinalFisico').value = fisico.mFinal;
+            document.getElementById('mesInicioFisico').value = fisico.mesInicio;
+            document.getElementById('mesFinalFisico').value = fisico.mesFinal;
+            
+            // Remover o físico antigo para ser substituído pelo novo ao salvar
+            removerFisico(id);
+        }
+
         function atualizarTabelaFisicos() {
             const tbody = document.getElementById('tabelaFisicos');
             const tableElement = tbody.closest('table');
@@ -1798,7 +1871,8 @@
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${inicioStr}</td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${finalStr}</td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="removerFisico(${f.id})">Remover</button>
+                        <button class="btn-icon edit" title="Editar" onclick="editarFisico(${f.id})">✏️</button>
+                        <button class="btn-icon delete" title="Remover" onclick="removerFisico(${f.id})">🗑️</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -2023,6 +2097,28 @@
             atualizarTabelaExecFinanceira();
         }
 
+        function editarFinanceiro(id) {
+            if (!window.tedSelecionado) return;
+            const financeiro = window.tedSelecionado.financeiros.find(f => f.id === id);
+            if (!financeiro) return;
+            
+            document.getElementById('numFinanceiro').value = financeiro.numero;
+            document.getElementById('mFinanceiro').value = financeiro.m;
+            document.getElementById('upFinanceiro').value = financeiro.up || financeiro.ug || '';
+            document.getElementById('valorFinanceiro').value = financeiro.valor;
+            
+            // Atualizar o campo de mês de descentralização
+            const d = new Date(window.tedSelecionado.dataAssinatura);
+            d.setMonth(d.getMonth() + (isNaN(financeiro.m) ? 0 : financeiro.m));
+            const mesDesc = d.getMonth() + 1;
+            const anoDesc = d.getFullYear();
+            const mesDescInput = document.getElementById('mesDescFinanceiro');
+            if (mesDescInput) mesDescInput.value = String(mesDesc).padStart(2,'0') + '/' + anoDesc;
+            
+            // Remover o financeiro antigo para ser substituído pelo novo ao salvar
+            removerFinanceiro(id);
+        }
+
         function atualizarTabelaFinanceira() {
             const tbody = document.getElementById('tabelaFinanceira');
             const headerGantt = document.getElementById('ganttHeaderFinanceira');
@@ -2128,7 +2224,8 @@
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${mesDescStr}</td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: ${bg};">R$ ${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
+                        <button class="btn-icon edit" title="Editar" onclick="editarFinanceiro(${f.id})">✏️</button>
+                        <button class="btn-icon delete" title="Remover" onclick="removerFinanceiro(${f.id})">🗑️</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar o mês/ano da descentralização
