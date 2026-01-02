@@ -1690,6 +1690,22 @@
             document.getElementById('valorUnitario').value = '';
         }
 
+        function editarObjeto(id) {
+            if (!window.tedSelecionado) return;
+            const obj = window.tedSelecionado.objetos.find(o => o.id === id);
+            if (!obj) return;
+            
+            document.getElementById('objeto').value = obj.objeto;
+            document.getElementById('qtdeObjeto').value = obj.qtde;
+            document.getElementById('valorUnitario').value = obj.valorUnitario;
+            
+            // Remover o objeto antigo para permitir edição
+            window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
+            atualizarTabelaObjetos();
+            atualizarOpcoesObjetoFisico();
+            atualizarOpcoesObjetoExecFisica();
+        }
+
         function removerObjeto(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
@@ -1717,7 +1733,8 @@
                         <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
-                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerObjeto(${obj.id})">Remover</button>
+                            <button class="btn-icon edit" onclick="editarObjeto(${obj.id})" title="Editar">✏️</button>
+                            <button class="btn-icon delete" onclick="removerObjeto(${obj.id})" title="Remover">🗑️</button>
                         </td>
                     </tr>
                 `;
@@ -1865,6 +1882,23 @@
             document.getElementById('mFinal').value = '';
             document.getElementById('mesInicio').value = '';
             document.getElementById('mesFinal').value = '';
+        }
+
+        function editarMeta(id) {
+            if (!window.tedSelecionado) return;
+            const meta = window.tedSelecionado.metas.find(m => m.id === id);
+            if (!meta) return;
+            
+            document.getElementById('meta').value = meta.meta;
+            document.getElementById('mInicio').value = meta.mInicio;
+            document.getElementById('mFinal').value = meta.mFinal;
+            
+            // Recalcular os meses automaticamente
+            calcularMesesMeta();
+            
+            // Remover a meta antiga para permitir edição
+            window.tedSelecionado.metas = window.tedSelecionado.metas.filter(m => m.id !== id);
+            atualizarTabelaMetas();
         }
 
         function removerMeta(id) {
@@ -2071,7 +2105,8 @@
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${inicioStr}</td>
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${finalStr}</td>
                     <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removerMeta(${meta.id})">Remover</button>
+                        <button class="btn-icon edit" onclick="editarMeta(${meta.id})" title="Editar">✏️</button>
+                        <button class="btn-icon delete" onclick="removerMeta(${meta.id})" title="Remover">🗑️</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -2193,6 +2228,25 @@
             document.getElementById('mFinalFisico').value = '';
             document.getElementById('mesInicioFisico').value = '';
             document.getElementById('mesFinalFisico').value = '';
+        }
+
+        function editarFisico(id) {
+            if (!window.tedSelecionado) return;
+            const fisico = window.tedSelecionado.fisicos.find(f => f.id === id);
+            if (!fisico) return;
+            
+            document.getElementById('faseFisico').value = fisico.fase;
+            document.getElementById('objetoFisico').value = fisico.objeto;
+            document.getElementById('qtdeFisico').value = fisico.qtde;
+            document.getElementById('mInicioFisico').value = fisico.mInicio;
+            document.getElementById('mFinalFisico').value = fisico.mFinal;
+            
+            // Recalcular os meses automaticamente
+            calcularMesesFisico();
+            
+            // Remover o físico antigo para permitir edição
+            window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(f => f.id !== id);
+            atualizarTabelaFisicos();
         }
 
         function removerFisico(id) {
@@ -2321,7 +2375,8 @@
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${inicioStr}</td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${finalStr}</td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="removerFisico(${f.id})">Remover</button>
+                        <button class="btn-icon edit" onclick="editarFisico(${f.id})" title="Editar">✏️</button>
+                        <button class="btn-icon delete" onclick="removerFisico(${f.id})" title="Remover">🗑️</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -2536,6 +2591,26 @@
             document.getElementById('valorFinanceiro').value = '';
         }
 
+        function editarFinanceiro(id) {
+            if (!window.tedSelecionado) return;
+            const financeiro = window.tedSelecionado.financeiros.find(f => f.id === id);
+            if (!financeiro) return;
+            
+            document.getElementById('numeroFinanceiro').value = financeiro.numero;
+            document.getElementById('mFinanceiro').value = financeiro.m;
+            document.getElementById('anoDescFinanceiro').value = financeiro.anoDesc;
+            document.getElementById('mesDescFinanceiro').value = financeiro.mesDesc;
+            document.getElementById('upFinanceiro').value = financeiro.up || financeiro.ug;
+            document.getElementById('valorFinanceiro').value = financeiro.valor;
+            
+            // Remover o financeiro antigo para permitir edição
+            window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
+            atualizarTabelaFinanceira();
+            atualizarOpcoesExecFinanceira();
+            atualizarGantt();
+            atualizarTabelaExecFinanceira();
+        }
+
         function removerFinanceiro(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
@@ -2651,7 +2726,8 @@
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${mesDescStr}</td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: ${bg};">R$ ${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
-                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="removerFinanceiro(${f.id})">Remover</button>
+                        <button class="btn-icon edit" onclick="editarFinanceiro(${f.id})" title="Editar">✏️</button>
+                        <button class="btn-icon delete" onclick="removerFinanceiro(${f.id})" title="Remover">🗑️</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar o mês/ano da descentralização
