@@ -593,36 +593,8 @@
         .tabela-padrao .col-qtde { width: 60px; text-align: center; }
         .tabela-padrao .col-valor { width: 100px; text-align: right; }
         .tabela-padrao .col-percent { width: 90px; text-align: center; }
-        /* Garantir largura fixa para colunas UP e Ação entre tabelas */
-        .tabela-padrao th.col-up, .tabela-padrao td.col-up {
-            width: 80px;
-            max-width: 80px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .tabela-padrao th.col-acao, .tabela-padrao td.col-acao {
-            width: 70px;
-            max-width: 70px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        /* Cadastro Financeiro: alinhar colunas à direita para ajustar largura de ND/UP
-           ND e UP ficam centralizados (mesma largura que Execução Financeira) */
-        #tabelaFinanceiraCompleta th, #tabelaFinanceiraCompleta td {
-            text-align: right;
-        }
-        #tabelaFinanceiraCompleta th.col-nd, #tabelaFinanceiraCompleta td.col-nd,
-        #tabelaFinanceiraCompleta th.col-up, #tabelaFinanceiraCompleta td.col-up {
-            text-align: center;
-        }
-        /* Forçar layout fixo nas duas tabelas financeiras para larguras consistentes */
-        #tabelaFinanceiraCompleta, #tabelaExecFinanceiraTable {
-            table-layout: fixed;
-        }
-        .tabela-padrao .col-nd { width: 80px; }
-        .tabela-padrao .col-up { width: 80px; }
+        .tabela-padrao .col-nd { min-width: 60px; text-align: center; }
+        .tabela-padrao .col-up { min-width: 60px; text-align: center; }
         .tabela-padrao .col-fase { width: 80px; }
         .tabela-padrao .col-objeto { min-width: 120px; }
         .tabela-padrao .col-descricao { min-width: 150px; }
