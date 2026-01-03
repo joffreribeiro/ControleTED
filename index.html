@@ -565,6 +565,113 @@
         .table-freeze-wrapper .freeze-col.freeze-last {
             box-shadow: 3px 0 6px rgba(0, 0, 0, 0.15);
         }
+
+        /* ===== ESTILOS PADRONIZADOS PARA TODAS AS TABELAS ===== */
+        .tabela-padrao {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .tabela-padrao thead tr {
+            background: #2c5aa0;
+            color: white;
+        }
+        .tabela-padrao th,
+        .tabela-padrao td {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            vertical-align: middle;
+        }
+        .tabela-padrao th {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        /* Larguras padrão para colunas comuns */
+        .tabela-padrao .col-acao { width: 70px; text-align: center; }
+        .tabela-padrao .col-m { width: 50px; text-align: center; }
+        .tabela-padrao .col-mes { width: 90px; text-align: center; }
+        .tabela-padrao .col-qtde { width: 60px; text-align: center; }
+        .tabela-padrao .col-valor { width: 100px; text-align: right; }
+        .tabela-padrao .col-percent { width: 90px; text-align: center; }
+        /* Garantir largura fixa para colunas UP e Ação entre tabelas */
+        .tabela-padrao th.col-up, .tabela-padrao td.col-up {
+            width: 80px;
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .tabela-padrao th.col-acao, .tabela-padrao td.col-acao {
+            width: 70px;
+            max-width: 70px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        /* Cadastro Financeiro: alinhar colunas à direita para ajustar largura de ND/UP
+           ND e UP ficam centralizados (mesma largura que Execução Financeira) */
+        #tabelaFinanceiraCompleta th, #tabelaFinanceiraCompleta td {
+            text-align: right;
+        }
+        #tabelaFinanceiraCompleta th.col-nd, #tabelaFinanceiraCompleta td.col-nd,
+        #tabelaFinanceiraCompleta th.col-up, #tabelaFinanceiraCompleta td.col-up {
+            text-align: center;
+        }
+        /* Forçar layout fixo nas duas tabelas financeiras para larguras consistentes */
+        #tabelaFinanceiraCompleta, #tabelaExecFinanceiraTable {
+            table-layout: fixed;
+        }
+        .tabela-padrao .col-nd { width: 80px; }
+        .tabela-padrao .col-up { width: 80px; }
+        .tabela-padrao .col-fase { width: 80px; }
+        .tabela-padrao .col-objeto { min-width: 120px; }
+        .tabela-padrao .col-descricao { min-width: 150px; }
+        .tabela-padrao .col-meta { width: 100px; }
+        .tabela-padrao .col-saldo { width: 100px; text-align: right; }
+        .tabela-padrao .col-percent { width: 80px; text-align: center; }
+        /* Linhas alternadas */
+        .tabela-padrao tbody tr:nth-child(even) { background: #f9f9f9; }
+        .tabela-padrao tbody tr:nth-child(odd) { background: #fff; }
+        /* Linha de total */
+        .tabela-padrao .linha-total {
+            background: #e8f4f8 !important;
+            font-weight: bold;
+        }
+        /* Cabeçalho secundário (meses Gantt) */
+        .tabela-padrao .header-meses {
+            background: #4b7ed0;
+            color: white;
+            font-size: 0.7rem;
+        }
+        /* Estilos isolados para a tabela do Gantt - manter consistente com .tabela-padrao */
+        .gantt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .gantt-table thead tr {
+            background: #2c5aa0;
+            color: white;
+        }
+        .gantt-table th,
+        .gantt-table td {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            vertical-align: middle;
+        }
+        .gantt-table th {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        /* Linha alternada para Gantt */
+        .gantt-table tbody tr:nth-child(even) { background: #f9f9f9; }
+        .gantt-table tbody tr:nth-child(odd) { background: #fff; }
+        /* Cabeçalho secundário de meses no Gantt */
+        .gantt-table .header-meses {
+            background: #4b7ed0;
+            color: white;
+            font-size: 0.7rem;
+        }
     </style>
 </head>
 <body>
@@ -600,11 +707,11 @@
                     </div>
                     <div class="stat-card">
                         <div class="label">Orçamento Total</div>
-                        <div class="value" id="orcamentoTotal">R$ 0</div>
+                            <div class="value" id="orcamentoTotal">0,00</div>
                     </div>
                     <div class="stat-card">
                         <div class="label">Total Gasto</div>
-                        <div class="value" id="totalGasto">R$ 0</div>
+                            <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
             </div>
@@ -860,14 +967,14 @@
                             <button type="button" class="btn btn-primary" onclick="adicionarObjeto()" style="align-self: flex-end; min-width: 120px;">Adicionar</button>
                         </div>
 
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                        <table class="tabela-padrao">
                             <thead>
-                                <tr style="background: #2c5aa0; color: white;">
-                                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Objeto</th>
-                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Qtde</th>
-                                    <th style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">Valor Unitário</th>
-                                    <th style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">Valor Total</th>
-                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
+                                <tr>
+                                    <th class="col-objeto">Objeto</th>
+                                    <th class="col-qtde">Qtde</th>
+                                    <th class="col-valor">Valor Unit.</th>
+                                    <th class="col-valor">Valor Total</th>
+                                    <th class="col-acao">Ação</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelaObjetos">
@@ -912,16 +1019,16 @@
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem;">
-                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                            <table class="tabela-padrao" style="min-width: 850px;">
                                 <thead>
-                                    <tr style="background: #2c5aa0; color: white;">
-                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Meta</th>
-                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Descrição</th>
-                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Início</th>
-                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Final</th>
-                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início (MM/AAAA)</th>
-                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Final (MM/AAAA)</th>
-                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
+                                    <tr>
+                                        <th class="col-meta">Meta</th>
+                                        <th class="col-descricao">Descrição</th>
+                                        <th class="col-m">M Início</th>
+                                        <th class="col-m">M Final</th>
+                                        <th class="col-mes">Mês Início</th>
+                                        <th class="col-mes">Mês Final</th>
+                                        <th class="col-acao">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaMetas">
@@ -970,17 +1077,17 @@
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
-                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                            <table class="tabela-padrao" style="min-width: 850px;">
                                 <thead>
-                                    <tr style="background: #2c5aa0; color: white;">
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Fase</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Objeto</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Qtde</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">M Início</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">M Final</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Mês Início (MM/AAAA)</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Mês Final (MM/AAAA)</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Ação</th>
+                                    <tr>
+                                        <th class="col-fase">Fase</th>
+                                        <th class="col-objeto">Objeto</th>
+                                        <th class="col-qtde">Qtde</th>
+                                        <th class="col-m">M Início</th>
+                                        <th class="col-m">M Final</th>
+                                        <th class="col-mes">Mês Início</th>
+                                        <th class="col-mes">Mês Final</th>
+                                        <th class="col-acao">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaFisicos">
@@ -1013,14 +1120,14 @@
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem;">
-                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                            <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 600px;">
                                 <thead>
-                                    <tr style="background: #2c5aa0; color: white;">
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Prevista</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Entregue</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Saldo</th>
-                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Execução (%)</th>
+                                    <tr>
+                                        <th class="col-objeto">Objeto</th>
+                                        <th class="col-qtde">Qtd Prevista</th>
+                                        <th class="col-qtde">Qtd Entregue</th>
+                                        <th class="col-saldo">Saldo</th>
+                                        <th class="col-percent">Execução (%)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaExecFisica">
@@ -1061,15 +1168,15 @@
                         </div>
 
                         <div class="table-wrapper" style="overflow-x: auto; position: relative;">
-                            <table id="tabelaFinanceiraCompleta" style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.75rem; min-width: 1400px;">
+                            <table id="tabelaFinanceiraCompleta" class="tabela-padrao" style="min-width: 1400px;">
                                 <thead>
-                                    <tr style="background: #2c5aa0; color: white;">
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">ND</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">UP</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">M</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Mês Desc.</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Valor (R$)</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0;">Ação</th>
+                                    <tr>
+                                        <th class="col-nd">ND</th>
+                                        <th class="col-up">UP</th>
+                                        <th class="col-m">M</th>
+                                        <th class="col-mes">Mês Desc.</th>
+                                        <th class="col-valor">Valor</th>
+                                        <th class="col-acao">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaFinanceira">
@@ -1110,14 +1217,14 @@
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
-                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                            <table class="tabela-padrao" style="min-width: 600px;">
                                 <thead>
-                                    <tr style="background: #2c5aa0; color: white;">
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">ND</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">UP</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Valor Previsto</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Valor Realizado</th>
-                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Saldo</th>
+                                    <tr>
+                                        <th class="col-nd">ND</th>
+                                        <th class="col-up">UP</th>
+                                        <th class="col-valor">Valor Previsto</th>
+                                        <th class="col-valor">Valor Realizado</th>
+                                        <th class="col-saldo">Saldo</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaExecFinanceira">
@@ -1127,11 +1234,11 @@
                         </div>
 
                         <div id="resumoExecFinanceira" style="margin-top: 0.75rem; font-size: 0.875rem; display: grid; row-gap: 0.35rem; max-width: 480px;">
-                            <div><strong>Previsto Anual:</strong> <span id="resExecPrevisto">R$ 0,00</span></div>
-                            <div><strong>A Receber ano anterior:</strong> <span id="resExecReceberAnterior">R$ 0,00</span></div>
-                            <div><strong>Recebido Anual:</strong> <span id="resExecRecebido">R$ 0,00</span></div>
-                            <div><strong>Devolvido:</strong> <span id="resExecDevolvido">R$ 0,00</span></div>
-                            <div><strong>Saldo Anual:</strong> <span id="resExecSaldo">R$ 0,00</span></div>
+                            <div><strong>Previsto Anual:</strong> <span id="resExecPrevisto">0,00</span></div>
+                            <div><strong>A Receber ano anterior:</strong> <span id="resExecReceberAnterior">0,00</span></div>
+                            <div><strong>Recebido Anual:</strong> <span id="resExecRecebido">0,00</span></div>
+                            <div><strong>Devolvido:</strong> <span id="resExecDevolvido">0,00</span></div>
+                            <div><strong>Saldo Anual:</strong> <span id="resExecSaldo">0,00</span></div>
                             <div><strong>Liquidação:</strong> <span id="resExecLiquidacao">0%</span></div>
                         </div>
                     </div>
@@ -1246,6 +1353,37 @@
             proxiId: 1
         };
 
+        // Função auxiliar para normalizar data (aceita DD/MM/YYYY ou YYYY-MM-DD)
+        function normalizarData(dataStr) {
+            if (!dataStr) return '';
+            dataStr = String(dataStr).trim();
+            
+            // Se já está no formato YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
+                return dataStr;
+            }
+            
+            // Se está no formato DD/MM/YYYY
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dataStr)) {
+                const partes = dataStr.split('/');
+                const dia = partes[0].padStart(2, '0');
+                const mes = partes[1].padStart(2, '0');
+                const ano = partes[2];
+                return `${ano}-${mes}-${dia}`;
+            }
+            
+            // Se está no formato DD-MM-YYYY
+            if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(dataStr)) {
+                const partes = dataStr.split('-');
+                const dia = partes[0].padStart(2, '0');
+                const mes = partes[1].padStart(2, '0');
+                const ano = partes[2];
+                return `${ano}-${mes}-${dia}`;
+            }
+            
+            return dataStr; // Retorna original se não reconhecer
+        }
+
         // Inicializar
         function inicializar() {
             const salvo = localStorage.getItem(STORAGE_KEY);
@@ -1332,8 +1470,12 @@
             document.getElementById('totalTeds').textContent = dados.teds.length;
             const tedsEmExecucao = dados.teds.filter(t => {
                 const hoje = new Date();
-                const inicio = new Date(t.inicioVigencia);
-                const fim = new Date(t.fimVigencia);
+                const inicioNorm = normalizarData(t.inicioVigencia);
+                const fimNorm = normalizarData(t.fimVigencia);
+                if (!inicioNorm || !fimNorm) return false;
+                const inicio = new Date(inicioNorm + 'T00:00:00');
+                const fim = new Date(fimNorm + 'T00:00:00');
+                if (isNaN(inicio.getTime()) || isNaN(fim.getTime())) return false;
                 return hoje >= inicio && hoje <= fim;
             }).length;
             document.getElementById('tedsExecucao').textContent = tedsEmExecucao;
@@ -1341,8 +1483,8 @@
             const valorTotal = dados.teds.reduce((sum, t) => sum + t.valorTed, 0);
             const gastoTotal = dados.teds.reduce((sum, t) => sum + t.gasto, 0);
 
-            document.getElementById('orcamentoTotal').textContent = 'R$ ' + valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-            document.getElementById('totalGasto').textContent = 'R$ ' + gastoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('orcamentoTotal').textContent = valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('totalGasto').textContent = gastoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
             // TEDs Recentes
             const recentes = dados.teds.slice(-3).reverse();
@@ -1372,11 +1514,17 @@
 
             const html = dados.teds.map(t => {
                 const hoje = new Date();
-                const inicio = new Date(t.inicioVigencia);
-                const fim = new Date(t.fimVigencia);
-                const emExecucao = hoje >= inicio && hoje <= fim;
-                const diasRestantes = Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24));
+                const inicioNorm = normalizarData(t.inicioVigencia);
+                const fimNorm = normalizarData(t.fimVigencia);
+                const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
+                const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                const inicioValido = inicio && !isNaN(inicio.getTime());
+                const fimValido = fim && !isNaN(fim.getTime());
+                const emExecucao = inicioValido && fimValido && hoje >= inicio && hoje <= fim;
+                const diasRestantes = fimValido ? Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24)) : 0;
                 const percentualGasto = t.valorTed > 0 ? Math.round((t.gasto / t.valorTed) * 100) : 0;
+                const inicioStr = inicioValido ? inicio.toLocaleDateString('pt-BR') : '-';
+                const fimStr = fimValido ? fim.toLocaleDateString('pt-BR') : '-';
                 
                 return `
                     <div class="card" style="margin: 0 0 1rem 0;">
@@ -1385,16 +1533,19 @@
                                 <h3><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${t.id}); return false;" style="color:inherit; text-decoration:none;">TED ${t.numTed}</a></h3>
                                 <p style="font-size: 0.875rem; color: var(--text); margin: 0.5rem 0 0 0;">${t.objetivo}</p>
                             </div>
-                            <span class="badge ${emExecucao ? 'badge-execucao' : 'badge-planejamento'}">${emExecucao ? 'EM EXECUÇÃO' : 'ENCERRADO'}</span>
+                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <span class="badge ${emExecucao ? 'badge-execucao' : 'badge-planejamento'}">${emExecucao ? 'EM EXECUÇÃO' : 'ENCERRADO'}</span>
+                                <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" style="background: transparent; border: none; cursor: pointer; font-size: 1.05rem; padding: 0;">🗑️</button>
+                            </div>
                         </div>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
                             <div>
-                                <p style="margin: 0; color: var(--text);">Valor: <strong>R$ ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></p>
+                                <p style="margin: 0; color: var(--text);">Valor: <strong>${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></p>
                                 <p style="margin: 0.5rem 0 0 0; color: var(--text);">Responsável: <strong>${t.responsavel}</strong></p>
                             </div>
                             <div>
-                                <p style="margin: 0; color: var(--text);">Vigência: ${inicio.toLocaleDateString('pt-BR')} a ${fim.toLocaleDateString('pt-BR')}</p>
+                                <p style="margin: 0; color: var(--text);">Vigência: ${inicioStr} a ${fimStr}</p>
                                 <p style="margin: 0.5rem 0 0 0; color: var(--text);">Dias restantes: <strong>${Math.max(0, diasRestantes)}</strong></p>
                             </div>
                         </div>
@@ -1407,7 +1558,7 @@
                             <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden;">
                                 <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
                             </div>
-                            <p style="font-size: 0.75rem; color: var(--text); margin: 0.5rem 0 0 0;">Gasto: R$ ${t.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                            <p style="font-size: 0.75rem; color: var(--text); margin: 0.5rem 0 0 0;">Gasto: ${t.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
                         </div>
 
                         
@@ -1423,10 +1574,14 @@
             const ted = dados.teds.find(t => t.id === id);
             if (!ted) return;
 
-            const inicio = new Date(ted.inicioVigencia);
-            const fim = new Date(ted.fimVigencia);
+            const inicioNorm = normalizarData(ted.inicioVigencia);
+            const fimNorm = normalizarData(ted.fimVigencia);
+            const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
+            const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
             const hoje = new Date();
-            const emExecucao = hoje >= inicio && hoje <= fim;
+            const inicioValido = inicio && !isNaN(inicio.getTime());
+            const fimValido = fim && !isNaN(fim.getTime());
+            const emExecucao = inicioValido && fimValido && hoje >= inicio && hoje <= fim;
             const percentualGasto = ted.valorTed > 0 ? Math.round((ted.gasto / ted.valorTed) * 100) : 0;
 
             document.getElementById('modalTitulo').textContent = `TED ${ted.numTed} - ${ted.objetivo}`;
@@ -1483,7 +1638,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
                     <div>
                         <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Valor do TED</p>
-                        <p style="margin: 0; font-size: 1.25rem; font-weight: bold; color: var(--primary);">R$ ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                        <p style="margin: 0; font-size: 1.25rem; font-weight: bold; color: var(--primary);">${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
                     </div>
                     <div>
                         <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Vigilância (Meses)</p>
@@ -1518,7 +1673,7 @@
                     <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
                         <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
                     </div>
-                    <p style="margin: 0; font-size: 0.75rem; color: var(--text);">Gasto: R$ ${ted.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                    <p style="margin: 0; font-size: 0.75rem; color: var(--text);">Gasto: ${ted.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
                 </div>
 
                 <p style="margin: 0; font-size: 0.75rem; color: var(--text);">Criado em: ${ted.dataCriacao}</p>
@@ -1538,6 +1693,24 @@
             atualizarListaTEDs();
             atualizarDashboard();
             alert('✅ TED deletado com sucesso!');
+        }
+
+        // Excluir TED a partir da lista (botão na aba TEDs)
+        function excluirTED(id) {
+            if (!confirm('Tem certeza que deseja excluir este TED? Esta ação não pode ser desfeita.')) return;
+
+            const idx = dados.teds.findIndex(t => t.id === id);
+            if (idx === -1) {
+                alert('❌ TED não encontrado.');
+                return;
+            }
+
+            dados.teds.splice(idx, 1);
+            salvarDados();
+            atualizarListaTEDs();
+            atualizarSeletorTED();
+            atualizarDashboard();
+            alert('✅ TED excluído com sucesso!');
         }
 
         // Editar TED
@@ -1618,7 +1791,7 @@
             document.getElementById('info_planoTrabalho').textContent = ted.planoTrabalho || '-';
             document.getElementById('info_numTed').textContent = ted.numTed || '-';
             document.getElementById('info_objetivo').textContent = ted.objetivo || '-';
-            document.getElementById('info_valorTed').textContent = ted.valorTed ? `R$ ${parseFloat(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-';
+            document.getElementById('info_valorTed').textContent = ted.valorTed ? `${parseFloat(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-';
             
             document.getElementById('info_codigoPlano').textContent = ted.codigoPlano || '-';
             document.getElementById('info_numTedSiafi').textContent = ted.numTedSiafi || '-';
@@ -1832,12 +2005,12 @@
             tbody.innerHTML = window.tedSelecionado.objetos.map(obj => {
                 totalValor += obj.valorTotal;
                 return `
-                    <tr style="background: ${window.tedSelecionado.objetos.indexOf(obj) % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
-                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${obj.objeto}</td>
-                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${obj.qtde}</td>
-                        <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
+                    <tr>
+                        <td class="col-objeto">${obj.objeto}</td>
+                        <td class="col-qtde">${obj.qtde}</td>
+                        <td class="col-valor">${obj.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td class="col-valor">${obj.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td class="col-acao">
                             <button class="btn-icon edit" onclick="editarObjeto(${obj.id})" title="Editar">✏️</button>
                             <button class="btn-icon delete" onclick="removerObjeto(${obj.id})" title="Remover">🗑️</button>
                         </td>
@@ -1846,10 +2019,10 @@
             }).join('');
 
             tbody.innerHTML += `
-                <tr style="background: #e8f4f8; font-weight: bold; border: 1px solid #ddd;">
-                    <td colspan="3" style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">TOTAL:</td>
-                    <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd;"></td>
+                <tr class="linha-total">
+                    <td colspan="3" style="text-align: right;">TOTAL:</td>
+                    <td class="col-valor">${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="col-acao"></td>
                 </tr>
             `;
         }
@@ -2072,16 +2245,16 @@
                 }
             });
 
-            let html = '<table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.75rem;">';
+            let html = '<table class="gantt-table" style="min-width: 850px;">';
             html += '<thead>';
-            html += '<tr style="background: #2c5aa0; color: white;">';
+            html += '<tr>';
             anos.forEach(a => {
-                html += `<th style="padding: 0.75rem 0.3rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; line-height: 1;" colspan="${a.count}">${a.ano}</th>`;
+                html += `<th colspan="${a.count}">${a.ano}</th>`;
             });
             html += '</tr>';
-            html += '<tr style="background: #4b7ed0; color: white;">';
+            html += '<tr class="header-meses">';
             meses.forEach(m => {
-                html += `<th style="padding: 0.75rem 0.25rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; line-height: 1;">${m.label}</th>`;
+                html += `<th>${m.label}</th>`;
             });
             html += '</tr>';
             html += '</thead>';
@@ -2089,12 +2262,11 @@
             
             // Se não há dados, mostrar linha vazia alinhada com a altura da tabela
             if (!dados || dados.length === 0) {
-                html += '<tr><td colspan="60" style="padding: 1rem; text-align: center; color: var(--text); border: 1px solid #ddd;">Sem registros</td></tr>';
+                html += '<tr><td colspan="60" style="padding: 1rem; text-align: center; color: var(--text);">Sem registros</td></tr>';
             } else {
-                // Criar uma linha para cada item de dados - altura total = padding + conteúdo
+                // Criar uma linha para cada item de dados
                 dados.forEach((item, idx) => {
-                    const bg = idx % 2 === 0 ? '#f9f9f9' : '#fff';
-                    html += '<tr style="height: 1px;">';
+                    html += '<tr>';
                     
                     meses.forEach((mesInfo, mesIdx) => {
                         let destaque = false;
@@ -2112,8 +2284,8 @@
                             }
                         }
                         
-                        const cor = destaque ? '#4CAF50' : bg;
-                        html += `<td style="padding: 0.75rem 0; border: 1px solid #ddd; background: ${cor};"></td>`;
+                        const corStyle = destaque ? ' style="background: #4CAF50;"' : '';
+                        html += `<td${corStyle}></td>`;
                     });
                     
                     html += '</tr>';
@@ -2170,16 +2342,16 @@
 
             // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
             let headerRow1 = tableElement.querySelector('thead tr');
-            let headerHTML = '<th rowspan="2" style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 80px;">Meta</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 150px;">Descrição</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 70px;">M Início</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 70px;">M Final</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 90px;">Mês Início</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 90px;">Mês Final</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 70px;">Ação</th>';
+            let headerHTML = '<th rowspan="2" class="col-meta">Meta</th>';
+            headerHTML += '<th rowspan="2" class="col-descricao">Descrição</th>';
+            headerHTML += '<th rowspan="2" class="col-m">M Início</th>';
+            headerHTML += '<th rowspan="2" class="col-m">M Final</th>';
+            headerHTML += '<th rowspan="2" class="col-mes">Mês Início</th>';
+            headerHTML += '<th rowspan="2" class="col-mes">Mês Final</th>';
+            headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
             
             anos.forEach(a => {
-                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th style="text-align: center;" colspan="${a.count}">${a.ano}</th>`;
             });
             
             headerRow1.innerHTML = headerHTML;
@@ -2192,11 +2364,10 @@
 
             // Criar segunda linha do cabeçalho com meses
             headerRow2 = document.createElement('tr');
-            headerRow2.style.background = '#4b7ed0';
-            headerRow2.style.color = 'white';
+            headerRow2.className = 'header-meses';
             let headerRow2HTML = '';
             meses.forEach(m => {
-                headerRow2HTML += `<th style=\"padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;\">${m.label}</th>`;
+                headerRow2HTML += `<th>${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableElement.querySelector('thead').appendChild(headerRow2);
@@ -2210,44 +2381,43 @@
             }
 
             tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => {
-                const bg = index % 2 === 0 ? '#f9f9f9' : '#fff';
-
                 let inicioStr = '';
                 let finalStr = '';
-                const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+                const mesesNomes = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
                 
                 if (baseDate && !isNaN(meta.mInicio) && !isNaN(meta.mFinal)) {
                     const dI = new Date(baseDate);
                     dI.setMonth(dI.getMonth() + meta.mInicio);
-                    inicioStr = `${meses[dI.getMonth()]}/${dI.getFullYear()}`;
+                    inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
                     const dF = new Date(baseDate);
                     dF.setMonth(dF.getMonth() + meta.mFinal);
-                    finalStr = `${meses[dF.getMonth()]}/${dF.getFullYear()}`;
-                } else {
+                    finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
+                } else if (meta.mesInicio && meta.anoInicio && meta.mesFinal && meta.anoFinal) {
                     // Fallback para dados já armazenados com anoInicio/anoFinal
-                    inicioStr = `${meses[meta.mesInicio - 1]}/${meta.anoInicio ?? ''}`;
-                    finalStr = `${meses[meta.mesFinal - 1]}/${meta.anoFinal ?? ''}`;
+                    inicioStr = `${mesesNomes[(meta.mesInicio || 1) - 1]}/${meta.anoInicio || ''}`;
+                    finalStr = `${mesesNomes[(meta.mesFinal || 1) - 1]}/${meta.anoFinal || ''}`;
+                } else {
+                    inicioStr = '-';
+                    finalStr = '-';
                 }
 
-                let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; background: ${bg};">${meta.meta}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; background: ${bg};">${meta.descricao || ''}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: ${bg};">${meta.mInicio}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: ${bg};">${meta.mFinal}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: ${bg};">${inicioStr}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: ${bg};">${finalStr}</td>
-                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; background: ${bg};">
+                let html = `<tr>
+                    <td class="col-meta">${meta.meta}</td>
+                    <td class="col-descricao">${meta.descricao || ''}</td>
+                    <td class="col-m">${meta.mInicio}</td>
+                    <td class="col-m">${meta.mFinal}</td>
+                    <td class="col-mes">${inicioStr}</td>
+                    <td class="col-mes">${finalStr}</td>
+                    <td class="col-acao">
                         <button class="btn-icon edit" onclick="editarMeta(${meta.id})" title="Editar">✏️</button>
                         <button class="btn-icon delete" onclick="removerMeta(${meta.id})" title="Remover">🗑️</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
-                let firstCellMeta = true;
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoPeríodo = mesIdx >= meta.mInicio && mesIdx <= meta.mFinal;
                     const cor = estaNoPeríodo ? '#4CAF50' : 'transparent';
-                    firstCellMeta = false;
-                    html += `<td style=\"padding: 0.75rem 0; border: 1px solid #ddd; background: ${cor};\"></td>`;
+                    html += `<td style="background: ${cor};"></td>`;
                 });
                 
                 html += '</tr>';
@@ -2434,19 +2604,17 @@
 
             // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
             let headerRow1 = tableElement.querySelector('thead tr');
-            let headerHTML = '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 100px;">Fase</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 100px;">Objeto</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 60px;">Qtde</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 70px;">M Início</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 70px;">M Final</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 90px;">Mês Início</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 90px;">Mês Final</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 90px;">Ação</th>';
+            let headerHTML = '<th rowspan="2" class="col-fase">Fase</th>';
+            headerHTML += '<th rowspan="2" class="col-objeto">Objeto</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde">Qtde</th>';
+            headerHTML += '<th rowspan="2" class="col-m">M Início</th>';
+            headerHTML += '<th rowspan="2" class="col-m">M Final</th>';
+            headerHTML += '<th rowspan="2" class="col-mes">Mês Início</th>';
+            headerHTML += '<th rowspan="2" class="col-mes">Mês Final</th>';
+            headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
             
-            let firstAnoFis = true;
             anos.forEach(a => {
-                firstAnoFis = false;
-                headerHTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th style="text-align: center;" colspan="${a.count}">${a.ano}</th>`;
             });
             
             headerRow1.innerHTML = headerHTML;
@@ -2459,13 +2627,10 @@
 
             // Criar segunda linha do cabeçalho com meses
             headerRow2 = document.createElement('tr');
-            headerRow2.style.background = '#4b7ed0';
-            headerRow2.style.color = 'white';
+            headerRow2.className = 'header-meses';
             let headerRow2HTML = '';
-            let firstMonthFis = true;
             meses.forEach(m => {
-                firstMonthFis = false;
-                headerRow2HTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; font-weight: bold; background: #4b7ed0;">${m.label}</th>`;
+                headerRow2HTML += `<th>${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableElement.querySelector('thead').appendChild(headerRow2);
@@ -2480,44 +2645,40 @@
             }
 
             tbody.innerHTML = window.tedSelecionado.fisicos.map((f, i) => {
-                const bg = i % 2 === 0 ? '#f9f9f9' : '#fff';
-
                 let inicioStr = '';
                 let finalStr = '';
-                const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+                const mesesNomes = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
                 
                 if (baseDate && !isNaN(f.mInicio) && !isNaN(f.mFinal)) {
                     const dI = new Date(baseDate);
                     dI.setMonth(dI.getMonth() + f.mInicio);
-                    inicioStr = `${meses[dI.getMonth()]}/${dI.getFullYear()}`;
+                    inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
                     const dF = new Date(baseDate);
                     dF.setMonth(dF.getMonth() + f.mFinal);
-                    finalStr = `${meses[dF.getMonth()]}/${dF.getFullYear()}`;
+                    finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
                 } else {
-                    inicioStr = `${meses[f.mesInicio - 1]}/${f.anoInicio ?? ''}`;
-                    finalStr = `${meses[f.mesFinal - 1]}/${f.anoFinal ?? ''}`;
+                    inicioStr = f.mesInicio && f.anoInicio ? `${mesesNomes[(f.mesInicio || 1) - 1]}/${f.anoInicio}` : '-';
+                    finalStr = f.mesFinal && f.anoFinal ? `${mesesNomes[(f.mesFinal || 1) - 1]}/${f.anoFinal}` : '-';
                 }
 
-                let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.fase}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.objeto}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.qtde ?? ''}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.mInicio}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.mFinal}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${inicioStr}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${finalStr}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
+                let html = `<tr>
+                    <td class="col-fase">${f.fase}</td>
+                    <td class="col-objeto">${f.objeto}</td>
+                    <td class="col-qtde">${f.qtde ?? ''}</td>
+                    <td class="col-m">${f.mInicio}</td>
+                    <td class="col-m">${f.mFinal}</td>
+                    <td class="col-mes">${inicioStr}</td>
+                    <td class="col-mes">${finalStr}</td>
+                    <td class="col-acao">
                         <button class="btn-icon edit" onclick="editarFisico(${f.id})" title="Editar">✏️</button>
                         <button class="btn-icon delete" onclick="removerFisico(${f.id})" title="Remover">🗑️</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
-                let firstCellFis = true;
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoPeríodo = mesIdx >= f.mInicio && mesIdx <= f.mFinal;
                     const cor = estaNoPeríodo ? '#4CAF50' : 'transparent';
-                    firstCellFis = false;
-                    html += `<td style=\"padding: 0.5rem 0; border: 1px solid #ddd; background: ${cor};\"></td>`;
+                    html += `<td style="background: ${cor};"></td>`;
                 });
                 
                 html += '</tr>';
@@ -2598,15 +2759,15 @@
 
             // Cabeçalho com rowspan nas colunas fixas
             let headerRow1 = tableElement.querySelector('thead tr');
-            let headerHTML = '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; background: #2c5aa0; color: white; min-width: 150px;">Objeto</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; min-width: 100px;">Qtd Prevista</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; min-width: 100px;">Qtd Entregue</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; min-width: 80px;">Saldo</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; min-width: 100px;">Execução (%)</th>';
+            let headerHTML = '<th rowspan="2" class="col-objeto">Objeto</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde">Qtd Prevista</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde">Qtd Entregue</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde">Saldo</th>';
+            headerHTML += '<th rowspan="2" class="col-percent">Execução (%)</th>';
             let firstAnoExecFis = true;
             anos.forEach(a => {
                 firstAnoExecFis = false;
-                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th colspan="${a.count}">${a.ano}</th>`;
             });
             headerRow1.innerHTML = headerHTML;
 
@@ -2619,7 +2780,7 @@
             let firstMonthExecFis = true;
             meses.forEach(m => {
                 firstMonthExecFis = false;
-                headerRow2HTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;">${m.label}</th>`;
+                headerRow2HTML += `<th class="col-mes">${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableElement.querySelector('thead').appendChild(headerRow2);
@@ -2654,17 +2815,17 @@
                     }
                 });
 
-                let html = `<tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'};">${obj}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'};">${prevista}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'};">${entregueTotal}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'};">${saldo}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'};">${execPerc}%</td>`;
+                let html = `<tr>
+                    <td class="col-objeto">${obj}</td>
+                    <td class="col-qtde">${prevista}</td>
+                    <td class="col-qtde">${entregueTotal}</td>
+                    <td class="col-qtde">${saldo}</td>
+                    <td class="col-percent">${execPerc}%</td>`;
 
                 meses.forEach((_, idx) => {
                     const val = mapaMes.get(idx) || '';
                     const bg = val ? '#d1fae5' : 'transparent';
-                    html += `<td style="padding: 0.25rem; border: 1px solid #ddd; text-align: center; background: ${bg}; cursor: pointer;" onclick="editarValorExecFisica('${obj}', ${idx})" title="Clique para editar">${val ? val : ''}</td>`;
+                    html += `<td class="col-mes" style="background: ${bg}; cursor: pointer;" onclick="editarValorExecFisica('${obj}', ${idx})" title="Clique para editar">${val ? val : ''}</td>`;
                 });
                 html += '</tr>';
                 return html;
@@ -2787,7 +2948,7 @@
                     headerGantt.innerHTML = 'CRONOGRAMA';
                     headerGantt.setAttribute('colspan', '60');
                 }
-                if (previstoAnualSpan) previstoAnualSpan.textContent = 'R$ 0,00';
+                if (previstoAnualSpan) previstoAnualSpan.textContent = '0,00';
                 return;
             }
 
@@ -2840,80 +3001,89 @@
 
             // Atualizar primeiro cabeçalho com anos e rowspan nas colunas fixas
             let headerRow1 = tableCompleta.querySelector('thead tr:nth-child(1)');
-            let headerHTML = '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 60px;">ND</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 60px;">UP</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 50px;">M</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 90px;">Mês Desc.</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0; min-width: 100px;">Valor (R$)</th>';
-            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; min-width: 90px;">Ação</th>';
+            let headerHTML = '<th rowspan="2" class="col-nd">ND</th>';
+            headerHTML += '<th rowspan="2" class="col-up">UP</th>';
+            headerHTML += '<th rowspan="2" class="col-m">M</th>';
+            headerHTML += '<th rowspan="2" class="col-mes">Mês Desc.</th>';
+            headerHTML += '<th rowspan="2" class="col-valor">Valor</th>';
+            headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
             
-            let firstAnoFis = true;
             anos.forEach(a => {
-                firstAnoFis = false;
-                headerHTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th style="text-align: center;" colspan="${a.count}">${a.ano}</th>`;
             });
             
             headerRow1.innerHTML = headerHTML;
 
             // Criar segunda linha do cabeçalho com meses
             headerRow2 = document.createElement('tr');
-            headerRow2.style.background = '#4b7ed0';
-            headerRow2.style.color = 'white';
+            headerRow2.className = 'header-meses';
             let headerRow2HTML = '';
             meses.forEach(m => {
-                headerRow2HTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; font-weight: bold; background: #4b7ed0;">${m.label}</th>`;
+                headerRow2HTML += `<th>${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableCompleta.querySelector('thead').appendChild(headerRow2);
 
             // Criar linhas de dados
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+            
+            // Array para acumular totais por coluna (mês)
+            const totaisPorMes = new Array(meses.length).fill(0);
+            
             tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => {
-                const bg = i % 2 === 0 ? '#f9f9f9' : '#fff';
                 const valorNum = parseFloat(f.valor) || 0;
                 totalValor += valorNum;
-                const mesDescStr = `${mesesNome[f.mesDesc - 1]}/${f.anoDesc}`;
-                let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.numero}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.up || f.ug}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.m}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${mesDescStr}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: ${bg};">R$ ${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
+                const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
+                const mesDescStr = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx]}/${f.anoDesc}` : '-';
+                const numeroDisplay = f.numero || f.nd || '-';
+                let html = `<tr>
+                    <td class="col-nd">${numeroDisplay}</td>
+                    <td class="col-up">${f.up || f.ug || ''}</td>
+                    <td class="col-m">${f.m ?? ''}</td>
+                    <td class="col-mes">${mesDescStr}</td>
+                    <td class="col-valor">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="col-acao">
                         <button class="btn-icon edit" onclick="editarFinanceiro(${f.id})" title="Editar">✏️</button>
                         <button class="btn-icon delete" onclick="removerFinanceiro(${f.id})" title="Remover">🗑️</button>
                     </td>`;
                 
-                // Adicionar células do Gantt - destacar o mês/ano da descentralização
+                // Adicionar células do Gantt - mostrar valor no mês correspondente
                 meses.forEach((mesInfo, mesIdx) => {
-                    const estaNoMes = f.mesDesc === mesInfo.mes && f.anoDesc === mesInfo.fullYear;
-                    const cor = estaNoMes ? '#4CAF50' : 'transparent';
-                    html += `<td style="padding: 0.5rem 0; border: 1px solid #ddd; background: ${cor};"></td>`;
+                    const estaNoMes = parseInt(f.mesDesc) === mesInfo.mes && parseInt(f.anoDesc) === mesInfo.fullYear;
+                    if (estaNoMes) {
+                        totaisPorMes[mesIdx] += valorNum;
+                        html += `<td style="background: #4CAF50; color: white; text-align: center; font-size: 0.65rem; font-weight: bold;">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    } else {
+                        html += `<td></td>`;
+                    }
                 });
                 
                 html += '</tr>';
                 return html;
             }).join('');
 
-            // Linha total
-            const totalCells = meses.map(() => {
-                return `<td style="padding: 0.5rem; border: 1px solid #ddd;"></td>`;
+            // Linha total com somatório por coluna
+            const totalCells = totaisPorMes.map((total) => {
+                if (total > 0) {
+                    return `<td style="background: #2196F3; color: white; text-align: center; font-size: 0.65rem; font-weight: bold;">${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                }
+                return `<td></td>`;
             }).join('');
             
             tbody.innerHTML += `
-                <tr style="background: #e8f4f8; font-weight: bold; border: 1px solid #ddd;">
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;">TOTAL</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #e8f4f8;">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
+                <tr class="linha-total">
+                    <td class="col-nd">TOTAL</td>
+                    <td class="col-up"></td>
+                    <td class="col-m"></td>
+                    <td class="col-mes"></td>
+                    <td class="col-valor">${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="col-acao"></td>
                     ${totalCells}
                 </tr>
             `;
 
             if (previstoAnualSpan) {
-                previstoAnualSpan.textContent = `R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                previstoAnualSpan.textContent = `${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
             }
         }
 
@@ -3031,15 +3201,15 @@
                 }
                 
                 // Criar tabela com resumo anual
-                let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-top: 1rem;">';
-                html += '<thead><tr style="background: #2c5aa0; color: white;">';
-                html += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>';
-                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Previsto Anual</th>';
-                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">A Receber ano anterior</th>';
-                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Recebido Anual</th>';
-                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Devolvido</th>';
-                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Saldo Anual</th>';
-                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Liquidação (%)</th>';
+                let html = '<table class="tabela-padrao" style="margin-top: 1rem;">';
+                html += '<thead><tr>';
+                html += '<th>Ano</th>';
+                html += '<th class="col-valor">Previsto Anual</th>';
+                html += '<th class="col-valor">A Receber ano anterior</th>';
+                html += '<th class="col-valor">Recebido Anual</th>';
+                html += '<th class="col-valor">Devolvido</th>';
+                html += '<th class="col-valor">Saldo Anual</th>';
+                html += '<th class="col-percent">Liquidação (%)</th>';
                 html += '</tr></thead><tbody>';
                 
                 let saldoAcumulado = 0;
@@ -3080,15 +3250,14 @@
                     // Liquidação
                     const liquidacao = previsto > 0 ? ((recebido / previsto) * 100) : 0;
                     
-                    const bg = idx % 2 === 0 ? '#f9f9f9' : '#fff';
-                    html += `<tr style="background: ${bg};">`;
-                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; font-weight: bold;">${ano}</td>`;
-                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${previsto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${aReceberAnterior.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right; color: ${devolvido > 0 ? '#ef4444' : 'inherit'};">-R$ ${devolvido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right; font-weight: bold;">R$ ${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${liquidacao.toFixed(2)}%</td>`;
+                    html += `<tr>`;
+                    html += `<td style="font-weight: bold;">${ano}</td>`;
+                    html += `<td class="col-valor">${previsto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td class="col-valor">${aReceberAnterior.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td class="col-valor">${recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td class="col-valor" style="color: ${devolvido > 0 ? '#ef4444' : 'inherit'};">-${devolvido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td class="col-valor" style="font-weight: bold;">${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td class="col-percent">${liquidacao.toFixed(2)}%</td>`;
                     html += '</tr>';
                 });
                 
@@ -3108,11 +3277,11 @@
             const resumoLiquidacao = document.getElementById('resExecLiquidacao');
 
             const setResumoZeros = () => {
-                if (resumoPrev) resumoPrev.textContent = 'R$ 0,00';
-                if (resumoReceberAnt) resumoReceberAnt.textContent = 'R$ 0,00';
-                if (resumoRecebido) resumoRecebido.textContent = 'R$ 0,00';
-                if (resumoDevolvido) resumoDevolvido.textContent = 'R$ 0,00';
-                if (resumoSaldo) resumoSaldo.textContent = 'R$ 0,00';
+                if (resumoPrev) resumoPrev.textContent = '0,00';
+                if (resumoReceberAnt) resumoReceberAnt.textContent = '0,00';
+                if (resumoRecebido) resumoRecebido.textContent = '0,00';
+                if (resumoDevolvido) resumoDevolvido.textContent = '0,00';
+                if (resumoSaldo) resumoSaldo.textContent = '0,00';
                 if (resumoLiquidacao) resumoLiquidacao.textContent = '0%';
             };
 
@@ -3148,25 +3317,24 @@
 
             // Cabeçalho com rowspan
             let hr1 = tableEl.querySelector('thead tr');
-            let hdr = '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; background: #2c5aa0; color: white; min-width: 60px;">ND</th>'+
-                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; background: #2c5aa0; color: white; min-width: 60px;">UP</th>'+
-                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background: #2c5aa0; color: white; min-width: 110px;">Valor Previsto</th>'+
-                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background: #2c5aa0; color: white; min-width: 110px;">Valor Realizado</th>'+
-                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background: #2c5aa0; color: white; min-width: 110px;">Saldo</th>';
+            let hdr = '<th rowspan="2" class="col-nd">ND</th>'+
+                      '<th rowspan="2" class="col-up">UP</th>'+
+                      '<th rowspan="2" class="col-valor">Valor Previsto</th>'+
+                      '<th rowspan="2" class="col-valor">Valor Realizado</th>'+
+                      '<th rowspan="2" class="col-saldo">Saldo</th>';
             
             anos.forEach(a=>{ 
-                hdr += `<th style="padding:0.5rem; border:1px solid #ddd; background:#2c5aa0; color:white; text-align:center; font-weight:bold;" colspan="${a.count}">${a.ano}</th>`; 
+                hdr += `<th style="text-align:center;" colspan="${a.count}">${a.ano}</th>`; 
             });
             hr1.innerHTML = hdr;
 
             let hr2 = tableEl.querySelector('thead tr:nth-child(2)');
             if (hr2) hr2.remove();
             hr2 = document.createElement('tr');
-            hr2.style.background = '#4b7ed0';
-            hr2.style.color = 'white';
+            hr2.className = 'header-meses';
             let hdr2 = '';
             meses.forEach(m => { 
-                hdr2 += `<th style="padding:0.5rem; border:1px solid #ddd; text-align:center; font-size:0.7rem; font-weight:bold; background: #4b7ed0;">${m.label}</th>`; 
+                hdr2 += `<th>${m.label}</th>`; 
             });
             hr2.innerHTML = hdr2;
             tableEl.querySelector('thead').appendChild(hr2);
@@ -3213,18 +3381,17 @@
                     totalMeses.set(idxMes, (totalMeses.get(idxMes) || 0) + val);
                 });
 
-                const bg = idx%2===0?'#f9f9f9':'#fff';
-                let html = `<tr style="background:${bg}; border:1px solid #ddd;">`+
-                           `<td style="padding:0.5rem; border:1px solid #ddd; background:${bg};">${nd}</td>`+
-                           `<td style="padding:0.5rem; border:1px solid #ddd; background:${bg};">${up}</td>`+
-                           `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg};">R$ ${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg};">R$ ${realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg};">R$ ${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                let html = `<tr>`+
+                           `<td class="col-nd">${nd}</td>`+
+                           `<td class="col-up">${up}</td>`+
+                           `<td class="col-valor">${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td class="col-valor">${realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td class="col-saldo">${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
 
                 meses.forEach((_,i)=>{
                     const val = mapaMes.get(i);
                     const cellBg = val ? '#e0f2fe' : 'transparent';
-                    html += `<td style="padding:0.25rem; border:1px solid #ddd; text-align:right; background:${cellBg}; font-size:0.7rem; cursor: pointer;" onclick="editarValorExecFinanceira('${nd}', '${up}', ${i})" title="Clique para editar">${val?('R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2})):''}</td>`;
+                    html += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor: pointer;" onclick="editarValorExecFinanceira('${nd}', '${up}', ${i})" title="Clique para editar">${val?val.toLocaleString('pt-BR',{minimumFractionDigits:2}):''}</td>`;
                 });
 
                 html += '</tr>';
@@ -3234,16 +3401,16 @@
             const totalSaldo = totalPrevisto - totalRealizado;
 
             // Linha de total por ND/UP e por mês
-            let totalRow = '<tr style="background:#e8f4f8; font-weight:bold; border:1px solid #ddd;">';
-            totalRow += '<td style="padding:0.5rem; border:1px solid #ddd; background:#e8f4f8;">TOTAL</td>';
-            totalRow += '<td style="padding:0.5rem; border:1px solid #ddd; background:#e8f4f8;"></td>';
-            totalRow += `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8;">R$ ${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8;">R$ ${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8;">R$ ${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            let totalRow = '<tr class="linha-total">';
+            totalRow += '<td class="col-nd">TOTAL</td>';
+            totalRow += '<td class="col-up"></td>';
+            totalRow += `<td class="col-valor">${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td class="col-valor">${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td class="col-saldo">${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
             meses.forEach((_, idx) => {
                 const val = totalMeses.get(idx);
                 const cellBg = val ? '#e0f2fe' : 'transparent';
-                totalRow += `<td style="padding:0.25rem; border:1px solid #ddd; text-align:right; background:${cellBg}; font-size:0.7rem;">${val ? 'R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}</td>`;
+                totalRow += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem;">${val ? val.toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}</td>`;
             });
             totalRow += '</tr>';
 
@@ -3309,11 +3476,11 @@
             // Liquidação percentual
             const liquidacaoPerc = previstoAnual > 0 ? ((recebidoAnual / previstoAnual) * 100) : 0;
 
-            if (resumoPrev) resumoPrev.textContent = `R$ ${previstoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            if (resumoReceberAnt) resumoReceberAnt.textContent = `R$ ${aReceberAnterior.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            if (resumoRecebido) resumoRecebido.textContent = `R$ ${recebidoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            if (resumoDevolvido) resumoDevolvido.textContent = `-R$ ${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            if (resumoSaldo) resumoSaldo.textContent = `R$ ${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoPrev) resumoPrev.textContent = `${previstoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoReceberAnt) resumoReceberAnt.textContent = `${aReceberAnterior.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoRecebido) resumoRecebido.textContent = `${recebidoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoDevolvido) resumoDevolvido.textContent = `-${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoSaldo) resumoSaldo.textContent = `${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
             if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
         }
 
@@ -3408,7 +3575,7 @@
             });
             
             const valorAtual = execsDoMes.reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
-            const novoValor = prompt(`Editar valor de ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\nValor atual: R$ ${valorAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2})}\nDigite o novo valor:`, valorAtual);
+            const novoValor = prompt(`Editar valor de ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\nValor atual: ${valorAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2})}\nDigite o novo valor:`, valorAtual);
             
             if (novoValor === null) return;
             
@@ -3496,6 +3663,10 @@
 
         // Função auxiliar para parsear CSV
         function parseCSV(text) {
+            // Remover BOM se existir
+            if (text.charCodeAt(0) === 0xFEFF) {
+                text = text.substring(1);
+            }
             const lines = text.split('\n').filter(l => l.trim());
             if (lines.length < 2) return [];
             const headers = lines[0].split(';').map(h => h.trim().replace(/^"|"$/g, ''));
@@ -3622,8 +3793,8 @@
                     rows.push({
                         numTed: ted.numTed,
                         id: f.id,
-                        nd: f.nd,
-                        up: f.up,
+                        numero: f.numero || f.nd, // Usar 'numero' (compatível com sistema) mas aceitar 'nd' antigo
+                        up: f.up || f.ug,
                         m: f.m,
                         mesDesc: f.mesDesc,
                         anoDesc: f.anoDesc,
@@ -3631,7 +3802,7 @@
                     });
                 });
             });
-            const headers = ['numTed', 'id', 'nd', 'up', 'm', 'mesDesc', 'anoDesc', 'valor'];
+            const headers = ['numTed', 'id', 'numero', 'up', 'm', 'mesDesc', 'anoDesc', 'valor'];
             const csv = arrayToCSV(rows, headers);
             downloadFile(csv, 'financeiros_export.csv');
             alert('✅ Cadastro Financeiro exportado com sucesso!');
@@ -3698,6 +3869,20 @@
             reader.readAsText(file);
         }
 
+        // Função auxiliar para calcular fim de vigência (início + meses)
+        function calcularFimVigenciaData(inicioVigencia, vigenciaMeses) {
+            if (!inicioVigencia || !vigenciaMeses) return '';
+            const dataNorm = normalizarData(inicioVigencia);
+            const d = new Date(dataNorm + 'T00:00:00');
+            if (isNaN(d.getTime())) return '';
+            const fim = new Date(d);
+            fim.setMonth(fim.getMonth() + parseInt(vigenciaMeses));
+            const yyyy = fim.getFullYear();
+            const mm = String(fim.getMonth() + 1).padStart(2, '0');
+            const dd = String(fim.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
         // IMPORTAR TEDs
         function importarTEDs(file) {
             if (!file) return;
@@ -3705,11 +3890,44 @@
             reader.onload = function(e) {
                 try {
                     const rows = parseCSV(e.target.result);
-                    let count = 0;
+                    let countNovos = 0;
+                    let countAtualizados = 0;
                     rows.forEach(row => {
-                        // Verificar se já existe (por numTed)
-                        const existe = dados.teds.find(t => t.numTed === row.numTed);
-                        if (!existe && row.numTed) {
+                        if (!row.numTed) return;
+                        // Verificar se já existe (por numTed) - normalizar para string para comparação
+                        const numTedImport = String(row.numTed).trim();
+                        const existe = dados.teds.find(t => String(t.numTed).trim() === numTedImport);
+                        console.log('numTed:', numTedImport, '| Encontrado:', !!existe, '| Total TEDs antes:', dados.teds.length);
+                        
+                        // Normalizar datas do CSV
+                        const inicioVigNorm = normalizarData(row.inicioVigencia);
+                        const primeiraDescNorm = normalizarData(row.primeiraDescentralizacao);
+                        const vigenciaMeses = parseInt(row.vigencia) || 0;
+                        
+                        if (existe) {
+                            console.log('>>> ATUALIZANDO TED existente');
+                            // ATUALIZAR TED existente (preservar sub-arrays)
+                            existe.planoTrabalho = row.planoTrabalho || existe.planoTrabalho;
+                            existe.objetivo = row.objetivo || existe.objetivo;
+                            existe.valorTed = parseFloat(row.valorTed) || existe.valorTed;
+                            existe.codigoPlano = row.codigoPlano || existe.codigoPlano;
+                            existe.numTedSiafi = row.numTedSiafi || existe.numTedSiafi;
+                            existe.notaSistema = row.notaSistema || existe.notaSistema;
+                            existe.upResponsavel = row.upResponsavel || existe.upResponsavel;
+                            existe.ugExecutora = row.ugExecutora || existe.ugExecutora;
+                            existe.unidadeDesc = row.unidadeDesc || existe.unidadeDesc;
+                            existe.ugDesc = row.ugDesc || existe.ugDesc;
+                            existe.inicioVigencia = inicioVigNorm || existe.inicioVigencia;
+                            existe.vigencia = vigenciaMeses || existe.vigencia;
+                            existe.primeiraDescentralizacao = primeiraDescNorm || existe.primeiraDescentralizacao;
+                            // Calcular fimVigencia automaticamente
+                            existe.fimVigencia = calcularFimVigenciaData(existe.inicioVigencia, existe.vigencia);
+                            console.log('>>> fimVigencia calculado:', existe.fimVigencia);
+                            countAtualizados++;
+                            console.log('>>> countAtualizados:', countAtualizados);
+                        } else {
+                            console.log('>>> CRIANDO novo TED');
+                            // CRIAR novo TED
                             dados.teds.push({
                                 id: dados.proxiId++,
                                 numTed: row.numTed,
@@ -3723,10 +3941,10 @@
                                 ugExecutora: row.ugExecutora || '',
                                 unidadeDesc: row.unidadeDesc || '',
                                 ugDesc: row.ugDesc || '',
-                                inicioVigencia: row.inicioVigencia || '',
-                                vigencia: parseInt(row.vigencia) || 0,
-                                fimVigencia: row.fimVigencia || '',
-                                primeiraDescentralizacao: row.primeiraDescentralizacao || '',
+                                inicioVigencia: inicioVigNorm,
+                                vigencia: vigenciaMeses,
+                                fimVigencia: calcularFimVigenciaData(inicioVigNorm, vigenciaMeses),
+                                primeiraDescentralizacao: primeiraDescNorm,
                                 dataCriacao: row.dataCriacao || new Date().toLocaleDateString('pt-BR'),
                                 gasto: 0,
                                 progressoFisico: 0,
@@ -3737,14 +3955,14 @@
                                 financeiros: [],
                                 execFinanceiras: []
                             });
-                            count++;
+                            countNovos++;
                         }
                     });
                     salvarDados();
                     atualizarDashboard();
                     atualizarListaTEDs();
                     atualizarSeletorTED();
-                    alert(`✅ ${count} TED(s) importado(s) com sucesso!`);
+                    alert(`✅ ${countNovos} TED(s) criado(s), ${countAtualizados} TED(s) atualizado(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
                 }
@@ -3759,23 +3977,33 @@
             reader.onload = function(e) {
                 try {
                     const rows = parseCSV(e.target.result);
-                    let count = 0;
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
                     rows.forEach(row => {
-                        const ted = dados.teds.find(t => t.numTed === row.numTed);
-                        if (ted && row.objeto) {
-                            ted.objetos = ted.objetos || [];
-                            ted.objetos.push({
-                                id: Date.now() + count,
+                        if (!row.numTed || !row.objeto) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(row);
+                    });
+                    // Substituir objetos para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            ted.objetos = grouped[numTed].map((row, idx) => ({
+                                id: Date.now() + idx,
                                 objeto: row.objeto,
                                 qtde: parseInt(row.qtde) || 0,
                                 valorUnitario: parseFloat(row.valorUnitario) || 0,
                                 valorTotal: parseFloat(row.valorTotal) || 0
-                            });
-                            count++;
+                            }));
+                            countTeds++;
+                            countItens += grouped[numTed].length;
                         }
                     });
                     salvarDados();
-                    alert(`✅ ${count} objeto(s) importado(s) com sucesso!`);
+                    alert(`✅ ${countItens} objeto(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
                 }
@@ -3790,27 +4018,70 @@
             reader.onload = function(e) {
                 try {
                     const rows = parseCSV(e.target.result);
-                    let count = 0;
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
                     rows.forEach(row => {
-                        const ted = dados.teds.find(t => t.numTed === row.numTed);
-                        if (ted && row.meta) {
-                            ted.metas = ted.metas || [];
-                            ted.metas.push({
-                                id: Date.now() + count,
-                                meta: row.meta,
-                                descricao: row.descricao || '',
-                                mInicio: parseInt(row.mInicio) || 0,
-                                mFinal: parseInt(row.mFinal) || 0,
-                                mesInicio: parseInt(row.mesInicio) || 0,
-                                anoInicio: parseInt(row.anoInicio) || 0,
-                                mesFinal: parseInt(row.mesFinal) || 0,
-                                anoFinal: parseInt(row.anoFinal) || 0
+                        if (!row.numTed || !row.meta) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(row);
+                    });
+                    // Substituir metas para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            // Obter data base para cálculo de mês/ano
+                            let baseDate = null;
+                            if (ted.primeiraDescentralizacao) {
+                                const dataNorm = normalizarData(ted.primeiraDescentralizacao);
+                                baseDate = new Date(dataNorm + 'T00:00:00');
+                                if (isNaN(baseDate.getTime())) baseDate = null;
+                            }
+                            
+                            ted.metas = grouped[numTed].map((row, idx) => {
+                                const mInicio = parseInt(row.mInicio) || 0;
+                                const mFinal = parseInt(row.mFinal) || 0;
+                                let mesInicio = parseInt(row.mesInicio) || 0;
+                                let anoInicio = parseInt(row.anoInicio) || 0;
+                                let mesFinal = parseInt(row.mesFinal) || 0;
+                                let anoFinal = parseInt(row.anoFinal) || 0;
+                                
+                                // Calcular mês/ano a partir de mInicio/mFinal se não vieram no CSV
+                                if (baseDate) {
+                                    if (!mesInicio || !anoInicio) {
+                                        const dI = new Date(baseDate);
+                                        dI.setMonth(dI.getMonth() + mInicio);
+                                        mesInicio = dI.getMonth() + 1;
+                                        anoInicio = dI.getFullYear();
+                                    }
+                                    if (!mesFinal || !anoFinal) {
+                                        const dF = new Date(baseDate);
+                                        dF.setMonth(dF.getMonth() + mFinal);
+                                        mesFinal = dF.getMonth() + 1;
+                                        anoFinal = dF.getFullYear();
+                                    }
+                                }
+                                
+                                return {
+                                    id: Date.now() + idx,
+                                    meta: row.meta,
+                                    descricao: row.descricao || '',
+                                    mInicio: mInicio,
+                                    mFinal: mFinal,
+                                    mesInicio: mesInicio,
+                                    anoInicio: anoInicio,
+                                    mesFinal: mesFinal,
+                                    anoFinal: anoFinal
+                                };
                             });
-                            count++;
+                            countTeds++;
+                            countItens += grouped[numTed].length;
                         }
                     });
                     salvarDados();
-                    alert(`✅ ${count} meta(s) importada(s) com sucesso!`);
+                    alert(`✅ ${countItens} meta(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
                 }
@@ -3825,28 +4096,71 @@
             reader.onload = function(e) {
                 try {
                     const rows = parseCSV(e.target.result);
-                    let count = 0;
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
                     rows.forEach(row => {
-                        const ted = dados.teds.find(t => t.numTed === row.numTed);
-                        if (ted && row.fase) {
-                            ted.fisicos = ted.fisicos || [];
-                            ted.fisicos.push({
-                                id: Date.now() + count,
-                                fase: row.fase,
-                                objeto: row.objeto || '',
-                                qtde: parseInt(row.qtde) || 0,
-                                mInicio: parseInt(row.mInicio) || 0,
-                                mFinal: parseInt(row.mFinal) || 0,
-                                mesInicio: parseInt(row.mesInicio) || 0,
-                                anoInicio: parseInt(row.anoInicio) || 0,
-                                mesFinal: parseInt(row.mesFinal) || 0,
-                                anoFinal: parseInt(row.anoFinal) || 0
+                        if (!row.numTed || !row.fase) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(row);
+                    });
+                    // Substituir físicos para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            // Obter data base para cálculo de mês/ano
+                            let baseDate = null;
+                            if (ted.primeiraDescentralizacao) {
+                                const dataNorm = normalizarData(ted.primeiraDescentralizacao);
+                                baseDate = new Date(dataNorm + 'T00:00:00');
+                                if (isNaN(baseDate.getTime())) baseDate = null;
+                            }
+                            
+                            ted.fisicos = grouped[numTed].map((row, idx) => {
+                                const mInicio = parseInt(row.mInicio) || 0;
+                                const mFinal = parseInt(row.mFinal) || 0;
+                                let mesInicio = parseInt(row.mesInicio) || 0;
+                                let anoInicio = parseInt(row.anoInicio) || 0;
+                                let mesFinal = parseInt(row.mesFinal) || 0;
+                                let anoFinal = parseInt(row.anoFinal) || 0;
+                                
+                                // Calcular mês/ano a partir de mInicio/mFinal se não vieram no CSV
+                                if (baseDate) {
+                                    if (!mesInicio || !anoInicio) {
+                                        const dI = new Date(baseDate);
+                                        dI.setMonth(dI.getMonth() + mInicio);
+                                        mesInicio = dI.getMonth() + 1;
+                                        anoInicio = dI.getFullYear();
+                                    }
+                                    if (!mesFinal || !anoFinal) {
+                                        const dF = new Date(baseDate);
+                                        dF.setMonth(dF.getMonth() + mFinal);
+                                        mesFinal = dF.getMonth() + 1;
+                                        anoFinal = dF.getFullYear();
+                                    }
+                                }
+                                
+                                return {
+                                    id: Date.now() + idx,
+                                    fase: row.fase,
+                                    objeto: row.objeto || '',
+                                    qtde: parseInt(row.qtde) || 0,
+                                    mInicio: mInicio,
+                                    mFinal: mFinal,
+                                    mesInicio: mesInicio,
+                                    anoInicio: anoInicio,
+                                    mesFinal: mesFinal,
+                                    anoFinal: anoFinal
+                                };
                             });
-                            count++;
+                            countTeds++;
+                            countItens += grouped[numTed].length;
                         }
                     });
                     salvarDados();
-                    alert(`✅ ${count} registro(s) físico(s) importado(s) com sucesso!`);
+                    alert(`✅ ${countItens} registro(s) físico(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
                 }
@@ -3861,22 +4175,32 @@
             reader.onload = function(e) {
                 try {
                     const rows = parseCSV(e.target.result);
-                    let count = 0;
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
                     rows.forEach(row => {
-                        const ted = dados.teds.find(t => t.numTed === row.numTed);
-                        if (ted && row.objeto) {
-                            ted.execFisicas = ted.execFisicas || [];
-                            ted.execFisicas.push({
-                                id: Date.now() + count,
+                        if (!row.numTed || !row.objeto) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(row);
+                    });
+                    // Substituir execuções físicas para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            ted.execFisicas = grouped[numTed].map((row, idx) => ({
+                                id: Date.now() + idx,
                                 objeto: row.objeto,
                                 qtde: parseFloat(row.qtde) || 0,
                                 data: row.data || ''
-                            });
-                            count++;
+                            }));
+                            countTeds++;
+                            countItens += grouped[numTed].length;
                         }
                     });
                     salvarDados();
-                    alert(`✅ ${count} execução(ões) física(s) importada(s) com sucesso!`);
+                    alert(`✅ ${countItens} execução(ões) física(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
                 }
@@ -3891,25 +4215,65 @@
             reader.onload = function(e) {
                 try {
                     const rows = parseCSV(e.target.result);
-                    let count = 0;
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
                     rows.forEach(row => {
-                        const ted = dados.teds.find(t => t.numTed === row.numTed);
-                        if (ted && row.nd) {
-                            ted.financeiros = ted.financeiros || [];
-                            ted.financeiros.push({
-                                id: Date.now() + count,
-                                nd: row.nd,
-                                up: row.up || '',
-                                m: parseInt(row.m) || 0,
-                                mesDesc: row.mesDesc || '',
-                                anoDesc: parseInt(row.anoDesc) || 0,
-                                valor: parseFloat(row.valor) || 0
+                        // Aceitar tanto 'nd' quanto 'numero' como nome da coluna
+                        const ndValue = row.nd || row.numero || '';
+                        if (!row.numTed || !ndValue) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push({...row, ndValue});
+                    });
+                    // Substituir financeiros para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            // Obter data base para cálculo de mesDesc/anoDesc
+                            let baseDate = null;
+                            console.log('TED', numTed, '- primeiraDescentralizacao:', ted.primeiraDescentralizacao);
+                            if (ted.primeiraDescentralizacao) {
+                                const dataNorm = normalizarData(ted.primeiraDescentralizacao);
+                                console.log('Data normalizada:', dataNorm);
+                                baseDate = new Date(dataNorm + 'T00:00:00');
+                                console.log('baseDate:', baseDate, 'isValid:', !isNaN(baseDate.getTime()));
+                                if (isNaN(baseDate.getTime())) baseDate = null;
+                            }
+                            
+                            ted.financeiros = grouped[numTed].map((row, idx) => {
+                                const m = parseInt(row.m) || 0;
+                                let mesDesc = parseInt(row.mesDesc) || 0;
+                                let anoDesc = parseInt(row.anoDesc) || 0;
+                                
+                                console.log('Linha:', idx, '- m:', m, 'mesDesc original:', row.mesDesc, 'anoDesc original:', row.anoDesc, 'baseDate:', baseDate);
+                                
+                                // Se não tem mesDesc/anoDesc mas tem baseDate e m, calcular
+                                if ((!mesDesc || !anoDesc) && baseDate && m >= 0) {
+                                    const d = new Date(baseDate);
+                                    d.setMonth(d.getMonth() + m);
+                                    mesDesc = d.getMonth() + 1;
+                                    anoDesc = d.getFullYear();
+                                    console.log('Calculado - mesDesc:', mesDesc, 'anoDesc:', anoDesc);
+                                }
+                                
+                                return {
+                                    id: Date.now() + idx,
+                                    numero: row.ndValue, // Usar 'numero' como o sistema espera
+                                    up: row.up || row.ug || '',
+                                    m: m,
+                                    mesDesc: mesDesc,
+                                    anoDesc: anoDesc,
+                                    valor: parseFloat(row.valor) || 0
+                                };
                             });
-                            count++;
+                            countTeds++;
+                            countItens += grouped[numTed].length;
                         }
                     });
                     salvarDados();
-                    alert(`✅ ${count} registro(s) financeiro(s) importado(s) com sucesso!`);
+                    alert(`✅ ${countItens} registro(s) financeiro(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
                 }
@@ -3924,23 +4288,33 @@
             reader.onload = function(e) {
                 try {
                     const rows = parseCSV(e.target.result);
-                    let count = 0;
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
                     rows.forEach(row => {
-                        const ted = dados.teds.find(t => t.numTed === row.numTed);
-                        if (ted && row.nd) {
-                            ted.execFinanceiras = ted.execFinanceiras || [];
-                            ted.execFinanceiras.push({
-                                id: Date.now() + count,
+                        if (!row.numTed || !row.nd) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(row);
+                    });
+                    // Substituir execuções financeiras para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            ted.execFinanceiras = grouped[numTed].map((row, idx) => ({
+                                id: Date.now() + idx,
                                 nd: row.nd,
                                 up: row.up || '',
                                 valor: parseFloat(row.valor) || 0,
                                 data: row.data || ''
-                            });
-                            count++;
+                            }));
+                            countTeds++;
+                            countItens += grouped[numTed].length;
                         }
                     });
                     salvarDados();
-                    alert(`✅ ${count} execução(ões) financeira(s) importada(s) com sucesso!`);
+                    alert(`✅ ${countItens} execução(ões) financeira(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
                 }
