@@ -587,7 +587,7 @@
             white-space: nowrap;
         }
         /* Larguras padrão para colunas comuns */
-        .tabela-padrao .col-acao { width: 70px; text-align: center; }
+        .tabela-padrao .col-acao { min-width: 70px; text-align: center; }
         .tabela-padrao .col-m { width: 50px; text-align: center; }
         .tabela-padrao .col-mes { width: 90px; text-align: center; }
         .tabela-padrao .col-qtde { width: 60px; text-align: center; }
@@ -1203,15 +1203,6 @@
                                     <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>
                                 </tbody>
                             </table>
-                        </div>
-
-                        <div id="resumoExecFinanceira" style="margin-top: 0.75rem; font-size: 0.875rem; display: grid; row-gap: 0.35rem; max-width: 480px;">
-                            <div><strong>Previsto Anual:</strong> <span id="resExecPrevisto">0,00</span></div>
-                            <div><strong>A Receber ano anterior:</strong> <span id="resExecReceberAnterior">0,00</span></div>
-                            <div><strong>Recebido Anual:</strong> <span id="resExecRecebido">0,00</span></div>
-                            <div><strong>Devolvido:</strong> <span id="resExecDevolvido">0,00</span></div>
-                            <div><strong>Saldo Anual:</strong> <span id="resExecSaldo">0,00</span></div>
-                            <div><strong>Liquidação:</strong> <span id="resExecLiquidacao">0%</span></div>
                         </div>
                     </div>
 
@@ -2256,7 +2247,7 @@
                             }
                         }
                         
-                        const corStyle = destaque ? ' style="background: #4CAF50;"' : '';
+                        const corStyle = destaque ? ' style="background: #e0f2fe;"' : '';
                         html += `<td${corStyle}></td>`;
                     });
                     
@@ -2388,7 +2379,7 @@
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoPeríodo = mesIdx >= meta.mInicio && mesIdx <= meta.mFinal;
-                    const cor = estaNoPeríodo ? '#4CAF50' : 'transparent';
+                    const cor = estaNoPeríodo ? '#e0f2fe' : 'transparent';
                     html += `<td style="background: ${cor};"></td>`;
                 });
                 
@@ -2649,7 +2640,7 @@
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoPeríodo = mesIdx >= f.mInicio && mesIdx <= f.mFinal;
-                    const cor = estaNoPeríodo ? '#4CAF50' : 'transparent';
+                    const cor = estaNoPeríodo ? '#e0f2fe' : 'transparent';
                     html += `<td style="background: ${cor};"></td>`;
                 });
                 
@@ -2796,7 +2787,7 @@
 
                 meses.forEach((_, idx) => {
                     const val = mapaMes.get(idx) || '';
-                    const bg = val ? '#d1fae5' : 'transparent';
+                    const bg = val ? '#e0f2fe' : 'transparent';
                     html += `<td class="col-mes" style="background: ${bg}; cursor: pointer;" onclick="editarValorExecFisica('${obj}', ${idx})" title="Clique para editar">${val ? val : ''}</td>`;
                 });
                 html += '</tr>';
@@ -3019,12 +3010,12 @@
                         <button class="btn-icon delete" onclick="removerFinanceiro(${f.id})" title="Remover">🗑️</button>
                     </td>`;
                 
-                // Adicionar células do Gantt - mostrar valor no mês correspondente
+                // Adicionar células do Gantt - mostrar valor com fundo azul claro no mês correspondente
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoMes = parseInt(f.mesDesc) === mesInfo.mes && parseInt(f.anoDesc) === mesInfo.fullYear;
                     if (estaNoMes) {
                         totaisPorMes[mesIdx] += valorNum;
-                        html += `<td style="background: #4CAF50; color: white; text-align: center; font-size: 0.65rem; font-weight: bold;">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                        html += `<td style="background: #e0f2fe; text-align: right; padding-right: 0.25rem; font-size: 0.7rem;">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                     } else {
                         html += `<td></td>`;
                     }
@@ -3034,10 +3025,10 @@
                 return html;
             }).join('');
 
-            // Linha total com somatório por coluna
+            // Linha total com somatório por coluna - mostrar valor com fundo azul claro
             const totalCells = totaisPorMes.map((total) => {
                 if (total > 0) {
-                    return `<td style="background: #2196F3; color: white; text-align: center; font-size: 0.65rem; font-weight: bold;">${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    return `<td style="background: #e0f2fe; text-align: right; padding-right: 0.25rem; font-size: 0.7rem;">${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                 }
                 return `<td></td>`;
             }).join('');
