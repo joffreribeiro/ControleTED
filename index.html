@@ -21,6 +21,7 @@
             --light: #f3f4f6;
             --border: #e5e7eb;
             --text: #374151;
+            --header-blue: #2c5aa0;
         }
 
         body {
@@ -378,10 +379,11 @@
         .ted-info-section {
             margin-bottom: 2rem;
             padding: 2rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--header-blue);
             border-radius: 1rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
             position: relative;
+            color: white;
         }
 
         .ted-info-header {
@@ -392,7 +394,7 @@
         }
 
         .ted-info-title {
-            color: white;
+            color: #ffffff !important;
             font-size: 1.5rem;
             font-weight: 700;
             margin: 0;
@@ -471,24 +473,26 @@
             grid-template-columns: repeat(3, 1fr);
         }
 
+        .ted-info-row.row-5 {
+            grid-template-columns: repeat(5, 1fr);
+        }
+
         .ted-info-card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
             border-radius: 0.75rem;
             padding: 1rem;
-            transition: all 0.3s;
+            transition: all 0.18s ease-in-out;
         }
 
         .ted-info-card:hover {
-            background: rgba(255, 255, 255, 0.2);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
         }
 
         .ted-info-label {
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255,255,255,0.9);
             font-size: 0.85rem;
             display: block;
             margin-bottom: 0.5rem;
@@ -644,6 +648,16 @@
             color: white;
             font-size: 0.7rem;
         }
+        /* Barra do Gantt (vigência) */
+        .gantt-bar {
+            height: 16px;
+            display: block;
+            width: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #2c5aa0 0%, #2c7bd3 100%);
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
+        }
+        .gantt-row-label { white-space: nowrap; font-weight:600; }
     </style>
 </head>
 <body>
@@ -692,6 +706,13 @@
                 <h2>TEDs Recentes</h2>
                 <div id="tedsRecentes" class="empty-state">
                     <p>Nenhum TED cadastrado ainda</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Vigência dos TEDs</h2>
+                <div id="ganttVigencia" style="overflow-x:auto; max-width:100%;">
+                    <p style="color:var(--text); padding:0.75rem;">Gerando gráfico de vigência...</p>
                 </div>
             </div>
         </div>
@@ -794,6 +815,34 @@
                             <input type="date" id="primeiraDescentralizacao" required>
                         </div>
                         
+                    </div>
+                    
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Situação TED</label>
+                            <select id="create_situacaoTED" onchange="calcularPrazoRelatorioCreate(); atualizarStatusCreate();">
+                                <option value="">--</option>
+                                <option value="finalizado">TED Finalizado</option>
+                                <option value="denunciado">TED Denunciado</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Data entrega/denúncia</label>
+                            <input type="date" id="create_dataEntregaDenuncia" onchange="calcularPrazoRelatorioCreate(); atualizarStatusCreate();">
+                        </div>
+                        <div class="form-group">
+                            <label>Prazo do Relatório Final</label>
+                            <input type="date" id="create_prazoRelatorio" readonly>
+                            <div id="create_prazo_helper" style="font-size:0.85rem; margin-top:0.25rem; color:var(--text);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Data da Entrega do Relatório</label>
+                            <input type="date" id="create_dataEntregaRelatorio" onchange="atualizarStatusCreate();">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <input type="text" id="create_statusTED" readonly>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Criar TED</button>
@@ -916,6 +965,39 @@
                                     <input type="date" class="ted-info-input" id="edit_primeiraDescentralizacao" style="display: none;">
                                 </div>
                             </div>
+
+                            <!-- Linha 5: novos campos (situação, data entrega/denúncia, prazo, data entrega relatório, status) -->
+                            <div class="ted-info-row row-5">
+                                <div class="ted-info-card">
+                                    <label class="ted-info-label">Situação TED</label>
+                                    <div class="ted-info-value" id="info_situacaoTED"></div>
+                                    <select class="ted-info-input" id="edit_situacaoTED" style="display:none;" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
+                                        <option value="">--</option>
+                                        <option value="finalizado">TED Finalizado</option>
+                                        <option value="denunciado">TED Denunciado</option>
+                                    </select>
+                                </div>
+                                <div class="ted-info-card">
+                                    <label class="ted-info-label">Data entrega/denúncia</label>
+                                    <div class="ted-info-value" id="info_dataEntregaDenuncia"></div>
+                                    <input type="date" class="ted-info-input" id="edit_dataEntregaDenuncia" style="display:none;" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
+                                </div>
+                                <div class="ted-info-card">
+                                    <label class="ted-info-label">Prazo do Relatório Final</label>
+                                    <div class="ted-info-value" id="info_prazoRelatorio"></div>
+                                    <input type="date" class="ted-info-input" id="edit_prazoRelatorio" readonly style="display:none;">
+                                </div>
+                                <div class="ted-info-card">
+                                    <label class="ted-info-label">Data da Entrega do Relatório</label>
+                                    <div class="ted-info-value" id="info_dataEntregaRelatorio"></div>
+                                    <input type="date" class="ted-info-input" id="edit_dataEntregaRelatorio" style="display:none;" onchange="atualizarStatusPorEntregaRelatorio();">
+                                </div>
+                                <div class="ted-info-card">
+                                    <label class="ted-info-label">Status</label>
+                                    <div class="ted-info-value" id="info_statusTED"></div>
+                                    <input type="text" class="ted-info-input" id="edit_statusTED" readonly style="display:none;">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -923,36 +1005,38 @@
                     <div style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
                         <h3 style="margin: 0 0 1rem 0;">📦 Cadastro de Objetos</h3>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem; max-width: 900px;">
                             <div class="form-group">
                                 <label>Objeto *</label>
-                                <input type="text" id="objeto" placeholder="Ex: Computador" required>
+                                <input type="text" id="objetoCadastro" placeholder="Ex: Computador" required>
                             </div>
                             <div class="form-group">
                                 <label>Qtde *</label>
-                                <input type="number" id="qtdeObjeto" placeholder="0" min="0" step="1" required>
+                                <input type="number" id="qtdeObjetoCadastro" placeholder="0" min="0" step="1" required>
                             </div>
                             <div class="form-group">
                                 <label>Valor Unitário (R$) *</label>
-                                <input type="number" id="valorUnitario" placeholder="0.00" step="0.01" min="0" required>
+                                <input type="number" id="valorUnitarioCadastro" placeholder="0.00" step="0.01" min="0" required>
                             </div>
                             <button type="button" class="btn btn-primary" onclick="adicionarObjeto()" style="align-self: flex-end; min-width: 120px;">Adicionar</button>
                         </div>
 
-                        <table class="tabela-padrao">
-                            <thead>
-                                <tr>
-                                    <th class="col-objeto">Objeto</th>
-                                    <th class="col-qtde">Qtde</th>
-                                    <th class="col-valor">Valor Unit.</th>
-                                    <th class="col-valor">Valor Total</th>
-                                    <th class="col-acao">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaObjetos">
-                                <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>
-                            </tbody>
-                        </table>
+                        <div style="max-width: 900px; overflow-x: auto;">
+                            <table class="tabela-padrao" style="width: auto;">
+                                <thead>
+                                    <tr>
+                                        <th class="col-objeto">Objeto</th>
+                                        <th class="col-qtde">Qtde</th>
+                                        <th class="col-valor">Valor Unit.</th>
+                                        <th class="col-valor">Valor Total</th>
+                                        <th class="col-acao">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaObjetos">
+                                    <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- CADASTRO DE METAS -->
@@ -1206,14 +1290,10 @@
                         </div>
                     </div>
 
-                    <!-- GANTT 60 MESES -->
+                    <!-- Resumo Anual por Ano -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
-                        <h3 style="margin: 0 0 1rem 0;">📅 Cronograma (Gantt 60 meses)</h3>
-                        <p style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text);">Início = 1ª descentralização (mês/ano) + 60 meses.</p>
-                        <div id="ganttContainer" style="overflow-x: auto;"></div>
-                        
-                        <!-- Resumo Anual por Ano -->
-                        <div id="resumoAnualPorAno" style="margin-top: 1.5rem; overflow-x: auto;">
+                        <h3 style="margin: 0 0 1rem 0;">📊 Resumo Anual por Ano</h3>
+                        <div id="resumoAnualPorAno" style="overflow-x: auto; max-width: 1000px;">
                             <!-- Será preenchido dinamicamente -->
                         </div>
                     </div>
@@ -1384,6 +1464,10 @@
             const primeiroMesDesc = dateObj.getMonth() + 1; // getMonth() retorna 0-11
             const primeiroAnoDesc = dateObj.getFullYear();
 
+            // garantir cálculo de prazo/status do formulário de criação
+            try { calcularPrazoRelatorioCreate(); } catch(e) {}
+            try { atualizarStatusCreate(); } catch(e) {}
+
             const ted = {
                 id: dados.proxiId++,
                 planoTrabalho: document.getElementById('planoTrabalho').value,
@@ -1416,6 +1500,13 @@
                 dataCriacao: new Date().toLocaleDateString('pt-BR')
             };
 
+            // Campos adicionais (não obrigatórios)
+            ted.situacaoTED = document.getElementById('create_situacaoTED') ? document.getElementById('create_situacaoTED').value : '';
+            ted.dataEntregaDenuncia = document.getElementById('create_dataEntregaDenuncia') ? document.getElementById('create_dataEntregaDenuncia').value : '';
+            ted.prazoRelatorio = document.getElementById('create_prazoRelatorio') ? document.getElementById('create_prazoRelatorio').value : '';
+            ted.dataEntregaRelatorio = document.getElementById('create_dataEntregaRelatorio') ? document.getElementById('create_dataEntregaRelatorio').value : '';
+            ted.statusTED = document.getElementById('create_statusTED') ? document.getElementById('create_statusTED').value : '';
+
             dados.teds.push(ted);
             salvarDados();
             atualizarSeletorTED();
@@ -1423,6 +1514,9 @@
             // Mostrar sucesso
             alert('✅ TED criado com sucesso!');
             event.target.reset();
+            // limpar helper/status do formulário de criação
+            const helper = document.getElementById('create_prazo_helper'); if (helper) helper.textContent = '';
+            const st = document.getElementById('create_statusTED'); if (st) st.value = '';
             switchTab('teds');
             atualizarListaTEDs();
             atualizarDashboard();
@@ -1466,6 +1560,8 @@
                     </div>
                 `).join('');
             document.getElementById('tedsRecentes').innerHTML = html;
+            // Atualizar Gantt de vigência também
+            try { renderGanttVigencia(); } catch(e) { console.warn('renderGanttVigencia error', e); }
         }
 
         // Atualizar Lista de TEDs
@@ -1789,6 +1885,29 @@
             document.getElementById('edit_vigencia').value = ted.vigencia || '';
             document.getElementById('edit_fimVigencia').value = formatarDataInput(ted.fimVigencia);
             document.getElementById('edit_primeiraDescentralizacao').value = formatarDataInput(ted.primeiraDescentralizacao);
+            // Novos campos: situação, data entrega/denúncia, prazo do relatório, data entrega do relatório, status
+            document.getElementById('info_situacaoTED').textContent = ted.situacaoTED === 'finalizado' ? 'TED Finalizado' : (ted.situacaoTED === 'denunciado' ? 'TED Denunciado' : '-');
+            document.getElementById('info_dataEntregaDenuncia').textContent = formatarData(ted.dataEntregaDenuncia);
+            document.getElementById('info_prazoRelatorio').textContent = formatarData(ted.prazoRelatorio);
+            if (ted.prazoRelatorio) {
+                try { mostrarAvisoPrazo('info_prazoRelatorio', new Date(ted.prazoRelatorio + 'T00:00:00')); } catch(e) {}
+            }
+            document.getElementById('info_dataEntregaRelatorio').textContent = formatarData(ted.dataEntregaRelatorio);
+            const computedStatus = ted.statusTED || (ted.dataEntregaRelatorio ? 'TED Finalizado' : (ted.situacaoTED ? 'Relatório Final' : 'Em Execução'));
+            document.getElementById('info_statusTED').textContent = computedStatus;
+
+            document.getElementById('edit_situacaoTED').value = ted.situacaoTED || '';
+            document.getElementById('edit_dataEntregaDenuncia').value = formatarDataInput(ted.dataEntregaDenuncia) || '';
+            document.getElementById('edit_prazoRelatorio').value = formatarDataInput(ted.prazoRelatorio) || '';
+            document.getElementById('edit_dataEntregaRelatorio').value = formatarDataInput(ted.dataEntregaRelatorio) || '';
+            document.getElementById('edit_statusTED').value = ted.statusTED || computedStatus || '';
+            // Recalcular prazo e status ao exibir
+            try {
+                calcularPrazoRelatorio();
+            } catch(e) {}
+            try {
+                atualizarStatusPorEntregaRelatorio();
+            } catch(e) {}
         }
 
         // Variável para backup dos dados originais
@@ -1804,7 +1923,8 @@
             // Mostrar campos de edição e ocultar visualização
             const campos = ['planoTrabalho', 'numTed', 'objetivo', 'valorTed', 'codigoPlano', 'numTedSiafi', 
                            'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc', 
-                           'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao'];
+                           'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao',
+                           'situacaoTED', 'dataEntregaDenuncia', 'prazoRelatorio', 'dataEntregaRelatorio', 'statusTED'];
             
             campos.forEach(campo => {
                 document.getElementById(`info_${campo}`).style.display = 'none';
@@ -1840,6 +1960,12 @@
             window.tedSelecionado.vigencia = document.getElementById('edit_vigencia').value;
             window.tedSelecionado.fimVigencia = document.getElementById('edit_fimVigencia').value;
             window.tedSelecionado.primeiraDescentralizacao = document.getElementById('edit_primeiraDescentralizacao').value;
+            // Novos campos
+            window.tedSelecionado.situacaoTED = document.getElementById('edit_situacaoTED').value;
+            window.tedSelecionado.dataEntregaDenuncia = document.getElementById('edit_dataEntregaDenuncia').value;
+            window.tedSelecionado.prazoRelatorio = document.getElementById('edit_prazoRelatorio').value;
+            window.tedSelecionado.dataEntregaRelatorio = document.getElementById('edit_dataEntregaRelatorio').value;
+            window.tedSelecionado.statusTED = document.getElementById('edit_statusTED').value;
             
             // Salvar no localStorage
             salvarDados();
@@ -1881,7 +2007,8 @@
         function sairModoEdicao() {
             const campos = ['planoTrabalho', 'numTed', 'objetivo', 'valorTed', 'codigoPlano', 'numTedSiafi', 
                            'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc', 
-                           'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao'];
+                           'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao',
+                           'situacaoTED', 'dataEntregaDenuncia', 'prazoRelatorio', 'dataEntregaRelatorio', 'statusTED'];
             
             campos.forEach(campo => {
                 document.getElementById(`info_${campo}`).style.display = 'block';
@@ -1894,6 +2021,114 @@
             document.getElementById('btnCancelarInfo').style.display = 'none';
         }
 
+        // Calcular prazo do relatório com base na situação e data de entrega/denúncia
+        function calcularPrazoRelatorio() {
+            const situacaoEl = document.getElementById('edit_situacaoTED');
+            const dataEl = document.getElementById('edit_dataEntregaDenuncia');
+            const prazoEl = document.getElementById('edit_prazoRelatorio');
+            const infoPrazo = document.getElementById('info_prazoRelatorio');
+            if (!situacaoEl || !dataEl) return;
+            const situacao = situacaoEl.value;
+            const data = dataEl.value;
+            if (!situacao || !data) {
+                if (prazoEl) prazoEl.value = '';
+                if (infoPrazo) infoPrazo.textContent = '';
+                return;
+            }
+            const addDays = situacao === 'finalizado' ? 120 : (situacao === 'denunciado' ? 30 : 0);
+            const d = new Date(data + 'T00:00:00');
+            d.setDate(d.getDate() + addDays);
+            const iso = d.toISOString().split('T')[0];
+            if (prazoEl) prazoEl.value = iso;
+            if (infoPrazo) infoPrazo.textContent = d.toLocaleDateString('pt-BR');
+            mostrarAvisoPrazo('info_prazoRelatorio', d);
+        }
+
+        // Atualizar status com base na seleção e na data da entrega do relatório
+        function atualizarStatusPorEntregaRelatorio() {
+            const situacaoEl = document.getElementById('edit_situacaoTED');
+            const dataEntregaRelEl = document.getElementById('edit_dataEntregaRelatorio');
+            const infoStatus = document.getElementById('info_statusTED');
+            const editStatus = document.getElementById('edit_statusTED');
+            if (!infoStatus && !editStatus) return;
+            const situacao = situacaoEl ? situacaoEl.value : '';
+            const dataEntregaRel = dataEntregaRelEl ? dataEntregaRelEl.value : '';
+            let status = 'Em Execução';
+            if (dataEntregaRel) {
+                status = 'TED Finalizado';
+            } else if (situacao === 'finalizado' || situacao === 'denunciado') {
+                status = 'Relatório Final';
+            }
+            if (infoStatus) infoStatus.textContent = status;
+            if (editStatus) editStatus.value = status;
+            // also show warning on prazo if needed
+            const prazoTextEl = document.getElementById('info_prazoRelatorio');
+            if (prazoTextEl) {
+                const prazoVal = document.getElementById('edit_prazoRelatorio') ? document.getElementById('edit_prazoRelatorio').value : '';
+                if (prazoVal) {
+                    mostrarAvisoPrazo('info_prazoRelatorio', new Date(prazoVal + 'T00:00:00'));
+                }
+            }
+        }
+
+        // Mostrar aviso visual se prazo passou
+        function mostrarAvisoPrazo(infoElementId, prazoDate) {
+            const el = document.getElementById(infoElementId);
+            if (!el) return;
+            const hoje = new Date();
+            // normalize dates to midnight
+            const p = new Date(prazoDate.getFullYear(), prazoDate.getMonth(), prazoDate.getDate());
+            const h = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            if (p < h) {
+                el.innerHTML = `${p.toLocaleDateString('pt-BR')} <span style="color:#ef4444; font-weight:700; margin-left:0.5rem;">(Vencido)</span>`;
+            } else {
+                el.textContent = p.toLocaleDateString('pt-BR');
+            }
+        }
+
+        // Versões para o formulário de criação
+        function calcularPrazoRelatorioCreate() {
+            const situacaoEl = document.getElementById('create_situacaoTED');
+            const dataEl = document.getElementById('create_dataEntregaDenuncia');
+            const prazoEl = document.getElementById('create_prazoRelatorio');
+            const statusEl = document.getElementById('create_statusTED');
+            if (!situacaoEl || !dataEl) return;
+            const situacao = situacaoEl.value;
+            const data = dataEl.value;
+            if (!situacao || !data) {
+                if (prazoEl) prazoEl.value = '';
+                if (statusEl) statusEl.value = '';
+                return;
+            }
+            const addDays = situacao === 'finalizado' ? 120 : (situacao === 'denunciado' ? 30 : 0);
+            const d = new Date(data + 'T00:00:00');
+            d.setDate(d.getDate() + addDays);
+            const iso = d.toISOString().split('T')[0];
+            if (prazoEl) prazoEl.value = iso;
+            if (statusEl) statusEl.value = document.getElementById('create_dataEntregaRelatorio') && document.getElementById('create_dataEntregaRelatorio').value ? 'TED Finalizado' : (situacao ? 'Relatório Final' : 'Em Execução');
+            // visual cue in creation form: if prazo passed, add a small red helper text under the input
+            const infoEl = document.getElementById('create_prazo_helper');
+            if (infoEl) {
+                const hoje = new Date();
+                const p = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const h = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+                if (p < h) infoEl.innerHTML = `<span style="color:#ef4444;font-weight:700">Prazo vencido</span>`; else infoEl.textContent = '';
+            }
+        }
+
+        function atualizarStatusCreate() {
+            const situacaoEl = document.getElementById('create_situacaoTED');
+            const dataEntregaRelEl = document.getElementById('create_dataEntregaRelatorio');
+            const statusEl = document.getElementById('create_statusTED');
+            if (!statusEl) return;
+            const situacao = situacaoEl ? situacaoEl.value : '';
+            const dataEntregaRel = dataEntregaRelEl ? dataEntregaRelEl.value : '';
+            let status = 'Em Execução';
+            if (dataEntregaRel) status = 'TED Finalizado';
+            else if (situacao === 'finalizado' || situacao === 'denunciado') status = 'Relatório Final';
+            statusEl.value = status;
+        }
+
         // OBJETOS
         function adicionarObjeto() {
             if (!window.tedSelecionado) {
@@ -1901,12 +2136,28 @@
                 return;
             }
 
-            const objeto = document.getElementById('objeto').value.trim();
-            const qtde = parseInt(document.getElementById('qtdeObjeto').value);
-            const valorUnitario = parseFloat(document.getElementById('valorUnitario').value);
+            const objetoInput = document.getElementById('objetoCadastro');
+            const qtdeInput = document.getElementById('qtdeObjetoCadastro');
+            const valorInput = document.getElementById('valorUnitarioCadastro');
 
-            if (!objeto || !qtde || qtde <= 0 || !valorUnitario || valorUnitario <= 0) {
-                alert('⚠️ Preencha todos os campos corretamente!');
+            const objeto = objetoInput.value.trim();
+            const qtde = parseInt(qtdeInput.value);
+            const valorUnitario = parseFloat(valorInput.value);
+
+            console.log('Objeto:', objeto, 'Qtde:', qtde, 'Valor:', valorUnitario); // Debug
+
+            if (!objeto) {
+                alert('⚠️ Preencha o nome do objeto!');
+                return;
+            }
+
+            if (isNaN(qtde) || qtde <= 0) {
+                alert('⚠️ Quantidade deve ser maior que zero!');
+                return;
+            }
+
+            if (isNaN(valorUnitario) || valorUnitario <= 0) {
+                alert('⚠️ Valor unitário deve ser maior que zero!');
                 return;
             }
 
@@ -1926,9 +2177,9 @@
             atualizarTabelaObjetos();
             atualizarOpcoesObjetoFisico();
             atualizarOpcoesObjetoExecFisica();
-            document.getElementById('objeto').value = '';
-            document.getElementById('qtdeObjeto').value = '';
-            document.getElementById('valorUnitario').value = '';
+            document.getElementById('objetoCadastro').value = '';
+            document.getElementById('qtdeObjetoCadastro').value = '';
+            document.getElementById('valorUnitarioCadastro').value = '';
         }
 
         function editarObjeto(id) {
@@ -3128,105 +3379,222 @@
 
         // GANTT 60 MESES
         function atualizarGantt() {
-            const container = document.getElementById('ganttContainer');
             const resumoContainer = document.getElementById('resumoAnualPorAno');
             
-            if (!container) return;
+            if (!resumoContainer) return;
 
             if (!window.tedSelecionado || !window.tedSelecionado.financeiros || window.tedSelecionado.financeiros.length === 0) {
-                container.innerHTML = '<p style="color: var(--text);">Cadastre ao menos uma descentralização para gerar o cronograma.</p>';
-                if (resumoContainer) resumoContainer.innerHTML = '';
+                resumoContainer.innerHTML = '<p style="color: var(--text); text-align: center; padding: 1rem;">Cadastre ao menos uma descentralização para gerar o resumo.</p>';
+                return;
+            }
+            
+            // Gerar resumo anual por ano
+            const cad = window.tedSelecionado.financeiros || [];
+            const execs = window.tedSelecionado.execFinanceiras || [];
+            
+            // Obter todos os anos únicos (do cadastro e execuções)
+            const anosSet = new Set();
+            cad.forEach(f => anosSet.add(f.anoDesc));
+            execs.forEach(e => {
+                if (e.data) {
+                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                    anosSet.add(ano);
+                }
+            });
+            
+            const anosOrdenados = Array.from(anosSet).sort();
+            
+            if (anosOrdenados.length === 0) {
+                resumoContainer.innerHTML = '';
+                return;
+            }
+            
+            // Criar tabela com resumo anual
+            let html = '<table class="tabela-padrao" style="margin-top: 1rem; width: auto;">';
+            html += '<thead><tr>';
+            html += '<th>Ano</th>';
+            html += '<th class="col-valor">Previsto Anual</th>';
+            html += '<th class="col-valor">A Receber ano anterior</th>';
+            html += '<th class="col-valor">Recebido Anual</th>';
+            html += '<th class="col-valor">Devolvido</th>';
+            html += '<th class="col-valor">Saldo Anual</th>';
+            html += '<th class="col-percent">Liquidação (%)</th>';
+            html += '</tr></thead><tbody>';
+            
+            let saldoAcumulado = 0;
+            
+            anosOrdenados.forEach((ano, idx) => {
+                // Previsto do ano
+                const previsto = cad
+                    .filter(f => f.anoDesc === ano)
+                    .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+                
+                // Recebido (valores positivos) do ano
+                const recebido = execs
+                    .filter(e => {
+                        if (!e.data) return false;
+                        const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                        const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                        return anoExec === ano && valor > 0;
+                    })
+                    .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+                
+                // Devolvido (valores negativos) do ano
+                const devolvido = Math.abs(execs
+                    .filter(e => {
+                        if (!e.data) return false;
+                        const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                        const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                        return anoExec === ano && valor < 0;
+                    })
+                    .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
+                
+                // A receber do ano anterior é o saldo acumulado do ano anterior
+                const aReceberAnterior = saldoAcumulado;
+                
+                // Saldo = previsto + a receber anterior - recebido - devolvido
+                const saldo = previsto + aReceberAnterior - recebido - devolvido;
+                saldoAcumulado = saldo; // atualizar para próximo ano
+                
+                // Liquidação
+                const liquidacao = previsto > 0 ? ((recebido / previsto) * 100) : 0;
+                
+                html += `<tr>`;
+                html += `<td style="font-weight: bold;">${ano}</td>`;
+                html += `<td class="col-valor">${previsto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                html += `<td class="col-valor">${aReceberAnterior.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                html += `<td class="col-valor">${recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                html += `<td class="col-valor" style="color: ${devolvido > 0 ? '#ef4444' : 'inherit'};">-${devolvido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                html += `<td class="col-valor" style="font-weight: bold;">${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                html += `<td class="col-percent">${liquidacao.toFixed(2)}%</td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            resumoContainer.innerHTML = html;
+        }
+
+        // Render Gantt de Vigência dos TEDs (todas as entradas em dados.teds)
+        function renderGanttVigencia() {
+            const container = document.getElementById('ganttVigencia');
+            if (!container) return;
+            const teds = (dados.teds || []).filter(t => t.inicioVigencia && t.fimVigencia);
+            if (!teds.length) {
+                container.innerHTML = '<p style="color:var(--text); padding:0.75rem;">Nenhum TED com vigência cadastrada.</p>';
                 return;
             }
 
-            container.innerHTML = renderGanttGenerico([]);
-            
-            // Gerar resumo anual por ano
-            if (resumoContainer) {
-                const cad = window.tedSelecionado.financeiros || [];
-                const execs = window.tedSelecionado.execFinanceiras || [];
-                
-                // Obter todos os anos únicos (do cadastro e execuções)
-                const anosSet = new Set();
-                cad.forEach(f => anosSet.add(f.anoDesc));
-                execs.forEach(e => {
-                    if (e.data) {
-                        const ano = new Date(e.data + 'T00:00:00').getFullYear();
-                        anosSet.add(ano);
-                    }
-                });
-                
-                const anosOrdenados = Array.from(anosSet).sort();
-                
-                if (anosOrdenados.length === 0) {
-                    resumoContainer.innerHTML = '';
-                    return;
-                }
-                
-                // Criar tabela com resumo anual
-                let html = '<table class="tabela-padrao" style="margin-top: 1rem;">';
-                html += '<thead><tr>';
-                html += '<th>Ano</th>';
-                html += '<th class="col-valor">Previsto Anual</th>';
-                html += '<th class="col-valor">A Receber ano anterior</th>';
-                html += '<th class="col-valor">Recebido Anual</th>';
-                html += '<th class="col-valor">Devolvido</th>';
-                html += '<th class="col-valor">Saldo Anual</th>';
-                html += '<th class="col-percent">Liquidação (%)</th>';
-                html += '</tr></thead><tbody>';
-                
-                let saldoAcumulado = 0;
-                
-                anosOrdenados.forEach((ano, idx) => {
-                    // Previsto do ano
-                    const previsto = cad
-                        .filter(f => f.anoDesc === ano)
-                        .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
-                    
-                    // Recebido (valores positivos) do ano
-                    const recebido = execs
-                        .filter(e => {
-                            if (!e.data) return false;
-                            const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
-                            const valor = parseFloat(e.valor || e.valorRealizado) || 0;
-                            return anoExec === ano && valor > 0;
-                        })
-                        .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
-                    
-                    // Devolvido (valores negativos) do ano
-                    const devolvido = Math.abs(execs
-                        .filter(e => {
-                            if (!e.data) return false;
-                            const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
-                            const valor = parseFloat(e.valor || e.valorRealizado) || 0;
-                            return anoExec === ano && valor < 0;
-                        })
-                        .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
-                    
-                    // A receber do ano anterior é o saldo acumulado do ano anterior
-                    const aReceberAnterior = saldoAcumulado;
-                    
-                    // Saldo = previsto + a receber anterior - recebido - devolvido
-                    const saldo = previsto + aReceberAnterior - recebido - devolvido;
-                    saldoAcumulado = saldo; // atualizar para próximo ano
-                    
-                    // Liquidação
-                    const liquidacao = previsto > 0 ? ((recebido / previsto) * 100) : 0;
-                    
-                    html += `<tr>`;
-                    html += `<td style="font-weight: bold;">${ano}</td>`;
-                    html += `<td class="col-valor">${previsto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td class="col-valor">${aReceberAnterior.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td class="col-valor">${recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td class="col-valor" style="color: ${devolvido > 0 ? '#ef4444' : 'inherit'};">-${devolvido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td class="col-valor" style="font-weight: bold;">${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    html += `<td class="col-percent">${liquidacao.toFixed(2)}%</td>`;
-                    html += '</tr>';
-                });
-                
-                html += '</tbody></table>';
-                resumoContainer.innerHTML = html;
+            // Normalizar datas e ordenar por UP (upResponsavel)
+            const rows = teds.map(t => {
+                const inicio = new Date(normalizarData(t.inicioVigencia) + 'T00:00:00');
+                const fim = new Date(normalizarData(t.fimVigencia) + 'T00:00:00');
+                return { ted: t, up: (t.upResponsavel || t.up || '').toString(), inicio, fim };
+            }).filter(r => !isNaN(r.inicio.getTime()) && !isNaN(r.fim.getTime()));
+
+            rows.sort((a,b) => {
+                if (a.up < b.up) return -1;
+                if (a.up > b.up) return 1;
+                return a.inicio - b.inicio;
+            });
+
+            // Calcular período total
+            let minDate = rows[0].inicio, maxDate = rows[0].fim;
+            rows.forEach(r => { if (r.inicio < minDate) minDate = r.inicio; if (r.fim > maxDate) maxDate = r.fim; });
+
+            // Limitar colunas para evitar tabelas enormes (máx 60 meses)
+            const maxMonths = 60;
+            const monthDiff = (d1, d2) => (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
+            let totalMonths = monthDiff(minDate, maxDate) + 1;
+            if (totalMonths > maxMonths) {
+                // centralizar janela em torno da data atual
+                const hoje = new Date();
+                const windowStart = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                const half = Math.floor(maxMonths/2);
+                windowStart.setMonth(windowStart.getMonth() - half);
+                minDate = new Date(windowStart.getFullYear(), windowStart.getMonth(), 1);
+                maxDate = new Date(minDate);
+                maxDate.setMonth(maxDate.getMonth() + maxMonths - 1);
+                totalMonths = maxMonths;
             }
+
+            // Construir meses e agrupar por ano
+            const months = [];
+            const years = [];
+            for (let i=0;i<totalMonths;i++) {
+                const d = new Date(minDate.getFullYear(), minDate.getMonth() + i, 1);
+                const label = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
+                months.push({d,label,year:d.getFullYear(),month:d.getMonth()+1});
+                const y = d.getFullYear();
+                const last = years[years.length-1];
+                if (!last || last.year !== y) years.push({year: y, count: 1, startIdx: i}); else last.count++;
+            }
+
+            // Índice do mês atual (para destaque)
+            const hoje = new Date();
+            const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+
+            // Gerar HTML da tabela Gantt com duas linhas de cabeçalho: anos (mesclados) e meses
+            let html = '<table class="gantt-table" style="margin-top:0.5rem; width:100%;"><thead>';
+            // Linha de anos (mesclada)
+            html += '<tr>';
+            html += '<th style="width:260px;">TED</th>';
+            years.forEach(y => {
+                html += `<th colspan="${y.count}" style="text-align:center; font-size:0.85rem; border-left: 1px solid var(--border);">${y.year}</th>`;
+            });
+            html += '</tr>';
+
+            // Linha de meses
+            html += '<tr class="header-meses">';
+            html += '<th style="visibility:hidden; height:0; padding:0; margin:0;"></th>';
+            months.forEach((m, idx) => {
+                // colocar borda à esquerda quando começa um novo ano (visível)
+                const isYearStart = years.some(y => y.startIdx === idx);
+                const borderLeft = isYearStart ? 'border-left:2px solid #1f2937;' : '';
+                const todayBorder = (idx === todayIdx) ? 'border-left:3px solid #f97316;' : '';
+                html += `<th style="text-align:center; font-size:0.75rem; ${borderLeft} ${todayBorder}">${m.label}/${String(m.year).slice(-2)}</th>`;
+            });
+            html += '</tr>';
+            html += '</thead><tbody>';
+
+            // Render linhas com mesclagem de células para a vigência (colspan)
+            let prevUp = null;
+            rows.forEach((r, rowIdx) => {
+                const startIdx = Math.max(0, monthDiff(minDate, new Date(r.inicio.getFullYear(), r.inicio.getMonth(), 1)));
+                const endIdx = Math.min(totalMonths-1, monthDiff(minDate, new Date(r.fim.getFullYear(), r.fim.getMonth(), 1)));
+
+                // Inserir separador visual entre grupos de UP
+                if (prevUp !== null && r.up !== prevUp) {
+                    html += `<tr><td colspan="${totalMonths+1}" style="padding:0; border-top:3px solid #1f2937; height:4px;"></td></tr>`;
+                }
+
+                html += '<tr>';
+                // Célula TED: numero - objeto
+                const label = `${r.ted.numTed || ''} - ${r.ted.objeto || r.ted.objetivo || ''}`;
+                html += `<td class="gantt-row-label" title="UP: ${r.up}">${label}</td>`;
+
+                // Render meses com mesclagem
+                for (let i=0;i<months.length;i++) {
+                    if (i === startIdx) {
+                        const span = endIdx - startIdx + 1;
+                        // aplicar destaque se atravessa a data atual
+                        const isTodayInside = (todayIdx >= startIdx && todayIdx <= endIdx);
+                        const todayStyle = isTodayInside ? 'border-left:3px solid #f97316;' : '';
+                        html += `<td colspan="${span}" style="padding:6px 4px; ${todayStyle}">`;
+                        html += `<div class=\"gantt-bar\" title=\"${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}\"></div>`;
+                        html += '</td>';
+                        i += (span - 1); // avançar o índice
+                        continue;
+                    }
+                    // células vazias para meses fora da vigência (rendered via colspan skipping)
+                    html += `<td></td>`;
+                }
+
+                html += '</tr>';
+                prevUp = r.up;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
         }
 
         function atualizarTabelaExecFinanceira() {
@@ -3243,8 +3611,8 @@
                 if (resumoPrev) resumoPrev.textContent = '0,00';
                 if (resumoReceberAnt) resumoReceberAnt.textContent = '0,00';
                 if (resumoRecebido) resumoRecebido.textContent = '0,00';
-                if (resumoDevolvido) resumoDevolvido.textContent = '0,00';
-                if (resumoSaldo) resumoSaldo.textContent = '0,00';
+                if (resumoDevolvido) resumoDevolvido.innerHTML = '0,00';
+                if (resumoSaldo) resumoSaldo.innerHTML = '<span style="font-weight:700">0,00</span>';
                 if (resumoLiquidacao) resumoLiquidacao.textContent = '0%';
             };
 
@@ -3344,17 +3712,27 @@
                     totalMeses.set(idxMes, (totalMeses.get(idxMes) || 0) + val);
                 });
 
+                // Helper to format numbers and color negative values red
+                const fmt = (v) => {
+                    if (v === undefined || v === null || v === '') return '';
+                    const num = parseFloat(v) || 0;
+                    const formatted = num.toLocaleString('pt-BR',{minimumFractionDigits:2});
+                    if (num < 0) return `<span style="color:#ef4444">${formatted}</span>`;
+                    return `${formatted}`;
+                };
+
                 let html = `<tr>`+
                            `<td class="col-nd">${nd}</td>`+
                            `<td class="col-up">${up}</td>`+
-                           `<td class="col-valor">${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td class="col-valor">${realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td class="col-saldo">${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                           `<td class="col-valor">${previsto < 0 ? '<span style="color:#ef4444">' + previsto.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td class="col-valor">${realizado < 0 ? '<span style="color:#ef4444">' + realizado.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td class="col-saldo"><span style="font-weight:700;color:${saldo<0? '#ef4444':'inherit'}">${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>`;
 
                 meses.forEach((_,i)=>{
                     const val = mapaMes.get(i);
                     const cellBg = val ? '#e0f2fe' : 'transparent';
-                    html += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor: pointer;" onclick="editarValorExecFinanceira('${nd}', '${up}', ${i})" title="Clique para editar">${val?val.toLocaleString('pt-BR',{minimumFractionDigits:2}):''}</td>`;
+                    const display = (val !== undefined && val !== null && val !== '') ? (parseFloat(val) < 0 ? `<span style="color:#ef4444">${(val).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : (val).toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
+                    html += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor: pointer;" onclick="editarValorExecFinanceira('${nd}', '${up}', ${i})" title="Clique para editar">${display}</td>`;
                 });
 
                 html += '</tr>';
@@ -3369,11 +3747,12 @@
             totalRow += '<td class="col-up"></td>';
             totalRow += `<td class="col-valor">${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
             totalRow += `<td class="col-valor">${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += `<td class="col-saldo">${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td class="col-saldo"><span style="font-weight:700;color:${totalSaldo<0? '#ef4444':'inherit'}">${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>`;
             meses.forEach((_, idx) => {
                 const val = totalMeses.get(idx);
                 const cellBg = val ? '#e0f2fe' : 'transparent';
-                totalRow += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem;">${val ? val.toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}</td>`;
+                const display = (val !== undefined && val !== null && val !== '') ? (parseFloat(val) < 0 ? `<span style="color:#ef4444">${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : val.toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
+                totalRow += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem;">${display}</td>`;
             });
             totalRow += '</tr>';
 
@@ -3442,8 +3821,8 @@
             if (resumoPrev) resumoPrev.textContent = `${previstoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
             if (resumoReceberAnt) resumoReceberAnt.textContent = `${aReceberAnterior.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
             if (resumoRecebido) resumoRecebido.textContent = `${recebidoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            if (resumoDevolvido) resumoDevolvido.textContent = `-${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            if (resumoSaldo) resumoSaldo.textContent = `${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoDevolvido) resumoDevolvido.innerHTML = `<span style="color:#ef4444">-${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
+            if (resumoSaldo) resumoSaldo.innerHTML = `<span style="font-weight:700;color:${saldoAnual<0? '#ef4444':'inherit'}">${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
             if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
         }
 
