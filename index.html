@@ -1000,17 +1000,17 @@
         </div>
 
         <!-- TAB 2: Listar TEDs -->
-        <div id="ted" class="tab-content">
+        <div id="teds" class="tab-content">
             <div class="card">
-                <h2>TED</h2>
+                <h2>Seus Termos de Execução</h2>
                 <div style="text-align: left; margin-bottom: 0.75rem; display:flex; gap:0.5rem; align-items:center;">
                     <button class="btn btn-primary" onclick="switchTab('novo')">Criar Novo TED</button>
                     <div style="display:flex; gap:0.5rem; align-items:center; margin-left: auto;">
                         <label style="font-size:0.9rem; color:var(--text);">Filtrar UP:</label>
-                        <select id="filterUP_teds" multiple size="4" onchange="atualizarListaTEDs()" style="min-width:140px; padding:0.25rem;"></select>
+                        <select id="filterUP_teds" onchange="atualizarListaTEDs()" style="min-width:140px; padding:0.25rem;"></select>
                         <label style="font-size:0.9rem; color:var(--text);">Filtrar Status:</label>
-                        <select id="filterStatus_teds" multiple size="4" onchange="atualizarListaTEDs()" style="min-width:160px; padding:0.25rem;"></select>
-                        <button class="btn" onclick="(function(){ const up = document.getElementById('filterUP_teds'); const st = document.getElementById('filterStatus_teds'); if(up) Array.from(up.options).forEach(o=>o.selected=false); if(st) Array.from(st.options).forEach(o=>o.selected=false); atualizarListaTEDs(); })()">Limpar</button>
+                        <select id="filterStatus_teds" onchange="atualizarListaTEDs()" style="min-width:160px; padding:0.25rem;"></select>
+                        <button class="btn" onclick="(function(){ document.getElementById('filterUP_teds').value=''; document.getElementById('filterStatus_teds').value=''; atualizarListaTEDs(); })()">Limpar</button>
                     </div>
                 </div>
                 <div id="listaTeds">
