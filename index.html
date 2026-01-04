@@ -78,6 +78,48 @@
             margin-bottom: 2rem;
         }
 
+        /* Resumo Financeiro: reduzir coluna 'Ano' */
+        .tabela-padrao th.col-ano,
+        .tabela-padrao td.col-ano,
+        .resumo-panel .tabela-padrao th.col-ano,
+        .resumo-panel .tabela-padrao td.col-ano {
+            width: 64px;
+            max-width: 64px;
+            text-align: center;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            white-space: nowrap;
+        }
+
+        /* Centralizar todos os cabeçalhos das tabelas padrão */
+        .tabela-padrao thead th {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        /* Forçar centralização APENAS no cabeçalho do Resumo Financeiro do dashboard */
+        #resumoFinanceiroChart .tabela-padrao thead th {
+            text-align: center !important;
+            vertical-align: middle !important;
+        }
+
+        /* Entregas / Resumo responsive layout */
+        .entregas-row { display:flex; gap:0.5rem; align-items:flex-start; flex-wrap:wrap; }
+        .resumo-panel { width:760px; min-width:520px; }
+        .entregas-panel { flex:1; min-width:320px; }
+
+        @media (max-width: 1000px) {
+            .resumo-panel { width: 60%; min-width: 360px; }
+        }
+
+        @media (max-width: 760px) {
+            .entregas-row { flex-direction: column; gap:0.75rem; }
+            .resumo-panel, .entregas-panel { width: 100% !important; min-width: auto !important; }
+            .resumo-panel .tabela-padrao, .resumo-panel table { width: 100%; }
+            .resumo-panel { order: 0; }
+            .entregas-panel { order: 1; }
+        }
+
         .tab-btn {
             background: none;
             border: none;
@@ -89,6 +131,7 @@
             margin-bottom: -2px;
             transition: all 0.3s;
         }
+
 
         .tab-btn.active {
             color: var(--primary);
@@ -128,6 +171,33 @@
             margin-bottom: 0.5rem;
             font-size: 1.1rem;
         }
+
+        /* Lista de TEDs: exibir 3 cards por linha (responsivo) */
+        #listaTeds {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 1100px) {
+            #listaTeds { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            #listaTeds { grid-template-columns: 1fr; }
+        }
+
+        /* Remover margin extra nos cards dentro da grade (grid já controla espaçamento) */
+        #listaTeds .card { margin: 0; }
+
+        /* Centralizar cabeçalhos das tabelas (aplica a todos os <th>) */
+        table thead th, table th {
+            text-align: center;
+            vertical-align: middle;
+            padding: 0.5rem;
+        }
+
+        
 
         /* Buttons */
         .btn {
@@ -287,6 +357,109 @@
         .badge-suspenso {
             background: #fee2e2;
             color: #7f1d1d;
+        }
+        
+        .badge-denunciado {
+            background: #fff7ed;
+            color: #92400e;
+        }
+
+        .badge-finalizado {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-encerrado {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* Filtros Multi-Select */
+        .multi-filter-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+        .multi-filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .multi-filter-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .multi-filter-dropdown {
+            position: relative;
+            min-width: 120px;
+        }
+        .multi-filter-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            min-width: 100px;
+        }
+        .multi-filter-btn:hover {
+            border-color: var(--primary);
+        }
+        .multi-filter-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 100;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 200px;
+            overflow-y: auto;
+            min-width: 140px;
+        }
+        .multi-filter-menu.open {
+            display: block;
+        }
+        .multi-filter-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        .multi-filter-option:hover {
+            background: #f1f5f9;
+        }
+        .multi-filter-option input[type="checkbox"] {
+            margin: 0;
+        }
+        .multi-filter-clear {
+            padding: 0.4rem 0.75rem;
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            width: 100%;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+        .multi-filter-clear:hover {
+            background: #f1f5f9;
         }
 
         /* Modal */
@@ -605,6 +778,10 @@
         .tabela-padrao .col-meta { width: 100px; }
         .tabela-padrao .col-saldo { width: 100px; text-align: right; }
         .tabela-padrao .col-percent { width: 80px; text-align: center; }
+        /* Garantir que os cabeçalhos (thead) fiquem centralizados mesmo quando colunas têm alinhamento direito */
+        .tabela-padrao thead th {
+            text-align: center;
+        }
         /* Linhas alternadas */
         .tabela-padrao tbody tr:nth-child(even) { background: #f9f9f9; }
         .tabela-padrao tbody tr:nth-child(odd) { background: #fff; }
@@ -658,23 +835,30 @@
             box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
         }
         .gantt-row-label { white-space: nowrap; font-weight:600; }
+        /* Entregas chart styles */
+        .entregas-controls { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; }
+        .entregas-chart { display:flex; gap:2rem; align-items:flex-end; padding:1rem 0; }
+        .entregas-item { display:flex; flex-direction:column; align-items:center; width:120px; }
+        .entregas-bar { width:80px; height:160px; background: linear-gradient(180deg,#66bb6a,#338a3e); box-shadow: inset 0 -6px 0 rgba(0,0,0,0.15); border-radius:6px; position:relative; display:flex; align-items:flex-end; justify-content:center; }
+        .entregas-percent { font-weight:700; margin-bottom:6px; }
+        .entregas-label { font-size:0.8rem; text-align:center; margin-top:0.6rem; color:var(--text); }
     </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav>
-        <h1>📋 Controle TED</h1>
-        <button onclick="logout()">Sair</button>
-    </nav>
+    </head>
+    <body>
+        <!-- Navbar -->
+        <nav>
+            <h1>📋 Controle TED</h1>
+            <button onclick="logout()">Sair</button>
+        </nav>
 
     <!-- Container Principal -->
     <div class="container">
         <!-- Abas -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
-            <button class="tab-btn" onclick="switchTab('teds')">TEDs</button>
-            <button id="tab-novo" class="tab-btn" onclick="switchTab('novo')" style="display:none;">Novo TED</button>
-            <button class="tab-btn" onclick="switchTab('detalhes')">Detalhes TED</button>
+            <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('teds')">📋 TEDs</button>
+            <button id="tab-novo" class="tab-btn" onclick="switchTab('novo')" style="display:none;">➕ Novo TED</button>
+            <button class="tab-btn" onclick="switchTab('detalhes')">🔎 Detalhes TED</button>
             <button class="tab-btn" onclick="switchTab('config')">⚙️ Configurações</button>
         </div>
 
@@ -700,19 +884,23 @@
                             <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
-            </div>
-
-            <div class="card">
-                <h2>TEDs Recentes</h2>
-                <div id="tedsRecentes" class="empty-state">
-                    <p>Nenhum TED cadastrado ainda</p>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2>Vigência dos TEDs</h2>
-                <div id="ganttVigencia" style="overflow-x:auto; max-width:100%;">
-                    <p style="color:var(--text); padding:0.75rem;">Gerando gráfico de vigência...</p>
+                <!-- Resumo geral: renderização definida no script ao final do arquivo -->
+                    
+                    <div class="entregas-row" style="display:flex; gap:0.5rem; align-items:flex-start; flex-wrap:wrap;">
+                        <div class="resumo-panel" style="width:760px; min-width:520px; order:0;">
+                            <h4 style="margin:0 0 0.5rem 0;">📊 Resumo Financeiro</h4>
+                            <div id="resumoFinanceiroChart" style="min-height:160px; padding:0.5rem; background: linear-gradient(#fff, #f7f7f7); border-radius:0.5rem;">
+                                <p style="color:var(--text);">Selecione um TED para ver o resumo financeiro (ou deixe vazio para consolidado).</p>
+                            </div>
+                        </div>
+                        <div class="entregas-panel" style="flex:1; min-width:320px; order:1;">
+                            
+                            <h4 style="margin:0.6rem 0 0.5rem 0;">📦 Entregas</h4>
+                            <div id="entregasChartContainer">
+                                <p style="color:var(--text);">Selecione um TED para ver o gráfico de entregas (por objeto).</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -721,7 +909,7 @@
         <div id="teds" class="tab-content">
             <div class="card">
                 <h2>Seus Termos de Execução</h2>
-                <div style="text-align: right; margin-bottom: 0.75rem;">
+                <div style="text-align: left; margin-bottom: 0.75rem;">
                     <button class="btn btn-primary" onclick="switchTab('novo')">Criar Novo TED</button>
                 </div>
                 <div id="listaTeds">
@@ -739,35 +927,15 @@
                 <h2>Criar Novo TED</h2>
                 <form onsubmit="criarTED(event)">
                     <div class="grid">
-                        <div class="form-group">
-                            <label>Plano de Trabalho *</label>
-                            <input type="text" id="planoTrabalho" placeholder="Ex: 2024" required>
+                        <div class="card">
+                            <h2>Próximas Ações (30 dias)</h2>
+                            <div id="proximasEntregas" style="margin-bottom:1rem;">
+                                <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem entregas programadas nos próximos 30 dias.</p>
+                            </div>
+                            <div id="proximosRecebimentos">
+                                <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>TED *</label>
-                            <input type="text" id="numTed" placeholder="Ex: 001" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Objeto *</label>
-                            <input type="text" id="objeto" placeholder="Objeto" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Valor do TED (R$) *</label>
-                            <input type="number" id="valorTed" placeholder="0.00" step="0.01" min="0" required>
-                        </div>
-                        
-                        
-                    </div>
-
-                    <div class="grid">
-                        
-                        <div class="form-group">
-                            <label>Código do Plano de Ação *</label>
-                            <input type="text" id="codigoPlano" placeholder="Código" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Nº TED - SIAFI *</label>
-                            <input type="text" id="numTedSiafi" placeholder="SIAFI" required>
                         </div>
                         <div class="form-group">
                             <label>Nota do Sistema do TED *</label>
@@ -822,7 +990,7 @@
                             <label>Situação TED</label>
                             <select id="create_situacaoTED" onchange="calcularPrazoRelatorioCreate(); atualizarStatusCreate();">
                                 <option value="">--</option>
-                                <option value="finalizado">TED Finalizado</option>
+                                <option value="finalizado">TED Finalizado</optionf>
                                 <option value="denunciado">TED Denunciado</option>
                             </select>
                         </div>
@@ -863,6 +1031,8 @@
                 </div>
 
                 <div id="tedsDetalheContainer" style="display: none;">
+                            <!-- Entregas (DETALHES TAB) -->
+                            <!-- Entregas (Visão do TED) removed from start of Details tab -->
                     <!-- INFORMAÇÕES DO TED -->
                     <div class="ted-info-section" id="infoTEDSection">
                         <div class="ted-info-header">
@@ -1223,6 +1393,40 @@
                             </div>
                         </div>
 
+                        <!-- Filtros Multi-Select para Cadastro Financeiro -->
+                        <div class="multi-filter-container" id="filtrosCadastroFinanceiro">
+                            <div class="multi-filter-group">
+                                <label>Filtrar ND</label>
+                                <div class="multi-filter-dropdown" id="filterNdFinDropdown">
+                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterNdFinDropdown')">
+                                        <span id="filterNdFinLabel">Todos</span>
+                                        <span>▼</span>
+                                    </button>
+                                    <div class="multi-filter-menu" id="filterNdFinMenu"></div>
+                                </div>
+                            </div>
+                            <div class="multi-filter-group">
+                                <label>Filtrar UP</label>
+                                <div class="multi-filter-dropdown" id="filterUpFinDropdown">
+                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterUpFinDropdown')">
+                                        <span id="filterUpFinLabel">Todos</span>
+                                        <span>▼</span>
+                                    </button>
+                                    <div class="multi-filter-menu" id="filterUpFinMenu"></div>
+                                </div>
+                            </div>
+                            <div class="multi-filter-group">
+                                <label>Filtrar M</label>
+                                <div class="multi-filter-dropdown" id="filterMFinDropdown">
+                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterMFinDropdown')">
+                                        <span id="filterMFinLabel">Todos</span>
+                                        <span>▼</span>
+                                    </button>
+                                    <div class="multi-filter-menu" id="filterMFinMenu"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="table-wrapper" style="overflow-x: auto; position: relative;">
                             <table id="tabelaFinanceiraCompleta" class="tabela-padrao" style="min-width: 1400px;">
                                 <thead>
@@ -1272,8 +1476,32 @@
                             </div>
                         </div>
 
+                        <!-- Filtros Multi-Select para Execução Financeira -->
+                        <div class="multi-filter-container" id="filtrosExecFinanceira">
+                            <div class="multi-filter-group">
+                                <label>Filtrar ND</label>
+                                <div class="multi-filter-dropdown" id="filterNdExecDropdown">
+                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterNdExecDropdown')">
+                                        <span id="filterNdExecLabel">Todos</span>
+                                        <span>▼</span>
+                                    </button>
+                                    <div class="multi-filter-menu" id="filterNdExecMenu"></div>
+                                </div>
+                            </div>
+                            <div class="multi-filter-group">
+                                <label>Filtrar UP</label>
+                                <div class="multi-filter-dropdown" id="filterUpExecDropdown">
+                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterUpExecDropdown')">
+                                        <span id="filterUpExecLabel">Todos</span>
+                                        <span>▼</span>
+                                    </button>
+                                    <div class="multi-filter-menu" id="filterUpExecMenu"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
-                            <table class="tabela-padrao" style="min-width: 600px;">
+                            <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 600px;">
                                 <thead>
                                     <tr>
                                         <th class="col-nd">ND</th>
@@ -1295,6 +1523,19 @@
                         <h3 style="margin: 0 0 1rem 0;">📊 Resumo Anual por Ano</h3>
                         <div id="resumoAnualPorAno" style="overflow-x: auto; max-width: 1000px;">
                             <!-- Será preenchido dinamicamente -->
+                        </div>
+                    </div>
+                    <!-- Seção de gráficos completa (após Resumo Anual) -->
+                    <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                        <h3 style="margin: 0 0 1rem 0;">📈 Entregas — Visão Completa</h3>
+                        <div id="filterFullWrap" style="display:flex; gap:1rem; align-items:center; margin-bottom:0.5rem;">
+                            <label style="font-weight:600; margin-right:0.5rem;">Filtrar TED:</label>
+                            <select id="filterTedEntregasFull" onchange="(function(v){ renderEntregasChart(v,'entregasChartFull'); })(this.value)"> 
+                                <option value="">-- Selecione um TED --</option>
+                            </select>
+                        </div>
+                        <div id="entregasChartFull" style="min-height:160px; padding:0.5rem; background: linear-gradient(#fff, #f7f7f7); border-radius:0.5rem;">
+                            <p style="color:var(--text);">Selecione um TED para ver o gráfico de entregas (visão completa).</p>
                         </div>
                     </div>
                 </div>
@@ -1390,6 +1631,44 @@
         // Armazenamento Local (LocalStorage)
         const STORAGE_KEY = 'ted_sistema';
 
+        // Inject styles and small helpers to center specific headers only
+        (function(){
+            const css = `
+                /* Center only the Valor header in Cadastro Financeiro table */
+                #tabelaFinanceiraCompleta thead th.col-valor { text-align: center; }
+
+                /* Center only the Saldo header in Execução Financeira (table id added below) */
+                #tabelaExecFinanceiraTable thead th.col-saldo { text-align: center; }
+            `;
+            const s = document.createElement('style');
+            s.setAttribute('data-auto','center-specific-headers');
+            s.appendChild(document.createTextNode(css));
+            document.head.appendChild(s);
+
+            // Function to center any 'Devolvido' header cells inside the Resumo Anual area
+            window.centerResumoAnualDevolvidoHeader = function() {
+                const wrap = document.getElementById('resumoAnualPorAno');
+                if (!wrap) return;
+                const ths = wrap.querySelectorAll('thead th');
+                ths.forEach(th => {
+                    if (!th) return;
+                    const txt = (th.textContent || '').trim().toLowerCase();
+                    if (txt.includes('devolvido')) {
+                        th.style.textAlign = 'center';
+                    }
+                });
+            };
+
+            // Observe changes to resumo container so header centering reapplies after dynamic renders
+            const resumoEl = document.getElementById('resumoAnualPorAno');
+            if (resumoEl) {
+                const mo = new MutationObserver(() => {
+                    try { window.centerResumoAnualDevolvidoHeader(); } catch(e){}
+                });
+                mo.observe(resumoEl, { childList: true, subtree: true });
+            }
+        })();
+
         // Dados Iniciais
         let dados = {
             teds: [],
@@ -1432,11 +1711,115 @@
             const salvo = localStorage.getItem(STORAGE_KEY);
             if (salvo) {
                 dados = JSON.parse(salvo);
+                // Recalcular valorTed a partir dos registros financeiros para garantir consistência
+                if (dados.teds && dados.teds.length) {
+                    dados.teds.forEach(t => {
+                        t.financeiros = t.financeiros || [];
+                        t.execFinanceiras = t.execFinanceiras || [];
+                        // garantir campos numéricos e recalcular valores
+                        try {
+                            t.valorTed = calcularTotalFinanceiro(t) || 0;
+                        } catch(e) {
+                            t.valorTed = t.valorTed || 0;
+                        }
+                        try {
+                            t.gasto = calcularTotalExecFinanceira(t) || 0;
+                        } catch(e) {
+                            t.gasto = t.gasto || 0;
+                        }
+                        try {
+                            t.progressoFisico = calcularProgressoFisico(t) || 0;
+                        } catch(e) {
+                            t.progressoFisico = t.progressoFisico || 0;
+                        }
+                        // Recalcular statusTED se não estiver preenchido
+                        if (!t.statusTED || String(t.statusTED).trim() === '') {
+                            const hoje = new Date();
+                            if (t.dataEntregaRelatorio) {
+                                t.statusTED = 'TED Finalizado';
+                            } else if (t.situacaoTED === 'finalizado' || t.situacaoTED === 'denunciado') {
+                                t.statusTED = 'Relatório Final';
+                            } else {
+                                const inicioNorm = normalizarData(t.inicioVigencia);
+                                const fimNorm = normalizarData(t.fimVigencia);
+                                const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
+                                const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                                const inicioValido = inicio && !isNaN(inicio.getTime());
+                                const fimValido = fim && !isNaN(fim.getTime());
+                                if (inicioValido && fimValido) {
+                                    if (hoje >= inicio && hoje <= fim) {
+                                        t.statusTED = 'EM EXECUÇÃO';
+                                    } else if (fim < hoje) {
+                                        t.statusTED = 'ENCERRADO';
+                                    } else {
+                                        t.statusTED = 'Em Execução';
+                                    }
+                                } else {
+                                    t.statusTED = 'Em Execução';
+                                }
+                            }
+                        }
+                    });
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dados)); } catch(e) {}
+                }
             }
             atualizarDashboard();
             atualizarListaTEDs();
             atualizarSeletorTED();
             atualizarGantt();
+            // atualizar filtro e gráfico de entregas
+            try { atualizarFiltroTedEntregas(); } catch(e) {}
+            try { renderEntregasFromFilter(); } catch(e) {}
+            try { renderResumoFinanceiroFromFilter(); } catch(e) {}
+            // Inicializar seletor/gráfico full (após Resumo Anual)
+            try {
+                const selFull = document.getElementById('filterTedEntregasFull');
+                const sel = document.getElementById('filterTedEntregas');
+                if (selFull && sel) {
+                    selFull.innerHTML = sel.innerHTML;
+                    // manter mesma seleção (se houver)
+                    selFull.value = sel.value || '';
+                    if (selFull.value) renderEntregasChart(selFull.value, 'entregasChartFull');
+                }
+                try {
+                    const wrap = document.getElementById('filterFullWrap');
+                    const active = document.querySelector('.tab-content.active');
+                    if (wrap) wrap.style.display = (active && active.id === 'detalhes') ? 'none' : 'flex';
+                } catch(e) {}
+            } catch(e) {}
+            // ensure resumo anual headers (e.g., 'Devolvido') are centered on init
+            try { if (window.centerResumoAnualDevolvidoHeader) window.centerResumoAnualDevolvidoHeader(); } catch(e) {}
+        }
+
+        // Retorna o status a ser exibido para um TED e sua origem.
+        // Retorna um objeto: { text: string, origin: 'campo'|'inferido' }
+        function getDisplayStatus(t) {
+            if (!t) return { text: '-', origin: 'inferido' };
+
+            // Se o campo statusTED estiver definido e não vazio, usamos seu valor (origem: campo)
+            if (typeof t.statusTED !== 'undefined' && t.statusTED !== null) {
+                const s = String(t.statusTED).trim();
+                if (s !== '') return { text: s, origin: 'campo' };
+            }
+
+            // Senão, inferimos o status a partir de outras propriedades (origem: inferido)
+            const hoje = new Date();
+            if (t.dataEntregaRelatorio) return { text: 'TED Finalizado', origin: 'inferido (dataEntregaRelatorio)' };
+            if (t.situacaoTED && String(t.situacaoTED).toLowerCase().includes('denunci')) return { text: 'TED Denunciado', origin: 'inferido (situacaoTED)' };
+
+            const inicioNorm = normalizarData(t.inicioVigencia);
+            const fimNorm = normalizarData(t.fimVigencia);
+            const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
+            const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+            const inicioValido = inicio && !isNaN(inicio.getTime());
+            const fimValido = fim && !isNaN(fim.getTime());
+            if (inicioValido && fimValido) {
+                if (hoje >= inicio && hoje <= fim) return { text: 'EM EXECUÇÃO', origin: 'inferido (vigência)' };
+                if (fim < hoje) return { text: 'ENCERRADO', origin: 'inferido (vigência)' };
+            }
+
+            // Fallback
+            return { text: 'Em Execução', origin: 'inferido' };
         }
 
         // Trocar Abas
@@ -1452,6 +1835,88 @@
             // Mostrar aba selecionada
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
+            try {
+                const wrap = document.getElementById('filterFullWrap');
+                if (wrap) wrap.style.display = (tabName === 'detalhes') ? 'none' : 'flex';
+            } catch(e) {}
+        }
+
+        // Calcula soma dos valores do cadastro financeiro de um TED
+        function calcularTotalFinanceiro(ted) {
+            if (!ted || !ted.financeiros || !ted.financeiros.length) return 0;
+            return ted.financeiros.reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+        }
+
+        // Calcula soma dos valores realizados (execução financeira) de um TED
+        function calcularTotalExecFinanceira(ted) {
+            if (!ted || !ted.execFinanceiras || !ted.execFinanceiras.length) return 0;
+            return ted.execFinanceiras.reduce((s, e) => s + (parseFloat(e.valor) || 0), 0);
+        }
+
+        // Atualiza o campo 'gasto' do TED a partir das execFinanceiras (valor realizado)
+        function atualizarGastoFromExecFinanceiras(ted) {
+            if (!ted) return;
+            const total = calcularTotalExecFinanceira(ted);
+            ted.gasto = total;
+            try { salvarDados(); } catch(e) {}
+            // Atualizar UI se TED selecionado
+            if (window.tedSelecionado && window.tedSelecionado.id === ted.id) {
+                // Atualizar exibição de info
+                try { document.querySelectorAll('#tedsDetalheContainer .percentual-gasto, #tedsDetalheContainer .gasto-valor').forEach(()=>{}); } catch(e) {}
+                // Re-render detalhes/dashboard elements that dependem de gasto
+                try { exibirInformacoesTED(); } catch(e) {}
+                try { atualizarListaTEDs(); } catch(e) {}
+                try { atualizarDashboard(); } catch(e) {}
+            }
+        }
+
+        // Atualiza o campo valorTed do TED a partir dos financeiros (e atualiza UI/armazenamento)
+        function atualizarValorTedFromFinanceiros(ted) {
+            if (!ted) return;
+            const total = calcularTotalFinanceiro(ted);
+            ted.valorTed = total;
+            try { salvarDados(); } catch(e) {}
+            // Atualizar exibição caso seja o TED selecionado
+            if (window.tedSelecionado && window.tedSelecionado.id === ted.id) {
+                const el = document.getElementById('info_valorTed');
+                if (el) el.textContent = total ? parseFloat(total).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '-';
+                const editEl = document.getElementById('edit_valorTed');
+                if (editEl) editEl.value = total || '';
+                // também atualizar o campo do formulário de criação (se presente)
+                const createEl = document.getElementById('valorTed');
+                if (createEl) createEl.value = total || '';
+                try { atualizarListaTEDs(); } catch(e) {}
+            }
+        }
+
+        // --- Execução Física: cálculos de progresso ---
+        function calcularTotalObjetosQtde(ted) {
+            if (!ted || !ted.objetos || !ted.objetos.length) return 0;
+            return ted.objetos.reduce((s, o) => s + (parseFloat(o.qtde) || 0), 0);
+        }
+
+        function calcularTotalExecFisicaQtde(ted) {
+            if (!ted || !ted.execFisicas || !ted.execFisicas.length) return 0;
+            return ted.execFisicas.reduce((s, e) => s + (parseFloat(e.qtde) || 0), 0);
+        }
+
+        function calcularProgressoFisico(ted) {
+            const totalObj = calcularTotalObjetosQtde(ted);
+            if (!totalObj || totalObj <= 0) return 0;
+            const realizado = calcularTotalExecFisicaQtde(ted);
+            return Math.round((realizado / totalObj) * 100);
+        }
+
+        function atualizarProgressoFisicoFromExecFisicas(ted) {
+            if (!ted) return;
+            const pct = calcularProgressoFisico(ted) || 0;
+            ted.progressoFisico = pct;
+            try { salvarDados(); } catch(e) {}
+            if (window.tedSelecionado && window.tedSelecionado.id === ted.id) {
+                try { exibirInformacoesTED(); } catch(e) {}
+                try { atualizarListaTEDs(); } catch(e) {}
+                try { atualizarDashboard(); } catch(e) {}
+            }
         }
 
         // Criar TED
@@ -1479,7 +1944,7 @@
                 notaSistema: document.getElementById('notaSistema').value,
                 unidadeDesc: document.getElementById('unidadeDesc').value,
                 ugDesc: document.getElementById('ugDesc').value,
-                valorTed: parseFloat(document.getElementById('valorTed').value) || 0,
+                valorTed: 0,
                 vigilancia: parseInt(document.getElementById('vigilancia').value) || 0,
                 inicioVigencia: document.getElementById('inicioVigencia').value,
                 fimVigencia: document.getElementById('fimVigencia').value,
@@ -1500,6 +1965,9 @@
                 dataCriacao: new Date().toLocaleDateString('pt-BR')
             };
 
+            // Garantir que valorTed seja derivado do cadastro financeiro (inicialmente 0)
+            ted.valorTed = calcularTotalFinanceiro(ted) || 0;
+
             // Campos adicionais (não obrigatórios)
             ted.situacaoTED = document.getElementById('create_situacaoTED') ? document.getElementById('create_situacaoTED').value : '';
             ted.dataEntregaDenuncia = document.getElementById('create_dataEntregaDenuncia') ? document.getElementById('create_dataEntregaDenuncia').value : '';
@@ -1510,6 +1978,7 @@
             dados.teds.push(ted);
             salvarDados();
             atualizarSeletorTED();
+            atualizarFiltroTedEntregas();
 
             // Mostrar sucesso
             alert('✅ TED criado com sucesso!');
@@ -1543,23 +2012,9 @@
             document.getElementById('orcamentoTotal').textContent = valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
             document.getElementById('totalGasto').textContent = gastoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
-            // TEDs Recentes
-            const recentes = dados.teds.slice(-3).reverse();
-            const html = recentes.length === 0 
-                ? '<p>Nenhum TED cadastrado</p>'
-                : recentes.map(t => `
-                    <div class="card" style="margin: 0 0 1rem 0;">
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div>
-                                <h3><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${t.id}); return false;" style="color:inherit; text-decoration:none;">TED ${t.numTed} - ${t.objetivo}</a></h3>
-                                <p style="color: var(--text); font-size: 0.875rem;">
-                                    ${t.unidadeDesc} • Responsável: ${t.responsavel} • ${t.dataCriacao}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-            document.getElementById('tedsRecentes').innerHTML = html;
+            // Atualizar blocos de próximas entregas e próximos recebimentos (30 dias)
+            try { renderUpcomingEntregas(); } catch(e) { console.warn('renderUpcomingEntregas error', e); }
+            try { renderUpcomingRecebimentos(); } catch(e) { console.warn('renderUpcomingRecebimentos error', e); }
             // Atualizar Gantt de vigência também
             try { renderGanttVigencia(); } catch(e) { console.warn('renderGanttVigencia error', e); }
         }
@@ -1582,8 +2037,26 @@
                 const emExecucao = inicioValido && fimValido && hoje >= inicio && hoje <= fim;
                 const diasRestantes = fimValido ? Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24)) : 0;
                 const percentualGasto = t.valorTed > 0 ? Math.round((t.gasto / t.valorTed) * 100) : 0;
+                const percentualFisico = (typeof t.progressoFisico !== 'undefined' ? t.progressoFisico : calcularProgressoFisico(t)) || 0;
                 const inicioStr = inicioValido ? inicio.toLocaleDateString('pt-BR') : '-';
                 const fimStr = fimValido ? fim.toLocaleDateString('pt-BR') : '-';
+                // Determinar status a partir do campo de informações do TED quando disponível
+                const statusObj = getDisplayStatus(t) || { text: '-', origin: 'inferido' };
+                const computedStatusLocal = statusObj.text || '';
+                const originLocal = statusObj.origin || '';
+                const stNorm = String(computedStatusLocal).toLowerCase();
+                let badgeClassLocal = 'badge-planejamento';
+                if (/execu|em execução/.test(stNorm)) {
+                    badgeClassLocal = 'badge-execucao';
+                } else if (/encerr/.test(stNorm)) {
+                    badgeClassLocal = 'badge-encerrado';
+                } else if (/conclu|finaliz|finalizado/.test(stNorm)) {
+                    badgeClassLocal = 'badge-concluido';
+                } else if (/denunci/.test(stNorm)) {
+                    badgeClassLocal = 'badge-denunciado';
+                } else if (/suspens|suspenso/.test(stNorm)) {
+                    badgeClassLocal = 'badge-suspenso';
+                }
                 
                 return `
                     <div class="card" style="margin: 0 0 1rem 0;">
@@ -1593,7 +2066,7 @@
                                 <p style="font-size: 0.875rem; color: var(--text); margin: 0.5rem 0 0 0;">${t.objetivo}</p>
                             </div>
                             <div style="display:flex; gap:0.5rem; align-items:center;">
-                                <span class="badge ${emExecucao ? 'badge-execucao' : 'badge-planejamento'}">${emExecucao ? 'EM EXECUÇÃO' : 'ENCERRADO'}</span>
+                                <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
                                 <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" style="background: transparent; border: none; cursor: pointer; font-size: 1.05rem; padding: 0;">🗑️</button>
                             </div>
                         </div>
@@ -1601,7 +2074,7 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
                             <div>
                                 <p style="margin: 0; color: var(--text);">Valor: <strong>${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></p>
-                                <p style="margin: 0.5rem 0 0 0; color: var(--text);">Responsável: <strong>${t.responsavel}</strong></p>
+                                <p style="margin: 0.5rem 0 0 0; color: var(--text);">UP: <strong>${t.upResponsavel || t.up || ''}</strong></p>
                             </div>
                             <div>
                                 <p style="margin: 0; color: var(--text);">Vigência: ${inicioStr} a ${fimStr}</p>
@@ -1610,14 +2083,28 @@
                         </div>
 
                         <div style="margin-bottom: 1rem;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
-                                <span>Execução Financeira</span>
-                                <span><strong>${percentualGasto}%</strong></span>
+                            <div style="display:flex; gap:1rem; align-items:flex-start;">
+                                <div style="flex:1;">
+                                    <div style="display:flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.875rem;">
+                                        <span>Execução Financeira</span>
+                                        <span><strong>${percentualGasto}%</strong></span>
+                                    </div>
+                                    <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.25rem;">
+                                        <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
+                                    </div>
+                                    <p style="font-size: 0.75rem; color: var(--text); margin: 0;">Gasto: ${t.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="display:flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.875rem;">
+                                        <span>Execução Física</span>
+                                        <span><strong>${percentualFisico}%</strong></span>
+                                    </div>
+                                    <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.25rem;">
+                                        <div style="background: linear-gradient(90deg,#2196F3,#64B5F6); height:100%; width: ${percentualFisico}%;"></div>
+                                    </div>
+                                    <p style="font-size: 0.75rem; color: var(--text); margin: 0;">Progresso: ${percentualFisico}%</p>
+                                </div>
                             </div>
-                            <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden;">
-                                <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
-                            </div>
-                            <p style="font-size: 0.75rem; color: var(--text); margin: 0.5rem 0 0 0;">Gasto: ${t.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
                         </div>
 
                         
@@ -1627,6 +2114,93 @@
 
             document.getElementById('listaTeds').innerHTML = html;
         }
+
+        // Render upcoming deliveries (execFisicas) within next 30 days
+        function renderUpcomingEntregas() {
+            const container = document.getElementById('proximasEntregas');
+            if (!container) return;
+            const today = new Date();
+            const maxDate = new Date();
+            maxDate.setDate(today.getDate() + 30);
+
+            const items = [];
+            (dados.teds || []).forEach(t => {
+                (t.execFisicas || []).forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    if (isNaN(d.getTime())) return;
+                    // include if in [today, maxDate]
+                    if (d >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) && d <= new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate())) {
+                        items.push({ date: d, ted: t, objeto: e.objeto, qtde: parseFloat(e.qtde) || 0, up: t.upResponsavel || t.up || '' });
+                    }
+                });
+            });
+
+            if (!items.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem entregas programadas nos próximos 30 dias.</p>';
+                return;
+            }
+
+            items.sort((a,b) => a.date - b.date);
+
+            let html = '<div class="table-wrapper"><table class="tabela-padrao" style="min-width:600px;">';
+            html += '<thead><tr><th>Data</th><th>TED</th><th>UP</th><th>Objeto</th><th class="col-qtde">Qtde</th></tr></thead><tbody>';
+            items.forEach(it => {
+                html += `<tr>`;
+                html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
+                html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td>${it.up}</td>`;
+                html += `<td>${it.objeto}</td>`;
+                html += `<td class="col-qtde">${it.qtde}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Render upcoming financial receipts (execFinanceiras) within next 30 days
+        function renderUpcomingRecebimentos() {
+            const container = document.getElementById('proximosRecebimentos');
+            if (!container) return;
+            const today = new Date();
+            const maxDate = new Date();
+            maxDate.setDate(today.getDate() + 30);
+
+            const items = [];
+            (dados.teds || []).forEach(t => {
+                (t.execFinanceiras || []).forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    if (isNaN(d.getTime())) return;
+                    if (d >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) && d <= new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate())) {
+                        items.push({ date: d, ted: t, nd: e.nd || e.numero || '', up: e.up || e.ug || t.upResponsavel || '', valor: parseFloat(e.valor || e.valorRealizado) || 0 });
+                    }
+                });
+            });
+
+            if (!items.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>';
+                return;
+            }
+
+            items.sort((a,b) => a.date - b.date);
+
+            let html = '<div class="table-wrapper"><table class="tabela-padrao" style="min-width:600px;">';
+            html += '<thead><tr><th>Data</th><th>TED</th><th>ND</th><th>UP</th><th class="col-valor">Valor (R$)</th></tr></thead><tbody>';
+            items.forEach(it => {
+                html += `<tr>`;
+                html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
+                html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td>${it.nd}</td>`;
+                html += `<td>${it.up}</td>`;
+                html += `<td class="col-valor" style="text-align:right;">${it.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        
 
         // Abrir Detalhes
         function abrirDetalhes(id) {
@@ -1660,7 +2234,21 @@
                     </div>
                     <div>
                         <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Status</p>
-                        <p style="margin: 0;"><span class="badge ${emExecucao ? 'badge-execucao' : 'badge-planejamento'}">${emExecucao ? 'EM EXECUÇÃO' : 'ENCERRADO'}</span></p>
+                        <p style="margin: 0;">
+                            ${(() => {
+                                const statusModalObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido' };
+                                const computedStatusModal = statusModalObj.text || '';
+                                const originModal = statusModalObj.origin || '';
+                                const sNorm = computedStatusModal.toLowerCase();
+                                let cls = 'badge-planejamento';
+                                if (/execu|em execução/.test(sNorm)) cls = 'badge-execucao';
+                                else if (/encerr/.test(sNorm)) cls = 'badge-encerrado';
+                                else if (/conclu|finaliz|finalizado/.test(sNorm)) cls = 'badge-concluido';
+                                else if (/denunci/.test(sNorm)) cls = 'badge-denunciado';
+                                else if (/suspens|suspenso/.test(sNorm)) cls = 'badge-suspenso';
+                                return `<span class="badge ${cls}" title="Origem: ${originModal}">${computedStatusModal}</span>`;
+                            })()}
+                        </p>
                     </div>
                 </div>
 
@@ -1751,6 +2339,7 @@
             fecharModal();
             atualizarListaTEDs();
             atualizarDashboard();
+            atualizarFiltroTedEntregas();
             alert('✅ TED deletado com sucesso!');
         }
 
@@ -1768,6 +2357,7 @@
             salvarDados();
             atualizarListaTEDs();
             atualizarSeletorTED();
+            atualizarFiltroTedEntregas();
             atualizarDashboard();
             alert('✅ TED excluído com sucesso!');
         }
@@ -1824,6 +2414,8 @@
             atualizarOpcoesExecFinanceira();
             atualizarTabelaExecFinanceira();
             atualizarGantt();
+            // Atualizar gráfico de entregas na visualização de detalhes (se ativo)
+            try { renderEntregasChart(tedId, 'entregasChartFull'); } catch(e) {}
         }
 
         // Exibir informações do TED
@@ -1893,21 +2485,22 @@
                 try { mostrarAvisoPrazo('info_prazoRelatorio', new Date(ted.prazoRelatorio + 'T00:00:00')); } catch(e) {}
             }
             document.getElementById('info_dataEntregaRelatorio').textContent = formatarData(ted.dataEntregaRelatorio);
-            const computedStatus = ted.statusTED || (ted.dataEntregaRelatorio ? 'TED Finalizado' : (ted.situacaoTED ? 'Relatório Final' : 'Em Execução'));
-            document.getElementById('info_statusTED').textContent = computedStatus;
+            const statusInfoObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido' };
+            document.getElementById('info_statusTED').textContent = statusInfoObj.text || '-';
+            // adicionar tooltip que indica a origem do status
+            const infoStatusEl = document.getElementById('info_statusTED');
+            if (infoStatusEl) infoStatusEl.title = `Origem: ${statusInfoObj.origin || ''}`;
 
             document.getElementById('edit_situacaoTED').value = ted.situacaoTED || '';
             document.getElementById('edit_dataEntregaDenuncia').value = formatarDataInput(ted.dataEntregaDenuncia) || '';
             document.getElementById('edit_prazoRelatorio').value = formatarDataInput(ted.prazoRelatorio) || '';
             document.getElementById('edit_dataEntregaRelatorio').value = formatarDataInput(ted.dataEntregaRelatorio) || '';
-            document.getElementById('edit_statusTED').value = ted.statusTED || computedStatus || '';
-            // Recalcular prazo e status ao exibir
+            document.getElementById('edit_statusTED').value = ted.statusTED || '';
+            // Recalcular prazo ao exibir (mas NÃO recalcular status automaticamente para preservar o valor salvo)
             try {
                 calcularPrazoRelatorio();
             } catch(e) {}
-            try {
-                atualizarStatusPorEntregaRelatorio();
-            } catch(e) {}
+            // NÃO chamar atualizarStatusPorEntregaRelatorio() aqui para preservar o statusTED salvo
         }
 
         // Variável para backup dos dados originais
@@ -1945,7 +2538,12 @@
             window.tedSelecionado.planoTrabalho = document.getElementById('edit_planoTrabalho').value;
             window.tedSelecionado.numTed = document.getElementById('edit_numTed').value;
             window.tedSelecionado.objetivo = document.getElementById('edit_objetivo').value;
-            window.tedSelecionado.valorTed = document.getElementById('edit_valorTed').value;
+            // Se houver cadastro financeiro, usar o total calculado (prioridade).
+            if (window.tedSelecionado.financeiros && window.tedSelecionado.financeiros.length) {
+                window.tedSelecionado.valorTed = calcularTotalFinanceiro(window.tedSelecionado);
+            } else {
+                window.tedSelecionado.valorTed = parseFloat(document.getElementById('edit_valorTed').value) || 0;
+            }
             
             window.tedSelecionado.codigoPlano = document.getElementById('edit_codigoPlano').value;
             window.tedSelecionado.numTedSiafi = document.getElementById('edit_numTedSiafi').value;
@@ -2053,14 +2651,45 @@
             if (!infoStatus && !editStatus) return;
             const situacao = situacaoEl ? situacaoEl.value : '';
             const dataEntregaRel = dataEntregaRelEl ? dataEntregaRelEl.value : '';
-            let status = 'Em Execução';
+
+            // Calcular status baseado em vigência se dataEntregaRelatorio e situacao não definirem
+            let status = '';
             if (dataEntregaRel) {
                 status = 'TED Finalizado';
             } else if (situacao === 'finalizado' || situacao === 'denunciado') {
                 status = 'Relatório Final';
+            } else if (window.tedSelecionado) {
+                // Usar vigência para determinar EM EXECUÇÃO ou ENCERRADO
+                const hoje = new Date();
+                const inicioNorm = normalizarData(window.tedSelecionado.inicioVigencia);
+                const fimNorm = normalizarData(window.tedSelecionado.fimVigencia);
+                const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
+                const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                const inicioValido = inicio && !isNaN(inicio.getTime());
+                const fimValido = fim && !isNaN(fim.getTime());
+                if (inicioValido && fimValido) {
+                    if (hoje >= inicio && hoje <= fim) {
+                        status = 'EM EXECUÇÃO';
+                    } else if (fim < hoje) {
+                        status = 'ENCERRADO';
+                    } else {
+                        status = 'Em Execução';
+                    }
+                } else {
+                    status = 'Em Execução';
+                }
+            } else {
+                status = 'Em Execução';
             }
+
             if (infoStatus) infoStatus.textContent = status;
             if (editStatus) editStatus.value = status;
+
+            // Persistir no objeto tedSelecionado imediatamente para que a lista sempre reflita o mesmo valor
+            if (window.tedSelecionado) {
+                window.tedSelecionado.statusTED = status;
+                salvarDados();
+            }
             // also show warning on prazo if needed
             const prazoTextEl = document.getElementById('info_prazoRelatorio');
             if (prazoTextEl) {
@@ -2180,6 +2809,7 @@
             document.getElementById('objetoCadastro').value = '';
             document.getElementById('qtdeObjetoCadastro').value = '';
             document.getElementById('valorUnitarioCadastro').value = '';
+            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
         }
 
         function editarObjeto(id) {
@@ -2205,6 +2835,7 @@
             atualizarTabelaObjetos();
             atualizarOpcoesObjetoFisico();
             atualizarOpcoesObjetoExecFisica();
+            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
         }
 
         function atualizarTabelaObjetos() {
@@ -2920,18 +3551,22 @@
             }
 
             window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto, qtde, data });
-            salvarDados();
+            // Atualizar progresso físico e persistir
+            atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado);
             atualizarTabelaExecFisica();
             document.getElementById('objetoExecFisica').value = '';
             document.getElementById('qtdeExec').value = '';
             document.getElementById('dataExec').value = '';
+            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
         }
 
         function removerExecFisica(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas.filter(f => f.id !== id);
-            salvarDados();
+            // Atualizar progresso físico e persistir
+            atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado);
             atualizarTabelaExecFisica();
+            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
         }
 
         function atualizarTabelaExecFisica() {
@@ -3107,11 +3742,13 @@
             const anoDesc = d.getFullYear();
 
             window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, up, valor });
-            salvarDados();
+            // Atualizar valor do TED automaticamente
+            atualizarValorTedFromFinanceiros(window.tedSelecionado);
             atualizarTabelaFinanceira();
             atualizarOpcoesExecFinanceira();
             atualizarGantt();
             atualizarTabelaExecFinanceira();
+            try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
             document.getElementById('numFinanceiro').value = '';
             document.getElementById('mFinanceiro').value = '';
             document.getElementById('mesDescFinanceiro').value = '';
@@ -3142,7 +3779,8 @@
         function removerFinanceiro(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
-            salvarDados();
+            // Atualizar valor do TED automaticamente
+            atualizarValorTedFromFinanceiros(window.tedSelecionado);
             atualizarTabelaFinanceira();
             atualizarOpcoesExecFinanceira();
             atualizarGantt();
@@ -3296,9 +3934,243 @@
                 </tr>
             `;
 
+            // Garantir que o valor do TED reflita o total dos financeiros
+            if (window.tedSelecionado) {
+                window.tedSelecionado.valorTed = totalValor;
+                try { salvarDados(); } catch(e) {}
+                const infoEl = document.getElementById('info_valorTed');
+                if (infoEl) infoEl.textContent = totalValor ? totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '-';
+                const editEl = document.getElementById('edit_valorTed');
+                if (editEl) editEl.value = totalValor || '';
+            }
+
             if (previstoAnualSpan) {
                 previstoAnualSpan.textContent = `${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
             }
+
+            // Atualizar filtros multi-select após carregar tabela
+            atualizarFiltrosMultiSelectFinanceiro();
+        }
+
+        // ========== FILTROS MULTI-SELECT ==========
+        // Estado dos filtros
+        window.filtrosFinanceiro = { nd: [], up: [], m: [] };
+        window.filtrosExecFinanceira = { nd: [], up: [] };
+
+        // Toggle do dropdown
+        function toggleMultiFilter(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) return;
+            const menu = dropdown.querySelector('.multi-filter-menu');
+            if (!menu) return;
+            
+            // Fechar outros menus abertos
+            document.querySelectorAll('.multi-filter-menu.open').forEach(m => {
+                if (m !== menu) m.classList.remove('open');
+            });
+            
+            menu.classList.toggle('open');
+        }
+
+        // Fechar menus ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.multi-filter-dropdown')) {
+                document.querySelectorAll('.multi-filter-menu.open').forEach(m => m.classList.remove('open'));
+            }
+        });
+
+        // Atualizar filtros do Cadastro Financeiro
+        function atualizarFiltrosMultiSelectFinanceiro() {
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros) return;
+            const financeiros = window.tedSelecionado.financeiros;
+            
+            // Extrair valores únicos
+            const nds = Array.from(new Set(financeiros.map(f => f.numero))).sort();
+            const ups = Array.from(new Set(financeiros.map(f => f.up || f.ug))).sort();
+            const ms = Array.from(new Set(financeiros.map(f => f.m))).sort((a,b) => a - b);
+            
+            // Popular menu ND
+            const menuNd = document.getElementById('filterNdFinMenu');
+            if (menuNd) {
+                menuNd.innerHTML = nds.map(nd => `
+                    <label class="multi-filter-option">
+                        <input type="checkbox" value="${nd}" onchange="onFilterChangeFinanceiro('nd', '${nd}', this.checked)">
+                        ${nd}
+                    </label>
+                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroFinanceiro(\'nd\')">Limpar</button>';
+            }
+            
+            // Popular menu UP
+            const menuUp = document.getElementById('filterUpFinMenu');
+            if (menuUp) {
+                menuUp.innerHTML = ups.map(up => `
+                    <label class="multi-filter-option">
+                        <input type="checkbox" value="${up}" onchange="onFilterChangeFinanceiro('up', '${up}', this.checked)">
+                        ${up}
+                    </label>
+                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroFinanceiro(\'up\')">Limpar</button>';
+            }
+            
+            // Popular menu M
+            const menuM = document.getElementById('filterMFinMenu');
+            if (menuM) {
+                menuM.innerHTML = ms.map(m => `
+                    <label class="multi-filter-option">
+                        <input type="checkbox" value="${m}" onchange="onFilterChangeFinanceiro('m', '${m}', this.checked)">
+                        ${m}
+                    </label>
+                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroFinanceiro(\'m\')">Limpar</button>';
+            }
+            
+            // Resetar filtros
+            window.filtrosFinanceiro = { nd: [], up: [], m: [] };
+            atualizarLabelsFilterFinanceiro();
+        }
+
+        // Callback quando checkbox muda
+        function onFilterChangeFinanceiro(tipo, valor, checked) {
+            if (checked) {
+                if (!window.filtrosFinanceiro[tipo].includes(valor)) {
+                    window.filtrosFinanceiro[tipo].push(valor);
+                }
+            } else {
+                window.filtrosFinanceiro[tipo] = window.filtrosFinanceiro[tipo].filter(v => v !== valor);
+            }
+            atualizarLabelsFilterFinanceiro();
+            aplicarFiltroTabelaFinanceira();
+        }
+
+        // Limpar filtro específico
+        function limparFiltroFinanceiro(tipo) {
+            window.filtrosFinanceiro[tipo] = [];
+            const menuId = tipo === 'nd' ? 'filterNdFinMenu' : (tipo === 'up' ? 'filterUpFinMenu' : 'filterMFinMenu');
+            const menu = document.getElementById(menuId);
+            if (menu) {
+                menu.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            }
+            atualizarLabelsFilterFinanceiro();
+            aplicarFiltroTabelaFinanceira();
+        }
+
+        // Atualizar labels dos botões
+        function atualizarLabelsFilterFinanceiro() {
+            const labelNd = document.getElementById('filterNdFinLabel');
+            const labelUp = document.getElementById('filterUpFinLabel');
+            const labelM = document.getElementById('filterMFinLabel');
+            
+            if (labelNd) labelNd.textContent = window.filtrosFinanceiro.nd.length ? `(${window.filtrosFinanceiro.nd.length})` : 'Todos';
+            if (labelUp) labelUp.textContent = window.filtrosFinanceiro.up.length ? `(${window.filtrosFinanceiro.up.length})` : 'Todos';
+            if (labelM) labelM.textContent = window.filtrosFinanceiro.m.length ? `(${window.filtrosFinanceiro.m.length})` : 'Todos';
+        }
+
+        // Aplicar filtro na tabela de Cadastro Financeiro
+        function aplicarFiltroTabelaFinanceira() {
+            const tbody = document.getElementById('tabelaFinanceira');
+            if (!tbody) return;
+            
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(row => {
+                if (row.cells.length < 3) return; // linha vazia
+                const nd = row.cells[0]?.textContent?.trim() || '';
+                const up = row.cells[1]?.textContent?.trim() || '';
+                const m = row.cells[2]?.textContent?.trim() || '';
+                
+                let show = true;
+                if (window.filtrosFinanceiro.nd.length && !window.filtrosFinanceiro.nd.includes(nd)) show = false;
+                if (window.filtrosFinanceiro.up.length && !window.filtrosFinanceiro.up.includes(up)) show = false;
+                if (window.filtrosFinanceiro.m.length && !window.filtrosFinanceiro.m.includes(m)) show = false;
+                
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        // Atualizar filtros da Execução Financeira
+        function atualizarFiltrosMultiSelectExecFinanceira() {
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros) return;
+            const financeiros = window.tedSelecionado.financeiros;
+            
+            // Extrair valores únicos do cadastro financeiro (base para execução)
+            const nds = Array.from(new Set(financeiros.map(f => f.numero))).sort();
+            const ups = Array.from(new Set(financeiros.map(f => f.up || f.ug))).sort();
+            
+            // Popular menu ND
+            const menuNd = document.getElementById('filterNdExecMenu');
+            if (menuNd) {
+                menuNd.innerHTML = nds.map(nd => `
+                    <label class="multi-filter-option">
+                        <input type="checkbox" value="${nd}" onchange="onFilterChangeExecFinanceira('nd', '${nd}', this.checked)">
+                        ${nd}
+                    </label>
+                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroExecFinanceira(\'nd\')">Limpar</button>';
+            }
+            
+            // Popular menu UP
+            const menuUp = document.getElementById('filterUpExecMenu');
+            if (menuUp) {
+                menuUp.innerHTML = ups.map(up => `
+                    <label class="multi-filter-option">
+                        <input type="checkbox" value="${up}" onchange="onFilterChangeExecFinanceira('up', '${up}', this.checked)">
+                        ${up}
+                    </label>
+                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroExecFinanceira(\'up\')">Limpar</button>';
+            }
+            
+            // Resetar filtros
+            window.filtrosExecFinanceira = { nd: [], up: [] };
+            atualizarLabelsFilterExecFinanceira();
+        }
+
+        // Callback quando checkbox muda (Execução Financeira)
+        function onFilterChangeExecFinanceira(tipo, valor, checked) {
+            if (checked) {
+                if (!window.filtrosExecFinanceira[tipo].includes(valor)) {
+                    window.filtrosExecFinanceira[tipo].push(valor);
+                }
+            } else {
+                window.filtrosExecFinanceira[tipo] = window.filtrosExecFinanceira[tipo].filter(v => v !== valor);
+            }
+            atualizarLabelsFilterExecFinanceira();
+            aplicarFiltroTabelaExecFinanceira();
+        }
+
+        // Limpar filtro específico (Execução Financeira)
+        function limparFiltroExecFinanceira(tipo) {
+            window.filtrosExecFinanceira[tipo] = [];
+            const menuId = tipo === 'nd' ? 'filterNdExecMenu' : 'filterUpExecMenu';
+            const menu = document.getElementById(menuId);
+            if (menu) {
+                menu.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            }
+            atualizarLabelsFilterExecFinanceira();
+            aplicarFiltroTabelaExecFinanceira();
+        }
+
+        // Atualizar labels dos botões (Execução Financeira)
+        function atualizarLabelsFilterExecFinanceira() {
+            const labelNd = document.getElementById('filterNdExecLabel');
+            const labelUp = document.getElementById('filterUpExecLabel');
+            
+            if (labelNd) labelNd.textContent = window.filtrosExecFinanceira.nd.length ? `(${window.filtrosExecFinanceira.nd.length})` : 'Todos';
+            if (labelUp) labelUp.textContent = window.filtrosExecFinanceira.up.length ? `(${window.filtrosExecFinanceira.up.length})` : 'Todos';
+        }
+
+        // Aplicar filtro na tabela de Execução Financeira
+        function aplicarFiltroTabelaExecFinanceira() {
+            const tbody = document.getElementById('tabelaExecFinanceira');
+            if (!tbody) return;
+            
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(row => {
+                if (row.cells.length < 2) return; // linha vazia
+                const nd = row.cells[0]?.textContent?.trim() || '';
+                const up = row.cells[1]?.textContent?.trim() || '';
+                
+                let show = true;
+                if (window.filtrosExecFinanceira.nd.length && !window.filtrosExecFinanceira.nd.includes(nd)) show = false;
+                if (window.filtrosExecFinanceira.up.length && !window.filtrosExecFinanceira.up.includes(up)) show = false;
+                
+                row.style.display = show ? '' : 'none';
+            });
         }
 
         // EXECUÇÃO FINANCEIRA
@@ -3357,13 +4229,16 @@
             }
 
             window.tedSelecionado.execFinanceiras.push({ id: Date.now(), nd, up, valor, data });
-            salvarDados();
+            // Atualizar gasto (valor realizado) automaticamente
+            atualizarGastoFromExecFinanceiras(window.tedSelecionado);
             atualizarTabelaExecFinanceira();
             atualizarGantt();
+            try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
             document.getElementById('numExecFin').value = '';
             document.getElementById('upExecFin').value = '';
             document.getElementById('valorExecFin').value = '';
             document.getElementById('dataExecFin').value = '';
+            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
         }
 
         function removerExecFinanceira(nd, up, data) {
@@ -3372,9 +4247,11 @@
             window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras.filter(f => 
                 !(String(f.nd || f.numero) === nd && String(f.up || f.ug) === up && f.data === data)
             );
-            salvarDados();
+            // Atualizar gasto (valor realizado) automaticamente
+            atualizarGastoFromExecFinanceiras(window.tedSelecionado);
             atualizarTabelaExecFinanceira();
             atualizarGantt();
+            try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
         }
 
         // GANTT 60 MESES
@@ -3412,7 +4289,7 @@
             // Criar tabela com resumo anual
             let html = '<table class="tabela-padrao" style="margin-top: 1rem; width: auto;">';
             html += '<thead><tr>';
-            html += '<th>Ano</th>';
+            html += '<th class="col-ano">Ano</th>';
             html += '<th class="col-valor">Previsto Anual</th>';
             html += '<th class="col-valor">A Receber ano anterior</th>';
             html += '<th class="col-valor">Recebido Anual</th>';
@@ -3460,7 +4337,7 @@
                 const liquidacao = previsto > 0 ? ((recebido / previsto) * 100) : 0;
                 
                 html += `<tr>`;
-                html += `<td style="font-weight: bold;">${ano}</td>`;
+                html += `<td class="col-ano" style="font-weight: bold;">${ano}</td>`;
                 html += `<td class="col-valor">${previsto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                 html += `<td class="col-valor">${aReceberAnterior.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                 html += `<td class="col-valor">${recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
@@ -3474,6 +4351,320 @@
             resumoContainer.innerHTML = html;
         }
 
+        // --- Entregas chart (por objeto) ---
+        function atualizarFiltroTedEntregas() {
+            const sel = document.getElementById('filterTedEntregas');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">-- Selecione um TED --</option>';
+            dados.teds.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = `TED ${t.numTed} - ${t.objetivo}`;
+                sel.appendChild(opt);
+            });
+            // Atualizar também o seletor full (se existir)
+            const selFull = document.getElementById('filterTedEntregasFull');
+            if (selFull) {
+                selFull.innerHTML = sel.innerHTML;
+            }
+            // Atualizar filtros auxiliares (ano e UP)
+            try { atualizarFiltrosGrafico(); } catch(e) {}
+        }
+
+        function atualizarFiltrosGrafico() {
+            const selAno = document.getElementById('filterAnoEntregas');
+            const selUp = document.getElementById('filterUpEntregas');
+            if (!selAno || !selUp) return;
+
+            const anosSet = new Set();
+            const upsSet = new Set();
+            (dados.teds || []).forEach(t => {
+                (t.financeiros || []).forEach(f => {
+                    if (f.anoDesc) anosSet.add(Number(f.anoDesc));
+                    if (f.up) upsSet.add(f.up);
+                    if (f.ug) upsSet.add(f.ug);
+                });
+                (t.execFinanceiras || []).forEach(e => {
+                    if (e.data) anosSet.add(new Date(e.data + 'T00:00:00').getFullYear());
+                    if (e.up) upsSet.add(e.up);
+                    if (e.ug) upsSet.add(e.ug);
+                });
+            });
+
+            const anos = Array.from(anosSet).sort((a,b)=>a-b);
+            const ups = Array.from(upsSet).sort();
+
+            selAno.innerHTML = '<option value="">-- Todos --</option>' + anos.map(a=>`<option value="${a}">${a}</option>`).join('');
+            selUp.innerHTML = '<option value="">-- Todas --</option>' + ups.map(u=>`<option value="${u}">${u}</option>`).join('');
+        }
+
+        function renderEntregasFromFilter() {
+            const sel = document.getElementById('filterTedEntregas');
+            if (!sel) return;
+            const id = sel.value;
+            const ano = (document.getElementById('filterAnoEntregas') || {}).value || null;
+            const up = (document.getElementById('filterUpEntregas') || {}).value || null;
+            renderEntregasChart(id, 'entregasChartContainer', ano, up);
+            try { renderResumoFinanceiro(id, 'resumoFinanceiroChart', ano, up); } catch(e) {}
+        }
+
+        function renderEntregasChart(tedId, containerId = 'entregasChartContainer', anoFilter = null, upFilter = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            if (!tedId) {
+                container.innerHTML = '<p style="color:var(--text);">Selecione um TED para ver o gráfico de entregas (por objeto).</p>';
+                return;
+            }
+            const ted = dados.teds.find(t => String(t.id) === String(tedId));
+            if (!ted) {
+                container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>';
+                return;
+            }
+
+            const objetos = ted.objetos || [];
+            if (!objetos.length) {
+                container.innerHTML = '<p style="color:var(--text);">Nenhum objeto cadastrado para este TED.</p>';
+                return;
+            }
+
+            // Calcular entregas por objeto (execFisicas.qtde)
+            const execs = ted.execFisicas || [];
+            const execsFiltrados = execs.filter(e => {
+                if (anoFilter) {
+                    if (!e.data) return false;
+                    const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                    if (anoExec !== Number(anoFilter)) return false;
+                }
+                if (upFilter) {
+                    const u = e.up || e.ug || '';
+                    if (u !== upFilter) return false;
+                }
+                return true;
+            });
+
+            const items = objetos.map(o => {
+                const entregues = execsFiltrados.filter(e => e.objeto === o.objeto).reduce((s,e)=>s+(parseFloat(e.qtde)||0),0);
+                const planejado = parseFloat(o.qtde) || 0;
+                const perc = planejado > 0 ? Math.min(100, (entregues/planejado)*100) : 0;
+                return { nome: o.objeto, entregues, planejado, perc };
+            });
+
+            // Render chart (simple bars)
+            let html = '<div class="entregas-chart">';
+            items.forEach(it => {
+                const heightPct = Math.max(2, Math.round(it.perc));
+                // map percentage to pixel height (max 160px)
+                const h = Math.round((heightPct/100)*160);
+                html += `<div class="entregas-item">`;
+                html += `<div class="entregas-percent">${it.perc.toFixed(2)}%</div>`;
+                html += `<div class="entregas-bar" style="height:${Math.max(8,h)}px;">`;
+                html += `</div>`;
+                html += `<div class="entregas-label">${it.nome}</div>`;
+                html += `</div>`;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        // --- Resumo Financeiro (lado do dashboard) ---
+        function renderResumoFinanceiroFromFilter() {
+            const sel = document.getElementById('filterTedEntregas');
+            if (!sel) return renderResumoFinanceiro(null);
+            const id = sel.value || null;
+            const ano = (document.getElementById('filterAnoEntregas') || {}).value || null;
+            const up = (document.getElementById('filterUpEntregas') || {}).value || null;
+            renderResumoFinanceiro(id, 'resumoFinanceiroChart', ano, up);
+        }
+
+        function renderResumoFinanceiro(tedId = null, containerId = 'resumoFinanceiroChart', anoFilter = null, upFilter = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // Gather cadastro and execuções for the selected TED (or all TEDs)
+            let cad = [];
+            let execs = [];
+            if (tedId) {
+                const ted = dados.teds.find(t => String(t.id) === String(tedId));
+                if (!ted) { container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>'; return; }
+                cad = ted.financeiros || [];
+                execs = ted.execFinanceiras || [];
+            } else {
+                (dados.teds || []).forEach(t => { cad = cad.concat(t.financeiros || []); execs = execs.concat(t.execFinanceiras || []); });
+            }
+
+            // apply optional filters (ano and UP)
+            if (anoFilter) {
+                cad = cad.filter(f => Number(f.anoDesc) === Number(anoFilter));
+                execs = execs.filter(e => e.data && new Date(e.data + 'T00:00:00').getFullYear() === Number(anoFilter));
+            }
+            if (upFilter) {
+                cad = cad.filter(f => (f.up || f.ug || '') === upFilter);
+                execs = execs.filter(e => ((e.up || e.ug || '') === upFilter));
+            }
+
+            const anosSet = new Set();
+            cad.forEach(f => { if (f.anoDesc) anosSet.add(Number(f.anoDesc)); });
+            execs.forEach(e => { if (e.data) anosSet.add(new Date(e.data + 'T00:00:00').getFullYear()); });
+            const anos = Array.from(anosSet).sort((a,b)=>a-b);
+
+            if (anos.length === 0) { container.innerHTML = '<p style="color:var(--text);">Sem dados para o resumo financeiro.</p>'; return; }
+
+            // Build table with columns: Ano | P Trab | Saldo a receber | Recebido | Empenhado | A Receber
+            let saldoAcumulado = 0;
+            let html = '<div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:740px; margin-top:0.5rem;">';
+            html += '<thead><tr>' +
+                '<th class="col-ano">Ano</th>' +
+                '<th class="col-valor">P Trab</th>' +
+                '<th class="col-valor">Saldo a receber</th>' +
+                '<th class="col-valor">Recebido</th>' +
+                '<th class="col-valor">Empenhado</th>' +
+                '<th class="col-valor">A Receber</th>' +
+                '</tr></thead><tbody>';
+
+            anos.forEach((ano) => {
+                const previsto = cad.filter(f => f.anoDesc === ano).reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+
+                const recebido = execs.filter(e => {
+                    if (!e.data) return false;
+                    const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return anoExec === ano && valor > 0;
+                }).reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+
+                const devolvido = Math.abs(execs.filter(e => {
+                    if (!e.data) return false;
+                    const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return anoExec === ano && valor < 0;
+                }).reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
+
+                const aReceberAnterior = saldoAcumulado;
+                const saldoAReceber = previsto + aReceberAnterior;
+                const empenhado = recebido - devolvido;
+                const aReceber = saldoAReceber - empenhado;
+                const saldo = previsto + aReceberAnterior - recebido - devolvido;
+                saldoAcumulado = saldo;
+
+                html += '<tr>';
+                html += `<td class="col-ano" style="font-weight:700">${ano}</td>`;
+                html += `<td class="col-valor">${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                html += `<td class="col-valor">${saldoAReceber.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                html += `<td class="col-valor">${recebido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                html += `<td class="col-valor">${empenhado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                html += `<td class="col-valor">${aReceber.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Render a compact SVG grouped bar chart for the resumo financeiro
+        function renderResumoFinanceiroChart(tedId = null, containerId = 'resumoFinanceiroChart') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // reuse same data gathering as the table function
+            let cad = [];
+            let execs = [];
+            if (tedId) {
+                const ted = dados.teds.find(t => String(t.id) === String(tedId));
+                if (!ted) { container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>'; return; }
+                cad = ted.financeiros || [];
+                execs = ted.execFinanceiras || [];
+            } else {
+                (dados.teds || []).forEach(t => { cad = cad.concat(t.financeiros || []); execs = execs.concat(t.execFinanceiras || []); });
+            }
+
+            const anosSet = new Set();
+            cad.forEach(f => anosSet.add(f.anoDesc));
+            execs.forEach(e => { if (e.data) anosSet.add(new Date(e.data + 'T00:00:00').getFullYear()); });
+            const anos = Array.from(anosSet).sort();
+            if (anos.length === 0) { container.innerHTML = '<p style="color:var(--text);">Sem dados para gráfico.</p>'; return; }
+
+            // compute series arrays
+            let saldoAcumulado = 0;
+            const series = anos.map(ano => {
+                const previsto = cad.filter(f => f.anoDesc === ano).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                const recebido = execs.filter(e=>{ if(!e.data) return false; const a=new Date(e.data+'T00:00:00').getFullYear(); const v=parseFloat(e.valor||e.valorRealizado)||0; return a===ano && v>0; }).reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0);
+                const devolvido = Math.abs(execs.filter(e=>{ if(!e.data) return false; const a=new Date(e.data+'T00:00:00').getFullYear(); const v=parseFloat(e.valor||e.valorRealizado)||0; return a===ano && v<0; }).reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0));
+                const aReceberAnterior = saldoAcumulado;
+                const saldoAReceber = previsto + aReceberAnterior;
+                const empenhado = recebido - devolvido;
+                const aReceber = saldoAReceber - empenhado;
+                const saldo = previsto + aReceberAnterior - recebido - devolvido;
+                saldoAcumulado = saldo;
+                return { ano, previsto, saldoAReceber, recebido, empenhado, aReceber };
+            });
+
+            // chart dimensions
+            const padding = {top:20, right:10, bottom:36, left:40};
+            const width = 360;
+            const height = 160;
+            const chartW = width - padding.left - padding.right;
+            const chartH = height - padding.top - padding.bottom;
+
+            // flatten values to find max
+            const allVals = [];
+            series.forEach(s => { allVals.push(s.previsto, s.saldoAReceber, s.recebido, s.empenhado, s.aReceber); });
+            const maxVal = Math.max(1, ...allVals.map(v=>Math.abs(v)));
+
+            // colors
+            const colors = { previsto:'#2b6cb0', recebido:'#16a34a', empenhado:'#ea580c', aReceber:'#64748b' };
+
+            // build SVG
+            let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+            svg += `<style> .label{font-family:system-ui; font-size:10px; fill:#223; } .axis{stroke:#ddd; stroke-width:1} .legend{text-anchor:start; font-size:11px; font-family:system-ui;} </style>`;
+
+            // scales
+            const n = series.length;
+            const groupW = chartW / n;
+            const barWidth = Math.min(18, Math.max(8, groupW/5));
+
+            // y scale function
+            const y = v => padding.top + chartH - (v / maxVal) * chartH;
+
+            // draw y axis ticks
+            for (let i=0;i<=3;i++){
+                const val = Math.round(maxVal * (i/3));
+                const yy = y(val);
+                svg += `<line x1="${padding.left}" x2="${width-padding.right}" y1="${yy}" y2="${yy}" class="axis" />`;
+                svg += `<text x="${padding.left-6}" y="${yy+4}" class="label" text-anchor="end">${val.toLocaleString('pt-BR')}</text>`;
+            }
+
+            // draw groups
+            series.forEach((s, idx) => {
+                const gx = padding.left + idx * groupW + (groupW - (barWidth*4 + 6)) / 2;
+                const vals = [s.previsto, s.recebido, s.empenhado, s.aReceber];
+                const keys = ['previsto','recebido','empenhado','aReceber'];
+                vals.forEach((v,i) => {
+                    const bx = gx + i*(barWidth+2);
+                    const by = y(Math.max(0,v));
+                    const h = Math.max(2, chartH - (by - padding.top));
+                    const color = colors[keys[i]] || '#888';
+                    svg += `<rect x="${bx}" y="${by}" width="${barWidth}" height="${h}" fill="${color}">`;
+                    svg += `<title>${s.ano} - ${keys[i]}: ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}</title>`;
+                    svg += `</rect>`;
+                });
+                // ano label
+                const lx = gx + (barWidth*4 + 6)/2;
+                svg += `<text x="${lx}" y="${padding.top + chartH + 14}" class="label" text-anchor="middle">${s.ano}</text>`;
+            });
+
+            // legend
+            const legendX = padding.left + 0;
+            let ly = 6;
+            Object.entries({ 'Previsto':colors.previsto, 'Recebido':colors.recebido, 'Empenhado':colors.empenhado, 'A Receber':colors.aReceber }).forEach(([k,c])=>{
+                svg += `<rect x="${legendX}" y="${ly}" width="10" height="10" fill="${c}" />`;
+                svg += `<text x="${legendX+14}" y="${ly+9}" class="legend">${k}</text>`;
+                ly += 14;
+            });
+
+            svg += `</svg>`;
+            container.innerHTML = svg;
+        }
+
         // Render Gantt de Vigência dos TEDs (todas as entradas em dados.teds)
         function renderGanttVigencia() {
             const container = document.getElementById('ganttVigencia');
@@ -3484,29 +4675,34 @@
                 return;
             }
 
-            // Normalizar datas e ordenar por UP (upResponsavel)
+            // Normalizar datas
             const rows = teds.map(t => {
                 const inicio = new Date(normalizarData(t.inicioVigencia) + 'T00:00:00');
                 const fim = new Date(normalizarData(t.fimVigencia) + 'T00:00:00');
                 return { ted: t, up: (t.upResponsavel || t.up || '').toString(), inicio, fim };
             }).filter(r => !isNaN(r.inicio.getTime()) && !isNaN(r.fim.getTime()));
 
-            rows.sort((a,b) => {
-                if (a.up < b.up) return -1;
-                if (a.up > b.up) return 1;
-                return a.inicio - b.inicio;
+            // Agrupar por UP e ordenar por UP e início
+            const groupsMap = new Map();
+            rows.forEach(r => {
+                const key = r.up || '(sem UP)';
+                if (!groupsMap.has(key)) groupsMap.set(key, []);
+                groupsMap.get(key).push(r);
             });
+            const groups = Array.from(groupsMap.entries()).map(([up, arr]) => {
+                arr.sort((a,b) => a.inicio - b.inicio);
+                return { up, teds: arr };
+            }).sort((a,b) => a.up.localeCompare(b.up));
 
             // Calcular período total
             let minDate = rows[0].inicio, maxDate = rows[0].fim;
             rows.forEach(r => { if (r.inicio < minDate) minDate = r.inicio; if (r.fim > maxDate) maxDate = r.fim; });
 
-            // Limitar colunas para evitar tabelas enormes (máx 60 meses)
+            // Limitar colunas (máx 60 meses)
             const maxMonths = 60;
             const monthDiff = (d1, d2) => (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
             let totalMonths = monthDiff(minDate, maxDate) + 1;
             if (totalMonths > maxMonths) {
-                // centralizar janela em torno da data atual
                 const hoje = new Date();
                 const windowStart = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
                 const half = Math.floor(maxMonths/2);
@@ -3517,84 +4713,129 @@
                 totalMonths = maxMonths;
             }
 
-            // Construir meses e agrupar por ano
+            // Construir meses e anos
             const months = [];
             const years = [];
             for (let i=0;i<totalMonths;i++) {
                 const d = new Date(minDate.getFullYear(), minDate.getMonth() + i, 1);
-                const label = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
-                months.push({d,label,year:d.getFullYear(),month:d.getMonth()+1});
+                months.push({d, label: d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase(), year: d.getFullYear()});
                 const y = d.getFullYear();
                 const last = years[years.length-1];
                 if (!last || last.year !== y) years.push({year: y, count: 1, startIdx: i}); else last.count++;
             }
 
-            // Índice do mês atual (para destaque)
-            const hoje = new Date();
-            const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+            // Configurações de largura fixa para cálculo de overlay
+            const upColWidth = 140; // px
+            const tedColWidth = 260; // px
+            const monthWidth = 40; // px
 
-            // Gerar HTML da tabela Gantt com duas linhas de cabeçalho: anos (mesclados) e meses
-            let html = '<table class="gantt-table" style="margin-top:0.5rem; width:100%;"><thead>';
-            // Linha de anos (mesclada)
-            html += '<tr>';
-            html += '<th style="width:260px;">TED</th>';
-            years.forEach(y => {
-                html += `<th colspan="${y.count}" style="text-align:center; font-size:0.85rem; border-left: 1px solid var(--border);">${y.year}</th>`;
-            });
-            html += '</tr>';
+            // Construir tabela (colgroup para larguras fixas das colunas)
+            let table = '<div class="gantt-wrap" style="position:relative; overflow:auto;">';
+            table += '<table class="gantt-table" style="margin-top:0.5rem; width:auto; table-layout:fixed;">';
+            table += '<colgroup>';
+            table += `<col style="width:${upColWidth}px">`;
+            table += `<col style="width:${tedColWidth}px">`;
+            for (let i=0;i<months.length;i++) table += `<col style="width:${monthWidth}px">`;
+            table += '</colgroup>';
 
-            // Linha de meses
-            html += '<tr class="header-meses">';
-            html += '<th style="visibility:hidden; height:0; padding:0; margin:0;"></th>';
-            months.forEach((m, idx) => {
-                // colocar borda à esquerda quando começa um novo ano (visível)
-                const isYearStart = years.some(y => y.startIdx === idx);
-                const borderLeft = isYearStart ? 'border-left:2px solid #1f2937;' : '';
-                const todayBorder = (idx === todayIdx) ? 'border-left:3px solid #f97316;' : '';
-                html += `<th style="text-align:center; font-size:0.75rem; ${borderLeft} ${todayBorder}">${m.label}/${String(m.year).slice(-2)}</th>`;
-            });
-            html += '</tr>';
-            html += '</thead><tbody>';
+            // Cabeçalhos
+            table += '<thead>';
+            table += '<tr>';
+            table += '<th rowspan="2" style="width:'+upColWidth+'px;">UP</th>';
+            table += '<th rowspan="2" style="width:'+tedColWidth+'px;">TED</th>';
+            years.forEach(y => table += `<th colspan="${y.count}" style="text-align:center; font-size:0.85rem;">${y.year}</th>`);
+            table += '</tr>';
+            table += '<tr class="header-meses">';
+            months.forEach((m, idx) => table += `<th style="text-align:center; font-size:0.75rem;">${m.label}/${String(m.year).slice(-2)}</th>`);
+            table += '</tr>';
+            table += '</thead>';
 
-            // Render linhas com mesclagem de células para a vigência (colspan)
-            let prevUp = null;
-            rows.forEach((r, rowIdx) => {
-                const startIdx = Math.max(0, monthDiff(minDate, new Date(r.inicio.getFullYear(), r.inicio.getMonth(), 1)));
-                const endIdx = Math.min(totalMonths-1, monthDiff(minDate, new Date(r.fim.getFullYear(), r.fim.getMonth(), 1)));
-
-                // Inserir separador visual entre grupos de UP
-                if (prevUp !== null && r.up !== prevUp) {
-                    html += `<tr><td colspan="${totalMonths+1}" style="padding:0; border-top:3px solid #1f2937; height:4px;"></td></tr>`;
-                }
-
-                html += '<tr>';
-                // Célula TED: numero - objeto
-                const label = `${r.ted.numTed || ''} - ${r.ted.objeto || r.ted.objetivo || ''}`;
-                html += `<td class="gantt-row-label" title="UP: ${r.up}">${label}</td>`;
-
-                // Render meses com mesclagem
-                for (let i=0;i<months.length;i++) {
-                    if (i === startIdx) {
-                        const span = endIdx - startIdx + 1;
-                        // aplicar destaque se atravessa a data atual
-                        const isTodayInside = (todayIdx >= startIdx && todayIdx <= endIdx);
-                        const todayStyle = isTodayInside ? 'border-left:3px solid #f97316;' : '';
-                        html += `<td colspan="${span}" style="padding:6px 4px; ${todayStyle}">`;
-                        html += `<div class=\"gantt-bar\" title=\"${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}\"></div>`;
-                        html += '</td>';
-                        i += (span - 1); // avançar o índice
-                        continue;
+            // Corpo: percorrer grupos e inserir rowspan na coluna UP
+            table += '<tbody>';
+            groups.forEach(group => {
+                const up = group.up;
+                group.teds.forEach((r, idx) => {
+                    const startIdx = Math.max(0, monthDiff(minDate, new Date(r.inicio.getFullYear(), r.inicio.getMonth(), 1)));
+                    const endIdx = Math.min(totalMonths-1, monthDiff(minDate, new Date(r.fim.getFullYear(), r.fim.getMonth(), 1)));
+                    table += '<tr>';
+                    if (idx === 0) {
+                        table += `<td class="gantt-row-up" rowspan="${group.teds.length}" style="vertical-align:middle; font-weight:700;">${up}</td>`;
                     }
-                    // células vazias para meses fora da vigência (rendered via colspan skipping)
-                    html += `<td></td>`;
-                }
+                    const label = `${r.ted.numTed || ''} - ${r.ted.objeto || r.ted.objetivo || ''}`;
+                    table += `<td class="gantt-row-label" title="UP: ${r.up}">${label}</td>`;
 
-                html += '</tr>';
-                prevUp = r.up;
+                    // Render meses com colspan para a vigência
+                    for (let i=0;i<months.length;i++) {
+                        if (i === startIdx) {
+                            const span = endIdx - startIdx + 1;
+                            table += `<td colspan="${span}" style="padding:6px 4px;"><div class=\"gantt-bar\" title=\"${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}\"></div></td>`;
+                            i += (span - 1);
+                            continue;
+                        }
+                        table += `<td></td>`;
+                    }
+
+                    table += '</tr>';
+                });
+
+                // Separador visual após grupo (linha escura)
+                table += `<tr><td colspan="${2 + months.length}" style="padding:0; border-top:3px solid #1f2937; height:4px;"></td></tr>`;
             });
+            table += '</tbody>';
+            table += '</table>';
 
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            // Overlay para linhas verticais (anos e mês atual)
+            table += `<div class="gantt-overlay" style="position:absolute; top:0; left:0; height:100%; width:100%; pointer-events:none; z-index:5;"></div>`;
+            table += '</div>';
+
+            container.innerHTML = table;
+
+            // Calcular e desenhar linhas no overlay (usar posições reais dos <th> para alinhamento preciso)
+            const wrap = container.querySelector('.gantt-wrap');
+            const overlay = wrap.querySelector('.gantt-overlay');
+            // garantir overlay cobre o conteúdo
+            overlay.style.height = wrap.scrollHeight + 'px';
+
+            const monthThs = wrap.querySelectorAll('thead tr.header-meses th');
+            if (monthThs && monthThs.length) {
+                const wrapRect = wrap.getBoundingClientRect();
+
+                // Adicionar linhas dos anos usando a posição do <th> correspondente ao primeiro mês do ano
+                years.forEach(y => {
+                    const idx = y.startIdx;
+                    const th = monthThs[idx];
+                    if (!th) return;
+                    const thRect = th.getBoundingClientRect();
+                    const x = thRect.left - wrapRect.left + wrap.scrollLeft;
+                    const line = document.createElement('div');
+                    line.style.position = 'absolute';
+                    line.style.left = x + 'px';
+                    line.style.top = '0';
+                    line.style.bottom = '0';
+                    line.style.width = '0px';
+                    line.style.borderLeft = '4px solid rgba(31,41,55,0.95)';
+                    line.style.zIndex = 6;
+                    overlay.appendChild(line);
+                });
+
+                // Linha do mês atual (destaque) usando posição do <th>
+                const hoje = new Date();
+                const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+                if (todayIdx >= 0 && todayIdx < monthThs.length) {
+                    const th = monthThs[todayIdx];
+                    const thRect = th.getBoundingClientRect();
+                    const x = thRect.left - wrapRect.left + wrap.scrollLeft;
+                    const tline = document.createElement('div');
+                    tline.style.position = 'absolute';
+                    tline.style.left = x + 'px';
+                    tline.style.top = '0';
+                    tline.style.bottom = '0';
+                    tline.style.width = '0px';
+                    tline.style.borderLeft = '5px solid #f97316';
+                    tline.style.zIndex = 7;
+                    overlay.appendChild(tline);
+                }
+            }
         }
 
         function atualizarTabelaExecFinanceira() {
@@ -3689,7 +4930,17 @@
             let totalRealizado = 0;
             const totalMeses = new Map();
 
-            const linhas = Array.from(chaves).map((chave, idx) => {
+            // Ordenar chaves por ND (numérico quando possível) antes de construir linhas
+            const sortedChaves = Array.from(chaves).sort((a,b) => {
+                const ndA = String(a).split('||')[0] || '';
+                const ndB = String(b).split('||')[0] || '';
+                const nA = parseFloat(ndA.replace(/[^0-9.-]/g, ''));
+                const nB = parseFloat(ndB.replace(/[^0-9.-]/g, ''));
+                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                return String(ndA).localeCompare(String(ndB), undefined, {numeric: true});
+            });
+
+            const linhas = sortedChaves.map((chave, idx) => {
                 const [nd, up] = chave.split('||');
                 const previsto = cad.filter(f => String(f.numero)===nd && String(f.up || f.ug)===up)
                                     .reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
@@ -3824,6 +5075,9 @@
             if (resumoDevolvido) resumoDevolvido.innerHTML = `<span style="color:#ef4444">-${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
             if (resumoSaldo) resumoSaldo.innerHTML = `<span style="font-weight:700;color:${saldoAnual<0? '#ef4444':'inherit'}">${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
             if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
+            
+            // Atualizar opções de filtro da Execução Financeira
+            atualizarFiltrosMultiSelectExecFinanceira();
         }
 
         // Editar valor da Execução Física
@@ -4537,11 +5791,13 @@
                                 qtde: parseFloat(row.qtde) || 0,
                                 data: row.data || ''
                             }));
+                            // Atualizar progresso físico a partir das execFisicas importadas
+                            try { ted.progressoFisico = calcularProgressoFisico(ted); } catch(e) { ted.progressoFisico = ted.progressoFisico || 0; }
                             countTeds++;
                             countItens += grouped[numTed].length;
                         }
                     });
-                    salvarDados();
+                    try { salvarDados(); } catch(e) {}
                     alert(`✅ ${countItens} execução(ões) física(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
@@ -4651,11 +5907,13 @@
                                 valor: parseFloat(row.valor) || 0,
                                 data: row.data || ''
                             }));
+                            // Atualizar gasto (valor realizado) a partir das execFinanceiras importadas
+                            try { atualizarGastoFromExecFinanceiras(ted); } catch(e) { try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}}
                             countTeds++;
                             countItens += grouped[numTed].length;
                         }
                     });
-                    salvarDados();
+                    try { salvarDados(); } catch(e) {}
                     alert(`✅ ${countItens} execução(ões) financeira(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
