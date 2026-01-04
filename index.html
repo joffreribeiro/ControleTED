@@ -888,7 +888,7 @@
         <!-- Abas -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-            <button class="tab-btn" onclick="switchTab('teds')">📋 TEDs</button>
+            <button class="tab-btn" onclick="switchTab('teds')">📋 TED</button>
             <button id="tab-novo" class="tab-btn" onclick="switchTab('novo')" style="display:none;">➕ Novo TED</button>
             <button class="tab-btn" onclick="switchTab('detalhes')">🔎 Detalhes TED</button>
             <button class="tab-btn" onclick="switchTab('relatorios')">📑 Relatórios</button>
@@ -947,7 +947,7 @@
             </div>
             
             <div class="card">
-                <h2>Vigência dos TEDs</h2>
+                <h2>Vigência dos TED</h2>
                 <div id="ganttVigencia" style="overflow-x:auto; max-width:100%;">
                     <p style="color:var(--text); padding:0.75rem;">Gerando gráfico de vigência...</p>
                 </div>
@@ -1002,15 +1002,15 @@
         <!-- TAB 2: Listar TEDs -->
         <div id="teds" class="tab-content">
             <div class="card">
-                <h2>Seus Termos de Execução</h2>
+                <h2>Termos de Execução Descentralizada</h2>
                 <div style="text-align: left; margin-bottom: 0.75rem; display:flex; gap:0.5rem; align-items:center;">
                     <button class="btn btn-primary" onclick="switchTab('novo')">Criar Novo TED</button>
                     <div style="display:flex; gap:0.5rem; align-items:center; margin-left: auto;">
                         <label style="font-size:0.9rem; color:var(--text);">Filtrar UP:</label>
-                        <select id="filterUP_teds" onchange="atualizarListaTEDs()" style="min-width:140px; padding:0.25rem;"></select>
+                        <select id="filterUP_teds" multiple size="4" onchange="atualizarListaTEDs()" style="min-width:140px; padding:0.25rem;"></select>
                         <label style="font-size:0.9rem; color:var(--text);">Filtrar Status:</label>
-                        <select id="filterStatus_teds" onchange="atualizarListaTEDs()" style="min-width:160px; padding:0.25rem;"></select>
-                        <button class="btn" onclick="(function(){ document.getElementById('filterUP_teds').value=''; document.getElementById('filterStatus_teds').value=''; atualizarListaTEDs(); })()">Limpar</button>
+                        <select id="filterStatus_teds" multiple size="4" onchange="atualizarListaTEDs()" style="min-width:160px; padding:0.25rem;"></select>
+                        <button class="btn" onclick="(function(){ const up=document.getElementById('filterUP_teds'); const st=document.getElementById('filterStatus_teds'); for(let i=0;i<up.options.length;i++){up.options[i].selected=false;} for(let i=0;i<st.options.length;i++){st.options[i].selected=false;} atualizarListaTEDs(); })()">Limpar</button>
                     </div>
                 </div>
                 <div id="listaTeds">
@@ -2197,15 +2197,18 @@
             // Aplicar filtros selecionados (UP e Status)
             let listaFiltrada = dados.teds.slice();
             try {
-                const selUp = (document.getElementById('filterUP_teds') || {}).value || '';
-                const selStatus = (document.getElementById('filterStatus_teds') || {}).value || '';
-                if (selUp) {
-                    listaFiltrada = listaFiltrada.filter(t => String(t.upResponsavel || t.up || '').trim() === selUp);
+                // Read multi-select values (support multiple UPs and multiple Status)
+                const upEl = document.getElementById('filterUP_teds');
+                const statusEl = document.getElementById('filterStatus_teds');
+                const selUpList = upEl ? Array.from(upEl.selectedOptions).map(o => String(o.value || '').trim()).filter(v => v) : [];
+                const selStatusList = statusEl ? Array.from(statusEl.selectedOptions).map(o => String(o.value || '').trim()).filter(v => v) : [];
+                if (selUpList.length > 0) {
+                    listaFiltrada = listaFiltrada.filter(t => selUpList.includes(String(t.upResponsavel || t.up || '').trim()));
                 }
-                if (selStatus) {
+                if (selStatusList.length > 0) {
                     listaFiltrada = listaFiltrada.filter(t => {
                         const statusObj = getDisplayStatus(t) || { text: '-' };
-                        return String(statusObj.text || '').trim() === selStatus;
+                        return selStatusList.includes(String(statusObj.text || '').trim());
                     });
                 }
             } catch (e) { console.warn('Erro aplicando filtros TEDs', e); }
