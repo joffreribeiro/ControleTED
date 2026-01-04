@@ -370,8 +370,126 @@
         }
 
         .badge-encerrado {
-            background: #f0fdf4;
-            color: #14532d;
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Filtros Multi-Select estilo Excel */
+        .filter-bar {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+            align-items: center;
+        }
+        .filter-bar-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text);
+            margin-right: 0.25rem;
+        }
+        .filter-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            background: #f3f4f6;
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        .filter-btn:hover {
+            background: #e5e7eb;
+        }
+        .filter-btn.active {
+            background: #dbeafe;
+            border-color: var(--primary);
+        }
+        .filter-btn::after {
+            content: '▼';
+            font-size: 0.6rem;
+            margin-left: 0.25rem;
+        }
+        .filter-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 160px;
+            max-height: 220px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 200;
+            padding: 0.25rem 0;
+        }
+        .filter-menu.open {
+            display: block;
+        }
+        .filter-menu label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .filter-menu label:hover {
+            background: #f3f4f6;
+        }
+        .filter-menu input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+        }
+        .filter-menu .filter-clear-btn {
+            display: block;
+            width: calc(100% - 1rem);
+            margin: 0.25rem 0.5rem;
+            padding: 0.3rem;
+            font-size: 0.75rem;
+            background: #fee2e2;
+            color: #b91c1c;
+            border: none;
+            border-radius: 0.2rem;
+            cursor: pointer;
+            text-align: center;
+        }
+        .filter-menu .filter-clear-btn:hover {
+            background: #fecaca;
+        }
+
+        /* Próximas Ações - Layout 3 colunas */
+        .proximas-acoes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        .proxima-col {
+            background: #f9fafb;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            min-height: 120px;
+        }
+        .proxima-col h4 {
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        @media (max-width: 1000px) {
+            .proximas-acoes-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: 640px) {
+            .proximas-acoes-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Modal */
@@ -796,32 +914,32 @@
                             <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
-                <!-- Resumo adicional: TEDs assinados/encerrados por mês e por UP -->
-                <div style="margin-top:1rem; display:flex; gap:1rem; flex-wrap:wrap;">
-                    <div style="flex:1 1 360px; min-width:280px; background:var(--bg-alt); padding:0.75rem; border-radius:0.5rem;">
-                        <h4 style="margin:0 0 0.5rem 0; font-size:1rem;">TEDs por Mês</h4>
-                        <div id="resumoGeralMeses">
-                            <p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>
-                        </div>
-                    </div>
-                    <div style="flex:1 1 360px; min-width:280px; background:var(--bg-alt); padding:0.75rem; border-radius:0.5rem;">
-                        <h4 style="margin:0 0 0.5rem 0; font-size:1rem;">TEDs por UP</h4>
-                        <div id="resumoGeralUPs">
-                            <p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>
-                        </div>
-                    </div>
-                </div>
+                <!-- Resumo adicional removido conforme solicitado -->
             </div>
 
                     
 
             <div class="card">
                 <h2>Próximas Ações (30 dias)</h2>
-                <div id="proximasEntregas" style="margin-bottom:1rem;">
-                    <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem entregas programadas nos próximos 30 dias.</p>
-                </div>
-                <div id="proximosRecebimentos">
-                    <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>
+                <div class="proximas-acoes-grid">
+                    <div class="proxima-col">
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">📦 Entregas</h4>
+                        <div id="proximasEntregas">
+                            <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem entregas programadas nos próximos 30 dias.</p>
+                        </div>
+                    </div>
+                    <div class="proxima-col">
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">💰 Recebimentos</h4>
+                        <div id="proximosRecebimentos">
+                            <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>
+                        </div>
+                    </div>
+                    <div class="proxima-col">
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">📅 Fim de Vigência</h4>
+                        <div id="proximasVigencias">
+                            <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem TEDs com vigência terminando nos próximos 30 dias.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -858,7 +976,7 @@
 
                     <div class="entregas-row" style="display:flex; gap:0.5rem; align-items:flex-start; flex-wrap:wrap;">
                         <div class="resumo-panel" style="width:760px; min-width:520px; order:0;">
-                            <h4 style="margin:0 0 0.5rem 0;">📊 Resumo Financeiro</h4>
+                            <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">📊 Resumo Financeiro</h4>
                             <div id="resumoFinanceiroChart" style="min-height:160px; padding:0.5rem; background: linear-gradient(#fff, #f7f7f7); border-radius:0.5rem;">
                                 <p style="color:var(--text);">Selecione um TED para ver o resumo financeiro (ou deixe vazio para consolidado).</p>
                             </div>
@@ -1384,6 +1502,22 @@
                         </div>
 
                         <div class="table-wrapper" style="overflow-x: auto; position: relative;">
+                            <!-- Filtros Cadastro Financeiro -->
+                            <div class="filter-bar" id="filterBarCadFin">
+                                <span class="filter-bar-label">Filtrar:</span>
+                                <div class="filter-btn" id="filterNdFinBtn" onclick="toggleFilterMenu('filterNdFinMenu')">
+                                    <span id="filterNdFinLabel">ND</span>
+                                    <div class="filter-menu" id="filterNdFinMenu"></div>
+                                </div>
+                                <div class="filter-btn" id="filterUpFinBtn" onclick="toggleFilterMenu('filterUpFinMenu')">
+                                    <span id="filterUpFinLabel">UP</span>
+                                    <div class="filter-menu" id="filterUpFinMenu"></div>
+                                </div>
+                                <div class="filter-btn" id="filterMFinBtn" onclick="toggleFilterMenu('filterMFinMenu')">
+                                    <span id="filterMFinLabel">M</span>
+                                    <div class="filter-menu" id="filterMFinMenu"></div>
+                                </div>
+                            </div>
                             <table id="tabelaFinanceiraCompleta" class="tabela-padrao" style="min-width: 1400px;">
                                 <thead>
                                     <tr>
@@ -1433,6 +1567,18 @@
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
+                            <!-- Filtros Execução Financeira -->
+                            <div class="filter-bar" id="filterBarExecFin">
+                                <span class="filter-bar-label">Filtrar:</span>
+                                <div class="filter-btn" id="filterNdExecBtn" onclick="toggleFilterMenu('filterNdExecMenu')">
+                                    <span id="filterNdExecLabel">ND</span>
+                                    <div class="filter-menu" id="filterNdExecMenu"></div>
+                                </div>
+                                <div class="filter-btn" id="filterUpExecBtn" onclick="toggleFilterMenu('filterUpExecMenu')">
+                                    <span id="filterUpExecLabel">UP</span>
+                                    <div class="filter-menu" id="filterUpExecMenu"></div>
+                                </div>
+                            </div>
                             <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 600px;">
                                 <thead>
                                     <tr>
@@ -1920,6 +2066,7 @@
             // Atualizar blocos de próximas entregas e próximos recebimentos (30 dias)
             try { renderUpcomingEntregas(); } catch(e) { console.warn('renderUpcomingEntregas error', e); }
             try { renderUpcomingRecebimentos(); } catch(e) { console.warn('renderUpcomingRecebimentos error', e); }
+            try { renderUpcomingVigencias(); } catch(e) { console.warn('renderUpcomingVigencias error', e); }
             // Atualizar Gantt de vigência também
             try { renderGanttVigencia(); } catch(e) { console.warn('renderGanttVigencia error', e); }
             // Atualizar resumo geral (assinados/encerrados por mês e por UP)
@@ -1955,7 +2102,9 @@
                 let badgeClassLocal = 'badge-planejamento';
                 if (/execu|em execução/.test(stNorm)) {
                     badgeClassLocal = 'badge-execucao';
-                } else if (/encerr|conclu|finaliz|finalizado/.test(stNorm)) {
+                } else if (/encerr/.test(stNorm)) {
+                    badgeClassLocal = 'badge-encerrado';
+                } else if (/conclu|finaliz|finalizado/.test(stNorm)) {
                     badgeClassLocal = 'badge-concluido';
                 } else if (/denunci/.test(stNorm)) {
                     badgeClassLocal = 'badge-denunciado';
@@ -2185,6 +2334,67 @@
                 html += `<td>${it.nd}</td>`;
                 html += `<td>${it.up}</td>`;
                 html += `<td class="col-valor" style="text-align:right;">${it.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Render TEDs with expiring validity (fimVigencia) within next 30 days
+        function renderUpcomingVigencias() {
+            const container = document.getElementById('proximasVigencias');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const maxDate = new Date();
+            maxDate.setDate(today.getDate() + 30);
+            maxDate.setHours(23, 59, 59, 999);
+
+            const items = [];
+            (dados.teds || []).forEach(t => {
+                if (!t.fimVigencia) return;
+                const fimNorm = normalizarData(t.fimVigencia);
+                if (!fimNorm) return;
+                const d = new Date(fimNorm + 'T00:00:00');
+                if (isNaN(d.getTime())) return;
+                
+                // Incluir se o fim da vigência está entre hoje e maxDate
+                if (d >= today && d <= maxDate) {
+                    const diasRestantes = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+                    items.push({ 
+                        date: d, 
+                        ted: t, 
+                        diasRestantes: diasRestantes,
+                        up: t.upResponsavel || t.up || '',
+                        status: t.statusTED || 'Em Execução'
+                    });
+                }
+            });
+
+            if (!items.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem TEDs com vigência terminando nos próximos 30 dias.</p>';
+                return;
+            }
+
+            items.sort((a,b) => a.date - b.date);
+
+            let html = '<div style="max-height:300px; overflow-y:auto;">';
+            html += '<table class="tabela-padrao" style="width:100%; font-size:0.85rem;">';
+            html += '<thead><tr><th>Fim Vigência</th><th>TED</th><th>UP</th><th style="text-align:center;">Dias</th></tr></thead><tbody>';
+            items.forEach(it => {
+                // Cor baseada nos dias restantes
+                let corDias = '#059669'; // verde
+                if (it.diasRestantes <= 7) {
+                    corDias = '#dc2626'; // vermelho
+                } else if (it.diasRestantes <= 15) {
+                    corDias = '#d97706'; // laranja
+                }
+                
+                html += `<tr>`;
+                html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
+                html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td>${it.up}</td>`;
+                html += `<td style="text-align:center; font-weight:600; color:${corDias};">${it.diasRestantes}</td>`;
                 html += `</tr>`;
             });
             html += '</tbody></table></div>';
@@ -3642,6 +3852,148 @@
             tbody.innerHTML = linhas;
         }
 
+        // ===== FILTROS MULTI-SELECT PARA TABELAS FINANCEIRAS =====
+        
+        // Estado global dos filtros
+        window.filtrosCadFin = { nd: [], up: [], m: [] };
+        window.filtrosExecFin = { nd: [], up: [] };
+
+        // Toggle menu de filtro
+        function toggleFilterMenu(menuId) {
+            event.stopPropagation();
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            
+            // Fechar outros menus abertos
+            document.querySelectorAll('.filter-menu.open').forEach(m => {
+                if (m.id !== menuId) m.classList.remove('open');
+            });
+            
+            menu.classList.toggle('open');
+        }
+
+        // Fechar menus ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.filter-btn')) {
+                document.querySelectorAll('.filter-menu.open').forEach(m => m.classList.remove('open'));
+            }
+        });
+
+        // Popular menus de filtro do Cadastro Financeiro
+        function popularFiltrosCadFin() {
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros) return;
+            
+            const nds = [...new Set(window.tedSelecionado.financeiros.map(f => String(f.numero || '')))].filter(Boolean).sort();
+            const ups = [...new Set(window.tedSelecionado.financeiros.map(f => String(f.up || f.ug || '')))].filter(Boolean).sort();
+            const ms = [...new Set(window.tedSelecionado.financeiros.map(f => String(f.m || '')))].filter(v => v !== '').sort((a,b) => parseInt(a) - parseInt(b));
+            
+            popularMenuFiltro('filterNdFinMenu', nds, 'cadFin', 'nd');
+            popularMenuFiltro('filterUpFinMenu', ups, 'cadFin', 'up');
+            popularMenuFiltro('filterMFinMenu', ms, 'cadFin', 'm');
+        }
+
+        // Popular menus de filtro da Execução Financeira
+        function popularFiltrosExecFin() {
+            if (!window.tedSelecionado) return;
+            
+            const cad = window.tedSelecionado.financeiros || [];
+            const execs = window.tedSelecionado.execFinanceiras || [];
+            
+            const nds = [...new Set([
+                ...cad.map(f => String(f.numero || '')),
+                ...execs.map(e => String(e.nd || e.numero || ''))
+            ])].filter(Boolean).sort();
+            
+            const ups = [...new Set([
+                ...cad.map(f => String(f.up || f.ug || '')),
+                ...execs.map(e => String(e.up || e.ug || ''))
+            ])].filter(Boolean).sort();
+            
+            popularMenuFiltro('filterNdExecMenu', nds, 'execFin', 'nd');
+            popularMenuFiltro('filterUpExecMenu', ups, 'execFin', 'up');
+        }
+
+        // Helper para popular um menu de filtro
+        function popularMenuFiltro(menuId, valores, tipo, campo) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            
+            const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
+            const selecionados = filtros[campo] || [];
+            
+            let html = '';
+            valores.forEach(v => {
+                const checked = selecionados.includes(v) ? 'checked' : '';
+                html += `<label><input type="checkbox" value="${v}" ${checked} onchange="onFiltroChange('${tipo}', '${campo}', '${v}', this.checked)">${v}</label>`;
+            });
+            html += `<button class="filter-clear-btn" onclick="limparFiltro('${tipo}', '${campo}')">Limpar</button>`;
+            menu.innerHTML = html;
+            
+            atualizarLabelFiltro(tipo, campo);
+        }
+
+        // Handler de mudança de filtro
+        function onFiltroChange(tipo, campo, valor, checked) {
+            const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
+            
+            if (checked) {
+                if (!filtros[campo].includes(valor)) filtros[campo].push(valor);
+            } else {
+                filtros[campo] = filtros[campo].filter(v => v !== valor);
+            }
+            
+            atualizarLabelFiltro(tipo, campo);
+            
+            // Re-renderizar tabela
+            if (tipo === 'cadFin') {
+                atualizarTabelaFinanceira();
+            } else {
+                atualizarTabelaExecFinanceira();
+            }
+        }
+
+        // Limpar filtro
+        function limparFiltro(tipo, campo) {
+            const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
+            filtros[campo] = [];
+            
+            if (tipo === 'cadFin') {
+                popularFiltrosCadFin();
+                atualizarTabelaFinanceira();
+            } else {
+                popularFiltrosExecFin();
+                atualizarTabelaExecFinanceira();
+            }
+        }
+
+        // Atualizar label do botão de filtro
+        function atualizarLabelFiltro(tipo, campo) {
+            const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
+            const count = filtros[campo].length;
+            
+            let labelId, btnId;
+            if (tipo === 'cadFin') {
+                if (campo === 'nd') { labelId = 'filterNdFinLabel'; btnId = 'filterNdFinBtn'; }
+                else if (campo === 'up') { labelId = 'filterUpFinLabel'; btnId = 'filterUpFinBtn'; }
+                else if (campo === 'm') { labelId = 'filterMFinLabel'; btnId = 'filterMFinBtn'; }
+            } else {
+                if (campo === 'nd') { labelId = 'filterNdExecLabel'; btnId = 'filterNdExecBtn'; }
+                else if (campo === 'up') { labelId = 'filterUpExecLabel'; btnId = 'filterUpExecBtn'; }
+            }
+            
+            const label = document.getElementById(labelId);
+            const btn = document.getElementById(btnId);
+            
+            if (label) {
+                const nome = campo.toUpperCase();
+                label.textContent = count > 0 ? `${nome} (${count})` : nome;
+            }
+            if (btn) {
+                if (count > 0) btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
+        }
+
         // CADASTRO FINANCEIRO
         // Calcular mês automaticamente para Financeiro
         function calcularMesFinanceiro() {
@@ -3753,6 +4105,9 @@
             const previstoAnualSpan = document.getElementById('previstoAnualValor');
             let totalValor = 0;
             
+            // Popular menus de filtro
+            try { popularFiltrosCadFin(); } catch(e) {}
+            
             if (!window.tedSelecionado || !window.tedSelecionado.financeiros.length) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
                 if (headerGantt) {
@@ -3762,6 +4117,15 @@
                 if (previstoAnualSpan) previstoAnualSpan.textContent = '0,00';
                 return;
             }
+            
+            // Aplicar filtros
+            const filtros = window.filtrosCadFin || { nd: [], up: [], m: [] };
+            let dadosFiltrados = window.tedSelecionado.financeiros.filter(f => {
+                if (filtros.nd.length && !filtros.nd.includes(String(f.numero || ''))) return false;
+                if (filtros.up.length && !filtros.up.includes(String(f.up || f.ug || ''))) return false;
+                if (filtros.m.length && !filtros.m.includes(String(f.m || ''))) return false;
+                return true;
+            });
 
             // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
             let startDate;
@@ -3841,7 +4205,8 @@
             // Array para acumular totais por coluna (mês)
             const totaisPorMes = new Array(meses.length).fill(0);
             
-            tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => {
+            // Usar dados filtrados para exibição
+            tbody.innerHTML = dadosFiltrados.map((f, i) => {
                 const valorNum = parseFloat(f.valor) || 0;
                 totalValor += valorNum;
                 const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
@@ -4591,6 +4956,9 @@
                 if (resumoSaldo) resumoSaldo.innerHTML = '<span style="font-weight:700">0,00</span>';
                 if (resumoLiquidacao) resumoLiquidacao.textContent = '0%';
             };
+            
+            // Popular menus de filtro
+            try { popularFiltrosExecFin(); } catch(e) {}
 
             if (!window.tedSelecionado) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
@@ -4660,13 +5028,28 @@
                 setResumoZeros();
                 return;
             }
+            
+            // Aplicar filtros às chaves
+            const filtros = window.filtrosExecFin || { nd: [], up: [] };
+            const chavesFiltradas = Array.from(chaves).filter(chave => {
+                const [nd, up] = chave.split('||');
+                if (filtros.nd.length && !filtros.nd.includes(nd)) return false;
+                if (filtros.up.length && !filtros.up.includes(up)) return false;
+                return true;
+            });
+            
+            if (chavesFiltradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Nenhum dado com os filtros aplicados</td></tr>';
+                setResumoZeros();
+                return;
+            }
 
             let totalPrevisto = 0;
             let totalRealizado = 0;
             const totalMeses = new Map();
 
             // Ordenar chaves por ND (numérico quando possível) antes de construir linhas
-            const sortedChaves = Array.from(chaves).sort((a,b) => {
+            const sortedChaves = chavesFiltradas.sort((a,b) => {
                 const ndA = String(a).split('||')[0] || '';
                 const ndB = String(b).split('||')[0] || '';
                 const nA = parseFloat(ndA.replace(/[^0-9.-]/g, ''));
