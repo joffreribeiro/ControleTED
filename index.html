@@ -11,6 +11,8 @@
             box-sizing: border-box;
         }
 
+        /* popularFiltrosTEDs moved to script block (to avoid JS inside <style>) */
+
         :root {
             --primary: #3b82f6;
             --primary-dark: #2563eb;
@@ -998,11 +1000,18 @@
         </div>
 
         <!-- TAB 2: Listar TEDs -->
-        <div id="teds" class="tab-content">
+        <div id="ted" class="tab-content">
             <div class="card">
-                <h2>Seus Termos de Execução</h2>
-                <div style="text-align: left; margin-bottom: 0.75rem;">
+                <h2>TED</h2>
+                <div style="text-align: left; margin-bottom: 0.75rem; display:flex; gap:0.5rem; align-items:center;">
                     <button class="btn btn-primary" onclick="switchTab('novo')">Criar Novo TED</button>
+                    <div style="display:flex; gap:0.5rem; align-items:center; margin-left: auto;">
+                        <label style="font-size:0.9rem; color:var(--text);">Filtrar UP:</label>
+                        <select id="filterUP_teds" multiple size="4" onchange="atualizarListaTEDs()" style="min-width:140px; padding:0.25rem;"></select>
+                        <label style="font-size:0.9rem; color:var(--text);">Filtrar Status:</label>
+                        <select id="filterStatus_teds" multiple size="4" onchange="atualizarListaTEDs()" style="min-width:160px; padding:0.25rem;"></select>
+                        <button class="btn" onclick="(function(){ const up = document.getElementById('filterUP_teds'); const st = document.getElementById('filterStatus_teds'); if(up) Array.from(up.options).forEach(o=>o.selected=false); if(st) Array.from(st.options).forEach(o=>o.selected=false); atualizarListaTEDs(); })()">Limpar</button>
+                    </div>
                 </div>
                 <div id="listaTeds">
                     <div class="empty-state">
@@ -1477,7 +1486,7 @@
 
                     <!-- CADASTRO FINANCEIRA -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
-                        <h3 style="margin: 0 0 1rem 0;">💰 Cadastro Financeira</h3>
+                        <h3 style="margin: 0 0 1rem 0;">💰 Cadastro Financeiro</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
@@ -1996,13 +2005,13 @@
         // Calcula soma dos valores do cadastro financeiro de um TED
         function calcularTotalFinanceiro(ted) {
             if (!ted || !ted.financeiros || !ted.financeiros.length) return 0;
-            return ted.financeiros.reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+            return ted.financeiros.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
         }
 
         // Calcula soma dos valores realizados (execução financeira) de um TED
         function calcularTotalExecFinanceira(ted) {
             if (!ted || !ted.execFinanceiras || !ted.execFinanceiras.length) return 0;
-            return ted.execFinanceiras.reduce((s, e) => s + (parseFloat(e.valor) || 0), 0);
+            return ted.execFinanceiras.reduce((s, e) => s + (parseNumber(e.valor) || 0), 0);
         }
 
         // Atualiza o campo 'gasto' do TED a partir das execFinanceiras (valor realizado)
@@ -2044,12 +2053,12 @@
         // --- Execução Física: cálculos de progresso ---
         function calcularTotalObjetosQtde(ted) {
             if (!ted || !ted.objetos || !ted.objetos.length) return 0;
-            return ted.objetos.reduce((s, o) => s + (parseFloat(o.qtde) || 0), 0);
+            return ted.objetos.reduce((s, o) => s + (parseNumber(o.qtde) || 0), 0);
         }
 
         function calcularTotalExecFisicaQtde(ted) {
             if (!ted || !ted.execFisicas || !ted.execFisicas.length) return 0;
-            return ted.execFisicas.reduce((s, e) => s + (parseFloat(e.qtde) || 0), 0);
+            return ted.execFisicas.reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
         }
 
         function calcularProgressoFisico(ted) {
@@ -2178,12 +2187,30 @@
 
         // Atualizar Lista de TEDs
         function atualizarListaTEDs() {
+            try { popularFiltrosTEDs(); } catch(e) {}
+
             if (dados.teds.length === 0) {
                 document.getElementById('listaTeds').innerHTML = '<div class="empty-state"><p>Nenhum TED cadastrado</p></div>';
                 return;
             }
 
-            const html = dados.teds.map(t => {
+            // Aplicar filtros selecionados (UP e Status)
+            let listaFiltrada = dados.teds.slice();
+            try {
+                const selUp = (document.getElementById('filterUP_teds') || {}).value || '';
+                const selStatus = (document.getElementById('filterStatus_teds') || {}).value || '';
+                if (selUp) {
+                    listaFiltrada = listaFiltrada.filter(t => String(t.upResponsavel || t.up || '').trim() === selUp);
+                }
+                if (selStatus) {
+                    listaFiltrada = listaFiltrada.filter(t => {
+                        const statusObj = getDisplayStatus(t) || { text: '-' };
+                        return String(statusObj.text || '').trim() === selStatus;
+                    });
+                }
+            } catch (e) { console.warn('Erro aplicando filtros TEDs', e); }
+
+            const html = listaFiltrada.map(t => {
                 const hoje = new Date();
                 const inicioNorm = normalizarData(t.inicioVigencia);
                 const fimNorm = normalizarData(t.fimVigencia);
@@ -2416,7 +2443,7 @@
                     const d = new Date(e.data + 'T00:00:00');
                     if (isNaN(d.getTime())) return;
                     if (d >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) && d <= new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate())) {
-                        items.push({ date: d, ted: t, nd: e.nd || e.numero || '', up: e.up || e.ug || t.upResponsavel || '', valor: parseFloat(e.valor || e.valorRealizado) || 0 });
+                        items.push({ date: d, ted: t, nd: e.nd || e.numero || '', up: e.up || e.ug || t.upResponsavel || '', valor: parseNumber(e.valor || e.valorRealizado) || 0 });
                     }
                 });
             });
@@ -2743,7 +2770,7 @@
             document.getElementById('info_planoTrabalho').textContent = ted.planoTrabalho || '-';
             document.getElementById('info_numTed').textContent = ted.numTed || '-';
             document.getElementById('info_objetivo').textContent = ted.objetivo || '-';
-            document.getElementById('info_valorTed').textContent = ted.valorTed ? `${parseFloat(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-';
+            document.getElementById('info_valorTed').textContent = ted.valorTed ? `${parseNumber(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-';
             
             document.getElementById('info_codigoPlano').textContent = ted.codigoPlano || '-';
             document.getElementById('info_numTedSiafi').textContent = ted.numTedSiafi || '-';
@@ -2845,7 +2872,7 @@
             if (window.tedSelecionado.financeiros && window.tedSelecionado.financeiros.length) {
                 window.tedSelecionado.valorTed = calcularTotalFinanceiro(window.tedSelecionado);
             } else {
-                window.tedSelecionado.valorTed = parseFloat(document.getElementById('edit_valorTed').value) || 0;
+                window.tedSelecionado.valorTed = parseNumber(document.getElementById('edit_valorTed').value) || 0;
             }
             
             window.tedSelecionado.codigoPlano = document.getElementById('edit_codigoPlano').value;
@@ -2871,8 +2898,14 @@
             window.tedSelecionado.dataEntregaRelatorio = document.getElementById('edit_dataEntregaRelatorio').value;
             window.tedSelecionado.statusTED = document.getElementById('edit_statusTED').value;
             
+            // Recalcular meses dependentes da 1ª descentralização
+            recalcularMesesBaseadosEmDescentralizacao();
+            
             // Salvar no localStorage
             salvarDados();
+            
+            // Atualizar tabelas em cascata
+            atualizarTabelasEmCascata('ted');
             
             // Atualizar lista e dashboard
             atualizarListaTEDs();
@@ -3046,7 +3079,7 @@
 
             const objeto = objetoInput.value.trim();
             const qtde = parseInt(qtdeInput.value);
-            const valorUnitario = parseFloat(valorInput.value);
+            const valorUnitario = parseNumber(valorInput.value);
 
             console.log('Objeto:', objeto, 'Qtde:', qtde, 'Valor:', valorUnitario); // Debug
 
@@ -3078,14 +3111,10 @@
             });
 
             salvarDados();
-            atualizarTabelaObjetos();
-            atualizarOpcoesObjetoFisico();
-            atualizarOpcoesObjetoExecFisica();
-            try { atualizarTabelaExecFisica(); } catch(e) {}
+            atualizarTabelasEmCascata('objetos');
             document.getElementById('objetoCadastro').value = '';
             document.getElementById('qtdeObjetoCadastro').value = '';
             document.getElementById('valorUnitarioCadastro').value = '';
-            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
         }
 
         function editarObjeto(id) {
@@ -3100,21 +3129,14 @@
 
             // Remover o objeto antigo para permitir gravação do editado
             window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
-            atualizarTabelaObjetos();
-            atualizarOpcoesObjetoFisico();
-            atualizarOpcoesObjetoExecFisica();
-            try { atualizarTabelaExecFisica(); } catch(e) {}
+            atualizarTabelasEmCascata('objetos');
         }
 
         function removerObjeto(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
             salvarDados();
-            atualizarTabelaObjetos();
-            atualizarOpcoesObjetoFisico();
-            atualizarOpcoesObjetoExecFisica();
-            try { atualizarTabelaExecFisica(); } catch(e) {}
-            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
+            atualizarTabelasEmCascata('objetos');
         }
 
         function atualizarTabelaObjetos() {
@@ -3305,7 +3327,7 @@
             });
 
             salvarDados();
-            atualizarTabelaMetas();
+            atualizarTabelasEmCascata('metas');
             document.getElementById('meta').value = '';
             document.getElementById('descricaoMeta').value = '';
             document.getElementById('mInicio').value = '';
@@ -3329,14 +3351,14 @@
             
             // Remover a meta antiga para permitir edição
             window.tedSelecionado.metas = window.tedSelecionado.metas.filter(m => m.id !== id);
-            atualizarTabelaMetas();
+            atualizarTabelasEmCascata('metas');
         }
 
         function removerMeta(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.metas = window.tedSelecionado.metas.filter(m => m.id !== id);
             salvarDados();
-            atualizarTabelaMetas();
+            atualizarTabelasEmCascata('metas');
         }
 
         function renderGanttGenerico(dados, usarMeses = false) {
@@ -3611,7 +3633,7 @@
 
             const fase = document.getElementById('faseFisico').value.trim();
             const objeto = document.getElementById('objetoFisico').value;
-            const qtde = parseFloat(document.getElementById('qtdeFisico').value);
+            const qtde = parseNumber(document.getElementById('qtdeFisico').value);
             const mInicio = parseInt(document.getElementById('mInicioFisico').value);
             const mFinal = parseInt(document.getElementById('mFinalFisico').value);
 
@@ -3650,9 +3672,7 @@
                 id: Date.now(), fase, objeto, qtde, mInicio, mFinal, mesInicio, anoInicio, mesFinal, anoFinal
             });
             salvarDados();
-            atualizarTabelaFisicos();
-            // Atualizar a tabela de execução física pois a Qtd Prevista mudou
-            try { atualizarTabelaExecFisica(); } catch(e) {}
+            atualizarTabelasEmCascata('fisicos');
             document.getElementById('faseFisico').value = '';
             document.getElementById('objetoFisico').value = '';
             document.getElementById('qtdeFisico').value = '';
@@ -3678,16 +3698,14 @@
             
             // Remover o físico antigo para permitir edição
             window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(f => f.id !== id);
-            atualizarTabelaFisicos();
-            try { atualizarTabelaExecFisica(); } catch(e) {}
+            atualizarTabelasEmCascata('fisicos');
         }
 
         function removerFisico(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(f => f.id !== id);
             salvarDados();
-            atualizarTabelaFisicos();
-            try { atualizarTabelaExecFisica(); } catch(e) {}
+            atualizarTabelasEmCascata('fisicos');
         }
 
         function atualizarTabelaFisicos() {
@@ -3829,7 +3847,7 @@
             }
 
             const objeto = document.getElementById('objetoExecFisica').value;
-            const qtde = parseFloat(document.getElementById('qtdeExec').value);
+            const qtde = parseNumber(document.getElementById('qtdeExec').value);
             const data = document.getElementById('dataExec').value;
 
             if (!objeto || isNaN(qtde) || qtde < 0 || !data) {
@@ -3923,19 +3941,19 @@
 
             // Agrupar execuções por objeto e por mês
             const execs = window.tedSelecionado.execFisicas || [];
-            const objetosCad = window.tedSelecionado.objetos || [];
-            // Objetos registrados no cadastro de objetos
-            const objetosUnicos = Array.from(new Set(objetosCad.map(o => o.objeto)));
+            const fisicos = window.tedSelecionado.fisicos || [];
+            // Objetos registrados no cadastro físico (não no cadastro de objetos)
+            const objetosUnicos = Array.from(new Set(fisicos.map(f => f.objeto)));
 
             if (!objetosUnicos.length) {
-                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Cadastre o objeto para listar execuções</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Cadastre o físico para listar objetos</td></tr>';
                 return;
             }
 
             const linhas = objetosUnicos.map((obj, i) => {
-                const prevista = objetosCad.filter(o => o.objeto === obj).reduce((s, o) => s + (parseFloat(o.qtde) || 0), 0);
+                const prevista = fisicos.filter(f => f.objeto === obj).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
                 const entregasObj = execs.filter(e => e.objeto === obj);
-                const entregueTotal = entregasObj.reduce((s, e) => s + (parseFloat(e.qtde) || 0), 0);
+                const entregueTotal = entregasObj.reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
                 const saldo = Math.max(0, prevista - entregueTotal);
                 const execPercRaw = prevista > 0 ? Math.min(100, (entregueTotal / prevista) * 100) : 0;
                 const execPerc = execPercRaw.toFixed(2);
@@ -3951,7 +3969,7 @@
                     // calcular índice relativo
                     const diffMonths = (d.getFullYear() - startDate.getFullYear()) * 12 + (d.getMonth() - startDate.getMonth());
                     if (diffMonths >= 0 && diffMonths < 60) {
-                        mapaMes.set(diffMonths, (mapaMes.get(diffMonths) || 0) + (parseFloat(e.qtde) || 0));
+                        mapaMes.set(diffMonths, (mapaMes.get(diffMonths) || 0) + (parseNumber(e.qtde) || 0));
                     }
                 });
 
@@ -4033,6 +4051,31 @@
             
             popularMenuFiltro('filterNdExecMenu', nds, 'execFin', 'nd');
             popularMenuFiltro('filterUpExecMenu', ups, 'execFin', 'up');
+        }
+
+        // Popular opções de filtros para a lista de TEDs (UP e Status)
+        function popularFiltrosTEDs() {
+            const selUp = document.getElementById('filterUP_teds');
+            const selStatus = document.getElementById('filterStatus_teds');
+            if (!selUp || !selStatus) return;
+
+            // preservar seleções atuais
+            const prevUp = Array.from(selUp.selectedOptions || []).map(o => o.value);
+            const prevStatus = Array.from(selStatus.selectedOptions || []).map(o => o.value);
+
+            // Reunir UPs
+            const ups = [...new Set((dados.teds || []).map(t => String(t.upResponsavel || t.up || '').trim()))].filter(Boolean).sort();
+            // Reunir Status a partir da função de exibição
+            const statusSet = new Set();
+            (dados.teds || []).forEach(t => {
+                const s = (getDisplayStatus(t) || {}).text || '';
+                if (s) statusSet.add(String(s).trim());
+            });
+            const statuses = Array.from(statusSet).sort();
+
+            // Popular selects (multiselect) preservando seleções
+            selUp.innerHTML = ups.map(u => `<option value="${u}" ${prevUp.indexOf(u) !== -1 ? 'selected' : ''}>${u}</option>`).join('');
+            selStatus.innerHTML = statuses.map(s => `<option value="${s}" ${prevStatus.indexOf(s) !== -1 ? 'selected' : ''}>${s}</option>`).join('');
         }
 
         // Helper para popular um menu de filtro
@@ -4151,7 +4194,7 @@
             const numero = document.getElementById('numFinanceiro').value.trim();
             const m = parseInt(document.getElementById('mFinanceiro').value);
             const up = document.getElementById('upFinanceiro').value.trim();
-            const valor = parseFloat(document.getElementById('valorFinanceiro').value);
+            const valor = parseNumber(document.getElementById('valorFinanceiro').value);
 
             if (!numero || isNaN(m) || !up || isNaN(valor)) {
                 alert('⚠️ Preencha todos os campos do cadastro financeiro');
@@ -4177,10 +4220,10 @@
             window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, up, valor });
             // Atualizar valor do TED automaticamente
             atualizarValorTedFromFinanceiros(window.tedSelecionado);
-            atualizarTabelaFinanceira();
+            salvarDados();
+            atualizarTabelasEmCascata('financeiros');
             atualizarOpcoesExecFinanceira();
             atualizarGantt();
-            atualizarTabelaExecFinanceira();
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
             document.getElementById('numFinanceiro').value = '';
             document.getElementById('mFinanceiro').value = '';
@@ -4194,19 +4237,19 @@
             const financeiro = window.tedSelecionado.financeiros.find(f => f.id === id);
             if (!financeiro) return;
             
-            document.getElementById('numeroFinanceiro').value = financeiro.numero;
+            // Preencher os campos do formulário de cadastro (usar os mesmos IDs do formulário de adicionar)
+            document.getElementById('numFinanceiro').value = financeiro.numero;
             document.getElementById('mFinanceiro').value = financeiro.m;
-            document.getElementById('anoDescFinanceiro').value = financeiro.anoDesc;
-            document.getElementById('mesDescFinanceiro').value = financeiro.mesDesc;
+            // Recalcular e preencher o campo mesDescFinanceiro a partir de M
+            try { calcularMesFinanceiro(); } catch(e) { document.getElementById('mesDescFinanceiro').value = financeiro.mesDesc || ''; }
             document.getElementById('upFinanceiro').value = financeiro.up || financeiro.ug;
             document.getElementById('valorFinanceiro').value = financeiro.valor;
             
             // Remover o financeiro antigo para permitir edição
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
-            atualizarTabelaFinanceira();
+            atualizarTabelasEmCascata('financeiros');
             atualizarOpcoesExecFinanceira();
             atualizarGantt();
-            atualizarTabelaExecFinanceira();
         }
 
         function removerFinanceiro(id) {
@@ -4214,10 +4257,10 @@
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
             // Atualizar valor do TED automaticamente
             atualizarValorTedFromFinanceiros(window.tedSelecionado);
-            atualizarTabelaFinanceira();
+            salvarDados();
+            atualizarTabelasEmCascata('financeiros');
             atualizarOpcoesExecFinanceira();
             atualizarGantt();
-            atualizarTabelaExecFinanceira();
         }
 
         function atualizarTabelaFinanceira() {
@@ -4329,7 +4372,7 @@
             
             // Usar dados filtrados para exibição
             tbody.innerHTML = dadosFiltrados.map((f, i) => {
-                const valorNum = parseFloat(f.valor) || 0;
+                const valorNum = parseNumber(f.valor) || 0;
                 totalValor += valorNum;
                 const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
                 const mesDescStr = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx]}/${f.anoDesc}` : '-';
@@ -4393,6 +4436,41 @@
             if (previstoAnualSpan) {
                 previstoAnualSpan.textContent = `${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
             }
+
+            // Mostrar alerta se a soma do Cadastro Financeiro exceder o total previsto nos Objetos
+            try {
+                const totalFinanceiro = totalValor || 0;
+                let totalObjetos = 0;
+                if (window.tedSelecionado && window.tedSelecionado.objetos && window.tedSelecionado.objetos.length) {
+                    totalObjetos = window.tedSelecionado.objetos.reduce((s, o) => s + (parseNumber(o.valorTotal) || 0), 0);
+                }
+
+                let alertDiv = document.getElementById('alertFinanceiro');
+                if (!alertDiv) {
+                    alertDiv = document.createElement('div');
+                    alertDiv.id = 'alertFinanceiro';
+                    alertDiv.style.marginTop = '0.5rem';
+                    alertDiv.style.padding = '0.6rem';
+                    alertDiv.style.borderRadius = '0.25rem';
+                    alertDiv.style.fontWeight = '600';
+                    // Insert after the full table
+                    if (tableCompleta && tableCompleta.parentNode) tableCompleta.parentNode.insertBefore(alertDiv, tableCompleta.nextSibling);
+                }
+
+                if (totalFinanceiro > totalObjetos) {
+                    alertDiv.style.display = 'block';
+                    alertDiv.style.background = '#fffbeb'; // light warning
+                    alertDiv.style.border = '1px solid #fef3c7';
+                    alertDiv.style.color = '#92400e';
+                    alertDiv.innerHTML = `⚠️ A soma dos valores lançados no Cadastro Financeiro (<strong>R$ ${totalFinanceiro.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>) é maior que o total previsto no Cadastro de Objetos (<strong>R$ ${totalObjetos.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>).`;
+                } else {
+                    alertDiv.style.display = 'none';
+                    alertDiv.innerHTML = '';
+                }
+            } catch (e) {
+                // não bloquear função se erro ao calcular alerta
+                console.error('Erro ao calcular alerta financeiro:', e);
+            }
         }
 
         // EXECUÇÃO FINANCEIRA
@@ -4434,7 +4512,7 @@
 
             const nd = document.getElementById('numExecFin').value.trim();
             const up = document.getElementById('upExecFin').value.trim();
-            const valor = parseFloat(document.getElementById('valorExecFin').value);
+            const valor = parseNumber(document.getElementById('valorExecFin').value);
             const data = document.getElementById('dataExecFin').value;
 
             if (!nd || !up || isNaN(valor) || !data) {
@@ -5906,6 +5984,102 @@
             }
         }
 
+        // =============================================
+        // FUNÇÕES DE ATUALIZAÇÃO EM CASCATA
+        // =============================================
+
+        // Recalcular meses de metas, físicos e financeiros com base na 1ª descentralização
+        function recalcularMesesBaseadosEmDescentralizacao() {
+            if (!window.tedSelecionado) return;
+            const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
+            if (!dataDesc) return;
+            const startDate = new Date(dataDesc + 'T00:00:00');
+            if (isNaN(startDate.getTime())) return;
+
+            // Recalcular metas
+            (window.tedSelecionado.metas || []).forEach(m => {
+                const mI = parseInt(m.mInicio);
+                const mF = parseInt(m.mFinal);
+                if (!isNaN(mI)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mI);
+                    m.mesInicio = d.getMonth() + 1;
+                    m.anoInicio = d.getFullYear();
+                }
+                if (!isNaN(mF)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mF);
+                    m.mesFinal = d.getMonth() + 1;
+                    m.anoFinal = d.getFullYear();
+                }
+            });
+
+            // Recalcular físicos
+            (window.tedSelecionado.fisicos || []).forEach(f => {
+                const mI = parseInt(f.mInicio);
+                const mF = parseInt(f.mFinal);
+                if (!isNaN(mI)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mI);
+                    f.mesInicio = d.getMonth() + 1;
+                    f.anoInicio = d.getFullYear();
+                }
+                if (!isNaN(mF)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mF);
+                    f.mesFinal = d.getMonth() + 1;
+                    f.anoFinal = d.getFullYear();
+                }
+            });
+
+            // Recalcular financeiros (mesDesc/anoDesc a partir de M)
+            (window.tedSelecionado.financeiros || []).forEach(fin => {
+                const m = parseInt(fin.m);
+                if (!isNaN(m)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + m);
+                    fin.mesDesc = d.getMonth() + 1;
+                    fin.anoDesc = d.getFullYear();
+                }
+            });
+        }
+
+        // Atualizar tabelas em cascata após alteração de dados
+        function atualizarTabelasEmCascata(origem) {
+            // origem pode ser: 'objetos', 'fisicos', 'metas', 'financeiros', 'execFisica', 'execFinanceira', 'ted'
+            try {
+                if (origem === 'objetos' || origem === 'ted') {
+                    atualizarTabelaObjetos();
+                    atualizarOpcoesObjetoFisico();
+                    atualizarOpcoesObjetoExecFisica();
+                    atualizarTabelaFisicos();
+                    atualizarTabelaExecFisica();
+                    atualizarTabelaFinanceira();
+                }
+                if (origem === 'fisicos' || origem === 'ted') {
+                    atualizarTabelaFisicos();
+                    atualizarTabelaExecFisica();
+                }
+                if (origem === 'metas' || origem === 'ted') {
+                    atualizarTabelaMetas();
+                }
+                if (origem === 'financeiros' || origem === 'ted') {
+                    atualizarTabelaFinanceira();
+                }
+                if (origem === 'execFisica') {
+                    atualizarTabelaExecFisica();
+                }
+                if (origem === 'execFinanceira') {
+                    atualizarTabelaExecFinanceira();
+                }
+                // Atualizar gráficos e dashboard
+                try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
+                try { atualizarDashboard(); } catch(e) {}
+            } catch (e) {
+                console.error('Erro em atualizarTabelasEmCascata:', e);
+            }
+        }
+
         // Salvar Dados
         function salvarDados() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
@@ -5957,9 +6131,35 @@
                 const obj = {};
                 headers.forEach((h, idx) => {
                     let val = values[idx] || '';
-                    // Tentar converter números
-                    if (/^-?\d+(\.\d+)?$/.test(val)) val = parseFloat(val);
+                    const low = String(h).trim().toLowerCase();
+                    // Não converter para número campos conhecidos que representam ND/numero (preservar formato exatamente como na planilha)
+                    const keepAsString = ['nd', 'numero', 'número'];
+                    // Tentar converter números (suporta formatos pt-BR com vírgula e separador de milhares com ponto)
+                    if (keepAsString.indexOf(low) === -1 && /^-?[\d.,]+$/.test(val)) {
+                        const cleaned = String(val).replace(/\s+/g, '');
+                        try {
+                            if (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1) {
+                                // Ex: 1.234,56 -> remover pontos e substituir vírgula por ponto
+                                val = parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
+                            } else if (cleaned.indexOf(',') > -1) {
+                                // Ex: 1234,56 -> substituir vírgula por ponto
+                                val = parseFloat(cleaned.replace(',', '.'));
+                            } else {
+                                // Ex: 1234.56 ou 1234 -> parseFloat direto
+                                val = parseFloat(cleaned);
+                            }
+                            if (isNaN(val)) val = values[idx] || '';
+                        } catch (e) {
+                            val = values[idx] || '';
+                        }
+                    }
                     obj[h] = val;
+                    // Criar alias lowercase para permitir cabeçalhos como 'ND' ou 'Numero' serem acessados via row.nd
+                    try {
+                        if (low && obj[low] === undefined) obj[low] = val;
+                    } catch (e) {
+                        // ignore
+                    }
                 });
                 data.push(obj);
             }
@@ -6190,7 +6390,7 @@
                             // ATUALIZAR TED existente (preservar sub-arrays)
                             existe.planoTrabalho = row.planoTrabalho || existe.planoTrabalho;
                             existe.objetivo = row.objetivo || existe.objetivo;
-                            existe.valorTed = parseFloat(row.valorTed) || existe.valorTed;
+                            existe.valorTed = parseNumber(row.valorTed) || existe.valorTed;
                             existe.codigoPlano = row.codigoPlano || existe.codigoPlano;
                             existe.numTedSiafi = row.numTedSiafi || existe.numTedSiafi;
                             existe.notaSistema = row.notaSistema || existe.notaSistema;
@@ -6214,7 +6414,7 @@
                                 numTed: row.numTed,
                                 planoTrabalho: row.planoTrabalho || '',
                                 objetivo: row.objetivo || '',
-                                valorTed: parseFloat(row.valorTed) || 0,
+                                valorTed: parseNumber(row.valorTed) || 0,
                                 codigoPlano: row.codigoPlano || '',
                                 numTedSiafi: row.numTedSiafi || '',
                                 notaSistema: row.notaSistema || '',
@@ -6290,8 +6490,8 @@
                         }
                     });
                     salvarDados();
+                    atualizarTabelasEmCascata('objetos');
                     alert(`✅ ${countItens} objeto(s) importado(s) para ${countTeds} TED(s)!`);
-                    try { atualizarTabelaExecFisica(); } catch(e) {}
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
                 }
@@ -6369,6 +6569,7 @@
                         }
                     });
                     salvarDados();
+                    atualizarTabelasEmCascata('metas');
                     alert(`✅ ${countItens} meta(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
@@ -6448,7 +6649,7 @@
                         }
                     });
                     salvarDados();
-                    try { atualizarTabelaExecFisica(); } catch(e) {}
+                    atualizarTabelasEmCascata('fisicos');
                     alert(`✅ ${countItens} registro(s) físico(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
@@ -6549,14 +6750,14 @@
                                     console.log('Calculado - mesDesc:', mesDesc, 'anoDesc:', anoDesc);
                                 }
                                 
-                                return {
+                                    return {
                                     id: Date.now() + idx,
                                     numero: row.ndValue, // Usar 'numero' como o sistema espera
                                     up: row.up || row.ug || '',
                                     m: m,
                                     mesDesc: mesDesc,
                                     anoDesc: anoDesc,
-                                    valor: parseFloat(row.valor) || 0
+                                    valor: parseNumber(row.valor) || 0
                                 };
                             });
                             countTeds++;
@@ -6564,6 +6765,7 @@
                         }
                     });
                     salvarDados();
+                    atualizarTabelasEmCascata('financeiros');
                     alert(`✅ ${countItens} registro(s) financeiro(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
@@ -6597,7 +6799,7 @@
                                 id: Date.now() + idx,
                                 nd: row.nd,
                                 up: row.up || '',
-                                valor: parseFloat(row.valor) || 0,
+                                valor: parseNumber(row.valor) || 0,
                                 data: row.data || ''
                             }));
                             // Atualizar gasto (valor realizado) a partir das execFinanceiras importadas
