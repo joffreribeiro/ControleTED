@@ -370,96 +370,8 @@
         }
 
         .badge-encerrado {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        /* Filtros Multi-Select */
-        .multi-filter-container {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: flex-end;
-            margin-bottom: 0.75rem;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 0.5rem;
-            border: 1px solid var(--border);
-        }
-        .multi-filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-        .multi-filter-group label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-        .multi-filter-dropdown {
-            position: relative;
-            min-width: 120px;
-        }
-        .multi-filter-btn {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.5rem;
-            padding: 0.4rem 0.6rem;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 0.375rem;
-            cursor: pointer;
-            font-size: 0.875rem;
-            min-width: 100px;
-        }
-        .multi-filter-btn:hover {
-            border-color: var(--primary);
-        }
-        .multi-filter-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            z-index: 100;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 0.375rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            max-height: 200px;
-            overflow-y: auto;
-            min-width: 140px;
-        }
-        .multi-filter-menu.open {
-            display: block;
-        }
-        .multi-filter-option {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 0.6rem;
-            cursor: pointer;
-            font-size: 0.875rem;
-        }
-        .multi-filter-option:hover {
-            background: #f1f5f9;
-        }
-        .multi-filter-option input[type="checkbox"] {
-            margin: 0;
-        }
-        .multi-filter-clear {
-            padding: 0.4rem 0.75rem;
-            background: none;
-            border: none;
-            color: var(--primary);
-            cursor: pointer;
-            font-size: 0.75rem;
-            width: 100%;
-            text-align: center;
-            border-top: 1px solid var(--border);
-        }
-        .multi-filter-clear:hover {
-            background: #f1f5f9;
+            background: #f0fdf4;
+            color: #14532d;
         }
 
         /* Modal */
@@ -884,8 +796,66 @@
                             <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
-                <!-- Resumo geral: renderização definida no script ao final do arquivo -->
+                <!-- Resumo adicional: TEDs assinados/encerrados por mês e por UP -->
+                <div style="margin-top:1rem; display:flex; gap:1rem; flex-wrap:wrap;">
+                    <div style="flex:1 1 360px; min-width:280px; background:var(--bg-alt); padding:0.75rem; border-radius:0.5rem;">
+                        <h4 style="margin:0 0 0.5rem 0; font-size:1rem;">TEDs por Mês</h4>
+                        <div id="resumoGeralMeses">
+                            <p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>
+                        </div>
+                    </div>
+                    <div style="flex:1 1 360px; min-width:280px; background:var(--bg-alt); padding:0.75rem; border-radius:0.5rem;">
+                        <h4 style="margin:0 0 0.5rem 0; font-size:1rem;">TEDs por UP</h4>
+                        <div id="resumoGeralUPs">
+                            <p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
                     
+
+            <div class="card">
+                <h2>Próximas Ações (30 dias)</h2>
+                <div id="proximasEntregas" style="margin-bottom:1rem;">
+                    <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem entregas programadas nos próximos 30 dias.</p>
+                </div>
+                <div id="proximosRecebimentos">
+                    <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Vigência dos TEDs</h2>
+                <div id="ganttVigencia" style="overflow-x:auto; max-width:100%;">
+                    <p style="color:var(--text); padding:0.75rem;">Gerando gráfico de vigência...</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Gráficos</h2>
+                <div style="padding:0.5rem 0;">
+                    <div class="graficos-filters" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; margin-bottom:0.75rem;">
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <label style="font-weight:600;">Filtrar TED:</label>
+                            <select id="filterTedEntregas" onchange="(function(){ renderEntregasFromFilter(); renderResumoFinanceiroFromFilter(); })()">
+                                <option value="">-- Selecione um TED --</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <label style="font-weight:600;">Ano:</label>
+                            <select id="filterAnoEntregas" onchange="(function(){ renderEntregasFromFilter(); renderResumoFinanceiroFromFilter(); })()">
+                                <option value="">-- Todos --</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <label style="font-weight:600;">UP:</label>
+                            <select id="filterUpEntregas" onchange="(function(){ renderEntregasFromFilter(); renderResumoFinanceiroFromFilter(); })()">
+                                <option value="">-- Todas --</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="entregas-row" style="display:flex; gap:0.5rem; align-items:flex-start; flex-wrap:wrap;">
                         <div class="resumo-panel" style="width:760px; min-width:520px; order:0;">
                             <h4 style="margin:0 0 0.5rem 0;">📊 Resumo Financeiro</h4>
@@ -927,15 +897,35 @@
                 <h2>Criar Novo TED</h2>
                 <form onsubmit="criarTED(event)">
                     <div class="grid">
-                        <div class="card">
-                            <h2>Próximas Ações (30 dias)</h2>
-                            <div id="proximasEntregas" style="margin-bottom:1rem;">
-                                <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem entregas programadas nos próximos 30 dias.</p>
-                            </div>
-                            <div id="proximosRecebimentos">
-                                <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>
-                            </div>
+                        <div class="form-group">
+                            <label>Plano de Trabalho *</label>
+                            <input type="text" id="planoTrabalho" placeholder="Ex: 2024" required>
                         </div>
+                        <div class="form-group">
+                            <label>TED *</label>
+                            <input type="text" id="numTed" placeholder="Ex: 001" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Objeto *</label>
+                            <input type="text" id="objeto" placeholder="Objeto" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor do TED (R$) *</label>
+                            <input type="number" id="valorTed" placeholder="0.00" step="0.01" min="0" required>
+                        </div>
+                        
+                        
+                    </div>
+
+                    <div class="grid">
+                        
+                        <div class="form-group">
+                            <label>Código do Plano de Ação *</label>
+                            <input type="text" id="codigoPlano" placeholder="Código" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nº TED - SIAFI *</label>
+                            <input type="text" id="numTedSiafi" placeholder="SIAFI" required>
                         </div>
                         <div class="form-group">
                             <label>Nota do Sistema do TED *</label>
@@ -1393,40 +1383,6 @@
                             </div>
                         </div>
 
-                        <!-- Filtros Multi-Select para Cadastro Financeiro -->
-                        <div class="multi-filter-container" id="filtrosCadastroFinanceiro">
-                            <div class="multi-filter-group">
-                                <label>Filtrar ND</label>
-                                <div class="multi-filter-dropdown" id="filterNdFinDropdown">
-                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterNdFinDropdown')">
-                                        <span id="filterNdFinLabel">Todos</span>
-                                        <span>▼</span>
-                                    </button>
-                                    <div class="multi-filter-menu" id="filterNdFinMenu"></div>
-                                </div>
-                            </div>
-                            <div class="multi-filter-group">
-                                <label>Filtrar UP</label>
-                                <div class="multi-filter-dropdown" id="filterUpFinDropdown">
-                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterUpFinDropdown')">
-                                        <span id="filterUpFinLabel">Todos</span>
-                                        <span>▼</span>
-                                    </button>
-                                    <div class="multi-filter-menu" id="filterUpFinMenu"></div>
-                                </div>
-                            </div>
-                            <div class="multi-filter-group">
-                                <label>Filtrar M</label>
-                                <div class="multi-filter-dropdown" id="filterMFinDropdown">
-                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterMFinDropdown')">
-                                        <span id="filterMFinLabel">Todos</span>
-                                        <span>▼</span>
-                                    </button>
-                                    <div class="multi-filter-menu" id="filterMFinMenu"></div>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="table-wrapper" style="overflow-x: auto; position: relative;">
                             <table id="tabelaFinanceiraCompleta" class="tabela-padrao" style="min-width: 1400px;">
                                 <thead>
@@ -1473,30 +1429,6 @@
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="visibility: hidden;">.</label>
                                 <button type="button" class="btn btn-primary" onclick="adicionarExecFinanceira()" style="width: 100%; height: 37px;">Adicionar</button>
-                            </div>
-                        </div>
-
-                        <!-- Filtros Multi-Select para Execução Financeira -->
-                        <div class="multi-filter-container" id="filtrosExecFinanceira">
-                            <div class="multi-filter-group">
-                                <label>Filtrar ND</label>
-                                <div class="multi-filter-dropdown" id="filterNdExecDropdown">
-                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterNdExecDropdown')">
-                                        <span id="filterNdExecLabel">Todos</span>
-                                        <span>▼</span>
-                                    </button>
-                                    <div class="multi-filter-menu" id="filterNdExecMenu"></div>
-                                </div>
-                            </div>
-                            <div class="multi-filter-group">
-                                <label>Filtrar UP</label>
-                                <div class="multi-filter-dropdown" id="filterUpExecDropdown">
-                                    <button type="button" class="multi-filter-btn" onclick="toggleMultiFilter('filterUpExecDropdown')">
-                                        <span id="filterUpExecLabel">Todos</span>
-                                        <span>▼</span>
-                                    </button>
-                                    <div class="multi-filter-menu" id="filterUpExecMenu"></div>
-                                </div>
                             </div>
                         </div>
 
@@ -1731,33 +1663,6 @@
                             t.progressoFisico = calcularProgressoFisico(t) || 0;
                         } catch(e) {
                             t.progressoFisico = t.progressoFisico || 0;
-                        }
-                        // Recalcular statusTED se não estiver preenchido
-                        if (!t.statusTED || String(t.statusTED).trim() === '') {
-                            const hoje = new Date();
-                            if (t.dataEntregaRelatorio) {
-                                t.statusTED = 'TED Finalizado';
-                            } else if (t.situacaoTED === 'finalizado' || t.situacaoTED === 'denunciado') {
-                                t.statusTED = 'Relatório Final';
-                            } else {
-                                const inicioNorm = normalizarData(t.inicioVigencia);
-                                const fimNorm = normalizarData(t.fimVigencia);
-                                const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
-                                const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
-                                const inicioValido = inicio && !isNaN(inicio.getTime());
-                                const fimValido = fim && !isNaN(fim.getTime());
-                                if (inicioValido && fimValido) {
-                                    if (hoje >= inicio && hoje <= fim) {
-                                        t.statusTED = 'EM EXECUÇÃO';
-                                    } else if (fim < hoje) {
-                                        t.statusTED = 'ENCERRADO';
-                                    } else {
-                                        t.statusTED = 'Em Execução';
-                                    }
-                                } else {
-                                    t.statusTED = 'Em Execução';
-                                }
-                            }
                         }
                     });
                     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dados)); } catch(e) {}
@@ -2017,6 +1922,8 @@
             try { renderUpcomingRecebimentos(); } catch(e) { console.warn('renderUpcomingRecebimentos error', e); }
             // Atualizar Gantt de vigência também
             try { renderGanttVigencia(); } catch(e) { console.warn('renderGanttVigencia error', e); }
+            // Atualizar resumo geral (assinados/encerrados por mês e por UP)
+            try { renderResumoGeralAssinadosEncerrados(); } catch(e) { console.warn('renderResumoGeralAssinadosEncerrados error', e); }
         }
 
         // Atualizar Lista de TEDs
@@ -2048,9 +1955,7 @@
                 let badgeClassLocal = 'badge-planejamento';
                 if (/execu|em execução/.test(stNorm)) {
                     badgeClassLocal = 'badge-execucao';
-                } else if (/encerr/.test(stNorm)) {
-                    badgeClassLocal = 'badge-encerrado';
-                } else if (/conclu|finaliz|finalizado/.test(stNorm)) {
+                } else if (/encerr|conclu|finaliz|finalizado/.test(stNorm)) {
                     badgeClassLocal = 'badge-concluido';
                 } else if (/denunci/.test(stNorm)) {
                     badgeClassLocal = 'badge-denunciado';
@@ -2113,6 +2018,92 @@
             }).join('');
 
             document.getElementById('listaTeds').innerHTML = html;
+        }
+
+        // Renderizar resumo de TEDs assinados e encerrados por mês e por UP
+        function renderResumoGeralAssinadosEncerrados() {
+            const teds = dados.teds || [];
+            const signedByMonth = {}; // chave YYYY-MM
+            const closedByMonth = {};
+            const signedByUp = {};
+            const closedByUp = {};
+            const hoje = new Date();
+
+            function monthKeyFromDate(d) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                return `${y}-${m}`;
+            }
+
+            teds.forEach(t => {
+                // Assinatura do TED -> usar inicioVigencia (data de assinatura)
+                const inicioNorm = normalizarData(t.inicioVigencia);
+                if (inicioNorm) {
+                    const dt = new Date(inicioNorm + 'T00:00:00');
+                    if (!isNaN(dt.getTime())) {
+                        const k = monthKeyFromDate(dt);
+                        signedByMonth[k] = (signedByMonth[k] || 0) + 1;
+                        const up = (t.upResponsavel || t.up || 'Sem UP');
+                        signedByUp[up] = (signedByUp[up] || 0) + 1;
+                    }
+                }
+
+                // Encerrados -> considerar 'dataEntregaDenuncia' como data de encerramento principal; fallback para fimVigencia
+                const entregaNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
+                let encerramentoNorm = entregaNorm;
+                if (!encerramentoNorm) {
+                    encerramentoNorm = normalizarData(t.fimVigencia || '');
+                }
+
+                if (encerramentoNorm) {
+                    const fimDt = new Date(encerramentoNorm + 'T00:00:00');
+                    if (!isNaN(fimDt.getTime()) && fimDt <= hoje) {
+                        const k2 = monthKeyFromDate(fimDt);
+                        closedByMonth[k2] = (closedByMonth[k2] || 0) + 1;
+                        const up2 = (t.upResponsavel || t.up || 'Sem UP');
+                        closedByUp[up2] = (closedByUp[up2] || 0) + 1;
+                    }
+                }
+            });
+
+            // Montar tabela por meses (união de chaves)
+            const months = Array.from(new Set([...Object.keys(signedByMonth), ...Object.keys(closedByMonth)]));
+            months.sort((a,b) => b.localeCompare(a)); // desc
+            const mesesHtml = [];
+            if (months.length === 0) {
+                document.getElementById('resumoGeralMeses').innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+            } else {
+                mesesHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
+                mesesHtml.push('<thead><tr><th style="text-align:left; padding:6px;">Mês</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
+                mesesHtml.push('<tbody>');
+                months.forEach(k => {
+                    const partes = k.split('-');
+                    const label = `${partes[1]}/${partes[0]}`;
+                    const a = signedByMonth[k] || 0;
+                    const c = closedByMonth[k] || 0;
+                    mesesHtml.push(`<tr><td style="padding:6px;">${label}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
+                });
+                mesesHtml.push('</tbody></table>');
+                document.getElementById('resumoGeralMeses').innerHTML = mesesHtml.join('');
+            }
+
+            // Montar tabela por UP
+            const ups = Array.from(new Set([...Object.keys(signedByUp), ...Object.keys(closedByUp)])).sort();
+            if (ups.length === 0) {
+                document.getElementById('resumoGeralUPs').innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+            } else {
+                const upHtml = [];
+                upHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
+                upHtml.push('<thead><tr><th style="text-align:left; padding:6px;">UP</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
+                upHtml.push('<tbody>');
+                ups.forEach(u => {
+                    const a = signedByUp[u] || 0;
+                    const c = closedByUp[u] || 0;
+                    upHtml.push(`<tr><td style="padding:6px;">${u}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
+                });
+                upHtml.push('</tbody></table>');
+                document.getElementById('resumoGeralUPs').innerHTML = upHtml.join('');
+            }
         }
 
         // Render upcoming deliveries (execFisicas) within next 30 days
@@ -2200,8 +2191,6 @@
             container.innerHTML = html;
         }
 
-        
-
         // Abrir Detalhes
         function abrirDetalhes(id) {
             const ted = dados.teds.find(t => t.id === id);
@@ -2242,8 +2231,7 @@
                                 const sNorm = computedStatusModal.toLowerCase();
                                 let cls = 'badge-planejamento';
                                 if (/execu|em execução/.test(sNorm)) cls = 'badge-execucao';
-                                else if (/encerr/.test(sNorm)) cls = 'badge-encerrado';
-                                else if (/conclu|finaliz|finalizado/.test(sNorm)) cls = 'badge-concluido';
+                                else if (/encerr|conclu|finaliz|finalizado/.test(sNorm)) cls = 'badge-concluido';
                                 else if (/denunci/.test(sNorm)) cls = 'badge-denunciado';
                                 else if (/suspens|suspenso/.test(sNorm)) cls = 'badge-suspenso';
                                 return `<span class="badge ${cls}" title="Origem: ${originModal}">${computedStatusModal}</span>`;
@@ -2495,12 +2483,14 @@
             document.getElementById('edit_dataEntregaDenuncia').value = formatarDataInput(ted.dataEntregaDenuncia) || '';
             document.getElementById('edit_prazoRelatorio').value = formatarDataInput(ted.prazoRelatorio) || '';
             document.getElementById('edit_dataEntregaRelatorio').value = formatarDataInput(ted.dataEntregaRelatorio) || '';
-            document.getElementById('edit_statusTED').value = ted.statusTED || '';
-            // Recalcular prazo ao exibir (mas NÃO recalcular status automaticamente para preservar o valor salvo)
+            document.getElementById('edit_statusTED').value = ted.statusTED || computedStatus || '';
+            // Recalcular prazo e status ao exibir
             try {
                 calcularPrazoRelatorio();
             } catch(e) {}
-            // NÃO chamar atualizarStatusPorEntregaRelatorio() aqui para preservar o statusTED salvo
+            try {
+                atualizarStatusPorEntregaRelatorio();
+            } catch(e) {}
         }
 
         // Variável para backup dos dados originais
@@ -2651,45 +2641,14 @@
             if (!infoStatus && !editStatus) return;
             const situacao = situacaoEl ? situacaoEl.value : '';
             const dataEntregaRel = dataEntregaRelEl ? dataEntregaRelEl.value : '';
-
-            // Calcular status baseado em vigência se dataEntregaRelatorio e situacao não definirem
-            let status = '';
+            let status = 'Em Execução';
             if (dataEntregaRel) {
                 status = 'TED Finalizado';
             } else if (situacao === 'finalizado' || situacao === 'denunciado') {
                 status = 'Relatório Final';
-            } else if (window.tedSelecionado) {
-                // Usar vigência para determinar EM EXECUÇÃO ou ENCERRADO
-                const hoje = new Date();
-                const inicioNorm = normalizarData(window.tedSelecionado.inicioVigencia);
-                const fimNorm = normalizarData(window.tedSelecionado.fimVigencia);
-                const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
-                const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
-                const inicioValido = inicio && !isNaN(inicio.getTime());
-                const fimValido = fim && !isNaN(fim.getTime());
-                if (inicioValido && fimValido) {
-                    if (hoje >= inicio && hoje <= fim) {
-                        status = 'EM EXECUÇÃO';
-                    } else if (fim < hoje) {
-                        status = 'ENCERRADO';
-                    } else {
-                        status = 'Em Execução';
-                    }
-                } else {
-                    status = 'Em Execução';
-                }
-            } else {
-                status = 'Em Execução';
             }
-
             if (infoStatus) infoStatus.textContent = status;
             if (editStatus) editStatus.value = status;
-
-            // Persistir no objeto tedSelecionado imediatamente para que a lista sempre reflita o mesmo valor
-            if (window.tedSelecionado) {
-                window.tedSelecionado.statusTED = status;
-                salvarDados();
-            }
             // also show warning on prazo if needed
             const prazoTextEl = document.getElementById('info_prazoRelatorio');
             if (prazoTextEl) {
@@ -3947,230 +3906,6 @@
             if (previstoAnualSpan) {
                 previstoAnualSpan.textContent = `${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
             }
-
-            // Atualizar filtros multi-select após carregar tabela
-            atualizarFiltrosMultiSelectFinanceiro();
-        }
-
-        // ========== FILTROS MULTI-SELECT ==========
-        // Estado dos filtros
-        window.filtrosFinanceiro = { nd: [], up: [], m: [] };
-        window.filtrosExecFinanceira = { nd: [], up: [] };
-
-        // Toggle do dropdown
-        function toggleMultiFilter(dropdownId) {
-            const dropdown = document.getElementById(dropdownId);
-            if (!dropdown) return;
-            const menu = dropdown.querySelector('.multi-filter-menu');
-            if (!menu) return;
-            
-            // Fechar outros menus abertos
-            document.querySelectorAll('.multi-filter-menu.open').forEach(m => {
-                if (m !== menu) m.classList.remove('open');
-            });
-            
-            menu.classList.toggle('open');
-        }
-
-        // Fechar menus ao clicar fora
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.multi-filter-dropdown')) {
-                document.querySelectorAll('.multi-filter-menu.open').forEach(m => m.classList.remove('open'));
-            }
-        });
-
-        // Atualizar filtros do Cadastro Financeiro
-        function atualizarFiltrosMultiSelectFinanceiro() {
-            if (!window.tedSelecionado || !window.tedSelecionado.financeiros) return;
-            const financeiros = window.tedSelecionado.financeiros;
-            
-            // Extrair valores únicos
-            const nds = Array.from(new Set(financeiros.map(f => f.numero))).sort();
-            const ups = Array.from(new Set(financeiros.map(f => f.up || f.ug))).sort();
-            const ms = Array.from(new Set(financeiros.map(f => f.m))).sort((a,b) => a - b);
-            
-            // Popular menu ND
-            const menuNd = document.getElementById('filterNdFinMenu');
-            if (menuNd) {
-                menuNd.innerHTML = nds.map(nd => `
-                    <label class="multi-filter-option">
-                        <input type="checkbox" value="${nd}" onchange="onFilterChangeFinanceiro('nd', '${nd}', this.checked)">
-                        ${nd}
-                    </label>
-                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroFinanceiro(\'nd\')">Limpar</button>';
-            }
-            
-            // Popular menu UP
-            const menuUp = document.getElementById('filterUpFinMenu');
-            if (menuUp) {
-                menuUp.innerHTML = ups.map(up => `
-                    <label class="multi-filter-option">
-                        <input type="checkbox" value="${up}" onchange="onFilterChangeFinanceiro('up', '${up}', this.checked)">
-                        ${up}
-                    </label>
-                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroFinanceiro(\'up\')">Limpar</button>';
-            }
-            
-            // Popular menu M
-            const menuM = document.getElementById('filterMFinMenu');
-            if (menuM) {
-                menuM.innerHTML = ms.map(m => `
-                    <label class="multi-filter-option">
-                        <input type="checkbox" value="${m}" onchange="onFilterChangeFinanceiro('m', '${m}', this.checked)">
-                        ${m}
-                    </label>
-                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroFinanceiro(\'m\')">Limpar</button>';
-            }
-            
-            // Resetar filtros
-            window.filtrosFinanceiro = { nd: [], up: [], m: [] };
-            atualizarLabelsFilterFinanceiro();
-        }
-
-        // Callback quando checkbox muda
-        function onFilterChangeFinanceiro(tipo, valor, checked) {
-            if (checked) {
-                if (!window.filtrosFinanceiro[tipo].includes(valor)) {
-                    window.filtrosFinanceiro[tipo].push(valor);
-                }
-            } else {
-                window.filtrosFinanceiro[tipo] = window.filtrosFinanceiro[tipo].filter(v => v !== valor);
-            }
-            atualizarLabelsFilterFinanceiro();
-            aplicarFiltroTabelaFinanceira();
-        }
-
-        // Limpar filtro específico
-        function limparFiltroFinanceiro(tipo) {
-            window.filtrosFinanceiro[tipo] = [];
-            const menuId = tipo === 'nd' ? 'filterNdFinMenu' : (tipo === 'up' ? 'filterUpFinMenu' : 'filterMFinMenu');
-            const menu = document.getElementById(menuId);
-            if (menu) {
-                menu.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-            }
-            atualizarLabelsFilterFinanceiro();
-            aplicarFiltroTabelaFinanceira();
-        }
-
-        // Atualizar labels dos botões
-        function atualizarLabelsFilterFinanceiro() {
-            const labelNd = document.getElementById('filterNdFinLabel');
-            const labelUp = document.getElementById('filterUpFinLabel');
-            const labelM = document.getElementById('filterMFinLabel');
-            
-            if (labelNd) labelNd.textContent = window.filtrosFinanceiro.nd.length ? `(${window.filtrosFinanceiro.nd.length})` : 'Todos';
-            if (labelUp) labelUp.textContent = window.filtrosFinanceiro.up.length ? `(${window.filtrosFinanceiro.up.length})` : 'Todos';
-            if (labelM) labelM.textContent = window.filtrosFinanceiro.m.length ? `(${window.filtrosFinanceiro.m.length})` : 'Todos';
-        }
-
-        // Aplicar filtro na tabela de Cadastro Financeiro
-        function aplicarFiltroTabelaFinanceira() {
-            const tbody = document.getElementById('tabelaFinanceira');
-            if (!tbody) return;
-            
-            const rows = tbody.querySelectorAll('tr');
-            rows.forEach(row => {
-                if (row.cells.length < 3) return; // linha vazia
-                const nd = row.cells[0]?.textContent?.trim() || '';
-                const up = row.cells[1]?.textContent?.trim() || '';
-                const m = row.cells[2]?.textContent?.trim() || '';
-                
-                let show = true;
-                if (window.filtrosFinanceiro.nd.length && !window.filtrosFinanceiro.nd.includes(nd)) show = false;
-                if (window.filtrosFinanceiro.up.length && !window.filtrosFinanceiro.up.includes(up)) show = false;
-                if (window.filtrosFinanceiro.m.length && !window.filtrosFinanceiro.m.includes(m)) show = false;
-                
-                row.style.display = show ? '' : 'none';
-            });
-        }
-
-        // Atualizar filtros da Execução Financeira
-        function atualizarFiltrosMultiSelectExecFinanceira() {
-            if (!window.tedSelecionado || !window.tedSelecionado.financeiros) return;
-            const financeiros = window.tedSelecionado.financeiros;
-            
-            // Extrair valores únicos do cadastro financeiro (base para execução)
-            const nds = Array.from(new Set(financeiros.map(f => f.numero))).sort();
-            const ups = Array.from(new Set(financeiros.map(f => f.up || f.ug))).sort();
-            
-            // Popular menu ND
-            const menuNd = document.getElementById('filterNdExecMenu');
-            if (menuNd) {
-                menuNd.innerHTML = nds.map(nd => `
-                    <label class="multi-filter-option">
-                        <input type="checkbox" value="${nd}" onchange="onFilterChangeExecFinanceira('nd', '${nd}', this.checked)">
-                        ${nd}
-                    </label>
-                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroExecFinanceira(\'nd\')">Limpar</button>';
-            }
-            
-            // Popular menu UP
-            const menuUp = document.getElementById('filterUpExecMenu');
-            if (menuUp) {
-                menuUp.innerHTML = ups.map(up => `
-                    <label class="multi-filter-option">
-                        <input type="checkbox" value="${up}" onchange="onFilterChangeExecFinanceira('up', '${up}', this.checked)">
-                        ${up}
-                    </label>
-                `).join('') + '<button type="button" class="multi-filter-clear" onclick="limparFiltroExecFinanceira(\'up\')">Limpar</button>';
-            }
-            
-            // Resetar filtros
-            window.filtrosExecFinanceira = { nd: [], up: [] };
-            atualizarLabelsFilterExecFinanceira();
-        }
-
-        // Callback quando checkbox muda (Execução Financeira)
-        function onFilterChangeExecFinanceira(tipo, valor, checked) {
-            if (checked) {
-                if (!window.filtrosExecFinanceira[tipo].includes(valor)) {
-                    window.filtrosExecFinanceira[tipo].push(valor);
-                }
-            } else {
-                window.filtrosExecFinanceira[tipo] = window.filtrosExecFinanceira[tipo].filter(v => v !== valor);
-            }
-            atualizarLabelsFilterExecFinanceira();
-            aplicarFiltroTabelaExecFinanceira();
-        }
-
-        // Limpar filtro específico (Execução Financeira)
-        function limparFiltroExecFinanceira(tipo) {
-            window.filtrosExecFinanceira[tipo] = [];
-            const menuId = tipo === 'nd' ? 'filterNdExecMenu' : 'filterUpExecMenu';
-            const menu = document.getElementById(menuId);
-            if (menu) {
-                menu.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-            }
-            atualizarLabelsFilterExecFinanceira();
-            aplicarFiltroTabelaExecFinanceira();
-        }
-
-        // Atualizar labels dos botões (Execução Financeira)
-        function atualizarLabelsFilterExecFinanceira() {
-            const labelNd = document.getElementById('filterNdExecLabel');
-            const labelUp = document.getElementById('filterUpExecLabel');
-            
-            if (labelNd) labelNd.textContent = window.filtrosExecFinanceira.nd.length ? `(${window.filtrosExecFinanceira.nd.length})` : 'Todos';
-            if (labelUp) labelUp.textContent = window.filtrosExecFinanceira.up.length ? `(${window.filtrosExecFinanceira.up.length})` : 'Todos';
-        }
-
-        // Aplicar filtro na tabela de Execução Financeira
-        function aplicarFiltroTabelaExecFinanceira() {
-            const tbody = document.getElementById('tabelaExecFinanceira');
-            if (!tbody) return;
-            
-            const rows = tbody.querySelectorAll('tr');
-            rows.forEach(row => {
-                if (row.cells.length < 2) return; // linha vazia
-                const nd = row.cells[0]?.textContent?.trim() || '';
-                const up = row.cells[1]?.textContent?.trim() || '';
-                
-                let show = true;
-                if (window.filtrosExecFinanceira.nd.length && !window.filtrosExecFinanceira.nd.includes(nd)) show = false;
-                if (window.filtrosExecFinanceira.up.length && !window.filtrosExecFinanceira.up.includes(up)) show = false;
-                
-                row.style.display = show ? '' : 'none';
-            });
         }
 
         // EXECUÇÃO FINANCEIRA
@@ -5075,9 +4810,6 @@
             if (resumoDevolvido) resumoDevolvido.innerHTML = `<span style="color:#ef4444">-${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
             if (resumoSaldo) resumoSaldo.innerHTML = `<span style="font-weight:700;color:${saldoAnual<0? '#ef4444':'inherit'}">${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
             if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
-            
-            // Atualizar opções de filtro da Execução Financeira
-            atualizarFiltrosMultiSelectExecFinanceira();
         }
 
         // Editar valor da Execução Física
