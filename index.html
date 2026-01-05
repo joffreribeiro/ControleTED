@@ -4,65 +4,209 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle TED - Sistema de Execução Descentralizada</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .btn-icon-sm {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+            /* Texto */
+            --text: #1e293b;
+            --text-secondary: #475569;
+            --text-light: #64748b;
+            --text-muted: #94a3b8;
+            
+            /* Header */
+            --header-blue: #1e40af;
+            --header-gradient: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            
+            /* Sombras */
+            --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+            --shadow-primary: 0 4px 14px 0 rgb(59 130 246 / 0.3);
+            
+            /* Border Radius */
+            --radius-sm: 0.375rem;
+            --radius: 0.5rem;
+            --radius-md: 0.625rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-2xl: 1.5rem;
+            --radius-full: 9999px;
+            
+            /* Espaçamento (escala 4px) */
+            --space-1: 0.25rem;   /* 4px */
+            --space-2: 0.5rem;    /* 8px */
+            --space-3: 0.75rem;   /* 12px */
+            --space-4: 1rem;      /* 16px */
+            --space-5: 1.25rem;   /* 20px */
+            --space-6: 1.5rem;    /* 24px */
+            --space-8: 2rem;      /* 32px */
+            --space-10: 2.5rem;   /* 40px */
+            --space-12: 3rem;     /* 48px */
+            --space-16: 4rem;     /* 64px */
+            
+            /* Transições */
+            --transition-fast: all 0.15s ease;
+            --transition: all 0.2s ease;
+            --transition-slow: all 0.3s ease;
+            
+            /* Light mode (padrão) */
+            --light: #f3f4f6;
         }
 
-        /* popularFiltrosTEDs moved to script block (to avoid JS inside <style>) */
-
-        :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --secondary: #1f2937;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --light: #f3f4f6;
-            --border: #e5e7eb;
-            --text: #374151;
-            --header-blue: #2c5aa0;
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --primary: #60a5fa;
+            --primary-dark: #3b82f6;
+            --primary-light: #93c5fd;
+            --primary-50: #1e3a5f;
+            --primary-100: #1e40af;
+            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            
+            --secondary: #f1f5f9;
+            --secondary-light: #e2e8f0;
+            
+            --success-light: #064e3b;
+            --danger-light: #7f1d1d;
+            --warning-light: #78350f;
+            --info-light: #164e63;
+            
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-alt: #334155;
+            --bg-hover: #334155;
+            
+            --border: #334155;
+            --border-light: #475569;
+            --border-dark: #64748b;
+            
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-light: #94a3b8;
+            --text-muted: #64748b;
+            
+            --header-blue: #3b82f6;
+            --header-gradient: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            
+            --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+            --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.4);
+            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.4);
+            
+            --light: #1e293b;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background-color: #f9fafb;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: var(--bg-secondary);
             color: var(--text);
             line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         /* Navbar */
         nav {
-            background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 1rem 2rem;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow);
+            padding: var(--space-4) var(--space-8);
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 100;
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition);
         }
 
         nav h1 {
-            color: var(--primary);
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        nav h1 i {
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            -webkit-text-fill-color: var(--primary);
+            color: var(--primary);
+            width: 28px;
+            height: 28px;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
         }
 
         nav button {
             background: var(--danger);
             color: white;
             border: none;
-            padding: 0.5rem 1.5rem;
-            border-radius: 0.375rem;
+            padding: var(--space-2) var(--space-6);
+            border-radius: var(--radius);
             cursor: pointer;
             font-weight: 600;
+            transition: var(--transition);
         }
 
         nav button:hover {
-            background: #dc2626;
+            background: var(--danger-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: var(--bg-alt) !important;
+            color: var(--text) !important;
+            padding: var(--space-2) !important;
+            border-radius: var(--radius-full) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--border) !important;
+            transform: rotate(15deg) !important;
+        }
+
+        .theme-toggle i {
+            width: 20px;
+            height: 20px;
+        }
+
+        .theme-icon-dark {
+            display: none;
+        }
+
+        [data-theme="dark"] .theme-icon-light {
+            display: none;
+        }
+
+        [data-theme="dark"] .theme-icon-dark {
+            display: block;
         }
 
         /* Main Container */
@@ -78,8 +222,40 @@
             gap: 1rem;
             border-bottom: 2px solid var(--border);
             margin-bottom: 2rem;
+            overflow-x: auto;
+            scrollbar-width: thin;
         }
 
+        .tab-btn i {
+            width: 18px;
+            height: 18px;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+
+        /* Lucide inline icons */
+        .inline-icon {
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+            margin-right: 8px;
+            display: inline-block;
+        }
+
+        .inline-icon-sm {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+            margin-right: 6px;
+            display: inline-block;
+        }
+
+        .btn-icon-sm {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
         /* Resumo Financeiro: reduzir coluna 'Ano' */
         .tabela-padrao th.col-ano,
         .tabela-padrao td.col-ano,
@@ -138,14 +314,23 @@
         .tab-btn.active {
             color: var(--primary);
             border-bottom-color: var(--primary);
+            font-weight: 600;
         }
 
         .tab-btn:hover {
             color: var(--primary);
+            background: var(--light);
+            border-radius: var(--radius) var(--radius) 0 0;
         }
 
         .tab-content {
             display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .tab-content.active {
@@ -154,24 +339,33 @@
 
         /* Cards */
         .card {
-            background: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-6);
+            margin-bottom: var(--space-6);
             border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow);
+            border-color: var(--border-dark);
         }
 
         .card h2 {
-            color: var(--secondary);
-            margin-bottom: 1rem;
+            color: var(--text);
+            margin-bottom: var(--space-4);
             font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
         }
 
         .card h3 {
-            color: var(--secondary);
+            color: var(--text);
             margin-bottom: 0.5rem;
             font-size: 1.1rem;
+            font-weight: 600;
         }
 
         /* Lista de TEDs: exibir 3 cards por linha (responsivo) */
@@ -205,31 +399,40 @@
         .btn {
             padding: 0.5rem 1.5rem;
             border: none;
-            border-radius: 0.375rem;
+            border-radius: var(--radius);
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s;
-            display: inline-block;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
             text-align: center;
             text-decoration: none;
+            font-size: 0.875rem;
         }
 
         .btn-primary {
-            background: var(--primary);
+            background: var(--primary-gradient);
             color: white;
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-primary:hover {
             background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
         }
 
         .btn-secondary {
             background: var(--light);
             color: var(--secondary);
+            border: 1px solid var(--border);
         }
 
         .btn-secondary:hover {
             background: var(--border);
+            transform: translateY(-1px);
         }
 
         .btn-danger {
@@ -239,11 +442,13 @@
 
         .btn-danger:hover {
             background: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
         }
 
         .btn-small {
             padding: 0.25rem 0.75rem;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
         }
 
         /* Forms */
@@ -256,17 +461,20 @@
             margin-bottom: 0.5rem;
             font-weight: 600;
             color: var(--secondary);
+            font-size: 0.875rem;
         }
 
         .form-group input,
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.75rem 1rem;
             border: 1px solid var(--border);
-            border-radius: 0.375rem;
-            font-size: 1rem;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
             font-family: inherit;
+            background: white;
+            transition: var(--transition);
         }
 
         .form-group input:focus,
@@ -274,7 +482,13 @@
         .form-group select:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .form-group input:hover,
+        .form-group textarea:hover,
+        .form-group select:hover {
+            border-color: var(--primary-light);
         }
 
         .form-group textarea {
@@ -285,23 +499,26 @@
         /* Progress Bar */
         .progress-bar {
             width: 100%;
-            height: 8px;
+            height: 10px;
             background: var(--light);
-            border-radius: 4px;
+            border-radius: 999px;
             overflow: hidden;
             margin: 0.5rem 0;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .progress-fill {
             height: 100%;
-            background: var(--primary);
-            transition: width 0.3s;
+            background: var(--primary-gradient);
+            transition: width 0.5s ease;
+            border-radius: 999px;
         }
 
         .progress-text {
             font-size: 0.875rem;
-            color: var(--text);
+            color: var(--text-light);
             margin-top: 0.25rem;
+            font-weight: 500;
         }
 
         /* Grid */
@@ -315,21 +532,34 @@
         .stat-card {
             background: white;
             padding: 1.5rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
             text-align: center;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .stat-card .label {
-            font-size: 0.875rem;
-            color: var(--text);
+            font-size: 0.8rem;
+            color: var(--text-light);
             margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
         }
 
         .stat-card .value {
-            font-size: 1.875rem;
-            font-weight: bold;
-            color: var(--primary);
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         /* Badge */
@@ -395,71 +625,85 @@
             display: inline-flex;
             align-items: center;
             gap: 0.25rem;
-            padding: 0.35rem 0.75rem;
+            padding: 0.4rem 0.85rem;
             font-size: 0.8rem;
-            background: #f3f4f6;
+            background: white;
             border: 1px solid var(--border);
-            border-radius: 0.25rem;
+            border-radius: var(--radius);
             cursor: pointer;
             user-select: none;
+            transition: var(--transition);
+            font-weight: 500;
         }
         .filter-btn:hover {
-            background: #e5e7eb;
+            background: var(--light);
+            border-color: var(--primary-light);
         }
         .filter-btn.active {
-            background: #dbeafe;
+            background: var(--primary-light);
             border-color: var(--primary);
+            color: white;
         }
         .filter-btn::after {
             content: '▼';
-            font-size: 0.6rem;
-            margin-left: 0.25rem;
+            font-size: 0.55rem;
+            margin-left: 0.35rem;
+            opacity: 0.7;
         }
         .filter-menu {
             display: none;
             position: absolute;
-            top: 100%;
+            top: calc(100% + 4px);
             left: 0;
-            min-width: 160px;
-            max-height: 220px;
+            min-width: 180px;
+            max-height: 240px;
             overflow-y: auto;
             background: white;
-            border: 1px solid var(--border);
-            border-radius: 0.25rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
             z-index: 200;
-            padding: 0.25rem 0;
+            padding: 0.35rem 0;
         }
         .filter-menu.open {
             display: block;
+            animation: dropdownFadeIn 0.2s ease;
+        }
+        @keyframes dropdownFadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .filter-menu label {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.35rem 0.75rem;
+            padding: 0.45rem 0.85rem;
             font-size: 0.8rem;
             cursor: pointer;
+            transition: background 0.15s;
         }
         .filter-menu label:hover {
-            background: #f3f4f6;
+            background: var(--light);
         }
         .filter-menu input[type="checkbox"] {
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
         }
         .filter-menu .filter-clear-btn {
             display: block;
             width: calc(100% - 1rem);
-            margin: 0.25rem 0.5rem;
-            padding: 0.3rem;
+            margin: 0.35rem 0.5rem;
+            padding: 0.4rem;
             font-size: 0.75rem;
-            background: #fee2e2;
-            color: #b91c1c;
+            background: var(--danger-light);
+            color: var(--danger);
             border: none;
-            border-radius: 0.2rem;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             text-align: center;
+            font-weight: 500;
+            transition: var(--transition);
         }
         .filter-menu .filter-clear-btn:hover {
             background: #fecaca;
@@ -502,7 +746,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -510,20 +755,32 @@
 
         .modal.active {
             display: flex;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .modal-content {
             background: white;
-            border-radius: 0.5rem;
+            border-radius: var(--radius-xl);
             padding: 2rem;
             max-width: 500px;
             width: 90%;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            box-shadow: var(--shadow-lg);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-header {
             font-size: 1.5rem;
-            font-weight: bold;
+            font-weight: 700;
             margin-bottom: 1.5rem;
             color: var(--secondary);
         }
@@ -546,8 +803,27 @@
         .table-wrapper {
             overflow-x: auto;
             position: relative;
-            border: 1px solid #ddd;
-            border-radius: 0.25rem;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            background: white;
+        }
+
+        /* Indicador de scroll horizontal */
+        .table-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 30px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .table-wrapper.has-scroll::after {
+            opacity: 1;
         }
 
         /* Garantir que sticky funcione */
@@ -657,6 +933,76 @@
             background: #dc2626;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Action button icons (delete, edit) */
+        .btn-icon-action {
+            border: none;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: var(--radius);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+
+        .btn-icon-action i {
+            width: 16px;
+            height: 16px;
+            stroke-width: 2.5;
+        }
+
+        .btn-icon-action.delete {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .btn-icon-action.delete:hover {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-icon-action.edit {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+        }
+
+        .btn-icon-action.edit:hover {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Dark mode adjustments for action buttons */
+        [data-theme="dark"] .btn-icon-action.delete {
+            background: #450a0a;
+            color: #fca5a5;
+            border-color: #7f1d1d;
+        }
+
+        [data-theme="dark"] .btn-icon-action.delete:hover {
+            background: #dc2626;
+            color: white;
+        }
+
+        [data-theme="dark"] .btn-icon-action.edit {
+            background: #1e3a5f;
+            color: #93c5fd;
+            border-color: #1e40af;
+        }
+
+        [data-theme="dark"] .btn-icon-action.edit:hover {
+            background: #3b82f6;
+            color: white;
         }
 
         .ted-info-grid {
@@ -782,18 +1128,19 @@
             font-size: 0.8rem;
         }
         .tabela-padrao thead tr {
-            background: #2c5aa0;
+            background: var(--primary-gradient);
             color: white;
         }
         .tabela-padrao th,
         .tabela-padrao td {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
+            padding: 0.6rem 0.5rem;
+            border: 1px solid var(--border-light);
             vertical-align: middle;
         }
         .tabela-padrao th {
             font-weight: 600;
             white-space: nowrap;
+            letter-spacing: 0.02em;
         }
         /* Larguras padrão para colunas comuns */
         .tabela-padrao .col-acao { min-width: 70px; text-align: center; }
@@ -814,9 +1161,18 @@
         .tabela-padrao thead th {
             text-align: center;
         }
-        /* Linhas alternadas */
-        .tabela-padrao tbody tr:nth-child(even) { background: #f9f9f9; }
-        .tabela-padrao tbody tr:nth-child(odd) { background: #fff; }
+        /* Linhas alternadas - muito sutis para não confundir com o fundo */
+        .tabela-padrao tbody tr:nth-child(even) { background: #fbfdff; }
+        .tabela-padrao tbody tr:nth-child(odd) { background: #ffffff; }
+        .tabela-padrao tbody tr:hover { background: #eef6ff; }
+        /* reforçar separador entre linhas (melhora contraste com bordas) */
+        .tabela-padrao tbody td { border-bottom: 1px solid rgba(16,24,40,0.04); }
+
+        /* Dark mode table rows */
+        [data-theme="dark"] .tabela-padrao tbody tr:nth-child(even) { background: #081224; }
+        [data-theme="dark"] .tabela-padrao tbody tr:nth-child(odd) { background: #06111b; }
+        [data-theme="dark"] .tabela-padrao tbody tr:hover { background: #0b2a44; }
+        [data-theme="dark"] .tabela-padrao tbody td { border-bottom: 1px solid rgba(255,255,255,0.03); }
         /* Linha de total */
         .tabela-padrao .linha-total {
             background: #e8f4f8 !important;
@@ -874,25 +1230,154 @@
         .entregas-bar { width:80px; height:160px; background: linear-gradient(180deg,#66bb6a,#338a3e); box-shadow: inset 0 -6px 0 rgba(0,0,0,0.15); border-radius:6px; position:relative; display:flex; align-items:flex-end; justify-content:center; }
         .entregas-percent { font-weight:700; margin-bottom:6px; }
         .entregas-label { font-size:0.8rem; text-align:center; margin-top:0.6rem; color:var(--text); }
+
+        /* Botões de ícone (editar/excluir) */
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            background: transparent;
+        }
+        .btn-icon:hover {
+            transform: scale(1.1);
+        }
+        .btn-icon.edit {
+            background: var(--warning-light);
+            color: #b45309;
+        }
+        .btn-icon.edit:hover {
+            background: #fde68a;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-icon.delete {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+        .btn-icon.delete:hover {
+            background: #fecaca;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Toast/Notificação */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            background: white;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastSlideIn 0.3s ease;
+            max-width: 350px;
+            font-size: 0.9rem;
+        }
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+        .toast.warning {
+            border-left: 4px solid var(--warning);
+        }
+        .toast.info {
+            border-left: 4px solid var(--primary);
+        }
+        @keyframes toastSlideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes toastSlideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* Alerta melhorado */
+        .alert-box {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        .alert-box.warning {
+            background: var(--warning-light);
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+        .alert-box.success {
+            background: var(--success-light);
+            border: 1px solid #a7f3d0;
+            color: #166534;
+        }
+        .alert-box.danger {
+            background: var(--danger-light);
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scroll suave */
+        html {
+            scroll-behavior: smooth;
+        }
     </style>
     </head>
     <body>
         <!-- Navbar -->
         <nav>
-            <h1>📋 Controle TED</h1>
-            <button onclick="logout()">Sair</button>
+            <h1><i data-lucide="clipboard-list"></i> Controle TED</h1>
+            <div class="nav-actions">
+                <button class="btn-icon theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+                    <i data-lucide="sun" class="theme-icon-light"></i>
+                    <i data-lucide="moon" class="theme-icon-dark"></i>
+                </button>
+                <button onclick="logout()">Sair</button>
+            </div>
         </nav>
 
     <!-- Container Principal -->
     <div class="container">
         <!-- Abas -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-            <button class="tab-btn" onclick="switchTab('teds')">📋 TED</button>
-            <button id="tab-novo" class="tab-btn" onclick="switchTab('novo')" style="display:none;">➕ Novo TED</button>
-            <button class="tab-btn" onclick="switchTab('detalhes')">🔎 Detalhes TED</button>
-            <button class="tab-btn" onclick="switchTab('relatorios')">📑 Relatórios</button>
-            <button class="tab-btn" onclick="switchTab('config')">⚙️ Configurações</button>
+            <button class="tab-btn active" onclick="switchTab('dashboard')"><i data-lucide="layout-dashboard"></i> Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('teds')"><i data-lucide="file-text"></i> TED</button>
+            <button id="tab-novo" class="tab-btn" onclick="switchTab('novo')" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
+            <button class="tab-btn" onclick="switchTab('detalhes')"><i data-lucide="search"></i> Detalhes TED</button>
+            <button class="tab-btn" onclick="switchTab('relatorios')"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <button class="tab-btn" onclick="switchTab('config')"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
         <!-- TAB 1: Dashboard -->
@@ -932,13 +1417,13 @@
                         </div>
                     </div>
                     <div class="proxima-col">
-                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">💰 Recebimentos</h4>
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="wallet" class="inline-icon-sm"></i> Recebimentos</h4>
                         <div id="proximosRecebimentos">
                             <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>
                         </div>
                     </div>
                     <div class="proxima-col">
-                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">📅 Fim de Vigência</h4>
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="calendar-clock" class="inline-icon-sm"></i> Fim de Vigência</h4>
                         <div id="proximasVigencias">
                             <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem TEDs com vigência terminando nos próximos 30 dias.</p>
                         </div>
@@ -980,7 +1465,7 @@
                     <div class="entregas-row" style="display:flex; gap:0.5rem; align-items:flex-start; flex-wrap:wrap;">
                         <div class="resumo-panel" style="width:760px; min-width:520px; order:0;">
                             <div class="card" style="padding:0.6rem; margin-bottom:0.5rem;">
-                                <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">📊 Resumo Financeiro</h4>
+                                <h4 style="margin:0 0 0.5rem 0;color:var(--primary);"><i data-lucide="pie-chart" class="inline-icon-sm"></i> Resumo Financeiro</h4>
                                 <div id="resumoFinanceiroChart" style="min-height:160px; padding:0.5rem; background: linear-gradient(#fff, #f7f7f7); border-radius:0.5rem;">
                                     <p style="color:var(--text);">Selecione um TED para ver o resumo financeiro (ou deixe vazio para consolidado).</p>
                                 </div>
@@ -1111,7 +1596,7 @@
                             <label>Situação TED</label>
                             <select id="create_situacaoTED" onchange="calcularPrazoRelatorioCreate(); atualizarStatusCreate();">
                                 <option value="">--</option>
-                                <option value="finalizado">TED Finalizado</optionf>
+                                <option value="finalizado">TED Finalizado</option>
                                 <option value="denunciado">TED Denunciado</option>
                             </select>
                         </div>
@@ -1157,11 +1642,11 @@
                     <!-- INFORMAÇÕES DO TED -->
                     <div class="ted-info-section" id="infoTEDSection">
                         <div class="ted-info-header">
-                            <h3 class="ted-info-title">📋 Informações do TED</h3>
+                            <h3 class="ted-info-title"><i data-lucide="clipboard-list" class="inline-icon"></i> Informações do TED</h3>
                             <div class="ted-info-actions">
-                                <button class="btn-edit" id="btnEditarInfo" onclick="toggleEditarInfo()" style="display: block;">✏️ Editar</button>
-                                <button class="btn-save" id="btnSalvarInfo" onclick="salvarEdicaoInfo()" style="display: none;">💾 Salvar</button>
-                                <button class="btn-cancel" id="btnCancelarInfo" onclick="cancelarEdicaoInfo()" style="display: none;">✖ Cancelar</button>
+                                <button class="btn-edit" id="btnEditarInfo" onclick="toggleEditarInfo()" style="display: block;"><i data-lucide="edit-2" class="btn-icon-sm"></i> Editar</button>
+                                <button class="btn-save" id="btnSalvarInfo" onclick="salvarEdicaoInfo()" style="display: none;"><i data-lucide="save" class="btn-icon-sm"></i> Salvar</button>
+                                <button class="btn-cancel" id="btnCancelarInfo" onclick="cancelarEdicaoInfo()" style="display: none;"><i data-lucide="x" class="btn-icon-sm"></i> Cancelar</button>
                             </div>
                         </div>
                         
@@ -1446,7 +1931,7 @@
 
                     <!-- EXECUÇÃO FÍSICA -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
-                        <h3 style="margin: 0 0 1rem 0;">📈 Execução Física</h3>
+                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física</h3>
                         <div style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>Objeto *</label>
@@ -1486,7 +1971,7 @@
 
                     <!-- CADASTRO FINANCEIRA -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
-                        <h3 style="margin: 0 0 1rem 0;">💰 Cadastro Financeiro</h3>
+                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
@@ -1551,7 +2036,7 @@
 
                     <!-- EXECUÇÃO FINANCEIRA -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 1rem 0;">📊 Execução Financeira</h3>
+                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
@@ -1611,14 +2096,14 @@
 
                     <!-- Resumo Anual por Ano -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
-                        <h3 style="margin: 0 0 1rem 0;">📊 Resumo Anual por Ano</h3>
+                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="bar-chart" class="inline-icon-sm"></i> Resumo Anual por Ano</h3>
                         <div id="resumoAnualPorAno" style="overflow-x: auto; max-width: 1000px;">
                             <!-- Será preenchido dinamicamente -->
                         </div>
                     </div>
                     <!-- Seção de gráficos completa (após Resumo Anual) -->
                     <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem;">
-                        <h3 style="margin: 0 0 1rem 0;">📈 Entregas — Visão Completa</h3>
+                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h3>
                         <div id="filterFullWrap" style="display:flex; gap:1rem; align-items:center; margin-bottom:0.5rem;">
                             <label style="font-weight:600; margin-right:0.5rem;">Filtrar TED:</label>
                             <select id="filterTedEntregasFull" onchange="(function(v){ renderEntregasChart(v,'entregasChartFull'); })(this.value)"> 
@@ -1636,7 +2121,7 @@
         <!-- TAB 5: Relatórios -->
         <div id="relatorios" class="tab-content">
             <div class="card">
-                <h2>📑 Relatórios</h2>
+                <h2><i data-lucide="file-bar-chart" class="inline-icon"></i> Relatórios</h2>
                 <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:1rem;">
                     <div style="display:flex; flex-direction:column; gap:0.3rem;">
                         <label style="font-weight:600;">TED</label>
@@ -1664,7 +2149,7 @@
 
                 <div style="display:flex; flex-direction:column; gap:0.75rem;">
                     <div class="card" style="padding:0.75rem; width:100%; box-sizing:border-box;">
-                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">📋 Cadastro do TED</h4>
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="file-text" class="inline-icon-sm"></i> Cadastro do TED</h4>
                         <div id="relatorioCadastroTed"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                     </div>
                     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
@@ -1684,14 +2169,14 @@
                             <div id="relatorioCadastroFisico"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">📈 Execução Física</h4>
+                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física</h4>
                             <div id="relatorioExecFisica"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                     </div>
 
                     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">💰 Cadastro Financeiro</h4>
+                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro</h4>
                             <div id="relatorioCadastroFinanceiro"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
@@ -1706,7 +2191,7 @@
         <!-- TAB 6: Configurações -->
         <div id="config" class="tab-content">
             <div class="card">
-                <h2>⚙️ Configurações</h2>
+                <h2><i data-lucide="settings" class="inline-icon"></i> Configurações</h2>
                 <p style="color: var(--text); margin-bottom: 1.5rem;">Exporte e importe seus dados em formato Excel (CSV).</p>
                 
                 <!-- Exportar -->
@@ -1791,6 +2276,34 @@
     <script>
         // Armazenamento Local (LocalStorage)
         const STORAGE_KEY = 'ted_sistema';
+
+        // ===== SISTEMA DE TOAST/NOTIFICAÇÕES =====
+        function showToast(message, type = 'info', duration = 3000) {
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
 
         // Global helper: format numeric quantities with thousands separator (pt-BR)
         function formatNumber(v) {
@@ -2144,7 +2657,7 @@
             atualizarFiltroTedEntregas();
 
             // Mostrar sucesso
-            alert('✅ TED criado com sucesso!');
+            showToast('TED criado com sucesso!', 'success');
             event.target.reset();
             // limpar helper/status do formulário de criação
             const helper = document.getElementById('create_prazo_helper'); if (helper) helper.textContent = '';
@@ -2254,7 +2767,7 @@
                             </div>
                             <div style="display:flex; gap:0.5rem; align-items:center;">
                                 <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
-                                <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" style="background: transparent; border: none; cursor: pointer; font-size: 1.05rem; padding: 0;">🗑️</button>
+                                <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete"><i data-lucide="trash-2"></i></button>
                             </div>
                         </div>
                         
@@ -2300,6 +2813,8 @@
             }).join('');
 
             document.getElementById('listaTeds').innerHTML = html;
+            // Reinicializar ícones Lucide após renderizar conteúdo dinâmico
+            initLucideIcons();
         }
 
         // Renderizar resumo de TEDs assinados e encerrados por mês e por UP
@@ -2671,7 +3186,7 @@
             atualizarListaTEDs();
             atualizarDashboard();
             atualizarFiltroTedEntregas();
-            alert('✅ TED deletado com sucesso!');
+            showToast('TED deletado com sucesso!', 'success');
         }
 
         // Excluir TED a partir da lista (botão na aba TEDs)
@@ -2680,7 +3195,7 @@
 
             const idx = dados.teds.findIndex(t => t.id === id);
             if (idx === -1) {
-                alert('❌ TED não encontrado.');
+                showToast('TED não encontrado.', 'error');
                 return;
             }
 
@@ -2690,7 +3205,7 @@
             atualizarSeletorTED();
             atualizarFiltroTedEntregas();
             atualizarDashboard();
-            alert('✅ TED excluído com sucesso!');
+            showToast('TED excluído com sucesso!', 'success');
         }
 
         // Editar TED
@@ -2747,6 +3262,8 @@
             atualizarGantt();
             // Atualizar gráfico de entregas na visualização de detalhes (se ativo)
             try { renderEntregasChart(tedId, 'entregasChartFull'); } catch(e) {}
+            // Reinicializar ícones Lucide após carregar detalhes
+            initLucideIcons();
         }
 
         // Exibir informações do TED
@@ -2923,7 +3440,7 @@
             // Limpar backup
             tedBackup = null;
             
-            alert('✅ Informações do TED atualizadas com sucesso!');
+            showToast('Informações do TED atualizadas com sucesso!', 'success');
         }
 
         // Cancelar edição
@@ -3084,8 +3601,6 @@
             const qtde = parseInt(qtdeInput.value);
             const valorUnitario = parseNumber(valorInput.value);
 
-            console.log('Objeto:', objeto, 'Qtde:', qtde, 'Valor:', valorUnitario); // Debug
-
             if (!objeto) {
                 alert('⚠️ Preencha o nome do objeto!');
                 return;
@@ -3164,8 +3679,8 @@
                         <td class="col-valor">${vu.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td class="col-valor">${vt.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td class="col-acao">
-                            <button class="btn-icon edit" onclick="editarObjeto(${obj.id})" title="Editar">✏️</button>
-                            <button class="btn-icon delete" onclick="removerObjeto(${obj.id})" title="Remover">🗑️</button>
+                            <button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar"><i data-lucide="edit-2"></i></button>
+                            <button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover"><i data-lucide="trash-2"></i></button>
                         </td>
                     </tr>
                 `;
@@ -3178,6 +3693,8 @@
                     <td class="col-acao"></td>
                 </tr>
             `;
+            // Reinicializar ícones Lucide
+            initLucideIcons();
         }
 
         // METAS
@@ -3562,8 +4079,8 @@
                     <td class="col-mes">${inicioStr}</td>
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
-                        <button class="btn-icon edit" onclick="editarMeta(${meta.id})" title="Editar">✏️</button>
-                        <button class="btn-icon delete" onclick="removerMeta(${meta.id})" title="Remover">🗑️</button>
+                        <button class="btn-icon-action edit" onclick="editarMeta(${meta.id})" title="Editar"><i data-lucide="edit-2"></i></button>
+                        <button class="btn-icon-action delete" onclick="removerMeta(${meta.id})" title="Remover"><i data-lucide="trash-2"></i></button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -3576,6 +4093,8 @@
                 html += '</tr>';
                 return html;
             }).join('');
+            // Reinicializar ícones Lucide
+            initLucideIcons();
         }
 
         function atualizarOpcoesObjetoFisico() {
@@ -3823,8 +4342,8 @@
                     <td class="col-mes">${inicioStr}</td>
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
-                        <button class="btn-icon edit" onclick="editarFisico(${f.id})" title="Editar">✏️</button>
-                        <button class="btn-icon delete" onclick="removerFisico(${f.id})" title="Remover">🗑️</button>
+                        <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar"><i data-lucide="edit-2"></i></button>
+                        <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover"><i data-lucide="trash-2"></i></button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -3837,6 +4356,9 @@
                 html += '</tr>';
                 return html;
             }).join('');
+
+            // Reinicializar ícones Lucide
+            initLucideIcons();
 
             // Atualizar opções de Execução Física (objetos únicos do cadastro físico)
             atualizarOpcoesObjetoExecFisica();
@@ -4387,8 +4909,8 @@
                     <td class="col-mes">${mesDescStr}</td>
                     <td class="col-valor">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td class="col-acao">
-                        <button class="btn-icon edit" onclick="editarFinanceiro(${f.id})" title="Editar">✏️</button>
-                        <button class="btn-icon delete" onclick="removerFinanceiro(${f.id})" title="Remover">🗑️</button>
+                        <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="edit-2"></i></button>
+                        <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover"><i data-lucide="trash-2"></i></button>
                     </td>`;
                 
                 // Adicionar células do Gantt - mostrar valor com fundo azul claro no mês correspondente
@@ -4474,6 +4996,9 @@
                 // não bloquear função se erro ao calcular alerta
                 console.error('Erro ao calcular alerta financeiro:', e);
             }
+
+            // Reinicializar ícones Lucide
+            initLucideIcons();
         }
 
         // EXECUÇÃO FINANCEIRA
@@ -6174,7 +6699,7 @@
             const headers = ['id', 'numTed', 'planoTrabalho', 'objetivo', 'valorTed', 'codigoPlano', 'numTedSiafi', 'notaSistema', 'upResponsavel', 'ugExecutora', 'unidadeDesc', 'ugDesc', 'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao', 'dataCriacao'];
             const csv = arrayToCSV(dados.teds, headers);
             downloadFile(csv, 'teds_export.csv');
-            alert('✅ TEDs exportados com sucesso!');
+            showToast('TEDs exportados com sucesso!', 'success');
         }
 
         // EXPORTAR OBJETOS
@@ -6195,7 +6720,7 @@
             const headers = ['numTed', 'id', 'objeto', 'qtde', 'valorUnitario', 'valorTotal'];
             const csv = arrayToCSV(rows, headers);
             downloadFile(csv, 'objetos_export.csv');
-            alert('✅ Objetos exportados com sucesso!');
+            showToast('Objetos exportados com sucesso!', 'success');
         }
 
         // EXPORTAR METAS
@@ -6220,7 +6745,7 @@
             const headers = ['numTed', 'id', 'meta', 'descricao', 'mInicio', 'mFinal', 'mesInicio', 'anoInicio', 'mesFinal', 'anoFinal'];
             const csv = arrayToCSV(rows, headers);
             downloadFile(csv, 'metas_export.csv');
-            alert('✅ Metas exportadas com sucesso!');
+            showToast('Metas exportadas com sucesso!', 'success');
         }
 
         // EXPORTAR FÍSICO
@@ -6246,7 +6771,7 @@
             const headers = ['numTed', 'id', 'fase', 'objeto', 'qtde', 'mInicio', 'mFinal', 'mesInicio', 'anoInicio', 'mesFinal', 'anoFinal'];
             const csv = arrayToCSV(rows, headers);
             downloadFile(csv, 'fisicos_export.csv');
-            alert('✅ Cadastro Físico exportado com sucesso!');
+            showToast('Cadastro Físico exportado com sucesso!', 'success');
         }
 
         // EXPORTAR EXECUÇÃO FÍSICA
@@ -6266,7 +6791,7 @@
             const headers = ['numTed', 'id', 'objeto', 'qtde', 'data'];
             const csv = arrayToCSV(rows, headers);
             downloadFile(csv, 'exec_fisica_export.csv');
-            alert('✅ Execução Física exportada com sucesso!');
+            showToast('Execução Física exportada com sucesso!', 'success');
         }
 
         // EXPORTAR FINANCEIRO
@@ -6289,7 +6814,7 @@
             const headers = ['numTed', 'id', 'numero', 'up', 'm', 'mesDesc', 'anoDesc', 'valor'];
             const csv = arrayToCSV(rows, headers);
             downloadFile(csv, 'financeiros_export.csv');
-            alert('✅ Cadastro Financeiro exportado com sucesso!');
+            showToast('Cadastro Financeiro exportado com sucesso!', 'success');
         }
 
         // EXPORTAR EXECUÇÃO FINANCEIRA
@@ -6310,7 +6835,7 @@
             const headers = ['numTed', 'id', 'nd', 'up', 'valor', 'data'];
             const csv = arrayToCSV(rows, headers);
             downloadFile(csv, 'exec_financeira_export.csv');
-            alert('✅ Execução Financeira exportada com sucesso!');
+            showToast('Execução Financeira exportada com sucesso!', 'success');
         }
 
         // EXPORTAR TUDO (múltiplos arquivos)
@@ -6328,7 +6853,7 @@
         function exportarBackupJSON() {
             const json = JSON.stringify(dados, null, 2);
             downloadFile(json, 'backup_controle_ted.json', 'application/json;charset=utf-8;');
-            alert('✅ Backup JSON exportado com sucesso!');
+            showToast('Backup JSON exportado com sucesso!', 'success');
         }
 
         // IMPORTAR BACKUP JSON
@@ -6344,7 +6869,7 @@
                         atualizarDashboard();
                         atualizarListaTEDs();
                         atualizarSeletorTED();
-                        alert('✅ Backup importado com sucesso!');
+                        showToast('Backup importado com sucesso!', 'success');
                     }
                 } catch (err) {
                     alert('❌ Erro ao importar: arquivo inválido.');
@@ -6381,7 +6906,6 @@
                         // Verificar se já existe (por numTed) - normalizar para string para comparação
                         const numTedImport = String(row.numTed).trim();
                         const existe = dados.teds.find(t => String(t.numTed).trim() === numTedImport);
-                        console.log('numTed:', numTedImport, '| Encontrado:', !!existe, '| Total TEDs antes:', dados.teds.length);
                         
                         // Normalizar datas do CSV
                         const inicioVigNorm = normalizarData(row.inicioVigencia);
@@ -6389,7 +6913,6 @@
                         const vigenciaMeses = parseInt(row.vigencia) || 0;
                         
                         if (existe) {
-                            console.log('>>> ATUALIZANDO TED existente');
                             // ATUALIZAR TED existente (preservar sub-arrays)
                             existe.planoTrabalho = row.planoTrabalho || existe.planoTrabalho;
                             existe.objetivo = row.objetivo || existe.objetivo;
@@ -6406,11 +6929,8 @@
                             existe.primeiraDescentralizacao = primeiraDescNorm || existe.primeiraDescentralizacao;
                             // Calcular fimVigencia automaticamente
                             existe.fimVigencia = calcularFimVigenciaData(existe.inicioVigencia, existe.vigencia);
-                            console.log('>>> fimVigencia calculado:', existe.fimVigencia);
                             countAtualizados++;
-                            console.log('>>> countAtualizados:', countAtualizados);
                         } else {
-                            console.log('>>> CRIANDO novo TED');
                             // CRIAR novo TED
                             dados.teds.push({
                                 id: dados.proxiId++,
@@ -6728,12 +7248,9 @@
                         if (ted) {
                             // Obter data base para cálculo de mesDesc/anoDesc
                             let baseDate = null;
-                            console.log('TED', numTed, '- primeiraDescentralizacao:', ted.primeiraDescentralizacao);
                             if (ted.primeiraDescentralizacao) {
                                 const dataNorm = normalizarData(ted.primeiraDescentralizacao);
-                                console.log('Data normalizada:', dataNorm);
                                 baseDate = new Date(dataNorm + 'T00:00:00');
-                                console.log('baseDate:', baseDate, 'isValid:', !isNaN(baseDate.getTime()));
                                 if (isNaN(baseDate.getTime())) baseDate = null;
                             }
                             
@@ -6742,15 +7259,12 @@
                                 let mesDesc = parseInt(row.mesDesc) || 0;
                                 let anoDesc = parseInt(row.anoDesc) || 0;
                                 
-                                console.log('Linha:', idx, '- m:', m, 'mesDesc original:', row.mesDesc, 'anoDesc original:', row.anoDesc, 'baseDate:', baseDate);
-                                
                                 // Se não tem mesDesc/anoDesc mas tem baseDate e m, calcular
                                 if ((!mesDesc || !anoDesc) && baseDate && m >= 0) {
                                     const d = new Date(baseDate);
                                     d.setMonth(d.getMonth() + m);
                                     mesDesc = d.getMonth() + 1;
                                     anoDesc = d.getFullYear();
-                                    console.log('Calculado - mesDesc:', mesDesc, 'anoDesc:', anoDesc);
                                 }
                                 
                                     return {
@@ -6812,16 +7326,62 @@
                         }
                     });
                     try { salvarDados(); } catch(e) {}
-                    alert(`✅ ${countItens} execução(ões) financeira(s) importada(s) para ${countTeds} TED(s)!`);
+                    showToast(`${countItens} execução(ões) financeira(s) importada(s) para ${countTeds} TED(s)!`, 'success');
                 } catch (err) {
-                    alert('❌ Erro ao importar: ' + err.message);
+                    showToast('Erro ao importar: ' + err.message, 'error');
                 }
             };
             reader.readAsText(file);
         }
 
+        // Detectar scroll horizontal em table-wrappers
+        function checkTableScrolls() {
+            document.querySelectorAll('.table-wrapper').forEach(wrapper => {
+                if (wrapper.scrollWidth > wrapper.clientWidth) {
+                    wrapper.classList.add('has-scroll');
+                } else {
+                    wrapper.classList.remove('has-scroll');
+                }
+            });
+        }
+
+        // Observer para detectar mudanças no DOM
+        const resizeObserver = new ResizeObserver(checkTableScrolls);
+
+        // ===== DARK MODE / THEME TOGGLE =====
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('ted_theme', newTheme);
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('ted_theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        }
+
+        // Inicializar Lucide Icons
+        function initLucideIcons() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
         // Iniciar ao carregar a página
-        window.onload = inicializar;
+        window.onload = function() {
+            initTheme();
+            inicializar();
+            checkTableScrolls();
+            initLucideIcons();
+            // Observar wrappers de tabela
+            document.querySelectorAll('.table-wrapper').forEach(w => resizeObserver.observe(w));
+        };
     </script>
 </body>
 </html>
