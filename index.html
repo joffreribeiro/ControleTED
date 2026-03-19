@@ -2741,6 +2741,29 @@
             return { text: 'Em Execução', origin: 'inferido' };
         }
 
+        function switchTab(tabName) {
+            // Ocultar todas as abas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Mostrar aba selecionada
+            document.getElementById(tabName).classList.add('active');
+            if (event && event.target) {
+                event.target.closest('.tab-btn') ? event.target.closest('.tab-btn').classList.add('active') : event.target.classList.add('active');
+            }
+            try {
+                const wrap = document.getElementById('filterFullWrap');
+                if (wrap) wrap.style.display = (tabName === 'detalhes') ? 'none' : 'flex';
+            } catch(e) {}
+            try {
+                if (tabName === 'relatorios') renderRelatorios();
+            } catch(e) {}
+        }
+
         // Calcula soma dos valores do cadastro financeiro de um TED
         function calcularTotalFinanceiro(ted) {
             if (!ted || !ted.financeiros || !ted.financeiros.length) return 0;
