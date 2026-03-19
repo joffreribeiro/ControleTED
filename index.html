@@ -2741,14 +2741,12 @@
             return { text: 'Em Execução', origin: 'inferido' };
         }
 
-
-            aplicarDadosNaInterface();
-            try {
         // Calcula soma dos valores do cadastro financeiro de um TED
         function calcularTotalFinanceiro(ted) {
             if (!ted || !ted.financeiros || !ted.financeiros.length) return 0;
             return ted.financeiros.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
-            } catch(e) {}
+        }
+
         // Calcula soma dos valores realizados (execução financeira) de um TED
         function calcularTotalExecFinanceira(ted) {
             if (!ted || !ted.execFinanceiras || !ted.execFinanceiras.length) return 0;
