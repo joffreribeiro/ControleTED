@@ -1,0 +1,3095 @@
+        // Exibir informações do TED
+        function exibirInfoTED() {
+            if (!window.tedSelecionado) return;
+
+            const ted = window.tedSelecionado;
+
+            // Calcular datas a partir de campos existentes
+            let inicio = null;
+            let fim = null;
+            if (ted.inicioVigencia) {
+                inicio = new Date(ted.inicioVigencia);
+            }
+            if (inicio && !isNaN(ted.vigilancia)) {
+                fim = new Date(inicio);
+                fim.setMonth(fim.getMonth() + (isNaN(parseInt(ted.vigilancia, 10)) ? 0 : parseInt(ted.vigilancia, 10)));
+            }
+
+            const formatDate = (d) => {
+                if (!d || isNaN(d)) return '';
+                return d.toLocaleDateString('pt-BR');
+            };
+
+            const infoGrid = document.getElementById('tedInfoGrid');
+            infoGrid.innerHTML = `
+                <div class="ted-info-item">
+                    <label>Plano de Trabalho</label>
+                    <div class="value" data-field="planoTrabalho">${ted.planoTrabalho || ''}</div>
+                // Exibir informações do TED
+            function exibirInfoTED() {
+                if (!window.tedSelecionado) return;
+
+                const ted = window.tedSelecionado;
+
+                // Calcular datas a partir de campos existentes
+                let inicio = null;
+                let fim = null;
+                if (ted.inicioVigencia) {
+                    inicio = new Date(ted.inicioVigencia);
+                }
+                if (inicio && !isNaN(ted.vigilancia)) {
+                    fim = new Date(inicio);
+                    fim.setMonth(fim.getMonth() + (isNaN(parseInt(ted.vigilancia, 10)) ? 0 : parseInt(ted.vigilancia, 10)));
+                }
+
+                const formatDate = (d) => {
+                    if (!d || isNaN(d)) return '';
+                    return d.toLocaleDateString('pt-BR');
+                };
+
+                const infoGrid = document.getElementById('tedInfoGrid');
+                infoGrid.innerHTML = `
+                    <div class="ted-info-item">
+                        <label>Plano de Trabalho</label>
+                        <div class="value" data-field="planoTrabalho">${ted.planoTrabalho || ''}</div>
+                    // Exibir informações do TED (versão única e ordenada)
+                    function exibirInfoTED() {
+                        if (!window.tedSelecionado) return;
+
+                        const ted = window.tedSelecionado;
+
+                        // Calcular datas a partir de campos existentes
+                        let inicio = null;
+                        let fim = null;
+                        if (ted.inicioVigencia) {
+                            inicio = new Date(ted.inicioVigencia);
+                        }
+                        if (inicio && !isNaN(ted.vigilancia)) {
+                            fim = new Date(inicio);
+                            fim.setMonth(fim.getMonth() + (isNaN(parseInt(ted.vigilancia, 10)) ? 0 : parseInt(ted.vigilancia, 10)));
+                        }
+
+                        const formatDate = (d) => {
+                            if (!d || isNaN(d)) return '';
+                            return d.toLocaleDateString('pt-BR');
+                        };
+
+                        const infoGrid = document.getElementById('tedInfoGrid');
+                        infoGrid.innerHTML = `
+                            <div class="ted-info-item">
+                                <label>Plano de Trabalho</label>
+                                <div class="value" data-field="planoTrabalho">${ted.planoTrabalho || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>TED</label>
+                                <div class="value" data-field="numTed">${ted.numTed || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Objeto</label>
+                                <div class="value" data-field="objetivo">${ted.objetivo || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Valor do TED (R$)</label>
+                                <div class="value" data-field="valorTed">R$ ${Number(ted.valorTed || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                            </div>
+
+                            <div class="ted-info-item">
+                                <label>Código do Plano de Ação</label>
+                                <div class="value" data-field="codigoPlano">${ted.codigoPlano || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Nº TED - SIAFI</label>
+                                <div class="value" data-field="numTedSiafi">${ted.numTedSiafi || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Nota do Sistema do TED</label>
+                                <div class="value" data-field="notaSistema">${ted.notaSistema || ''}</div>
+                            </div>
+
+                            <div class="ted-info-item">
+                                <label>UP Responsável</label>
+                                <div class="value" data-field="upResponsavel">${ted.upResponsavel || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>UG Executora</label>
+                                <div class="value" data-field="egExecutora">${ted.egExecutora || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Unidade Descentralizadora</label>
+                                <div class="value" data-field="unidadeDesc">${ted.unidadeDesc || ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>UG Descentralizadora</label>
+                                <div class="value" data-field="ugDesc">${ted.ugDesc || ''}</div>
+                            </div>
+
+                            <div class="ted-info-item">
+                                <label>Vigência (Meses)</label>
+                                <div class="value" data-field="vigilancia">${ted.vigilancia ?? ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Início da Vigência</label>
+                                <div class="value" data-field="inicioVigencia">${inicio ? formatDate(inicio) : ''}</div>
+                            </div>
+                            <div class="ted-info-item">
+                                <label>Fim da Vigência</label>
+                                <div class="value" data-field="fimVigencia">${fim ? formatDate(fim) : ''}</div>
+                            </div>
+
+                            <div class="ted-info-item">
+                                <label>1ª Descentralização</label>
+                                <div class="value" data-field="primeiraDescentralizacao">${ted.primeiraDescentralizacao || ''}</div>
+                            </div>
+                        `;
+                    }
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .card h3 {
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-small {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        /* Icon Buttons */
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.25rem 0.5rem;
+            transition: transform 0.2s, opacity 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            transform: scale(1.2);
+            opacity: 0.8;
+        }
+
+        .btn-icon.delete {
+            color: var(--danger);
+        }
+
+        .btn-icon.edit {
+            color: var(--primary);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--text);
+            margin-top: 0.25rem;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 0.875rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .badge-planejamento {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-execucao {
+            background: #dbeafe;
+            color: #0c2d6b;
+        }
+
+        .badge-concluido {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-suspenso {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: var(--secondary);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: flex-end;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text);
+        }
+
+        /* Table wrapper with scroll */
+        .table-wrapper {
+            overflow-x: auto;
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 0.25rem;
+        }
+
+        /* Garantir que sticky funcione */
+        .table-wrapper table {
+            border-collapse: collapse;
+        }
+
+        /* Detalhes TED - Seção Fixa e Scrollável */
+        #tedsDetalheContainer {
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #tedsDetalheContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #tedsDetalheContainer::-webkit-scrollbar-track {
+            background: var(--light);
+            border-radius: 4px;
+        }
+
+        #tedsDetalheContainer::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        #tedsDetalheContainer::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Info TED Section */
+        .ted-info-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .ted-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .ted-info-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .ted-info-item label {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .ted-info-item .value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .ted-info-item input,
+        .ted-info-item select {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--text);
+            border: none;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            width: 100%;
+            font-size: 0.875rem;
+        }
+
+        .ted-edit-mode .ted-info-item {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+
+            #tedsDetalheContainer {
+                max-height: calc(100vh - 300px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav>
+        <h1>📋 Controle TED</h1>
+        <button onclick="logout()">Sair</button>
+    </nav>
+
+    <!-- Container Principal -->
+    <div class="container">
+        <!-- Abas -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('teds')">TEDs</button>
+            <button class="tab-btn" onclick="switchTab('novo')">Novo TED</button>
+            <button class="tab-btn" onclick="switchTab('detalhes')">Detalhes TED</button>
+        </div>
+
+        <!-- TAB 1: Dashboard -->
+        <div id="dashboard" class="tab-content active">
+            <div class="card">
+                <h2>Resumo Geral</h2>
+                <div class="grid">
+                    <div class="stat-card">
+                        <div class="label">Total de TEDs</div>
+                        <div class="value" id="totalTeds">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Em Execução</div>
+                        <div class="value" id="tedsExecucao">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Orçamento Total</div>
+                        <div class="value" id="orcamentoTotal">R$ 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Total Gasto</div>
+                        <div class="value" id="totalGasto">R$ 0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>TEDs Recentes</h2>
+                <div id="tedsRecentes" class="empty-state">
+                    <p>Nenhum TED cadastrado ainda</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Listar TEDs -->
+        <div id="teds" class="tab-content">
+            <div class="card">
+                <h2>Seus Termos de Execução</h2>
+                <div id="listaTeds">
+                    <div class="empty-state">
+                        <p>Nenhum TED cadastrado</p>
+                        <button class="btn btn-primary" onclick="switchTab('novo')">Criar Primeiro TED</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Novo TED -->
+        <div id="novo" class="tab-content">
+            <div class="card">
+                <h2>Criar Novo TED</h2>
+                <form onsubmit="criarTED(event)">
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Plano de Trabalho *</label>
+                            <input type="text" id="planoTrabalho" placeholder="Ex: 2024" required>
+                        </div>
+                        <div class="form-group">
+                            <label>TED *</label>
+                            <input type="text" id="numTed" placeholder="Ex: 001" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Objeto *</label>
+                            <input type="text" id="objetivo" placeholder="Objeto" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor do TED (R$) *</label>
+                            <input type="number" id="valorTed" placeholder="0.00" step="0.01" min="0" required>
+                        </div>
+                     </div>
+
+                    <div class="grid">
+                        
+                        <div class="form-group">
+                            <label>Código do Plano de Ação *</label>
+                            <input type="text" id="codigoPlano" placeholder="Código" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nº TED - SIAFI *</label>
+                            <input type="text" id="numTedSiafi" placeholder="SIAFI" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Nota do Sistema do TED *</label>
+                            <input type="text" id="notaSistema" placeholder="Nota" required>
+                        </div>
+                        
+                    </div>
+
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>UP Responsável pela Execução *</label>
+                            <input type="text" id="upResponsavel" placeholder="UP" required>
+                        </div>
+                        <div class="form-group">
+                            <label>UG Executora *</label>
+                            <input type="text" id="egExecutora" placeholder="UG" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidade Descentralizadora *</label>
+                            <input type="text" id="unidadeDesc" placeholder="Unidade" required>
+                        </div>
+                        <div class="form-group">
+                            <label>UG Descentralizadora *</label>
+                            <input type="text" id="ugDesc" placeholder="UG" required>
+                        </div>
+                    </div>
+                        <div class="grid">
+                        <div class="form-group">
+                            <label>Início de Vigência *</label>
+                            <input type="date" id="inicioVigencia" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Vigência em Meses *</label>
+                            <input type="number" id="vigilancia" placeholder="Meses" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Fim de Vigência *</label>
+                            <input type="date" id="fimVigencia" required>
+                        </div>
+                        <div class="form-group">
+                            <label>1ª Descentralização *</label>
+                            <input type="date" id="primeiraDescentralizacao" required>
+                        </div>
+                    </div>
+
+                    
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Criar TED</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB 4: Detalhes TED -->
+        <div id="detalhes" class="tab-content">
+            <div class="card">
+                <h2>Detalhes do TED</h2>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Selecione um TED:</label>
+                    <select id="seletorTED" onchange="carregarDetalhes(this.value)" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; width: 100%;">
+                        <option value="">-- Escolha um TED --</option>
+                    </select>
+                </div>
+
+                <div id="tedsDetalheContainer" style="display: none;">
+                    <!-- INFORMAÇÕES DO TED -->
+                    <div class="ted-info-section" id="tedInfoSection">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0;">📋 Informações do TED</h3>
+                            <div>
+                                <button id="btnEditarTED" class="btn btn-secondary" onclick="toggleEditarTED()" style="background: rgba(255,255,255,0.2); color: white; padding: 0.5rem 1rem;">✏️ Editar</button>
+                                <button id="btnSalvarTED" class="btn btn-primary" onclick="salvarEdicaoTED()" style="display: none; padding: 0.5rem 1rem; margin-left: 0.5rem;">💾 Salvar</button>
+                                <button id="btnCancelarTED" class="btn btn-secondary" onclick="cancelarEdicaoTED()" style="display: none; background: rgba(255,255,255,0.2); color: white; padding: 0.5rem 1rem; margin-left: 0.5rem;">✖ Cancelar</button>
+                            </div>
+                        </div>
+                        <div class="ted-info-grid" id="tedInfoGrid">
+                            <!-- Será preenchido dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- CADASTRO DE OBJETOS -->
+                    <div style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                        <h3 style="margin: 0 0 1rem 0;">📦 Cadastro de Objetos</h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Objeto *</label>
+                                <input type="text" id="objeto" placeholder="Ex: Computador" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Qtde *</label>
+                                <input type="number" id="qtdeObjeto" placeholder="0" min="0" step="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor Unitário (R$) *</label>
+                                <input type="number" id="valorUnitario" placeholder="0.00" step="0.01" min="0" required>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="adicionarObjeto()" style="align-self: flex-end; min-width: 120px;">Adicionar</button>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                            <thead>
+                                <tr style="background: #2c5aa0; color: white;">
+                                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Objeto</th>
+                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Qtde</th>
+                                    <th style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">Valor Unitário</th>
+                                    <th style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">Valor Total</th>
+                                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaObjetos">
+                                <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- CADASTRO DE METAS -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0;">🎯 Cadastro de Metas</h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Meta *</label>
+                                <input type="text" id="meta" placeholder="Ex: Entrega" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M Início *</label>
+                                <input type="number" id="mInicio" placeholder="0" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M Final *</label>
+                                <input type="number" id="mFinal" placeholder="0" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mês Início (auto) *</label>
+                                <input type="number" id="mesInicio" placeholder="calculado" min="1" max="12" readonly required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mês Final (auto) *</label>
+                                <input type="number" id="mesFinal" placeholder="calculado" min="1" max="12" readonly required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarMeta()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <div style="overflow-x: auto; border: 1px solid #ddd; border-radius: 0.25rem;">
+                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                <thead>
+                                    <tr style="background: #2c5aa0; color: white;">
+                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Meta</th>
+                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Início</th>
+                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Final</th>
+                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início (MM/AAAA)</th>
+                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Final (MM/AAAA)</th>
+                                        <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaMetas">
+                                    <tr><td colspan="6" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- CADASTRO FÍSICO -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0;">🏗️ Cadastro Físico</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Fase *</label>
+                                <input type="text" id="faseFisico" placeholder="Ex: Fase 1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Objeto *</label>
+                                <select id="objetoFisico" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Qtde *</label>
+                                <input type="number" id="qtdeFisico" min="0" step="0.01" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M Início *</label>
+                                <input type="number" id="mInicioFisico" min="0" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M Final *</label>
+                                <input type="number" id="mFinalFisico" min="0" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mês Início (auto) *</label>
+                                <input type="number" id="mesInicioFisico" min="1" max="12" placeholder="calculado" readonly required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mês Final (auto) *</label>
+                                <input type="number" id="mesFinalFisico" min="1" max="12" placeholder="calculado" readonly required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarFisico()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper" style="overflow-x: auto; border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
+                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                <thead>
+                                    <tr style="background: #2c5aa0; color: white;">
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Fase</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Objeto</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Qtde</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">M Início</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">M Final</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Mês Início (MM/AAAA)</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Mês Final (MM/AAAA)</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaFisicos">
+                                    <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro físico</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- EXECUÇÃO FÍSICA -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0;">📈 Execução Física</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>Objeto *</label>
+                                <select id="objetoExecFisica" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Qtde *</label>
+                                <input type="number" id="qtdeExec" min="0" step="0.01" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Data *</label>
+                                <input type="date" id="dataExec" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarExecFisica()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <div style="overflow-x: auto; border: 1px solid #ddd; border-radius: 0.25rem;">
+                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                <thead>
+                                    <tr style="background: #2c5aa0; color: white;">
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Prevista</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Entregue</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Saldo</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Execução (%)</th>
+                                        <th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaExecFisica">
+                                    <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução física</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- CADASTRO FINANCEIRA -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0;">💰 Cadastro Financeira</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>ND *</label>
+                                <input type="text" id="numFinanceiro" placeholder="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>UP *</label>
+                                <input type="text" id="upFinanceiro" placeholder="UP" required>
+                            </div>
+                            <div class="form-group">
+                                <label>M *</label>
+                                <input type="number" id="mFinanceiro" min="0" placeholder="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mês Desc. (auto) *</label>
+                                <input type="text" id="mesDescFinanceiro" placeholder="MM/AAAA" readonly required>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor (R$) *</label>
+                                <input type="number" id="valorFinanceiro" min="0" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarFinanceiro()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper" style="overflow-x: auto; position: relative;">
+                            <table id="tabelaFinanceiraCompleta" style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.75rem; min-width: 1400px;">
+                                <thead>
+                                    <tr style="background: #2c5aa0; color: white;">
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">ND</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">UP</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">M</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">Mês Desc.</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Valor (R$)</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaFinanceira">
+                                    <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- EXECUÇÃO FINANCEIRA -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 1rem 0;">📊 Execução Financeira</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>ND *</label>
+                                <select id="numExecFin" required>
+                                    <option value="">-- Selecione --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>UP *</label>
+                                <select id="upExecFin" required>
+                                    <option value="">-- Selecione --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor (R$) *</label>
+                                <input type="number" id="valorExecFin" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Data *</label>
+                                <input type="date" id="dataExecFin" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarExecFinanceira()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper" style="overflow-x: auto; border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
+                            <table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                <thead>
+                                    <tr style="background: #2c5aa0; color: white;">
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">ND</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0;">UP</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Valor Previsto</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Valor Realizado</th>
+                                        <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0;">Saldo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaExecFinanceira">
+                                    <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma execução financeira</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="resumoExecFinanceira" style="margin-top: 0.75rem; font-size: 0.875rem; display: grid; row-gap: 0.35rem; max-width: 480px;">
+                            <div><strong>Previsto Anual:</strong> <span id="resExecPrevisto">R$ 0,00</span></div>
+                            <div><strong>A Receber ano anterior:</strong> <span id="resExecReceberAnterior">R$ 0,00</span></div>
+                            <div><strong>Recebido Anual:</strong> <span id="resExecRecebido">R$ 0,00</span></div>
+                            <div><strong>Devolvido:</strong> <span id="resExecDevolvido">R$ 0,00</span></div>
+                            <div><strong>Saldo Anual:</strong> <span id="resExecSaldo">R$ 0,00</span></div>
+                            <div><strong>Liquidação:</strong> <span id="resExecLiquidacao">0%</span></div>
+                        </div>
+                    </div>
+
+                    <!-- GANTT 60 MESES -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                        <h3 style="margin: 0 0 1rem 0;">📅 Cronograma (Gantt 60 meses)</h3>
+                        <p style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text);">Início = 1ª descentralização (mês/ano) + 60 meses.</p>
+                        <div id="ganttContainer" style="overflow-x: auto;"></div>
+                        
+                        <!-- Resumo Anual por Ano -->
+                        <div id="resumoAnualPorAno" style="margin-top: 1.5rem; overflow-x: auto;">
+                            <!-- Será preenchido dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes -->
+    <div id="modalDetalhes" class="modal" onclick="fecharModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header" id="modalTitulo">Detalhes do TED</div>
+            <div id="modalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
+                <button class="btn btn-primary" onclick="editarTED()">Editar</button>
+                <button class="btn btn-danger" onclick="deletarTED()">Deletar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Armazenamento Local (LocalStorage)
+        const STORAGE_KEY = 'ted_sistema';
+
+        // Dados Iniciais
+        let dados = {
+            teds: [],
+            proxiId: 1
+        };
+
+        // Inicializar
+        function inicializar() {
+            const salvo = localStorage.getItem(STORAGE_KEY);
+            if (salvo) {
+                dados = JSON.parse(salvo);
+            }
+            atualizarDashboard();
+            atualizarListaTEDs();
+            atualizarSeletorTED();
+            atualizarGantt();
+        }
+
+        // Trocar Abas
+        function switchTab(tabName) {
+            // Ocultar todas as abas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Mostrar aba selecionada
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Criar TED
+        function criarTED(event) {
+            event.preventDefault();
+
+            // Extrair mês e ano da data de descentralização
+            const dataDesc = document.getElementById('primeiraDescentralizacao').value;
+            const dateObj = new Date(dataDesc + 'T00:00:00');
+            const primeiroMesDesc = dateObj.getMonth() + 1; // getMonth() retorna 0-11
+            const primeiroAnoDesc = dateObj.getFullYear();
+
+            const ted = {
+                id: dados.proxiId++,
+                planoTrabalho: document.getElementById('planoTrabalho').value,
+                numTed: document.getElementById('numTed').value,
+                codigoPlano: document.getElementById('codigoPlano').value,
+                upResponsavel: document.getElementById('upResponsavel').value,
+                egExecutora: document.getElementById('egExecutora').value,
+                numTedSiafi: document.getElementById('numTedSiafi').value,
+                notaSistema: document.getElementById('notaSistema').value,
+                unidadeDesc: document.getElementById('unidadeDesc').value,
+                ugDesc: document.getElementById('ugDesc').value,
+                valorTed: parseFloat(document.getElementById('valorTed').value) || 0,
+                vigilancia: parseInt(document.getElementById('vigilancia').value) || 0,
+                inicioVigencia: document.getElementById('inicioVigencia').value,
+                fimVigencia: document.getElementById('fimVigencia').value,
+                primeiraDescentralizacao: dataDesc,
+                primeiroMesDesc: primeiroMesDesc,
+                primeiroAnoDesc: primeiroAnoDesc,
+                objetivo: document.getElementById('objetivo').value,
+                gasto: 0,
+                progressoFisico: 0,
+                objetos: [],
+                metas: [],
+                fisicos: [],
+                execFisicas: [],
+                financeiros: [],
+                execFinanceiras: [],
+                marcos: [],
+                despesas: [],
+                dataCriacao: new Date().toLocaleDateString('pt-BR')
+            };
+
+            dados.teds.push(ted);
+            salvarDados();
+            atualizarSeletorTED();
+
+            // Mostrar sucesso
+            alert('✅ TED criado com sucesso!');
+            event.target.reset();
+            switchTab('teds');
+            atualizarListaTEDs();
+            atualizarDashboard();
+        }
+
+        // Atualizar Dashboard
+        function atualizarDashboard() {
+            document.getElementById('totalTeds').textContent = dados.teds.length;
+            const tedsEmExecucao = dados.teds.filter(t => {
+                const hoje = new Date();
+                const inicio = new Date(t.inicioVigencia);
+                const fim = new Date(t.fimVigencia);
+                return hoje >= inicio && hoje <= fim;
+            }).length;
+            document.getElementById('tedsExecucao').textContent = tedsEmExecucao;
+
+            const valorTotal = dados.teds.reduce((sum, t) => sum + t.valorTed, 0);
+            const gastoTotal = dados.teds.reduce((sum, t) => sum + t.gasto, 0);
+
+            document.getElementById('orcamentoTotal').textContent = 'R$ ' + valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('totalGasto').textContent = 'R$ ' + gastoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+            // TEDs Recentes
+            const recentes = dados.teds.slice(-3).reverse();
+            const html = recentes.length === 0 
+                ? '<p>Nenhum TED cadastrado</p>'
+                : recentes.map(t => `
+                    <div class="card" style="margin: 0 0 1rem 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <h3>TED ${t.numTed} - ${t.objetivo}</h3>
+                                <p style="color: var(--text); font-size: 0.875rem;">
+                                    ${t.unidadeDesc} • Responsável: ${t.responsavel} • ${t.dataCriacao}
+                                </p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-small" style="margin-top: 1rem;" onclick="abrirDetalhes(${t.id})">Ver Detalhes</button>
+                    </div>
+                `).join('');
+            document.getElementById('tedsRecentes').innerHTML = html;
+        }
+
+        // Atualizar Lista de TEDs
+        function atualizarListaTEDs() {
+            if (dados.teds.length === 0) {
+                document.getElementById('listaTeds').innerHTML = '<div class="empty-state"><p>Nenhum TED cadastrado</p></div>';
+                return;
+            }
+
+            const html = dados.teds.map(t => {
+                const hoje = new Date();
+                const inicio = new Date(t.inicioVigencia);
+                const fim = new Date(t.fimVigencia);
+                const emExecucao = hoje >= inicio && hoje <= fim;
+                const diasRestantes = Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24));
+                const percentualGasto = t.valorTed > 0 ? Math.round((t.gasto / t.valorTed) * 100) : 0;
+                
+                return `
+                    <div class="card" style="margin: 0 0 1rem 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                            <div style="flex: 1;">
+                                <h3>TED ${t.numTed}</h3>
+                                <p style="font-size: 0.875rem; color: var(--text); margin: 0.5rem 0 0 0;">${t.objetivo}</p>
+                            </div>
+                            <span class="badge ${emExecucao ? 'badge-execucao' : 'badge-planejamento'}">${emExecucao ? 'EM EXECUÇÃO' : 'ENCERRADO'}</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                            <div>
+                                <p style="margin: 0; color: var(--text);">Valor: <strong>R$ ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></p>
+                                <p style="margin: 0.5rem 0 0 0; color: var(--text);">Responsável: <strong>${t.responsavel}</strong></p>
+                            </div>
+                            <div>
+                                <p style="margin: 0; color: var(--text);">Vigência: ${inicio.toLocaleDateString('pt-BR')} a ${fim.toLocaleDateString('pt-BR')}</p>
+                                <p style="margin: 0.5rem 0 0 0; color: var(--text);">Dias restantes: <strong>${Math.max(0, diasRestantes)}</strong></p>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                                <span>Execução Financeira</span>
+                                <span><strong>${percentualGasto}%</strong></span>
+                            </div>
+                            <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden;">
+                                <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--text); margin: 0.5rem 0 0 0;">Gasto: R$ ${t.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                        </div>
+
+                        <button class="btn btn-primary btn-small" onclick="abrirDetalhes(${t.id})" style="width: 100%;">Ver Detalhes</button>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('listaTeds').innerHTML = html;
+        }
+
+        // Abrir Detalhes
+        function abrirDetalhes(id) {
+            const ted = dados.teds.find(t => t.id === id);
+            if (!ted) return;
+
+            const inicio = new Date(ted.inicioVigencia);
+            const fim = new Date(ted.fimVigencia);
+            const hoje = new Date();
+            const emExecucao = hoje >= inicio && hoje <= fim;
+            const percentualGasto = ted.valorTed > 0 ? Math.round((ted.gasto / ted.valorTed) * 100) : 0;
+
+            document.getElementById('modalTitulo').textContent = `TED ${ted.numTed} - ${ted.objetivo}`;
+            document.getElementById('modalBody').innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Plano de Trabalho</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.planoTrabalho}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">TED</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.numTed}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Código do Plano de Ação</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.codigoPlano}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Status</p>
+                        <p style="margin: 0;"><span class="badge ${emExecucao ? 'badge-execucao' : 'badge-planejamento'}">${emExecucao ? 'EM EXECUÇÃO' : 'ENCERRADO'}</span></p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">UP Responsável pela Execução</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.upResponsavel}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">UG Executora</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.egExecutora}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Nº TED - SIAFI</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.numTedSiafi}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Nota do Sistema do TED</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.notaSistema}</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Unidade Descentralizadora</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.unidadeDesc}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">UG Descentralizadora</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.ugDesc}</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Valor do TED</p>
+                        <p style="margin: 0; font-size: 1.25rem; font-weight: bold; color: var(--primary);">R$ ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Vigência (Meses)</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.vigilancia}</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Início da Vigência</p>
+                        <p style="margin: 0; font-weight: 500;">${inicio.toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Fim da Vigência</p>
+                        <p style="margin: 0; font-weight: 500;">${fim.toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">1ª Descentralização</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.primeiraDescentralizacao || ''}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Objeto</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.objetivo}</p>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                        <span>Execução Financeira</span>
+                        <span><strong>${percentualGasto}%</strong></span>
+                    </div>
+                    <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
+                        <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
+                    </div>
+                    <p style="margin: 0; font-size: 0.75rem; color: var(--text);">Gasto: R$ ${ted.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                </div>
+
+                <p style="margin: 0; font-size: 0.75rem; color: var(--text);">Criado em: ${ted.dataCriacao}</p>
+            `;
+
+            document.getElementById('modalDetalhes').classList.add('active');
+            window.tedAtual = id;
+        }
+
+        // Deletar TED
+        function deletarTED() {
+            if (!confirm('Tem certeza que deseja deletar este TED?')) return;
+
+            dados.teds = dados.teds.filter(t => t.id !== window.tedAtual);
+            salvarDados();
+            fecharModal();
+            atualizarListaTEDs();
+            atualizarDashboard();
+            alert('✅ TED deletado com sucesso!');
+        }
+
+        // Editar TED
+        function editarTED() {
+            alert('⚠️ Edição será implementada na próxima versão');
+        }
+
+        // FUNÇÕES PARA DETALHES TED
+        // Carregar seletor de TEDs na aba detalhes
+        function atualizarSeletorTED() {
+            const seletor = document.getElementById('seletorTED');
+            seletor.innerHTML = '<option value="">-- Escolha um TED --</option>';
+            
+            dados.teds.forEach(ted => {
+                const option = document.createElement('option');
+                option.value = ted.id;
+                option.textContent = `TED ${ted.numTed} - ${ted.objetivo}`;
+                seletor.appendChild(option);
+            });
+        }
+
+        // Carregar detalhes do TED selecionado
+        function carregarDetalhes(tedId) {
+            if (!tedId) {
+                document.getElementById('tedsDetalheContainer').style.display = 'none';
+                return;
+            }
+
+            window.tedSelecionado = dados.teds.find(t => t.id == tedId);
+            if (!window.tedSelecionado) return;
+
+            // Garantir arrays
+            window.tedSelecionado.objetos = window.tedSelecionado.objetos || [];
+            window.tedSelecionado.metas = window.tedSelecionado.metas || [];
+            window.tedSelecionado.fisicos = window.tedSelecionado.fisicos || [];
+            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas || [];
+            window.tedSelecionado.financeiros = window.tedSelecionado.financeiros || [];
+            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras || [];
+
+            document.getElementById('tedsDetalheContainer').style.display = 'block';
+            
+            // Exibir informações do TED
+            exibirInfoTED();
+            
+            atualizarTabelaObjetos();
+            atualizarOpcoesObjetoFisico();
+            atualizarTabelaMetas();
+            atualizarTabelaFisicos();
+            atualizarOpcoesObjetoExecFisica();
+            atualizarTabelaExecFisica();
+            atualizarTabelaFinanceira();
+            atualizarOpcoesExecFinanceira();
+            atualizarTabelaExecFinanceira();
+            atualizarGantt();
+        }
+
+        // Exibir informações do TED (versão única e ordenada)
+        function exibirInfoTED() {
+            if (!window.tedSelecionado) return;
+
+            const ted = window.tedSelecionado;
+
+            // Calcular datas a partir de campos existentes
+            let inicio = null;
+            let fim = null;
+            if (ted.inicioVigencia) {
+                inicio = new Date(ted.inicioVigencia);
+            }
+            if (inicio && !isNaN(ted.vigilancia)) {
+                fim = new Date(inicio);
+                fim.setMonth(fim.getMonth() + (isNaN(parseInt(ted.vigilancia, 10)) ? 0 : parseInt(ted.vigilancia, 10)));
+            }
+
+            const formatDate = (d) => {
+                if (!d || isNaN(d)) return '';
+                return d.toLocaleDateString('pt-BR');
+            };
+
+            const infoGrid = document.getElementById('tedInfoGrid');
+            infoGrid.innerHTML = `
+                <div class="ted-info-item">
+                    <label>Plano de Trabalho</label>
+                    <div class="value" data-field="planoTrabalho">${ted.planoTrabalho || ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>TED</label>
+                    <div class="value" data-field="numTed">${ted.numTed || ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>Objeto</label>
+                    <div class="value" data-field="objetivo">${ted.objetivo || ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>Valor do TED (R$)</label>
+                    <div class="value" data-field="valorTed">R$ ${Number(ted.valorTed || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                </div>
+
+                <div class="ted-info-item">
+                    <label>Código do Plano de Ação</label>
+                    <div class="value" data-field="codigoPlano">${ted.codigoPlano || ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>Nº TED - SIAFI</label>
+                    <div class="value" data-field="numTedSiafi">${ted.numTedSiafi || ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>Nota do Sistema do TED</label>
+                    <div class="value" data-field="notaSistema">${ted.notaSistema || ''}</div>
+                </div>
+
+                <div class="ted-info-item">
+                    <label>UP Responsável</label>
+                    <div class="value" data-field="upResponsavel">${ted.upResponsavel || ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>UG Executora</label>
+                    <div class="value" data-field="egExecutora">${ted.egExecutora || ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>Unidade Descentralizadora</label>
+                    <div class="value" data-field="unidadeDesc">${ted.unidadeDesc || ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>UG Descentralizadora</label>
+                    <div class="value" data-field="ugDesc">${ted.ugDesc || ''}</div>
+                </div>
+
+                <div class="ted-info-item">
+                    <label>Vigência (Meses)</label>
+                    <div class="value" data-field="vigilancia">${ted.vigilancia ?? ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>Início da Vigência</label>
+                    <div class="value" data-field="inicioVigencia">${inicio ? formatDate(inicio) : ''}</div>
+                </div>
+                <div class="ted-info-item">
+                    <label>Fim da Vigência</label>
+                    <div class="value" data-field="fimVigencia">${fim ? formatDate(fim) : ''}</div>
+                </div>
+
+                <div class="ted-info-item">
+                    <label>1ª Descentralização</label>
+                    <div class="value" data-field="primeiraDescentralizacao">${ted.primeiraDescentralizacao || ''}</div>
+                </div>
+            `;
+        }
+
+        // Toggle modo de edição
+        let tedBackup = null;
+        
+        function toggleEditarTED() {
+            if (!window.tedSelecionado) return;
+            
+            // Fazer backup antes de editar
+            tedBackup = JSON.parse(JSON.stringify(window.tedSelecionado));
+            
+            const infoGrid = document.getElementById('tedInfoGrid');
+            const ted = window.tedSelecionado;
+            
+            infoGrid.innerHTML = `
+                <div class="ted-info-item">
+                    <label>Plano de Trabalho</label>
+                    <input type="text" data-field="planoTrabalho" value="${ted.planoTrabalho}">
+                </div>
+                <div class="ted-info-item">
+                    <label>TED</label>
+                    <input type="text" data-field="numTed" value="${ted.numTed}">
+                </div>
+                <div class="ted-info-item">
+                    <label>Objeto</label>
+                    <input type="text" data-field="objetivo" value="${ted.objetivo}">
+                </div>
+                <div class="ted-info-item">
+                    <label>Valor do TED (R$)</label>
+                    <input type="number" step="0.01" data-field="valorTed" value="${ted.valorTed}">
+                </div>
+
+                <div class="ted-info-item">
+                    <label>Código do Plano de Ação</label>
+                    <input type="text" data-field="codigoPlano" value="${ted.codigoPlano}">
+                </div>
+                <div class="ted-info-item">
+                    <label>Nº TED - SIAFI</label>
+                    <input type="text" data-field="numTedSiafi" value="${ted.numTedSiafi}">
+                </div>
+                <div class="ted-info-item">
+                    <label>Nota do Sistema do TED</label>
+                    <input type="text" data-field="notaSistema" value="${ted.notaSistema}">
+                </div>
+
+                <div class="ted-info-item">
+                    <label>UP Responsável</label>
+                    <input type="text" data-field="upResponsavel" value="${ted.upResponsavel}">
+                </div>
+                <div class="ted-info-item">
+                    <label>UG Executora</label>
+                    <input type="text" data-field="egExecutora" value="${ted.egExecutora}">
+                </div>
+                <div class="ted-info-item">
+                    <label>Unidade Descentralizadora</label>
+                    <input type="text" data-field="unidadeDesc" value="${ted.unidadeDesc}">
+                </div>
+                <div class="ted-info-item">
+                    <label>UG Descentralizadora</label>
+                    <input type="text" data-field="ugDesc" value="${ted.ugDesc}">
+                </div>
+
+                <div class="ted-info-item">
+                    <label>Início de Vigência</label>
+                    <input type="date" data-field="inicioVigencia" value="${ted.inicioVigencia || ''}" oninput="atualizarFimVigencia()">
+                </div>
+                <div class="ted-info-item">
+                    <label>Vigência (Meses)</label>
+                    <input type="number" data-field="vigilancia" value="${ted.vigilancia}" oninput="atualizarFimVigencia()">
+                </div>
+                <div class="ted-info-item">
+                    <label>Fim da Vigência</label>
+                    <input type="text" id="fimVigenciaEdit" readonly style="background:#fff; color:var(--text);">
+                </div>
+
+                <div class="ted-info-item">
+                    <label>1ª Descentralização</label>
+                    <input type="date" data-field="primeiraDescentralizacao" value="${ted.primeiraDescentralizacao || ''}">
+                </div>
+                <div class="ted-info-item" style="grid-column: 1 / -1;">
+                    <label>Objeto</label>
+                    <input type="text" data-field="objetivo" value="${ted.objetivo}">
+                </div>
+            `;
+            
+            document.getElementById('tedInfoSection').classList.add('ted-edit-mode');
+            document.getElementById('btnEditarTED').style.display = 'none';
+            document.getElementById('btnSalvarTED').style.display = 'inline-block';
+            document.getElementById('btnCancelarTED').style.display = 'inline-block';
+            
+            // Atualiza o campo de fim da vigência ao abrir o modo de edição
+            atualizarFimVigencia();
+        }
+
+        function salvarEdicaoTED() {
+            if (!window.tedSelecionado) return;
+            
+            const infoGrid = document.getElementById('tedInfoGrid');
+            const inputs = infoGrid.querySelectorAll('[data-field]');
+            
+            inputs.forEach(input => {
+                const field = input.getAttribute('data-field');
+                let value = input.value;
+                
+                // Converter tipos apropriados
+                if (field === 'valorTed') {
+                    value = parseFloat(value);
+                } else if (field === 'vigilancia') {
+                    value = parseInt(value);
+                }
+                
+                window.tedSelecionado[field] = value;
+            });
+            
+            salvarDados();
+            atualizarListaTeds();
+            atualizarDashboard();
+            atualizarSeletorTED();
+            exibirInfoTED();
+            
+            document.getElementById('tedInfoSection').classList.remove('ted-edit-mode');
+            document.getElementById('btnEditarTED').style.display = 'inline-block';
+            document.getElementById('btnSalvarTED').style.display = 'none';
+            document.getElementById('btnCancelarTED').style.display = 'none';
+            
+            tedBackup = null;
+            
+            alert('✅ Informações do TED atualizadas com sucesso!');
+        }
+
+        function cancelarEdicaoTED() {
+            if (tedBackup) {
+                // Restaurar dados do backup
+                Object.assign(window.tedSelecionado, tedBackup);
+                tedBackup = null;
+            }
+            
+            exibirInfoTED();
+            
+            document.getElementById('tedInfoSection').classList.remove('ted-edit-mode');
+            document.getElementById('btnEditarTED').style.display = 'inline-block';
+            document.getElementById('btnSalvarTED').style.display = 'none';
+            document.getElementById('btnCancelarTED').style.display = 'none';
+        }
+
+        // Calcula e atualiza o campo de Fim da Vigência (Fim = Início + Vigência meses)
+        function atualizarFimVigencia() {
+            const infoGrid = document.getElementById('tedInfoGrid');
+            if (!infoGrid) return;
+            const inicioEl = infoGrid.querySelector('[data-field="inicioVigencia"]');
+            const vigEl = infoGrid.querySelector('[data-field="vigilancia"]');
+            const fimField = document.getElementById('fimVigenciaEdit');
+            if (!fimField) return;
+
+            const inicioStr = inicioEl ? inicioEl.value : '';
+            const vig = vigEl ? parseInt(vigEl.value, 10) : NaN;
+
+            if (!inicioStr || isNaN(vig)) {
+                fimField.value = '';
+                return;
+            }
+
+            const d = new Date(inicioStr);
+            d.setMonth(d.getMonth() + (isNaN(vig) ? 0 : vig));
+
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            fimField.value = `${day}/${month}/${year}`;
+        }
+
+        // OBJETOS
+        function adicionarObjeto() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const objeto = document.getElementById('objeto').value.trim();
+            const qtde = parseInt(document.getElementById('qtdeObjeto').value);
+            const valorUnitario = parseFloat(document.getElementById('valorUnitario').value);
+
+            if (!objeto || !qtde || qtde <= 0 || !valorUnitario || valorUnitario <= 0) {
+                alert('⚠️ Preencha todos os campos corretamente!');
+                return;
+            }
+
+            if (!window.tedSelecionado.objetos) {
+                window.tedSelecionado.objetos = [];
+            }
+
+            window.tedSelecionado.objetos.push({
+                id: Date.now(),
+                objeto: objeto,
+                qtde: qtde,
+                valorUnitario: valorUnitario,
+                valorTotal: valorUnitario * qtde
+            });
+
+            salvarDados();
+            atualizarTabelaObjetos();
+            atualizarOpcoesObjetoFisico();
+            atualizarOpcoesObjetoExecFisica();
+            document.getElementById('objeto').value = '';
+            document.getElementById('qtdeObjeto').value = '';
+            document.getElementById('valorUnitario').value = '';
+        }
+
+        function removerObjeto(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
+            salvarDados();
+            atualizarTabelaObjetos();
+            atualizarOpcoesObjetoFisico();
+            atualizarOpcoesObjetoExecFisica();
+        }
+
+        function editarObjeto(id) {
+            if (!window.tedSelecionado) return;
+            const obj = window.tedSelecionado.objetos.find(o => o.id === id);
+            if (!obj) return;
+            
+            document.getElementById('objeto').value = obj.objeto;
+            document.getElementById('qtdeObjeto').value = obj.qtde;
+            document.getElementById('valorUnitario').value = obj.valorUnitario;
+            
+            // Remover o objeto antigo para ser substituído pelo novo ao salvar
+            removerObjeto(id);
+        }
+
+        function atualizarTabelaObjetos() {
+            const tbody = document.getElementById('tabelaObjetos');
+            
+            if (!window.tedSelecionado || !window.tedSelecionado.objetos || window.tedSelecionado.objetos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>';
+                return;
+            }
+
+            let totalValor = 0;
+            tbody.innerHTML = window.tedSelecionado.objetos.map(obj => {
+                totalValor += obj.valorTotal;
+                return `
+                    <tr style="background: ${window.tedSelecionado.objetos.indexOf(obj) % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                        <td style="padding: 0.75rem; border: 1px solid #ddd;">${obj.objeto}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${obj.qtde}</td>
+                        <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${obj.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
+                            <button class="btn-icon edit" title="Editar" onclick="editarObjeto(${obj.id})">✏️</button>
+                            <button class="btn-icon delete" title="Remover" onclick="removerObjeto(${obj.id})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML += `
+                <tr style="background: #e8f4f8; font-weight: bold; border: 1px solid #ddd;">
+                    <td colspan="3" style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">TOTAL:</td>
+                    <td style="padding: 0.75rem; text-align: right; border: 1px solid #ddd;">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;"></td>
+                </tr>
+            `;
+        }
+
+        // METAS
+        function adicionarMeta() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const meta = document.getElementById('meta').value.trim();
+            const mInicio = parseInt(document.getElementById('mInicio').value);
+            const mFinal = parseInt(document.getElementById('mFinal').value);
+            // Calcular mês/ano a partir da 1ª descentralização + M (offset em meses)
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                alert('⚠️ Defina a 1ª descentralização no TED para usar M como referência.');
+                return;
+            }
+            const dInicio = new Date(startDate);
+            dInicio.setMonth(dInicio.getMonth() + (isNaN(mInicio) ? 0 : mInicio));
+            const mesInicio = dInicio.getMonth() + 1;
+            const anoInicio = dInicio.getFullYear();
+            const dFinal = new Date(startDate);
+            dFinal.setMonth(dFinal.getMonth() + (isNaN(mFinal) ? 0 : mFinal));
+            const mesFinal = dFinal.getMonth() + 1;
+            const anoFinal = dFinal.getFullYear();
+            // Preencher campos somente leitura com MM/AAAA
+            document.getElementById('mesInicioFisico').value = String(mesInicio).padStart(2,'0') + '/' + anoInicio;
+            document.getElementById('mesFinalFisico').value = String(mesFinal).padStart(2,'0') + '/' + anoFinal;
+            // Preencher campos somente leitura com MM/AAAA
+            document.getElementById('mesInicio').value = String(mesInicio).padStart(2,'0') + '/' + anoInicio;
+            document.getElementById('mesFinal').value = String(mesFinal).padStart(2,'0') + '/' + anoFinal;
+
+            if (!meta || isNaN(mInicio) || isNaN(mFinal)) {
+                alert('⚠️ Preencha todos os campos corretamente!');
+                return;
+            }
+
+            if (!window.tedSelecionado.metas) {
+                window.tedSelecionado.metas = [];
+            }
+
+            window.tedSelecionado.metas.push({
+                id: Date.now(),
+                meta: meta,
+                mInicio: mInicio,
+                mFinal: mFinal,
+                mesInicio: mesInicio,
+                anoInicio: anoInicio,
+                mesFinal: mesFinal,
+                anoFinal: anoFinal
+            });
+
+            salvarDados();
+            atualizarTabelaMetas();
+            document.getElementById('meta').value = '';
+            document.getElementById('mInicio').value = '';
+            document.getElementById('mFinal').value = '';
+            document.getElementById('mesInicio').value = '';
+            document.getElementById('mesFinal').value = '';
+        }
+
+        function removerMeta(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.metas = window.tedSelecionado.metas.filter(m => m.id !== id);
+            salvarDados();
+            atualizarTabelaMetas();
+        }
+
+        function editarMeta(id) {
+            if (!window.tedSelecionado) return;
+            const meta = window.tedSelecionado.metas.find(m => m.id === id);
+            if (!meta) return;
+            
+            document.getElementById('meta').value = meta.meta;
+            document.getElementById('mInicio').value = meta.mInicio;
+            document.getElementById('mFinal').value = meta.mFinal;
+            document.getElementById('mesInicio').value = meta.mesInicio;
+            document.getElementById('mesFinal').value = meta.mesFinal;
+            
+            // Remover a meta antiga para ser substituída pela nova ao salvar
+            removerMeta(id);
+        }
+
+        function renderGanttGenerico(dados, usarMeses = false) {
+            if (!window.tedSelecionado) {
+                return '<p style="color: var(--text); font-size: 0.875rem; margin: 0;">Sem dados</p>';
+            }
+
+            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
+                startDate = new Date(dataDesc + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 15);
+            } else {
+                return '<p style="color: var(--text); font-size: 0.875rem; margin: 0;">Data de descentralização não definida</p>';
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth() + 1 });
+            }
+
+            const anos = [];
+            meses.forEach((m, idx) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            let html = '<table style="min-width: 850px; width: 100%; border-collapse: collapse; font-size: 0.75rem;">';
+            html += '<thead>';
+            html += '<tr style="background: #2c5aa0; color: white;">';
+            anos.forEach(a => {
+                html += `<th style="padding: 0.75rem 0.3rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; line-height: 1;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            html += '</tr>';
+            html += '<tr style="background: #4b7ed0; color: white;">';
+            meses.forEach(m => {
+                html += `<th style="padding: 0.75rem 0.25rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; line-height: 1;">${m.label}</th>`;
+            });
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody>';
+            
+            // Se não há dados, mostrar linha vazia alinhada com a altura da tabela
+            if (!dados || dados.length === 0) {
+                html += '<tr><td colspan="60" style="padding: 1rem; text-align: center; color: var(--text); border: 1px solid #ddd;">Sem registros</td></tr>';
+            } else {
+                // Criar uma linha para cada item de dados - altura total = padding + conteúdo
+                dados.forEach((item, idx) => {
+                    const bg = idx % 2 === 0 ? '#f9f9f9' : '#fff';
+                    html += '<tr style="height: 1px;">';
+                    
+                    meses.forEach((mesInfo, mesIdx) => {
+                        let destaque = false;
+                        
+                        // Verificar se este mês está no período do item
+                        if (usarMeses && item.mesInicio && item.mesFinal) {
+                            // Usar apenas o número do mês (1-12)
+                            if (mesInfo.mes >= item.mesInicio && mesInfo.mes <= item.mesFinal) {
+                                destaque = true;
+                            }
+                        } else if (item.mInicio !== undefined && item.mFinal !== undefined) {
+                            // Usar M (índice sequencial desde início do TED)
+                            if (mesIdx >= item.mInicio && mesIdx <= item.mFinal) {
+                                destaque = true;
+                            }
+                        }
+                        
+                        const cor = destaque ? '#4CAF50' : bg;
+                        html += `<td style="padding: 0.75rem 0; border: 1px solid #ddd; background: ${cor};"></td>`;
+                    });
+                    
+                    html += '</tr>';
+                });
+            }
+            
+            html += '</tbody></table>';
+
+            return html;
+        }
+
+        function atualizarTabelaMetas() {
+            const tbody = document.getElementById('tabelaMetas');
+            const tableElement = tbody.closest('table');
+            
+            if (!window.tedSelecionado || !window.tedSelecionado.metas || window.tedSelecionado.metas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>';
+                return;
+            }
+
+            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ 
+                    label: `${mes}/${ano2}`, 
+                    ano: d.getFullYear(), 
+                    mes: d.getMonth() + 1,
+                    fullYear: d.getFullYear()
+                });
+            }
+
+            // Agrupar por ano
+            const anos = [];
+            meses.forEach((m) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
+            let headerRow1 = tableElement.querySelector('thead tr');
+            let headerHTML = '<th rowspan="2" style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Meta</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Início</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">M Final</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Início</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Mês Final</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">Ação</th>';
+            
+            anos.forEach(a => {
+                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            
+            headerRow1.innerHTML = headerHTML;
+
+            // Remover segunda linha de cabeçalho se existir
+            let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) {
+                headerRow2.remove();
+            }
+
+            // Criar segunda linha do cabeçalho com meses
+            headerRow2 = document.createElement('tr');
+            headerRow2.style.background = '#4b7ed0';
+            headerRow2.style.color = 'white';
+            let headerRow2HTML = '';
+            meses.forEach(m => {
+                headerRow2HTML += `<th style=\"padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;\">${m.label}</th>`;
+            });
+            headerRow2.innerHTML = headerRow2HTML;
+            tableElement.querySelector('thead').appendChild(headerRow2);
+
+            // Calcular MM/AAAA dinamicamente a partir da 1ª descentralização e offsets M
+            let baseDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            }
+
+            tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => {
+                const bg = index % 2 === 0 ? '#f9f9f9' : '#fff';
+
+                let inicioStr = '';
+                let finalStr = '';
+                if (baseDate && !isNaN(meta.mInicio) && !isNaN(meta.mFinal)) {
+                    const dI = new Date(baseDate);
+                    dI.setMonth(dI.getMonth() + meta.mInicio);
+                    inicioStr = `${String(dI.getMonth()+1).padStart(2,'0')}/${dI.getFullYear()}`;
+                    const dF = new Date(baseDate);
+                    dF.setMonth(dF.getMonth() + meta.mFinal);
+                    finalStr = `${String(dF.getMonth()+1).padStart(2,'0')}/${dF.getFullYear()}`;
+                } else {
+                    // Fallback para dados já armazenados com anoInicio/anoFinal
+                    inicioStr = `${String(meta.mesInicio).padStart(2,'0')}/${meta.anoInicio ?? ''}`;
+                    finalStr = `${String(meta.mesFinal).padStart(2,'0')}/${meta.anoFinal ?? ''}`;
+                }
+
+                let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${meta.meta}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mInicio}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${meta.mFinal}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${inicioStr}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">${finalStr}</td>
+                    <td style="padding: 0.75rem; text-align: center; border: 1px solid #ddd;">
+                        <button class="btn-icon edit" title="Editar" onclick="editarMeta(${meta.id})">✏️</button>
+                        <button class="btn-icon delete" title="Remover" onclick="removerMeta(${meta.id})">🗑️</button>
+                    </td>`;
+                
+                // Adicionar células do Gantt - destacar período mInicio até mFinal
+                let firstCellMeta = true;
+                meses.forEach((mesInfo, mesIdx) => {
+                    const estaNoPeríodo = mesIdx >= meta.mInicio && mesIdx <= meta.mFinal;
+                    const cor = estaNoPeríodo ? '#4CAF50' : 'transparent';
+                    firstCellMeta = false;
+                    html += `<td style=\"padding: 0.75rem 0; border: 1px solid #ddd; background: ${cor};\"></td>`;
+                });
+                
+                html += '</tr>';
+                return html;
+            }).join('');
+        }
+
+        function atualizarOpcoesObjetoFisico() {
+            const select = document.getElementById('objetoFisico');
+            if (!select) return;
+
+            if (!window.tedSelecionado) {
+                select.innerHTML = '<option value="">Selecione um TED</option>';
+                select.disabled = true;
+                return;
+            }
+
+            const objs = window.tedSelecionado.objetos || [];
+            if (!objs.length) {
+                select.innerHTML = '<option value="">Cadastre um objeto primeiro</option>';
+                select.disabled = true;
+                return;
+            }
+
+            select.disabled = false;
+            let options = '<option value="">-- escolha um objeto --</option>';
+            options += objs.map(o => `<option value="${o.objeto}">${o.objeto}</option>`).join('');
+            select.innerHTML = options;
+        }
+
+        function atualizarOpcoesObjetoExecFisica() {
+            const select = document.getElementById('objetoExecFisica');
+            if (!select) return;
+
+            if (!window.tedSelecionado) {
+                select.innerHTML = '<option value="">Selecione um TED</option>';
+                select.disabled = true;
+                return;
+            }
+
+            const objs = window.tedSelecionado.objetos || [];
+            const nomes = objs.map(o => o.objeto).filter(Boolean);
+            const objetosUnicos = Array.from(new Set(nomes));
+
+            if (!objetosUnicos.length) {
+                select.innerHTML = '<option value="">Cadastre um objeto primeiro</option>';
+                select.disabled = true;
+                return;
+            }
+
+            select.disabled = false;
+            let options = '<option value="">-- escolha um objeto --</option>';
+            options += objetosUnicos.map(o => `<option value="${o}">${o}</option>`).join('');
+            select.innerHTML = options;
+        }
+
+        // CADASTRO FÍSICO
+        function adicionarFisico() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const fase = document.getElementById('faseFisico').value.trim();
+            const objeto = document.getElementById('objetoFisico').value;
+            const qtde = parseFloat(document.getElementById('qtdeFisico').value);
+            const mInicio = parseInt(document.getElementById('mInicioFisico').value);
+            const mFinal = parseInt(document.getElementById('mFinalFisico').value);
+            // Calcular mês/ano a partir da 1ª descentralização + M (offset em meses)
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                alert('⚠️ Defina a 1ª descentralização no TED para usar M como referência.');
+                return;
+            }
+            const dInicio = new Date(startDate);
+            dInicio.setMonth(dInicio.getMonth() + (isNaN(mInicio) ? 0 : mInicio));
+            const mesInicio = dInicio.getMonth() + 1;
+            const anoInicio = dInicio.getFullYear();
+            const dFinal = new Date(startDate);
+            dFinal.setMonth(dFinal.getMonth() + (isNaN(mFinal) ? 0 : mFinal));
+            const mesFinal = dFinal.getMonth() + 1;
+            const anoFinal = dFinal.getFullYear();
+
+            if (!fase || !objeto || isNaN(qtde) || qtde < 0 || isNaN(mInicio) || isNaN(mFinal)) {
+                alert('⚠️ Preencha todos os campos do cadastro físico');
+                return;
+            }
+
+            if (!window.tedSelecionado.objetos || !window.tedSelecionado.objetos.length) {
+                alert('⚠️ Cadastre um objeto primeiro para selecionar.');
+                return;
+            }
+
+            window.tedSelecionado.fisicos.push({
+                id: Date.now(), fase, objeto, qtde, mInicio, mFinal, mesInicio, anoInicio, mesFinal, anoFinal
+            });
+            salvarDados();
+            atualizarTabelaFisicos();
+            document.getElementById('faseFisico').value = '';
+            document.getElementById('objetoFisico').value = '';
+            document.getElementById('qtdeFisico').value = '';
+            document.getElementById('mInicioFisico').value = '';
+            document.getElementById('mFinalFisico').value = '';
+            document.getElementById('mesInicioFisico').value = '';
+            document.getElementById('mesFinalFisico').value = '';
+        }
+
+        function removerFisico(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(f => f.id !== id);
+            salvarDados();
+            atualizarTabelaFisicos();
+        }
+
+        function editarFisico(id) {
+            if (!window.tedSelecionado) return;
+            const fisico = window.tedSelecionado.fisicos.find(f => f.id === id);
+            if (!fisico) return;
+            
+            document.getElementById('faseFisico').value = fisico.fase;
+            document.getElementById('objetoFisico').value = fisico.objeto;
+            document.getElementById('qtdeFisico').value = fisico.qtde || '';
+            document.getElementById('mInicioFisico').value = fisico.mInicio;
+            document.getElementById('mFinalFisico').value = fisico.mFinal;
+            document.getElementById('mesInicioFisico').value = fisico.mesInicio;
+            document.getElementById('mesFinalFisico').value = fisico.mesFinal;
+            
+            // Remover o físico antigo para ser substituído pelo novo ao salvar
+            removerFisico(id);
+        }
+
+        function atualizarTabelaFisicos() {
+            const tbody = document.getElementById('tabelaFisicos');
+            const tableElement = tbody.closest('table');
+            
+            if (!window.tedSelecionado || !window.tedSelecionado.fisicos.length) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro físico</td></tr>';
+                return;
+            }
+
+            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
+                startDate = new Date(dataDesc + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ 
+                    label: `${mes}/${ano2}`, 
+                    ano: d.getFullYear(), 
+                    mes: d.getMonth() + 1,
+                    fullYear: d.getFullYear()
+                });
+            }
+
+            // Agrupar por ano
+            const anos = [];
+            meses.forEach((m) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
+            let headerRow1 = tableElement.querySelector('thead tr');
+            let headerHTML = '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 100px;">Fase</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 100px;">Objeto</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 60px;">Qtde</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 70px;">M Início</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 70px;">M Final</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 90px;">Mês Início</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 90px;">Mês Final</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 90px;">Ação</th>';
+            
+            let firstAnoFis = true;
+            anos.forEach(a => {
+                firstAnoFis = false;
+                headerHTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            
+            headerRow1.innerHTML = headerHTML;
+
+            // Remover segunda linha de cabeçalho se existir
+            let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) {
+                headerRow2.remove();
+            }
+
+            // Criar segunda linha do cabeçalho com meses
+            headerRow2 = document.createElement('tr');
+            headerRow2.style.background = '#4b7ed0';
+            headerRow2.style.color = 'white';
+            let headerRow2HTML = '';
+            let firstMonthFis = true;
+            meses.forEach(m => {
+                firstMonthFis = false;
+                headerRow2HTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; font-weight: bold; background: #4b7ed0;">${m.label}</th>`;
+            });
+            headerRow2.innerHTML = headerRow2HTML;
+            tableElement.querySelector('thead').appendChild(headerRow2);
+
+            // Criar linhas de dados
+            // Calcular MM/AAAA dinamicamente a partir da 1ª descentralização e offsets M
+            let baseDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            }
+
+            tbody.innerHTML = window.tedSelecionado.fisicos.map((f, i) => {
+                const bg = i % 2 === 0 ? '#f9f9f9' : '#fff';
+
+                let inicioStr = '';
+                let finalStr = '';
+                if (baseDate && !isNaN(f.mInicio) && !isNaN(f.mFinal)) {
+                    const dI = new Date(baseDate);
+                    dI.setMonth(dI.getMonth() + f.mInicio);
+                    inicioStr = `${String(dI.getMonth()+1).padStart(2,'0')}/${dI.getFullYear()}`;
+                    const dF = new Date(baseDate);
+                    dF.setMonth(dF.getMonth() + f.mFinal);
+                    finalStr = `${String(dF.getMonth()+1).padStart(2,'0')}/${dF.getFullYear()}`;
+                } else {
+                    inicioStr = `${String(f.mesInicio).padStart(2,'0')}/${f.anoInicio ?? ''}`;
+                    finalStr = `${String(f.mesFinal).padStart(2,'0')}/${f.anoFinal ?? ''}`;
+                }
+
+                let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.fase}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.objeto}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.qtde ?? ''}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.mInicio}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.mFinal}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${inicioStr}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${finalStr}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
+                        <button class="btn-icon edit" title="Editar" onclick="editarFisico(${f.id})">✏️</button>
+                        <button class="btn-icon delete" title="Remover" onclick="removerFisico(${f.id})">🗑️</button>
+                    </td>`;
+                
+                // Adicionar células do Gantt - destacar período mInicio até mFinal
+                let firstCellFis = true;
+                meses.forEach((mesInfo, mesIdx) => {
+                    const estaNoPeríodo = mesIdx >= f.mInicio && mesIdx <= f.mFinal;
+                    const cor = estaNoPeríodo ? '#4CAF50' : 'transparent';
+                    firstCellFis = false;
+                    html += `<td style=\"padding: 0.5rem 0; border: 1px solid #ddd; background: ${cor};\"></td>`;
+                });
+                
+                html += '</tr>';
+                return html;
+            }).join('');
+
+            // Atualizar opções de Execução Física (objetos únicos do cadastro físico)
+            atualizarOpcoesObjetoExecFisica();
+        }
+
+        // EXECUÇÃO FÍSICA
+        function adicionarExecFisica() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const objeto = document.getElementById('objetoExecFisica').value;
+            const qtde = parseFloat(document.getElementById('qtdeExec').value);
+            const data = document.getElementById('dataExec').value;
+
+            if (!objeto || isNaN(qtde) || qtde < 0 || !data) {
+                alert('⚠️ Preencha todos os campos da execução física');
+                return;
+            }
+
+            window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto, qtde, data });
+            salvarDados();
+            atualizarTabelaExecFisica();
+            document.getElementById('objetoExecFisica').value = '';
+            document.getElementById('qtdeExec').value = '';
+            document.getElementById('dataExec').value = '';
+        }
+
+        function removerExecFisica(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas.filter(f => f.id !== id);
+            salvarDados();
+            atualizarTabelaExecFisica();
+        }
+
+        function atualizarTabelaExecFisica() {
+            const tbody = document.getElementById('tabelaExecFisica');
+            const tableElement = tbody.closest('table');
+
+            if (!window.tedSelecionado) {
+                tbody.innerHTML = '<tr><td colspan="67" style="padding: 1rem; text-align: center; color: var(--text);">Selecione um TED</td></tr>';
+                return;
+            }
+
+            // Base do cronograma (60 meses)
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth() + 1, fullYear: d.getFullYear() });
+            }
+
+            const anos = [];
+            meses.forEach(m => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            // Cabeçalho com rowspan nas colunas fixas
+            let headerRow1 = tableElement.querySelector('thead tr');
+            let headerHTML = '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd;">Objeto</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Prevista</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Qtd Entregue</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Saldo</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Execução (%)</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Ação</th>';
+            let firstAnoExecFis = true;
+            anos.forEach(a => {
+                firstAnoExecFis = false;
+                headerHTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            headerRow1.innerHTML = headerHTML;
+
+            let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) headerRow2.remove();
+            headerRow2 = document.createElement('tr');
+            headerRow2.style.background = '#4b7ed0';
+            headerRow2.style.color = 'white';
+            let headerRow2HTML = '';
+            let firstMonthExecFis = true;
+            meses.forEach(m => {
+                firstMonthExecFis = false;
+                headerRow2HTML += `<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; font-weight: bold;">${m.label}</th>`;
+            });
+            headerRow2.innerHTML = headerRow2HTML;
+            tableElement.querySelector('thead').appendChild(headerRow2);
+
+            // Agrupar execuções por objeto e por mês
+            const execs = window.tedSelecionado.execFisicas || [];
+            const objetosCad = window.tedSelecionado.objetos || [];
+            // Objetos registrados no cadastro de objetos
+            const objetosUnicos = Array.from(new Set(objetosCad.map(o => o.objeto)));
+
+            if (!objetosUnicos.length) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Cadastre o físico para listar objetos</td></tr>';
+                return;
+            }
+
+            const linhas = objetosUnicos.map((obj, i) => {
+                const prevista = objetosCad.filter(o => o.objeto === obj).reduce((s, o) => s + (parseFloat(o.qtde) || 0), 0);
+                const entregasObj = execs.filter(e => e.objeto === obj);
+                const entregueTotal = entregasObj.reduce((s, e) => s + (parseFloat(e.qtde) || 0), 0);
+                const saldo = Math.max(0, prevista - entregueTotal);
+                const execPerc = prevista > 0 ? Math.min(100, Math.round((entregueTotal / prevista) * 100)) : 0;
+
+                // Mapa mês->quantidade entregue
+                const mapaMes = new Map();
+                entregasObj.forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    // calcular índice relativo
+                    const diffMonths = (d.getFullYear() - startDate.getFullYear()) * 12 + (d.getMonth() - startDate.getMonth());
+                    if (diffMonths >= 0 && diffMonths < 60) {
+                        mapaMes.set(diffMonths, (mapaMes.get(diffMonths) || 0) + (parseFloat(e.qtde) || 0));
+                    }
+                });
+
+                let html = `<tr style="background: ${i % 2 === 0 ? '#f9f9f9' : '#fff'}; border: 1px solid #ddd;">
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">${obj}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${prevista}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${entregueTotal}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${saldo}</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${execPerc}%</td>
+                    <td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;"></td>`;
+
+                meses.forEach((_, idx) => {
+                    const val = mapaMes.get(idx) || '';
+                    const bg = val ? '#d1fae5' : 'transparent';
+                    html += `<td style="padding: 0.25rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${val ? val : ''}</td>`;
+                });
+                html += '</tr>';
+                return html;
+            }).join('');
+
+            tbody.innerHTML = linhas;
+        }
+
+        // CADASTRO FINANCEIRO
+        function adicionarFinanceiro() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const numero = document.getElementById('numFinanceiro').value.trim();
+            const m = parseInt(document.getElementById('mFinanceiro').value);
+            const up = document.getElementById('upFinanceiro').value.trim();
+            const valor = parseFloat(document.getElementById('valorFinanceiro').value);
+
+            if (!numero || isNaN(m) || !up || isNaN(valor)) {
+                alert('⚠️ Preencha todos os campos do cadastro financeiro');
+                return;
+            }
+
+            // Calcular Mês/Ano automaticamente a partir da 1ª descentralização + M
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                alert('⚠️ Defina a 1ª descentralização para calcular Mês/Ano.');
+                return;
+            }
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + (isNaN(m) ? 0 : m));
+            const mesDesc = d.getMonth() + 1;
+            const anoDesc = d.getFullYear();
+            // preencher campo somente leitura com formato MM/AAAA
+            const mesDescInput = document.getElementById('mesDescFinanceiro');
+            if (mesDescInput) mesDescInput.value = String(mesDesc).padStart(2,'0') + '/' + anoDesc;
+
+            window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, up, valor });
+            salvarDados();
+            atualizarTabelaFinanceira();
+            atualizarOpcoesExecFinanceira();
+            atualizarGantt();
+            atualizarTabelaExecFinanceira();
+            document.getElementById('numFinanceiro').value = '';
+            document.getElementById('mFinanceiro').value = '';
+            document.getElementById('mesDescFinanceiro').value = '';
+            document.getElementById('upFinanceiro').value = '';
+            document.getElementById('valorFinanceiro').value = '';
+        }
+
+        function removerFinanceiro(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
+            salvarDados();
+            atualizarTabelaFinanceira();
+            atualizarOpcoesExecFinanceira();
+            atualizarGantt();
+            atualizarTabelaExecFinanceira();
+        }
+
+        function editarFinanceiro(id) {
+            if (!window.tedSelecionado) return;
+            const financeiro = window.tedSelecionado.financeiros.find(f => f.id === id);
+            if (!financeiro) return;
+            
+            document.getElementById('numFinanceiro').value = financeiro.numero;
+            document.getElementById('mFinanceiro').value = financeiro.m;
+            document.getElementById('upFinanceiro').value = financeiro.up || financeiro.ug || '';
+            document.getElementById('valorFinanceiro').value = financeiro.valor;
+            
+            // Atualizar o campo de mês de descentralização
+            const d = new Date(window.tedSelecionado.dataAssinatura);
+            d.setMonth(d.getMonth() + (isNaN(financeiro.m) ? 0 : financeiro.m));
+            const mesDesc = d.getMonth() + 1;
+            const anoDesc = d.getFullYear();
+            const mesDescInput = document.getElementById('mesDescFinanceiro');
+            if (mesDescInput) mesDescInput.value = String(mesDesc).padStart(2,'0') + '/' + anoDesc;
+            
+            // Remover o financeiro antigo para ser substituído pelo novo ao salvar
+            removerFinanceiro(id);
+        }
+
+        function atualizarTabelaFinanceira() {
+            const tbody = document.getElementById('tabelaFinanceira');
+            const headerGantt = document.getElementById('ganttHeaderFinanceira');
+            const tableCompleta = document.getElementById('tabelaFinanceiraCompleta');
+            const previstoAnualSpan = document.getElementById('previstoAnualValor');
+            let totalValor = 0;
+            
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros.length) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
+                if (headerGantt) {
+                    headerGantt.innerHTML = 'CRONOGRAMA';
+                    headerGantt.setAttribute('colspan', '60');
+                }
+                if (previstoAnualSpan) previstoAnualSpan.textContent = 'R$ 0,00';
+                return;
+            }
+
+            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
+                startDate = new Date(dataDesc + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                // Fallback para primeira descentralização dos registros financeiros
+                const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
+                    if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
+                    return a.mesDesc - b.mesDesc;
+                });
+                const start = primeiros[0];
+                startDate = new Date(start.anoDesc, start.mesDesc - 1, 1);
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ 
+                    label: `${mes}/${ano2}`, 
+                    ano: d.getFullYear(), 
+                    mes: d.getMonth() + 1,
+                    fullYear: d.getFullYear()
+                });
+            }
+
+            // Agrupar por ano
+            const anos = [];
+            meses.forEach((m) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            // Remover segundo cabeçalho se existir
+            let headerRow2 = tableCompleta.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) {
+                headerRow2.remove();
+            }
+
+            // Atualizar primeiro cabeçalho com anos e rowspan nas colunas fixas
+            let headerRow1 = tableCompleta.querySelector('thead tr:nth-child(1)');
+            let headerHTML = '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 60px;">ND</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 60px;">UP</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 50px;">M</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; background: #2c5aa0; min-width: 90px;">Mês Desc.</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #2c5aa0; min-width: 100px;">Valor (R$)</th>';
+            headerHTML += '<th rowspan="2" style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; min-width: 90px;">Ação</th>';
+            
+            let firstAnoFis = true;
+            anos.forEach(a => {
+                firstAnoFis = false;
+                headerHTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: #2c5aa0; color: white; font-weight: bold;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            
+            headerRow1.innerHTML = headerHTML;
+
+            // Criar segunda linha do cabeçalho com meses
+            headerRow2 = document.createElement('tr');
+            headerRow2.style.background = '#4b7ed0';
+            headerRow2.style.color = 'white';
+            let headerRow2HTML = '';
+            meses.forEach(m => {
+                headerRow2HTML += `<th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; font-weight: bold; background: #4b7ed0;">${m.label}</th>`;
+            });
+            headerRow2.innerHTML = headerRow2HTML;
+            tableCompleta.querySelector('thead').appendChild(headerRow2);
+
+            // Criar linhas de dados
+            tbody.innerHTML = window.tedSelecionado.financeiros.map((f, i) => {
+                const bg = i % 2 === 0 ? '#f9f9f9' : '#fff';
+                const valorNum = parseFloat(f.valor) || 0;
+                totalValor += valorNum;
+                const mesDescStr = String(f.mesDesc).padStart(2, '0') + '/' + f.anoDesc;
+                let html = `<tr style="background: ${bg}; border: 1px solid #ddd;">
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.numero}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: ${bg};">${f.up || f.ug}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${f.m}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">${mesDescStr}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: ${bg};">R$ ${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; background: ${bg};">
+                        <button class="btn-icon edit" title="Editar" onclick="editarFinanceiro(${f.id})">✏️</button>
+                        <button class="btn-icon delete" title="Remover" onclick="removerFinanceiro(${f.id})">🗑️</button>
+                    </td>`;
+                
+                // Adicionar células do Gantt - destacar o mês/ano da descentralização
+                meses.forEach((mesInfo, mesIdx) => {
+                    const estaNoMes = f.mesDesc === mesInfo.mes && f.anoDesc === mesInfo.fullYear;
+                    const cor = estaNoMes ? '#4CAF50' : 'transparent';
+                    html += `<td style="padding: 0.5rem 0; border: 1px solid #ddd; background: ${cor};"></td>`;
+                });
+                
+                html += '</tr>';
+                return html;
+            }).join('');
+
+            // Linha total
+            const totalCells = meses.map(() => {
+                return `<td style="padding: 0.5rem; border: 1px solid #ddd;"></td>`;
+            }).join('');
+            
+            tbody.innerHTML += `
+                <tr style="background: #e8f4f8; font-weight: bold; border: 1px solid #ddd;">
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;">TOTAL</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: right; background: #e8f4f8;">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 0.5rem; border: 1px solid #ddd; background: #e8f4f8;"></td>
+                    ${totalCells}
+                </tr>
+            `;
+
+            if (previstoAnualSpan) {
+                previstoAnualSpan.textContent = `R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            }
+        }
+
+        // EXECUÇÃO FINANCEIRA
+        function atualizarOpcoesExecFinanceira() {
+            const selectND = document.getElementById('numExecFin');
+            const selectUP = document.getElementById('upExecFin');
+            
+            if (!selectND || !selectUP) return;
+            
+            if (!window.tedSelecionado) {
+                selectND.innerHTML = '<option value="">-- Selecione um TED --</option>';
+                selectUP.innerHTML = '<option value="">-- Selecione um TED --</option>';
+                return;
+            }
+            
+            const cad = window.tedSelecionado.financeiros || [];
+            if (!cad.length) {
+                selectND.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
+                selectUP.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
+                return;
+            }
+            
+            // ND únicos
+            const ndsUnicos = Array.from(new Set(cad.map(f => f.numero)));
+            selectND.innerHTML = '<option value="">-- Selecione ND --</option>' +
+                ndsUnicos.map(nd => `<option value="${nd}">${nd}</option>`).join('');
+            
+            // UP únicos
+            const upsUnicos = Array.from(new Set(cad.map(f => f.up || f.ug)));
+            selectUP.innerHTML = '<option value="">-- Selecione UP --</option>' +
+                upsUnicos.map(up => `<option value="${up}">${up}</option>`).join('');
+        }
+        
+        function adicionarExecFinanceira() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const nd = document.getElementById('numExecFin').value.trim();
+            const up = document.getElementById('upExecFin').value.trim();
+            const valor = parseFloat(document.getElementById('valorExecFin').value);
+            const data = document.getElementById('dataExecFin').value;
+
+            if (!nd || !up || isNaN(valor) || !data) {
+                alert('⚠️ Preencha todos os campos da execução financeira');
+                return;
+            }
+            
+            // Verificar se ND+UP existe no cadastro
+            const cad = window.tedSelecionado.financeiros || [];
+            const existe = cad.some(f => String(f.numero) === nd && String(f.up || f.ug) === up);
+            if (!existe) {
+                alert('⚠️ A combinação ND+UP informada não existe no cadastro financeiro!');
+                return;
+            }
+
+            window.tedSelecionado.execFinanceiras.push({ id: Date.now(), nd, up, valor, data });
+            salvarDados();
+            atualizarTabelaExecFinanceira();
+            atualizarGantt();
+            document.getElementById('numExecFin').value = '';
+            document.getElementById('upExecFin').value = '';
+            document.getElementById('valorExecFin').value = '';
+            document.getElementById('dataExecFin').value = '';
+        }
+
+        function removerExecFinanceira(nd, up, data) {
+            if (!window.tedSelecionado) return;
+            // Remove apenas a execução específica (mesma ND+UP+data)
+            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras.filter(f => 
+                !(String(f.nd || f.numero) === nd && String(f.up || f.ug) === up && f.data === data)
+            );
+            salvarDados();
+            atualizarTabelaExecFinanceira();
+            atualizarGantt();
+        }
+
+        // GANTT 60 MESES
+        function atualizarGantt() {
+            const container = document.getElementById('ganttContainer');
+            const resumoContainer = document.getElementById('resumoAnualPorAno');
+            
+            if (!container) return;
+
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros || window.tedSelecionado.financeiros.length === 0) {
+                container.innerHTML = '<p style="color: var(--text);">Cadastre ao menos uma descentralização para gerar o cronograma.</p>';
+                if (resumoContainer) resumoContainer.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = renderGanttGenerico([]);
+            
+            // Gerar resumo anual por ano
+            if (resumoContainer) {
+                const cad = window.tedSelecionado.financeiros || [];
+                const execs = window.tedSelecionado.execFinanceiras || [];
+                
+                // Obter todos os anos únicos (do cadastro e execuções)
+                const anosSet = new Set();
+                cad.forEach(f => anosSet.add(f.anoDesc));
+                execs.forEach(e => {
+                    if (e.data) {
+                        const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                        anosSet.add(ano);
+                    }
+                });
+                
+                const anosOrdenados = Array.from(anosSet).sort();
+                
+                if (anosOrdenados.length === 0) {
+                    resumoContainer.innerHTML = '';
+                    return;
+                }
+                
+                // Criar tabela com resumo anual
+                let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-top: 1rem;">';
+                html += '<thead><tr style="background: #2c5aa0; color: white;">';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd;">Ano</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Previsto Anual</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">A Receber ano anterior</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Recebido Anual</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Devolvido</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">Saldo Anual</th>';
+                html += '<th style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">Liquidação (%)</th>';
+                html += '</tr></thead><tbody>';
+                
+                let saldoAcumulado = 0;
+                
+                anosOrdenados.forEach((ano, idx) => {
+                    // Previsto do ano
+                    const previsto = cad
+                        .filter(f => f.anoDesc === ano)
+                        .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+                    
+                    // Recebido (valores positivos) do ano
+                    const recebido = execs
+                        .filter(e => {
+                            if (!e.data) return false;
+                            const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                            const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                            return anoExec === ano && valor > 0;
+                        })
+                        .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+                    
+                    // Devolvido (valores negativos) do ano
+                    const devolvido = Math.abs(execs
+                        .filter(e => {
+                            if (!e.data) return false;
+                            const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                            const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                            return anoExec === ano && valor < 0;
+                        })
+                        .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
+                    
+                    // A receber do ano anterior é o saldo acumulado do ano anterior
+                    const aReceberAnterior = saldoAcumulado;
+                    
+                    // Saldo = previsto + a receber anterior - recebido - devolvido
+                    const saldo = previsto + aReceberAnterior - recebido - devolvido;
+                    saldoAcumulado = saldo; // atualizar para próximo ano
+                    
+                    // Liquidação
+                    const liquidacao = previsto > 0 ? ((recebido / previsto) * 100) : 0;
+                    
+                    const bg = idx % 2 === 0 ? '#f9f9f9' : '#fff';
+                    html += `<tr style="background: ${bg};">`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; font-weight: bold;">${ano}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${previsto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${aReceberAnterior.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right;">R$ ${recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right; color: ${devolvido > 0 ? '#ef4444' : 'inherit'};">-R$ ${devolvido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: right; font-weight: bold;">R$ ${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    html += `<td style="padding: 0.75rem; border: 1px solid #ddd; text-align: center;">${liquidacao.toFixed(2)}%</td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+                resumoContainer.innerHTML = html;
+            }
+        }
+
+        function atualizarTabelaExecFinanceira() {
+            const tbody = document.getElementById('tabelaExecFinanceira');
+            const tableEl = tbody.closest('table');
+            const resumoPrev = document.getElementById('resExecPrevisto');
+            const resumoReceberAnt = document.getElementById('resExecReceberAnterior');
+            const resumoRecebido = document.getElementById('resExecRecebido');
+            const resumoDevolvido = document.getElementById('resExecDevolvido');
+            const resumoSaldo = document.getElementById('resExecSaldo');
+            const resumoLiquidacao = document.getElementById('resExecLiquidacao');
+
+            const setResumoZeros = () => {
+                if (resumoPrev) resumoPrev.textContent = 'R$ 0,00';
+                if (resumoReceberAnt) resumoReceberAnt.textContent = 'R$ 0,00';
+                if (resumoRecebido) resumoRecebido.textContent = 'R$ 0,00';
+                if (resumoDevolvido) resumoDevolvido.textContent = 'R$ 0,00';
+                if (resumoSaldo) resumoSaldo.textContent = 'R$ 0,00';
+                if (resumoLiquidacao) resumoLiquidacao.textContent = '0%';
+            };
+
+            if (!window.tedSelecionado) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
+                setResumoZeros();
+                return;
+            }
+
+            // Base (60 meses)
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i=0;i<60;i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({label:`${mes}/${ano2}`, ano:d.getFullYear(), mes:d.getMonth()+1, fullYear:d.getFullYear()});
+            }
+
+            const anos = [];
+            meses.forEach(m => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ano:m.ano, count:1}); else anos[anos.length-1].count += 1;
+            });
+
+            // Cabeçalho com rowspan
+            let hr1 = tableEl.querySelector('thead tr');
+            let hdr = '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; background: #2c5aa0; min-width: 60px;">ND</th>'+
+                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; background: #2c5aa0; min-width: 60px;">UP</th>'+
+                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background: #2c5aa0; min-width: 110px;">Valor Previsto</th>'+
+                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background: #2c5aa0; min-width: 110px;">Valor Realizado</th>'+
+                      '<th rowspan="2" style="padding:0.5rem; border:1px solid #ddd; text-align:right; background: #2c5aa0; min-width: 110px;">Saldo</th>';
+            
+            anos.forEach(a=>{ 
+                hdr += `<th style="padding:0.5rem; border:1px solid #ddd; background:#2c5aa0; color:white; text-align:center; font-weight:bold;" colspan="${a.count}">${a.ano}</th>`; 
+            });
+            hr1.innerHTML = hdr;
+
+            let hr2 = tableEl.querySelector('thead tr:nth-child(2)');
+            if (hr2) hr2.remove();
+            hr2 = document.createElement('tr');
+            hr2.style.background = '#4b7ed0';
+            hr2.style.color = 'white';
+            let hdr2 = '';
+            meses.forEach(m => { 
+                hdr2 += `<th style="padding:0.5rem; border:1px solid #ddd; text-align:center; font-size:0.7rem; font-weight:bold; background: #4b7ed0;">${m.label}</th>`; 
+            });
+            hr2.innerHTML = hdr2;
+            tableEl.querySelector('thead').appendChild(hr2);
+
+            const cad = window.tedSelecionado.financeiros || [];
+            const execs = window.tedSelecionado.execFinanceiras || [];
+
+            // Conjunto de chaves ND+UP presentes em cadastro ou execução
+            const chaves = new Set([
+                ...cad.map(f => `${f.numero}||${f.up || f.ug}`),
+                ...execs.map(e => `${e.nd || e.numero}||${e.up || e.ug}`)
+            ].filter(Boolean));
+
+            if (chaves.size === 0) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Nenhum dado financeiro</td></tr>';
+                setResumoZeros();
+                return;
+            }
+
+            let totalPrevisto = 0;
+            let totalRealizado = 0;
+            const totalMeses = new Map();
+
+            const linhas = Array.from(chaves).map((chave, idx) => {
+                const [nd, up] = chave.split('||');
+                const previsto = cad.filter(f => String(f.numero)===nd && String(f.up || f.ug)===up)
+                                    .reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                const execList = execs.filter(e => String(e.nd || e.numero)===nd && String(e.up || e.ug)===up);
+                const realizado = execList.reduce((s,e)=>s+(parseFloat(e.valor || e.valorRealizado)||0),0);
+                const saldo = previsto - realizado;
+
+                totalPrevisto += previsto;
+                totalRealizado += realizado;
+
+                const mapaMes = new Map();
+                execList.forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
+                    if (diff>=0 && diff<60) mapaMes.set(diff, (mapaMes.get(diff)||0) + (parseFloat(e.valor || e.valorRealizado)||0));
+                });
+
+                mapaMes.forEach((val, idxMes) => {
+                    totalMeses.set(idxMes, (totalMeses.get(idxMes) || 0) + val);
+                });
+
+                const bg = idx%2===0?'#f9f9f9':'#fff';
+                let html = `<tr style="background:${bg}; border:1px solid #ddd;">`+
+                           `<td style="padding:0.5rem; border:1px solid #ddd; background:${bg};">${nd}</td>`+
+                           `<td style="padding:0.5rem; border:1px solid #ddd; background:${bg};">${up}</td>`+
+                           `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg};">R$ ${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg};">R$ ${realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
+                           `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:${bg};">R$ ${(saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+
+                meses.forEach((_,i)=>{
+                    const val = mapaMes.get(i);
+                    const cellBg = val ? '#e0f2fe' : 'transparent';
+                    html += `<td style="padding:0.25rem; border:1px solid #ddd; text-align:right; background:${cellBg}; font-size:0.7rem;">${val?('R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2})):''}</td>`;
+                });
+
+                html += '</tr>';
+                return html;
+            }).join('');
+
+            const totalSaldo = totalPrevisto - totalRealizado;
+
+            // Linha de total por ND/UP e por mês
+            let totalRow = '<tr style="background:#e8f4f8; font-weight:bold; border:1px solid #ddd;">';
+            totalRow += '<td style="padding:0.5rem; border:1px solid #ddd; background:#e8f4f8;">TOTAL</td>';
+            totalRow += '<td style="padding:0.5rem; border:1px solid #ddd; background:#e8f4f8;"></td>';
+            totalRow += `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8;">R$ ${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8;">R$ ${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td style="padding:0.5rem; border:1px solid #ddd; text-align:right; background:#e8f4f8;">R$ ${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            meses.forEach((_, idx) => {
+                const val = totalMeses.get(idx);
+                const cellBg = val ? '#e0f2fe' : 'transparent';
+                totalRow += `<td style="padding:0.25rem; border:1px solid #ddd; text-align:right; background:${cellBg}; font-size:0.7rem;">${val ? 'R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}</td>`;
+            });
+            totalRow += '</tr>';
+
+            tbody.innerHTML = linhas + totalRow;
+
+            // Calcular valores anuais baseados no ano corrente
+            const anoAtual = new Date().getFullYear();
+            
+            // Previsto Anual: soma do cadastro financeiro do ano corrente
+            const previstoAnual = cad
+                .filter(f => f.anoDesc === anoAtual)
+                .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+            
+            // Recebido Anual: soma dos valores positivos recebidos no ano corrente
+            const recebidoAnual = execs
+                .filter(e => {
+                    if (!e.data) return false;
+                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return ano === anoAtual && valor > 0;
+                })
+                .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+            
+            // Devolvido: soma dos valores negativos do ano corrente
+            const devolvido = Math.abs(execs
+                .filter(e => {
+                    if (!e.data) return false;
+                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return ano === anoAtual && valor < 0;
+                })
+                .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
+            
+            // A Receber ano anterior: calcular saldo do ano anterior
+            const anoAnterior = anoAtual - 1;
+            const previstoAnoAnterior = cad
+                .filter(f => f.anoDesc === anoAnterior)
+                .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+            
+            const recebidoAnoAnterior = execs
+                .filter(e => {
+                    if (!e.data) return false;
+                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return ano === anoAnterior && valor > 0;
+                })
+                .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+            
+            const devolvidoAnoAnterior = Math.abs(execs
+                .filter(e => {
+                    if (!e.data) return false;
+                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    return ano === anoAnterior && valor < 0;
+                })
+                .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
+            
+            const aReceberAnterior = previstoAnoAnterior - recebidoAnoAnterior - devolvidoAnoAnterior;
+            
+            // Saldo Anual: previsto + a receber anterior - recebido - devolvido
+            const saldoAnual = previstoAnual + aReceberAnterior - recebidoAnual - devolvido;
+            
+            // Liquidação percentual
+            const liquidacaoPerc = previstoAnual > 0 ? ((recebidoAnual / previstoAnual) * 100) : 0;
+
+            if (resumoPrev) resumoPrev.textContent = `R$ ${previstoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoReceberAnt) resumoReceberAnt.textContent = `R$ ${aReceberAnterior.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoRecebido) resumoRecebido.textContent = `R$ ${recebidoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoDevolvido) resumoDevolvido.textContent = `-R$ ${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoSaldo) resumoSaldo.textContent = `R$ ${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
+        }
+
+        // Fechar Modal
+        function fecharModal(event) {
+            if (event && event.target !== document.getElementById('modalDetalhes')) return;
+            document.getElementById('modalDetalhes').classList.remove('active');
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                alert('Até logo! 👋');
+            }
+        }
+
+        // Salvar Dados
+        function salvarDados() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+        }
+
+        // Iniciar ao carregar a página
+        window.onload = inicializar;
+    </script>
+</body>
+</html>
