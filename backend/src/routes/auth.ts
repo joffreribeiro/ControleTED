@@ -2,7 +2,14 @@ import { Router, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getUserByEmail, createUser } from '../models/user';
-import { AuthRequest } from '../middleware/auth';
+
+function getJwtSecret(): string {
+  return process.env.JWT_SECRET || 'secret';
+}
+
+function getJwtExpiresIn(): jwt.SignOptions['expiresIn'] {
+  return (process.env.JWT_EXPIRES_IN || '24h') as jwt.SignOptions['expiresIn'];
+}
 
 const router = Router();
 
@@ -31,8 +38,8 @@ router.post('/register', async (req, res: Response) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      getJwtSecret(),
+      { expiresIn: getJwtExpiresIn() }
     );
 
     res.status(201).json({
@@ -67,8 +74,8 @@ router.post('/login', async (req, res: Response) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      getJwtSecret(),
+      { expiresIn: getJwtExpiresIn() }
     );
 
     res.json({
