@@ -2318,6 +2318,8 @@
         let avisoPersistenciaExibido = false;
         let timeoutSalvarArquivo = null;
         let filaSalvarArquivo = Promise.resolve();
+        let ultimaAssinaturaDados = '';
+        let sincronizacaoEmAndamento = false;
 
         // ===== SISTEMA DE TOAST/NOTIFICAÇÕES =====
         function showToast(message, type = 'info', duration = 3000) {
@@ -2442,6 +2444,15 @@
             return listaTEDs.length > 0 || Number(valor.proxiId || 1) > 1;
         }
 
+        function gerarAssinaturaDados(valor) {
+            try {
+                return JSON.stringify(normalizarEstruturaDados(valor));
+            } catch (error) {
+                console.warn('Não foi possível gerar assinatura dos dados:', error);
+                return '';
+            }
+        }
+
         function salvarLocalmente() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
@@ -2524,6 +2535,83 @@
                         t.progressoFisico = t.progressoFisico || 0;
                     }
                 });
+            }
+
+            ultimaAssinaturaDados = gerarAssinaturaDados(dados);
+        }
+
+        function aplicarDadosNaInterface() {
+            atualizarDashboard();
+            atualizarListaTEDs();
+            atualizarSeletorTED();
+            atualizarGantt();
+            try { atualizarFiltroTedEntregas(); } catch(e) {}
+            try { renderEntregasFromFilter(); } catch(e) {}
+            try { renderResumoFinanceiroFromFilter(); } catch(e) {}
+            try { popularFiltrosRelatorios(); } catch(e) {}
+            try { renderRelatorios(); } catch(e) {}
+
+            try {
+                const selFull = document.getElementById('filterTedEntregasFull');
+                const sel = document.getElementById('filterTedEntregas');
+                if (selFull && sel) {
+                    selFull.innerHTML = sel.innerHTML;
+                    selFull.value = sel.value || '';
+                    if (selFull.value) renderEntregasChart(selFull.value, 'entregasChartFull');
+                }
+            } catch(e) {}
+
+            if (window.tedSelecionado && window.tedSelecionado.id) {
+                const tedAtualizado = dados.teds.find(t => t.id == window.tedSelecionado.id);
+                if (tedAtualizado) {
+                    carregarDetalhes(tedAtualizado.id);
+                } else {
+                    window.tedSelecionado = null;
+                    const detalheContainer = document.getElementById('tedsDetalheContainer');
+                    if (detalheContainer) {
+                        detalheContainer.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        async function sincronizarComArquivo(opcoes = {}) {
+            const { silencioso = true, mostrarToast = false } = opcoes;
+
+            if (sincronizacaoEmAndamento) {
+                return false;
+            }
+
+            sincronizacaoEmAndamento = true;
+
+            try {
+                const dadosArquivo = await carregarDadosDoArquivo();
+                const assinaturaArquivo = gerarAssinaturaDados(dadosArquivo);
+
+                if (!assinaturaArquivo || assinaturaArquivo === ultimaAssinaturaDados) {
+                    return false;
+                }
+
+                dados = dadosArquivo;
+                modoPersistencia = 'arquivo';
+                recalcularDadosCarregados();
+                salvarLocalmente();
+                aplicarDadosNaInterface();
+
+                if (mostrarToast) {
+                    showToast('Dados mais recentes carregados do arquivo compartilhado.', 'info', 3500);
+                }
+
+                return true;
+            } catch (error) {
+                modoPersistencia = 'localStorage';
+                if (!silencioso) {
+                    showToast('Não foi possível atualizar os dados do arquivo compartilhado.', 'warning', 4000);
+                }
+                console.warn('Falha ao sincronizar com o arquivo compartilhado:', error);
+                return false;
+            } finally {
+                sincronizacaoEmAndamento = false;
             }
         }
 
@@ -2653,34 +2741,14 @@
             return { text: 'Em Execução', origin: 'inferido' };
         }
 
-        // Trocar Abas
-        function switchTab(tabName) {
-            // Ocultar todas as abas
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
 
-            // Mostrar aba selecionada
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            aplicarDadosNaInterface();
             try {
-                const wrap = document.getElementById('filterFullWrap');
-                if (wrap) wrap.style.display = (tabName === 'detalhes') ? 'none' : 'flex';
-            } catch(e) {}
-            try {
-                if (tabName === 'relatorios') renderRelatorios();
-            } catch(e) {}
-        }
-
         // Calcula soma dos valores do cadastro financeiro de um TED
         function calcularTotalFinanceiro(ted) {
             if (!ted || !ted.financeiros || !ted.financeiros.length) return 0;
             return ted.financeiros.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
-        }
-
+            } catch(e) {}
         // Calcula soma dos valores realizados (execução financeira) de um TED
         function calcularTotalExecFinanceira(ted) {
             if (!ted || !ted.execFinanceiras || !ted.execFinanceiras.length) return 0;
@@ -7534,10 +7602,21 @@
             }
         }
 
+        window.addEventListener('focus', () => {
+            sincronizarComArquivo({ silencioso: true, mostrarToast: false });
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                sincronizarComArquivo({ silencioso: true, mostrarToast: false });
+            }
+        });
+
         // Iniciar ao carregar a página
         window.onload = async function() {
             initTheme();
             await inicializar();
+            await sincronizarComArquivo({ silencioso: true, mostrarToast: false });
             checkTableScrolls();
             initLucideIcons();
             // Observar wrappers de tabela
