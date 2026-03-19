@@ -1441,7 +1441,23 @@
                 <!-- Resumo adicional removido conforme solicitado -->
             </div>
 
-                    
+            <div class="card">
+                <h2>TEDs Assinados / Encerrados</h2>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                    <div>
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Por Mês</h4>
+                        <div id="resumoGeralMeses">
+                            <p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Por UP</h4>
+                        <div id="resumoGeralUPs">
+                            <p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="card">
                 <h2>Próximas Ações (30 dias)</h2>
@@ -2316,6 +2332,9 @@
         const STORAGE_API_URL = `${STORAGE_API_BASE}/api/storage/app-data`;
         let modoPersistencia = 'localStorage';
         let avisoPersistenciaExibido = false;
+        let backendDisponivel = null; // null = não testado, true = ok, false = offline
+        let ultimoTesteBackend = 0; // timestamp do último teste
+        const INTERVALO_RETRY_BACKEND = 30000; // tentar novamente a cada 30s
         let timeoutSalvarArquivo = null;
         let filaSalvarArquivo = Promise.resolve();
         let ultimaAssinaturaDados = '';
@@ -2462,19 +2481,39 @@
         }
 
         async function carregarDadosDoArquivo() {
-            const resposta = await fetch(STORAGE_API_URL, {
-                method: 'GET',
-                cache: 'no-store'
-            });
-
-            if (!resposta.ok) {
-                throw new Error(`Falha ao carregar arquivo compartilhado (${resposta.status})`);
+            // Se já sabemos que o backend está offline, não tentar novamente até o intervalo expirar
+            if (backendDisponivel === false) {
+                const agora = Date.now();
+                if (agora - ultimoTesteBackend < INTERVALO_RETRY_BACKEND) {
+                    throw new Error('Backend indisponível (aguardando intervalo para nova tentativa)');
+                }
             }
 
-            return normalizarEstruturaDados(await resposta.json());
+            try {
+                const resposta = await fetch(STORAGE_API_URL, {
+                    method: 'GET',
+                    cache: 'no-store'
+                });
+
+                if (!resposta.ok) {
+                    throw new Error(`Falha ao carregar arquivo compartilhado (${resposta.status})`);
+                }
+
+                backendDisponivel = true;
+                return normalizarEstruturaDados(await resposta.json());
+            } catch (error) {
+                backendDisponivel = false;
+                ultimoTesteBackend = Date.now();
+                throw error;
+            }
         }
 
         async function salvarDadosNoArquivo() {
+            // Se backend está offline e ainda no intervalo de espera, não tentar
+            if (backendDisponivel === false && (Date.now() - ultimoTesteBackend < INTERVALO_RETRY_BACKEND)) {
+                return;
+            }
+
             const payload = JSON.stringify(dados);
 
             filaSalvarArquivo = filaSalvarArquivo.then(async () => {
@@ -2490,9 +2529,12 @@
                     throw new Error(`Falha ao salvar arquivo compartilhado (${resposta.status})`);
                 }
 
+                backendDisponivel = true;
                 modoPersistencia = 'arquivo';
                 avisoPersistenciaExibido = false;
             }).catch((error) => {
+                backendDisponivel = false;
+                ultimoTesteBackend = Date.now();
                 modoPersistencia = 'localStorage';
                 if (!avisoPersistenciaExibido) {
                     avisoPersistenciaExibido = true;
@@ -3116,8 +3158,12 @@
             const months = Array.from(new Set([...Object.keys(signedByMonth), ...Object.keys(closedByMonth)]));
             months.sort((a,b) => b.localeCompare(a)); // desc
             const mesesHtml = [];
+            const elMeses = document.getElementById('resumoGeralMeses');
+            const elUPs = document.getElementById('resumoGeralUPs');
+            if (!elMeses || !elUPs) return; // elementos não existem no DOM
+
             if (months.length === 0) {
-                document.getElementById('resumoGeralMeses').innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+                elMeses.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
             } else {
                 mesesHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
                 mesesHtml.push('<thead><tr><th style="text-align:left; padding:6px;">Mês</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
@@ -3130,13 +3176,13 @@
                     mesesHtml.push(`<tr><td style="padding:6px;">${label}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
                 });
                 mesesHtml.push('</tbody></table>');
-                document.getElementById('resumoGeralMeses').innerHTML = mesesHtml.join('');
+                elMeses.innerHTML = mesesHtml.join('');
             }
 
             // Montar tabela por UP
             const ups = Array.from(new Set([...Object.keys(signedByUp), ...Object.keys(closedByUp)])).sort();
             if (ups.length === 0) {
-                document.getElementById('resumoGeralUPs').innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+                elUPs.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
             } else {
                 const upHtml = [];
                 upHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
@@ -3148,7 +3194,7 @@
                     upHtml.push(`<tr><td style="padding:6px;">${u}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
                 });
                 upHtml.push('</tbody></table>');
-                document.getElementById('resumoGeralUPs').innerHTML = upHtml.join('');
+                elUPs.innerHTML = upHtml.join('');
             }
         }
 
@@ -7624,11 +7670,14 @@
         }
 
         window.addEventListener('focus', () => {
-            sincronizarComArquivo({ silencioso: true, mostrarToast: false });
+            // Só tenta sincronizar se backend pode estar disponível
+            if (backendDisponivel !== false || (Date.now() - ultimoTesteBackend >= INTERVALO_RETRY_BACKEND)) {
+                sincronizarComArquivo({ silencioso: true, mostrarToast: false });
+            }
         });
 
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
+            if (!document.hidden && (backendDisponivel !== false || (Date.now() - ultimoTesteBackend >= INTERVALO_RETRY_BACKEND))) {
                 sincronizarComArquivo({ silencioso: true, mostrarToast: false });
             }
         });
