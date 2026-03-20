@@ -7070,8 +7070,8 @@
                 headers.forEach((h, idx) => {
                     let val = values[idx] || '';
                     const low = String(h).trim().toLowerCase();
-                    // Não converter para número campos conhecidos que representam ND/numero (preservar formato exatamente como na planilha)
-                    const keepAsString = ['nd', 'numero', 'número'];
+                    // Não converter para número campos conhecidos que representam ND/numero/transferência (preservar formato exatamente como na planilha)
+                    const keepAsString = ['nd', 'numero', 'número', 'nc - natureza despesa', 'nc - natureza despes', 'nc - transferência', 'nc - transferencia'];
                     // Tentar converter números (suporta formatos pt-BR com vírgula e separador de milhares com ponto)
                     if (keepAsString.indexOf(low) === -1 && /^-?[\d.,]+$/.test(val)) {
                         const cleaned = String(val).replace(/\s+/g, '');
@@ -7772,37 +7772,100 @@
                     const rows = parseCSV(e.target.result);
                     const grouped = {};
                     rows.forEach(row => {
-                        const numTed = String(row.numTed || '').trim();
-                        if (!numTed) return;
-                        if (!grouped[numTed]) grouped[numTed] = [];
+                        // Mapeamento do Tesouro Gerencial:
+                        //   "NC - Transferência" ou "NC - Transferencia" → nº TED SIAFI (identifica o TED)
+                        //   "NC - Natureza Despesa" ou "NC - Natureza Despes" → ND
+                        //   "NC - Valor Linha" → Valor
+                        //   "Emissão - Dia" ou "Emissao - Dia" → Data da descentralização
+                        // Também aceita formato simplificado (numTed, nd, valor, data) para reimportação
 
-                        grouped[numTed].push({
-                            nd: String(row.nd || row['ND'] || '').trim(),
-                            valor: parseNumber(row.valor || row['Valor'] || 0),
-                            data: String(row.data || row['Data'] || '').trim()
-                        });
+                        const numTedSiafi = String(
+                            row['NC - Transferência'] || row['NC - Transferencia'] ||
+                            row['nc - transferência'] || row['nc - transferencia'] ||
+                            row['NC - Transfer\u00eancia'] ||
+                            row.numTedSiafi || row.numTed || ''
+                        ).trim();
+
+                        if (!numTedSiafi) return;
+
+                        const nd = String(
+                            row['NC - Natureza Despesa'] || row['NC - Natureza Despes'] ||
+                            row['nc - natureza despesa'] || row['nc - natureza despes'] ||
+                            row.nd || row.ND || ''
+                        ).trim();
+
+                        const valor = parseNumber(
+                            row['NC - Valor Linha'] || row['nc - valor linha'] ||
+                            row.valor || row.Valor || 0
+                        );
+
+                        // Data: "Emissão - Dia" vem como dd/mm/aaaa — converter para yyyy-mm-dd
+                        let dataRaw = String(
+                            row['Emissão - Dia'] || row['Emissao - Dia'] ||
+                            row['emissão - dia'] || row['emissao - dia'] ||
+                            row['Emiss\u00e3o - Dia'] ||
+                            row.data || row.Data || ''
+                        ).trim();
+
+                        let data = '';
+                        if (dataRaw) {
+                            // Tentar formato dd/mm/aaaa
+                            const partes = dataRaw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+                            if (partes) {
+                                data = partes[3] + '-' + partes[2].padStart(2,'0') + '-' + partes[1].padStart(2,'0');
+                            } else if (/^\d{4}-\d{2}-\d{2}$/.test(dataRaw)) {
+                                // Já está no formato yyyy-mm-dd
+                                data = dataRaw;
+                            } else {
+                                // Tentar Date parse genérico
+                                try {
+                                    const d = new Date(dataRaw);
+                                    if (!isNaN(d.getTime())) {
+                                        data = d.toISOString().split('T')[0];
+                                    }
+                                } catch(ex) {}
+                            }
+                        }
+
+                        if (!grouped[numTedSiafi]) grouped[numTedSiafi] = [];
+                        grouped[numTedSiafi].push({ nd, valor, data });
                     });
 
                     let countTeds = 0;
                     let countItens = 0;
-                    Object.keys(grouped).forEach(numTed => {
-                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                    let tedsNaoEncontrados = [];
+
+                    Object.keys(grouped).forEach(numTedSiafi => {
+                        // Procurar TED pelo numTedSiafi OU pelo numTed
+                        const ted = dados.teds.find(t =>
+                            String(t.numTedSiafi || '').trim() === numTedSiafi ||
+                            String(t.numTed || '').trim() === numTedSiafi
+                        );
                         if (ted) {
                             ted.recursosGerais = ted.recursosGerais || [];
-                            grouped[numTed].forEach((row, idx) => {
+                            grouped[numTedSiafi].forEach((row, idx) => {
                                 ted.recursosGerais.push({
                                     id: Date.now() + idx + Math.random() * 1000,
                                     ...row
                                 });
                             });
                             countTeds++;
-                            countItens += grouped[numTed].length;
+                            countItens += grouped[numTedSiafi].length;
+                        } else {
+                            tedsNaoEncontrados.push(numTedSiafi);
                         }
                     });
 
                     try { salvarDados(); } catch(e) {}
                     try { atualizarTabelaRecursosGerais(); } catch(e) {}
-                    showToast(`${countItens} recurso(s) importado(s) para ${countTeds} TED(s)!`, 'success');
+
+                    let msg = `${countItens} recurso(s) importado(s) para ${countTeds} TED(s)!`;
+                    if (tedsNaoEncontrados.length > 0) {
+                        msg += `\n⚠️ TEDs não encontrados: ${tedsNaoEncontrados.join(', ')}`;
+                        showToast(msg, 'warning');
+                    } else {
+                        showToast(msg, 'success');
+                    }
                 } catch (err) {
                     showToast('Erro ao importar: ' + err.message, 'error');
                 }
