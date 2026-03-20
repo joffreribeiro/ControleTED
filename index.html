@@ -1441,23 +1441,7 @@
                 <!-- Resumo adicional removido conforme solicitado -->
             </div>
 
-            <div class="card">
-                <h2>TEDs Assinados / Encerrados</h2>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
-                    <div>
-                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Por Mês</h4>
-                        <div id="resumoGeralMeses">
-                            <p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Por UP</h4>
-                        <div id="resumoGeralUPs">
-                            <p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    
 
             <div class="card">
                 <h2>Próximas Ações (30 dias)</h2>
@@ -2326,19 +2310,8 @@
     </div>
 
     <script>
-        // Armazenamento compartilhado (arquivo local via backend, com fallback para localStorage)
+        // Armazenamento Local (LocalStorage)
         const STORAGE_KEY = 'ted_sistema';
-        const STORAGE_API_BASE = window.location.protocol === 'file:' ? 'http://localhost:5000' : '';
-        const STORAGE_API_URL = `${STORAGE_API_BASE}/api/storage/app-data`;
-        let modoPersistencia = 'localStorage';
-        let avisoPersistenciaExibido = false;
-        let backendDisponivel = null; // null = não testado, true = ok, false = offline
-        let ultimoTesteBackend = 0; // timestamp do último teste
-        const INTERVALO_RETRY_BACKEND = 30000; // tentar novamente a cada 30s
-        let timeoutSalvarArquivo = null;
-        let filaSalvarArquivo = Promise.resolve();
-        let ultimaAssinaturaDados = '';
-        let sincronizacaoEmAndamento = false;
 
         // ===== SISTEMA DE TOAST/NOTIFICAÇÕES =====
         function showToast(message, type = 'info', duration = 3000) {
@@ -2428,235 +2401,6 @@
             }
         })();
 
-        function obterDadosPadrao() {
-            return {
-                teds: [],
-                proxiId: 1
-            };
-        }
-
-        function normalizarEstruturaDados(valor) {
-            if (!valor || typeof valor !== 'object' || Array.isArray(valor)) {
-                return obterDadosPadrao();
-            }
-
-            return {
-                ...valor,
-                teds: Array.isArray(valor.teds) ? valor.teds : [],
-                proxiId: Number.isFinite(Number(valor.proxiId)) && Number(valor.proxiId) > 0 ? Number(valor.proxiId) : 1
-            };
-        }
-
-        function obterDadosLocalStorage() {
-            try {
-                const salvo = localStorage.getItem(STORAGE_KEY);
-                return salvo ? normalizarEstruturaDados(JSON.parse(salvo)) : obterDadosPadrao();
-            } catch (error) {
-                console.warn('Não foi possível ler dados locais:', error);
-                return obterDadosPadrao();
-            }
-        }
-
-        function temDadosPersistidos(valor) {
-            if (!valor || typeof valor !== 'object') return false;
-            const listaTEDs = Array.isArray(valor.teds) ? valor.teds : [];
-            return listaTEDs.length > 0 || Number(valor.proxiId || 1) > 1;
-        }
-
-        function gerarAssinaturaDados(valor) {
-            try {
-                return JSON.stringify(normalizarEstruturaDados(valor));
-            } catch (error) {
-                console.warn('Não foi possível gerar assinatura dos dados:', error);
-                return '';
-            }
-        }
-
-        function salvarLocalmente() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
-            } catch (error) {
-                console.warn('Não foi possível salvar localmente:', error);
-            }
-        }
-
-        async function carregarDadosDoArquivo() {
-            // Se já sabemos que o backend está offline, não tentar novamente até o intervalo expirar
-            if (backendDisponivel === false) {
-                const agora = Date.now();
-                if (agora - ultimoTesteBackend < INTERVALO_RETRY_BACKEND) {
-                    throw new Error('Backend indisponível (aguardando intervalo para nova tentativa)');
-                }
-            }
-
-            try {
-                const resposta = await fetch(STORAGE_API_URL, {
-                    method: 'GET',
-                    cache: 'no-store'
-                });
-
-                if (!resposta.ok) {
-                    throw new Error(`Falha ao carregar arquivo compartilhado (${resposta.status})`);
-                }
-
-                backendDisponivel = true;
-                return normalizarEstruturaDados(await resposta.json());
-            } catch (error) {
-                backendDisponivel = false;
-                ultimoTesteBackend = Date.now();
-                throw error;
-            }
-        }
-
-        async function salvarDadosNoArquivo() {
-            // Se backend está offline e ainda no intervalo de espera, não tentar
-            if (backendDisponivel === false && (Date.now() - ultimoTesteBackend < INTERVALO_RETRY_BACKEND)) {
-                return;
-            }
-
-            const payload = JSON.stringify(dados);
-
-            filaSalvarArquivo = filaSalvarArquivo.then(async () => {
-                const resposta = await fetch(STORAGE_API_URL, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: payload
-                });
-
-                if (!resposta.ok) {
-                    throw new Error(`Falha ao salvar arquivo compartilhado (${resposta.status})`);
-                }
-
-                backendDisponivel = true;
-                modoPersistencia = 'arquivo';
-                avisoPersistenciaExibido = false;
-            }).catch((error) => {
-                backendDisponivel = false;
-                ultimoTesteBackend = Date.now();
-                modoPersistencia = 'localStorage';
-                if (!avisoPersistenciaExibido) {
-                    avisoPersistenciaExibido = true;
-                    showToast('Arquivo compartilhado indisponível. Salvando apenas neste navegador.', 'warning', 5000);
-                }
-                console.warn('Não foi possível salvar no arquivo compartilhado:', error);
-            });
-
-            return filaSalvarArquivo;
-        }
-
-        function agendarSalvarArquivo() {
-            if (timeoutSalvarArquivo) {
-                clearTimeout(timeoutSalvarArquivo);
-            }
-
-            timeoutSalvarArquivo = setTimeout(() => {
-                salvarDadosNoArquivo();
-            }, 250);
-        }
-
-        function recalcularDadosCarregados() {
-            if (dados.teds && dados.teds.length) {
-                dados.teds.forEach(t => {
-                    t.financeiros = t.financeiros || [];
-                    t.execFinanceiras = t.execFinanceiras || [];
-                    try {
-                        t.valorTed = calcularTotalFinanceiro(t) || 0;
-                    } catch(e) {
-                        t.valorTed = t.valorTed || 0;
-                    }
-                    try {
-                        t.gasto = calcularTotalExecFinanceira(t) || 0;
-                    } catch(e) {
-                        t.gasto = t.gasto || 0;
-                    }
-                    try {
-                        t.progressoFisico = calcularProgressoFisico(t) || 0;
-                    } catch(e) {
-                        t.progressoFisico = t.progressoFisico || 0;
-                    }
-                });
-            }
-
-            ultimaAssinaturaDados = gerarAssinaturaDados(dados);
-        }
-
-        function aplicarDadosNaInterface() {
-            atualizarDashboard();
-            atualizarListaTEDs();
-            atualizarSeletorTED();
-            atualizarGantt();
-            try { atualizarFiltroTedEntregas(); } catch(e) {}
-            try { renderEntregasFromFilter(); } catch(e) {}
-            try { renderResumoFinanceiroFromFilter(); } catch(e) {}
-            try { popularFiltrosRelatorios(); } catch(e) {}
-            try { renderRelatorios(); } catch(e) {}
-
-            try {
-                const selFull = document.getElementById('filterTedEntregasFull');
-                const sel = document.getElementById('filterTedEntregas');
-                if (selFull && sel) {
-                    selFull.innerHTML = sel.innerHTML;
-                    selFull.value = sel.value || '';
-                    if (selFull.value) renderEntregasChart(selFull.value, 'entregasChartFull');
-                }
-            } catch(e) {}
-
-            if (window.tedSelecionado && window.tedSelecionado.id) {
-                const tedAtualizado = dados.teds.find(t => t.id == window.tedSelecionado.id);
-                if (tedAtualizado) {
-                    carregarDetalhes(tedAtualizado.id);
-                } else {
-                    window.tedSelecionado = null;
-                    const detalheContainer = document.getElementById('tedsDetalheContainer');
-                    if (detalheContainer) {
-                        detalheContainer.style.display = 'none';
-                    }
-                }
-            }
-        }
-
-        async function sincronizarComArquivo(opcoes = {}) {
-            const { silencioso = true, mostrarToast = false } = opcoes;
-
-            if (sincronizacaoEmAndamento) {
-                return false;
-            }
-
-            sincronizacaoEmAndamento = true;
-
-            try {
-                const dadosArquivo = await carregarDadosDoArquivo();
-                const assinaturaArquivo = gerarAssinaturaDados(dadosArquivo);
-
-                if (!assinaturaArquivo || assinaturaArquivo === ultimaAssinaturaDados) {
-                    return false;
-                }
-
-                dados = dadosArquivo;
-                modoPersistencia = 'arquivo';
-                recalcularDadosCarregados();
-                salvarLocalmente();
-                aplicarDadosNaInterface();
-
-                if (mostrarToast) {
-                    showToast('Dados mais recentes carregados do arquivo compartilhado.', 'info', 3500);
-                }
-
-                return true;
-            } catch (error) {
-                modoPersistencia = 'localStorage';
-                if (!silencioso) {
-                    showToast('Não foi possível atualizar os dados do arquivo compartilhado.', 'warning', 4000);
-                }
-                console.warn('Falha ao sincronizar com o arquivo compartilhado:', error);
-                return false;
-            } finally {
-                sincronizacaoEmAndamento = false;
-            }
-        }
-
         // Dados Iniciais
         let dados = {
             teds: [],
@@ -2695,33 +2439,35 @@
         }
 
         // Inicializar
-        async function inicializar() {
-            const dadosLocais = obterDadosLocalStorage();
-            let dadosArquivo = null;
-
-            try {
-                dadosArquivo = await carregarDadosDoArquivo();
-                modoPersistencia = 'arquivo';
-            } catch (error) {
-                modoPersistencia = 'localStorage';
-                console.warn('Arquivo compartilhado indisponível durante a inicialização:', error);
-            }
-
-            if (dadosArquivo) {
-                if (temDadosPersistidos(dadosArquivo) || !temDadosPersistidos(dadosLocais)) {
-                    dados = dadosArquivo;
-                } else {
-                    dados = dadosLocais;
-                    await salvarDadosNoArquivo();
-                    showToast('Dados locais migrados para o arquivo compartilhado.', 'success', 4500);
+        function inicializar() {
+            const salvo = localStorage.getItem(STORAGE_KEY);
+            if (salvo) {
+                dados = JSON.parse(salvo);
+                // Recalcular valorTed a partir dos registros financeiros para garantir consistência
+                if (dados.teds && dados.teds.length) {
+                    dados.teds.forEach(t => {
+                        t.financeiros = t.financeiros || [];
+                        t.execFinanceiras = t.execFinanceiras || [];
+                        // garantir campos numéricos e recalcular valores
+                        try {
+                            t.valorTed = calcularTotalFinanceiro(t) || 0;
+                        } catch(e) {
+                            t.valorTed = t.valorTed || 0;
+                        }
+                        try {
+                            t.gasto = calcularTotalExecFinanceira(t) || 0;
+                        } catch(e) {
+                            t.gasto = t.gasto || 0;
+                        }
+                        try {
+                            t.progressoFisico = calcularProgressoFisico(t) || 0;
+                        } catch(e) {
+                            t.progressoFisico = t.progressoFisico || 0;
+                        }
+                    });
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dados)); } catch(e) {}
                 }
-            } else {
-                dados = dadosLocais;
             }
-
-            recalcularDadosCarregados();
-            salvarLocalmente();
-
             atualizarDashboard();
             atualizarListaTEDs();
             atualizarSeletorTED();
@@ -2783,6 +2529,7 @@
             return { text: 'Em Execução', origin: 'inferido' };
         }
 
+        // Trocar Abas
         function switchTab(tabName) {
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -2794,9 +2541,7 @@
 
             // Mostrar aba selecionada
             document.getElementById(tabName).classList.add('active');
-            if (event && event.target) {
-                event.target.closest('.tab-btn') ? event.target.closest('.tab-btn').classList.add('active') : event.target.classList.add('active');
-            }
+            event.target.classList.add('active');
             try {
                 const wrap = document.getElementById('filterFullWrap');
                 if (wrap) wrap.style.display = (tabName === 'detalhes') ? 'none' : 'flex';
@@ -3158,12 +2903,8 @@
             const months = Array.from(new Set([...Object.keys(signedByMonth), ...Object.keys(closedByMonth)]));
             months.sort((a,b) => b.localeCompare(a)); // desc
             const mesesHtml = [];
-            const elMeses = document.getElementById('resumoGeralMeses');
-            const elUPs = document.getElementById('resumoGeralUPs');
-            if (!elMeses || !elUPs) return; // elementos não existem no DOM
-
             if (months.length === 0) {
-                elMeses.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+                document.getElementById('resumoGeralMeses').innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
             } else {
                 mesesHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
                 mesesHtml.push('<thead><tr><th style="text-align:left; padding:6px;">Mês</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
@@ -3176,13 +2917,13 @@
                     mesesHtml.push(`<tr><td style="padding:6px;">${label}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
                 });
                 mesesHtml.push('</tbody></table>');
-                elMeses.innerHTML = mesesHtml.join('');
+                document.getElementById('resumoGeralMeses').innerHTML = mesesHtml.join('');
             }
 
             // Montar tabela por UP
             const ups = Array.from(new Set([...Object.keys(signedByUp), ...Object.keys(closedByUp)])).sort();
             if (ups.length === 0) {
-                elUPs.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+                document.getElementById('resumoGeralUPs').innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
             } else {
                 const upHtml = [];
                 upHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
@@ -3194,7 +2935,7 @@
                     upHtml.push(`<tr><td style="padding:6px;">${u}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
                 });
                 upHtml.push('</tbody></table>');
-                elUPs.innerHTML = upHtml.join('');
+                document.getElementById('resumoGeralUPs').innerHTML = upHtml.join('');
             }
         }
 
@@ -6905,8 +6646,7 @@
 
         // Salvar Dados
         function salvarDados() {
-            salvarLocalmente();
-            agendarSalvarArquivo();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
         }
 
         // =============================================
@@ -7669,24 +7409,10 @@
             }
         }
 
-        window.addEventListener('focus', () => {
-            // Só tenta sincronizar se backend pode estar disponível
-            if (backendDisponivel !== false || (Date.now() - ultimoTesteBackend >= INTERVALO_RETRY_BACKEND)) {
-                sincronizarComArquivo({ silencioso: true, mostrarToast: false });
-            }
-        });
-
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && (backendDisponivel !== false || (Date.now() - ultimoTesteBackend >= INTERVALO_RETRY_BACKEND))) {
-                sincronizarComArquivo({ silencioso: true, mostrarToast: false });
-            }
-        });
-
         // Iniciar ao carregar a página
-        window.onload = async function() {
+        window.onload = function() {
             initTheme();
-            await inicializar();
-            await sincronizarComArquivo({ silencioso: true, mostrarToast: false });
+            inicializar();
             checkTableScrolls();
             initLucideIcons();
             // Observar wrappers de tabela
