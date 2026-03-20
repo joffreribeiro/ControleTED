@@ -7827,29 +7827,25 @@
             reader.onload = function(e) {
                 try {
                     let texto = e.target.result;
-                    // Remover BOM
                     if (texto.charCodeAt(0) === 0xFEFF) texto = texto.substring(1);
 
-                    // Detectar separador automaticamente (tab, ;, ou ,)
+                    // Detectar separador (tab, ;, ou ,)
                     const primeiraLinha = texto.split('\n')[0] || '';
-                    let separador = ';';
-                    if (primeiraLinha.indexOf('\t') > -1) {
-                        separador = '\t';
-                    } else if (primeiraLinha.indexOf(';') === -1 && primeiraLinha.indexOf(',') > -1) {
-                        separador = ',';
-                    }
+                    let sep = ';';
+                    if (primeiraLinha.indexOf('\t') > -1) sep = '\t';
+                    else if (primeiraLinha.indexOf(';') === -1 && primeiraLinha.indexOf(',') > -1) sep = ',';
 
-                    // Parser CSV que respeita campos entre aspas (o Tesouro Gerencial pode ter ; dentro de campos entre aspas)
-                    function splitCSVLine(line, sep) {
+                    // Parser CSV que respeita campos entre aspas
+                    function splitCSV(line) {
                         const result = [];
                         let current = '';
                         let inQuotes = false;
-                        for (let c = 0; c < line.length; c++) {
-                            const ch = line[c];
+                        for (let i = 0; i < line.length; i++) {
+                            const ch = line[i];
                             if (ch === '"') {
-                                if (inQuotes && c + 1 < line.length && line[c + 1] === '"') {
-                                    current += '"'; // escaped quote
-                                    c++;
+                                if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+                                    current += '"';
+                                    i++;
                                 } else {
                                     inQuotes = !inQuotes;
                                 }
@@ -7866,242 +7862,160 @@
 
                     const lines = texto.split('\n').filter(l => l.trim());
                     if (lines.length < 2) {
-                        alert('⚠️ Arquivo vazio ou sem dados (apenas ' + lines.length + ' linha(s))');
+                        alert('⚠️ Arquivo vazio ou sem dados.');
                         return;
                     }
 
-                    const headers = splitCSVLine(lines[0], separador).map(h => h.replace(/^"|"$/g, '').trim());
+                    // Parsear headers e normalizar (remover aspas e espaços extras)
+                    const headers = splitCSV(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
 
-                    console.log('[RecGerais] Importando:', headers.length, 'colunas,', lines.length - 1, 'linhas, sep:', separador === '\t' ? 'TAB' : separador);
+                    // Localizar as 4 colunas necessárias por busca flexível
+                    function findCol(keywords) {
+                        for (const h of headers) {
+                            const hLow = h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                            if (keywords.length > 0 && keywords.every(kw => hLow.indexOf(kw) > -1)) return h;
+                        }
+                        return null;
+                    }
 
-                    // Parsear dados com parser que respeita aspas
+                    const colSiafi = findCol(['transferencia']) || findCol(['transfer']);
+                    const colND    = findCol(['natureza', 'despes']) || findCol(['natureza']);
+                    const colValor = findCol(['valor', 'linha']) || findCol(['valor']);
+                    const colData  = findCol(['emissao', 'dia']) || findCol(['emiss', 'dia']) || findCol(['dia']);
+
+                    console.log('[RecGerais] Colunas: SIAFI=' + (colSiafi||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
+
+                    if (!colSiafi) {
+                        alert('❌ Coluna "NC - Transferência" não encontrada.\n\nCabeçalhos: ' + headers.join(', '));
+                        return;
+                    }
+                    if (!colND) {
+                        alert('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', '));
+                        return;
+                    }
+
+                    // Parsear dados
                     const rows = [];
                     for (let i = 1; i < lines.length; i++) {
-                        const values = splitCSVLine(lines[i], separador).map(v => v.replace(/^"|"$/g, '').trim());
+                        const values = splitCSV(lines[i]).map(v => v.replace(/^"|"$/g, '').trim());
                         const obj = {};
-                        headers.forEach((h, idx) => {
-                            obj[h] = values[idx] || '';
-                            // Alias lowercase
-                            const low = h.toLowerCase();
-                            if (low && obj[low] === undefined) obj[low] = values[idx] || '';
-                        });
+                        headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
                         rows.push(obj);
                     }
 
-                    // Buscar dinamicamente os cabeçalhos que contêm as palavras-chave
-                    // "Transferência" ou "Transferencia" → TED SIAFI
-                    // "Natureza" + "Despesa" → ND
-                    // "Valor" + "Linha" → Valor
-                    // "Dia" (em cabeçalho que contém "Emiss") → Data
-                    const findHeader = (keywords, exact) => {
-                        // Primeiro tentar correspondência exata
-                        if (exact) {
-                            for (const h of headers) {
-                                if (h === exact || h.toLowerCase() === exact.toLowerCase()) return h;
-                            }
-                        }
-                        // Depois busca por palavras-chave (todas devem estar presentes)
-                        for (const h of headers) {
-                            const hLow = h.toLowerCase();
-                            if (keywords.every(kw => hLow.indexOf(kw.toLowerCase()) > -1)) return h;
-                        }
-                        return null;
-                    };
-
-                    const colTransf = findHeader(['transfer'], 'NC - Transferência') || findHeader(['transfer']);
-                    const colTedNome = findHeader([], 'TED'); // Coluna "TED" com o nome do TED (ex: 18-EME-069)
-                    const colND = findHeader(['natureza', 'despes'], 'NC - Natureza Despesa') || findHeader(['natureza']);
-                    const colValor = findHeader(['valor', 'linha'], 'NC - Valor Linha') || findHeader(['valor']);
-                    const colData = findHeader(['emiss', 'dia'], 'Emissão - Dia') || findHeader(['dia']) || findHeader(['data']);
-
-                    console.log('[RecGerais] Colunas: TED=' + (colTedNome||'?') + ', SIAFI=' + (colTransf||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
-
-                    if (!colTransf && !colTedNome) {
-                        // Fallback: tentar formato simplificado (numTed/numTedSiafi)
-                        const colTed = findHeader(['numted']) || findHeader(['ted']);
-                        if (!colTed) {
-                            alert('❌ Não foi possível identificar a coluna do TED no arquivo.\n\nCabeçalhos encontrados:\n' + headers.join('\n') + '\n\nEsperado: coluna contendo "Transferência" ou "numTed"');
-                            return;
-                        }
-                        // Usar formato simplificado
-                    }
-
-                    // Estrutura: agrupar por TED, usando nome do TED (coluna "TED") como chave principal
-                    // e nº SIAFI (coluna "NC - Transferência") como identificador secundário
-                    const grouped = {}; // chave = tedNome ou siafi, valor = { siafi, tedNome, itens: [] }
+                    // Agrupar por NC - Transferência (nº SIAFI do TED)
+                    const grouped = {}; // chave = siafi, valor = { itens: [{nd, valor, data}] }
                     let linhasIgnoradas = 0;
 
                     rows.forEach(row => {
-                        // Obter nome do TED (ex: "18-EME-069")
-                        let tedNome = '';
-                        if (colTedNome) {
-                            tedNome = String(row[colTedNome] || '').trim();
-                        }
+                        const siafi = String(row[colSiafi] || '').trim();
+                        if (!siafi) { linhasIgnoradas++; return; }
 
-                        // Obter nº SIAFI (ex: "695556")
-                        let siafi = '';
-                        if (colTransf) {
-                            siafi = String(row[colTransf] || '').trim();
-                        }
+                        const ndRaw = String(row[colND] || '').trim();
+                        // Validar ND (somente dígitos/pontos, mínimo 4 dígitos)
+                        if (!isNDValida(ndRaw)) return;
 
-                        // Fallback para formato simplificado
-                        if (!tedNome && !siafi) {
-                            tedNome = String(row.numTed || row['numTed'] || '').trim();
-                            siafi = String(row.numTedSiafi || '').trim();
-                        }
+                        // Valor
+                        const valor = parseNumber(row[colValor] || 0);
 
-                        // Chave de agrupamento: preferir nome do TED, senão usar SIAFI
-                        const chave = tedNome || siafi;
-                        if (!chave) {
-                            linhasIgnoradas++;
-                            return;
-                        }
-
-                        // Obter ND
-                        let ndRaw = '';
-                        if (colND) {
-                            ndRaw = String(row[colND] || '').trim();
-                        }
-                        if (!ndRaw) {
-                            ndRaw = String(row.nd || row.ND || '').trim();
-                        }
-
-                        // Obter Valor
-                        let valorRaw = 0;
-                        if (colValor) {
-                            valorRaw = row[colValor];
-                        }
-                        if (!valorRaw && valorRaw !== 0) {
-                            valorRaw = row.valor || row.Valor || 0;
-                        }
-                        // Se o valor é string com vírgula (formato pt-BR), converter
-                        const valor = parseNumber(valorRaw);
-
-                        // Obter Data
-                        let dataRaw = '';
-                        if (colData) {
-                            dataRaw = String(row[colData] || '').trim();
-                        }
-                        if (!dataRaw) {
-                            dataRaw = String(row.data || row.Data || '').trim();
-                        }
-
+                        // Data (dd/mm/aaaa → yyyy-mm-dd)
                         let data = '';
+                        const dataRaw = String(row[colData] || '').trim();
                         if (dataRaw) {
-                            // Tentar formato dd/mm/aaaa
-                            const partes = dataRaw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
-                            if (partes) {
-                                data = partes[3] + '-' + partes[2].padStart(2,'0') + '-' + partes[1].padStart(2,'0');
+                            const p = dataRaw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+                            if (p) {
+                                data = p[3] + '-' + p[2].padStart(2,'0') + '-' + p[1].padStart(2,'0');
                             } else if (/^\d{4}-\d{2}-\d{2}$/.test(dataRaw)) {
                                 data = dataRaw;
-                            } else {
-                                try {
-                                    const d = new Date(dataRaw);
-                                    if (!isNaN(d.getTime())) {
-                                        data = d.toISOString().split('T')[0];
-                                    }
-                                } catch(ex) {}
                             }
                         }
 
-                        if (!grouped[chave]) grouped[chave] = { tedNome, siafi, itens: [] };
-                        // Atualizar siafi/tedNome se estiverem vazios no grupo
-                        if (siafi && !grouped[chave].siafi) grouped[chave].siafi = siafi;
-                        if (tedNome && !grouped[chave].tedNome) grouped[chave].tedNome = tedNome;
-                        grouped[chave].itens.push({ nd: ndRaw, valor, data });
+                        if (!grouped[siafi]) grouped[siafi] = { itens: [] };
+                        grouped[siafi].itens.push({ nd: ndRaw, valor, data });
                     });
 
-                    console.log('[RecGerais] TEDs no CSV:', Object.keys(grouped).length, '| Linhas s/ TED:', linhasIgnoradas);
+                    const siafiKeys = Object.keys(grouped);
+                    const totalItens = siafiKeys.reduce((s, k) => s + grouped[k].itens.length, 0);
 
-                    // Perguntar ao usuário se deseja substituir os dados existentes
-                    const totalGrupos = Object.keys(grouped).length;
-                    const totalItensCSV = Object.values(grouped).reduce((s, g) => s + g.itens.length, 0);
-                    if (!confirm(`O arquivo contém ${totalItensCSV} registro(s) de ${totalGrupos} TED(s).\n\n⚠️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS pelos dados do arquivo.\n\nDeseja continuar?`)) {
+                    console.log('[RecGerais] SIAFIs no CSV:', siafiKeys.length, '(' + siafiKeys.join(', ') + ') | Total itens:', totalItens);
+
+                    if (siafiKeys.length === 0) {
+                        alert('❌ Nenhum dado válido encontrado no arquivo.');
                         return;
                     }
+
+                    if (!confirm('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?')) {
+                        return;
+                    }
+
+                    // Normalizar SIAFI para comparação
+                    const normSiafi = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
 
                     let countTeds = 0;
                     let countItens = 0;
                     let tedsNaoEncontrados = [];
 
-                    // Normalizar string para comparação de TED
-                    const normTed = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
+                    siafiKeys.forEach(siafi => {
+                        const grupo = grouped[siafi];
+                        const normS = normSiafi(siafi);
 
-                    Object.keys(grouped).forEach(chave => {
-                        const grupo = grouped[chave];
-                        const tedNome = grupo.tedNome;
-                        const siafi = grupo.siafi;
-                        const nomNome = normTed(tedNome);
-                        const nomSiafi = normTed(siafi);
-
+                        // Procurar TED pelo numTedSiafi
                         const ted = dados.teds.find(t => {
-                            const tNome = normTed(t.numTed);
-                            const tSiafi = normTed(t.numTedSiafi);
-                            // Tentar casar por nome do TED
-                            if (nomNome && tNome && nomNome === tNome) return true;
-                            // Tentar casar por nº SIAFI
-                            if (nomSiafi && tSiafi && nomSiafi === tSiafi) return true;
-                            // Tentar casar nome do CSV com SIAFI do sistema e vice-versa
-                            if (nomNome && tSiafi && nomNome === tSiafi) return true;
-                            if (nomSiafi && tNome && nomSiafi === tNome) return true;
-                            return false;
+                            const tSiafi = normSiafi(t.numTedSiafi);
+                            return normS && tSiafi && normS === tSiafi;
                         });
 
-                        if (ted) {
-                            // LIMPAR dados antigos antes de importar (evitar acumulação)
-                            ted.recursosGerais = [];
-                            const cadNDs = {};
-                            (ted.financeiros || []).forEach(f => {
-                                const ndNorm = normalizarND(f.numero);
-                                if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
-                            });
-
-                            let itensValidos = 0;
-                            grupo.itens.forEach((row, idx) => {
-                                // Validar se o campo ND é realmente uma ND (somente dígitos/pontos)
-                                if (!isNDValida(row.nd)) {
-                                    return; // pular ND inválida (texto etc)
-                                }
-
-                                const ndImportNorm = normalizarND(row.nd);
-                                // Usar ND do cadastro (com pontos) se existir, senão formatar automaticamente
-                                const ndFinal = cadNDs[ndImportNorm] || formatarNDComPontos(row.nd);
-
-                                ted.recursosGerais.push({
-                                    id: Date.now() + idx + Math.random() * 1000,
-                                    nd: ndFinal,
-                                    valor: row.valor,
-                                    data: row.data
-                                });
-                                itensValidos++;
-                            });
-                            countTeds++;
-                            countItens += itensValidos;
-                        } else {
-                            tedsNaoEncontrados.push(tedNome || siafi);
+                        if (!ted) {
+                            tedsNaoEncontrados.push(siafi);
+                            return;
                         }
+
+                        // Limpar dados antigos deste TED
+                        ted.recursosGerais = [];
+
+                        // Mapa de NDs do cadastro financeiro (normalizada → formato com pontos)
+                        const cadNDs = {};
+                        (ted.financeiros || []).forEach(f => {
+                            const ndNorm = normalizarND(f.numero);
+                            if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
+                        });
+
+                        grupo.itens.forEach((item, idx) => {
+                            const ndImportNorm = normalizarND(item.nd);
+                            // Usar ND do cadastro (com pontos) se existir, senão formatar automaticamente
+                            const ndFinal = cadNDs[ndImportNorm] || formatarNDComPontos(item.nd);
+
+                            ted.recursosGerais.push({
+                                id: Date.now() + idx + Math.random() * 1000,
+                                nd: ndFinal,
+                                valor: item.valor,
+                                data: item.data
+                            });
+                        });
+
+                        countTeds++;
+                        countItens += grupo.itens.length;
                     });
 
                     try { salvarDados(); } catch(e) {}
                     try { atualizarTabelaRecursosGerais(); } catch(e) {}
 
-                    let msg = `${countItens} recurso(s) importado(s) para ${countTeds} TED(s)!`;
+                    let msg = countItens + ' recurso(s) importado(s) para ' + countTeds + ' TED(s)!';
                     if (tedsNaoEncontrados.length > 0) {
-                        msg += `\n⚠️ TEDs não encontrados: ${tedsNaoEncontrados.join(', ')}`;
-                        console.log('TEDs não encontrados:', tedsNaoEncontrados);
+                        msg += '\n⚠️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
                         if (countItens === 0) {
-                            alert('❌ Nenhum recurso importado!\n\nTEDs no arquivo: ' + Object.keys(grouped).join(', ') + '\n\nTEDs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => 'numTed=' + t.numTed + ' | siafi=' + t.numTedSiafi).join('\n') + '\n\nAbra o Console (F12) para mais detalhes.');
+                            alert('❌ Nenhum recurso importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + '\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
                         } else {
                             showToast(msg, 'warning');
                         }
                     } else if (countItens === 0) {
-                        alert('❌ Nenhum recurso importado. O arquivo foi lido mas não contém dados válidos.\n\nCabeçalhos: ' + headers.join(', ') + '\nLinhas: ' + rows.length + '\n\nAbra o Console (F12) para detalhes.');
+                        alert('❌ Nenhum recurso importado.\n\nCabeçalhos: ' + headers.join(', ') + '\nLinhas: ' + rows.length);
                     } else {
                         showToast(msg, 'success');
                     }
                 } catch (err) {
                     console.error('Erro na importação:', err);
-                    alert('❌ Erro ao importar: ' + err.message + '\n\nAbra o Console (F12) para detalhes.');
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
