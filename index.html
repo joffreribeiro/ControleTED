@@ -7790,43 +7790,140 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const rows = parseCSV(e.target.result);
+                    let texto = e.target.result;
+                    // Remover BOM
+                    if (texto.charCodeAt(0) === 0xFEFF) texto = texto.substring(1);
+
+                    // Detectar separador automaticamente (tab, ;, ou ,)
+                    const primeiraLinha = texto.split('\n')[0] || '';
+                    let separador = ';';
+                    if (primeiraLinha.indexOf('\t') > -1) {
+                        separador = '\t';
+                    } else if (primeiraLinha.indexOf(';') === -1 && primeiraLinha.indexOf(',') > -1) {
+                        separador = ',';
+                    }
+
+                    const lines = texto.split('\n').filter(l => l.trim());
+                    if (lines.length < 2) {
+                        alert('⚠️ Arquivo vazio ou sem dados (apenas ' + lines.length + ' linha(s))');
+                        return;
+                    }
+
+                    const headers = lines[0].split(separador).map(h => h.trim().replace(/^"|"$/g, ''));
+
+                    // DEBUG: Mostrar cabeçalhos encontrados para diagnóstico
+                    console.log('=== DIAGNÓSTICO IMPORTAÇÃO RECURSOS GERAIS ===');
+                    console.log('Separador detectado:', separador === '\t' ? 'TAB' : separador);
+                    console.log('Cabeçalhos encontrados (' + headers.length + '):', JSON.stringify(headers));
+                    console.log('Total de linhas de dados:', lines.length - 1);
+
+                    // Parsear dados
+                    const rows = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(separador).map(v => v.trim().replace(/^"|"$/g, ''));
+                        const obj = {};
+                        headers.forEach((h, idx) => {
+                            obj[h] = values[idx] || '';
+                            // Alias lowercase
+                            const low = h.toLowerCase();
+                            if (low && obj[low] === undefined) obj[low] = values[idx] || '';
+                        });
+                        rows.push(obj);
+                    }
+
+                    if (rows.length > 0) {
+                        console.log('Primeira linha de dados:', JSON.stringify(rows[0]));
+                    }
+
+                    // Buscar dinamicamente os cabeçalhos que contêm as palavras-chave
+                    // "Transferência" ou "Transferencia" → TED SIAFI
+                    // "Natureza" + "Despesa" → ND
+                    // "Valor" + "Linha" → Valor
+                    // "Dia" (em cabeçalho que contém "Emiss") → Data
+                    const findHeader = (keywords, exact) => {
+                        // Primeiro tentar correspondência exata
+                        if (exact) {
+                            for (const h of headers) {
+                                if (h === exact || h.toLowerCase() === exact.toLowerCase()) return h;
+                            }
+                        }
+                        // Depois busca por palavras-chave (todas devem estar presentes)
+                        for (const h of headers) {
+                            const hLow = h.toLowerCase();
+                            if (keywords.every(kw => hLow.indexOf(kw.toLowerCase()) > -1)) return h;
+                        }
+                        return null;
+                    };
+
+                    const colTransf = findHeader(['transfer'], 'NC - Transferência') || findHeader(['transfer']);
+                    const colND = findHeader(['natureza', 'despes'], 'NC - Natureza Despesa') || findHeader(['natureza']);
+                    const colValor = findHeader(['valor', 'linha'], 'NC - Valor Linha') || findHeader(['valor']);
+                    const colData = findHeader(['emiss', 'dia'], 'Emissão - Dia') || findHeader(['dia']) || findHeader(['data']);
+
+                    console.log('Colunas mapeadas:');
+                    console.log('  Transferência (TED):', colTransf || 'NÃO ENCONTRADA');
+                    console.log('  Natureza Despesa (ND):', colND || 'NÃO ENCONTRADA');
+                    console.log('  Valor Linha:', colValor || 'NÃO ENCONTRADA');
+                    console.log('  Emissão Dia (Data):', colData || 'NÃO ENCONTRADA');
+
+                    if (!colTransf) {
+                        // Fallback: tentar formato simplificado (numTed/numTedSiafi)
+                        const colTed = findHeader(['numted']) || findHeader(['ted']);
+                        if (!colTed) {
+                            alert('❌ Não foi possível identificar a coluna do TED no arquivo.\n\nCabeçalhos encontrados:\n' + headers.join('\n') + '\n\nEsperado: coluna contendo "Transferência" ou "numTed"');
+                            return;
+                        }
+                        // Usar formato simplificado
+                        console.log('  Usando formato simplificado, coluna TED:', colTed);
+                    }
+
                     const grouped = {};
+                    let linhasIgnoradas = 0;
+
                     rows.forEach(row => {
-                        // Mapeamento do Tesouro Gerencial:
-                        //   "NC - Transferência" ou "NC - Transferencia" → nº TED SIAFI (identifica o TED)
-                        //   "NC - Natureza Despesa" ou "NC - Natureza Despes" → ND
-                        //   "NC - Valor Linha" → Valor
-                        //   "Emissão - Dia" ou "Emissao - Dia" → Data da descentralização
-                        // Também aceita formato simplificado (numTed, nd, valor, data) para reimportação
+                        // Obter TED SIAFI
+                        let numTedSiafi = '';
+                        if (colTransf) {
+                            numTedSiafi = String(row[colTransf] || '').trim();
+                        }
+                        if (!numTedSiafi) {
+                            // Fallback para formato simplificado
+                            numTedSiafi = String(row.numTedSiafi || row.numTed || row['numTed'] || '').trim();
+                        }
 
-                        const numTedSiafi = String(
-                            row['NC - Transferência'] || row['NC - Transferencia'] ||
-                            row['nc - transferência'] || row['nc - transferencia'] ||
-                            row['NC - Transfer\u00eancia'] ||
-                            row.numTedSiafi || row.numTed || ''
-                        ).trim();
+                        if (!numTedSiafi) {
+                            linhasIgnoradas++;
+                            return;
+                        }
 
-                        if (!numTedSiafi) return;
+                        // Obter ND
+                        let ndRaw = '';
+                        if (colND) {
+                            ndRaw = String(row[colND] || '').trim();
+                        }
+                        if (!ndRaw) {
+                            ndRaw = String(row.nd || row.ND || '').trim();
+                        }
 
-                        const ndRaw = String(
-                            row['NC - Natureza Despesa'] || row['NC - Natureza Despes'] ||
-                            row['nc - natureza despesa'] || row['nc - natureza despes'] ||
-                            row.nd || row.ND || ''
-                        ).trim();
+                        // Obter Valor
+                        let valorRaw = 0;
+                        if (colValor) {
+                            valorRaw = row[colValor];
+                        }
+                        if (!valorRaw && valorRaw !== 0) {
+                            valorRaw = row.valor || row.Valor || 0;
+                        }
+                        // Se o valor é string com vírgula (formato pt-BR), converter
+                        const valor = parseNumber(valorRaw);
 
-                        const valor = parseNumber(
-                            row['NC - Valor Linha'] || row['nc - valor linha'] ||
-                            row.valor || row.Valor || 0
-                        );
-
-                        // Data: "Emissão - Dia" vem como dd/mm/aaaa — converter para yyyy-mm-dd
-                        let dataRaw = String(
-                            row['Emissão - Dia'] || row['Emissao - Dia'] ||
-                            row['emissão - dia'] || row['emissao - dia'] ||
-                            row['Emiss\u00e3o - Dia'] ||
-                            row.data || row.Data || ''
-                        ).trim();
+                        // Obter Data
+                        let dataRaw = '';
+                        if (colData) {
+                            dataRaw = String(row[colData] || '').trim();
+                        }
+                        if (!dataRaw) {
+                            dataRaw = String(row.data || row.Data || '').trim();
+                        }
 
                         let data = '';
                         if (dataRaw) {
@@ -7850,23 +7947,44 @@
                         grouped[numTedSiafi].push({ nd: ndRaw, valor, data });
                     });
 
+                    console.log('TEDs agrupados:', Object.keys(grouped));
+                    console.log('Linhas ignoradas (sem TED):', linhasIgnoradas);
+
+                    // Listar TEDs cadastrados para comparação
+                    console.log('TEDs cadastrados no sistema:');
+                    dados.teds.forEach(t => {
+                        console.log('  numTed:', t.numTed, '| numTedSiafi:', t.numTedSiafi);
+                    });
+
                     let countTeds = 0;
                     let countItens = 0;
                     let tedsNaoEncontrados = [];
 
-                    // Normalizar string para comparação de TED (remover zeros à esquerda, espaços, pontos, traços)
+                    // Normalizar string para comparação de TED
                     const normTed = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim();
 
                     Object.keys(grouped).forEach(numTedSiafi => {
-                        // Procurar TED pelo numTedSiafi OU pelo numTed, normalizando a comparação
                         const numNorm = normTed(numTedSiafi);
-                        const ted = dados.teds.find(t =>
-                            normTed(t.numTedSiafi) === numNorm ||
-                            normTed(t.numTed) === numNorm
-                        );
+                        console.log('Procurando TED:', numTedSiafi, '(normalizado:', numNorm + ')');
+
+                        const ted = dados.teds.find(t => {
+                            const siafi = normTed(t.numTedSiafi);
+                            const num = normTed(t.numTed);
+                            const match = siafi === numNorm || num === numNorm;
+                            if (!match) {
+                                // Tentar correspondência parcial (contém)
+                                const contem = (siafi && numNorm && (siafi.indexOf(numNorm) > -1 || numNorm.indexOf(siafi) > -1)) ||
+                                               (num && numNorm && (num.indexOf(numNorm) > -1 || numNorm.indexOf(num) > -1));
+                                if (contem) {
+                                    console.log('  Match parcial com TED:', t.numTed, '(siafi:', t.numTedSiafi + ')');
+                                }
+                            }
+                            return match;
+                        });
+
                         if (ted) {
+                            console.log('  → Encontrou TED:', ted.numTed);
                             ted.recursosGerais = ted.recursosGerais || [];
-                            // Construir mapa de NDs normalizadas do cadastro financeiro para usar o formato correto
                             const cadNDs = {};
                             (ted.financeiros || []).forEach(f => {
                                 const ndNorm = normalizarND(f.numero);
@@ -7874,9 +7992,7 @@
                             });
 
                             grouped[numTedSiafi].forEach((row, idx) => {
-                                // Tentar casar a ND importada com a ND do cadastro (ignorando pontos)
                                 const ndImportNorm = normalizarND(row.nd);
-                                // Se encontrar no cadastro, usar o formato com pontos do cadastro
                                 const ndFinal = cadNDs[ndImportNorm] || row.nd;
 
                                 ted.recursosGerais.push({
@@ -7890,6 +8006,7 @@
                             countItens += grouped[numTedSiafi].length;
                         } else {
                             tedsNaoEncontrados.push(numTedSiafi);
+                            console.log('  → NÃO encontrou TED!');
                         }
                     });
 
@@ -7899,12 +8016,20 @@
                     let msg = `${countItens} recurso(s) importado(s) para ${countTeds} TED(s)!`;
                     if (tedsNaoEncontrados.length > 0) {
                         msg += `\n⚠️ TEDs não encontrados: ${tedsNaoEncontrados.join(', ')}`;
-                        showToast(msg, 'warning');
+                        console.log('TEDs não encontrados:', tedsNaoEncontrados);
+                        if (countItens === 0) {
+                            alert('❌ Nenhum recurso importado!\n\nTEDs no arquivo: ' + Object.keys(grouped).join(', ') + '\n\nTEDs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => 'numTed=' + t.numTed + ' | siafi=' + t.numTedSiafi).join('\n') + '\n\nAbra o Console (F12) para mais detalhes.');
+                        } else {
+                            showToast(msg, 'warning');
+                        }
+                    } else if (countItens === 0) {
+                        alert('❌ Nenhum recurso importado. O arquivo foi lido mas não contém dados válidos.\n\nCabeçalhos: ' + headers.join(', ') + '\nLinhas: ' + rows.length + '\n\nAbra o Console (F12) para detalhes.');
                     } else {
                         showToast(msg, 'success');
                     }
                 } catch (err) {
-                    showToast('Erro ao importar: ' + err.message, 'error');
+                    console.error('Erro na importação:', err);
+                    alert('❌ Erro ao importar: ' + err.message + '\n\nAbra o Console (F12) para detalhes.');
                 }
             };
             reader.readAsText(file);
