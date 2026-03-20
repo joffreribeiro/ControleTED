@@ -6728,8 +6728,9 @@
 
         function removerRecursoGeral(nd, data) {
             if (!window.tedSelecionado) return;
+            const ndNorm = normalizarND(nd);
             window.tedSelecionado.recursosGerais = (window.tedSelecionado.recursosGerais || []).filter(r =>
-                !(String(r.nd) === nd && r.data === data)
+                !(normalizarND(r.nd) === ndNorm && r.data === data)
             );
             salvarDados();
             atualizarTabelaRecursosGerais();
@@ -6753,8 +6754,9 @@
             const dataFormatada = d.toISOString().split('T')[0];
 
             const recs = window.tedSelecionado.recursosGerais || [];
+            const ndNorm = normalizarND(nd);
             const recsDoMes = recs.filter(r => {
-                if (!r.data || String(r.nd) !== nd) return false;
+                if (!r.data || normalizarND(r.nd) !== ndNorm) return false;
                 const rd = new Date(r.data + 'T00:00:00');
                 const diff = (rd.getFullYear() - startDate.getFullYear()) * 12 + (rd.getMonth() - startDate.getMonth());
                 return diff === indiceMes;
@@ -6769,7 +6771,7 @@
 
             // Remover registros antigos deste mês/ND
             window.tedSelecionado.recursosGerais = recs.filter(r => {
-                if (!r.data || String(r.nd) !== nd) return true;
+                if (!r.data || normalizarND(r.nd) !== ndNorm) return true;
                 const rd = new Date(r.data + 'T00:00:00');
                 const diff = (rd.getFullYear() - startDate.getFullYear()) * 12 + (rd.getMonth() - startDate.getMonth());
                 return diff !== indiceMes;
@@ -6885,21 +6887,33 @@
             const cad = window.tedSelecionado.financeiros || [];
             const recs = window.tedSelecionado.recursosGerais || [];
 
-            // Conjunto de NDs presentes no cadastro ou nos recursos gerais
-            const ndsSet = new Set([
-                ...cad.map(f => String(f.numero || '')),
-                ...recs.map(r => String(r.nd || ''))
-            ].filter(Boolean));
+            // Conjunto de NDs presentes no cadastro ou nos recursos gerais (normalizadas para agrupar corretamente)
+            // Mapa: ND normalizada → ND para exibição (preferir formato do cadastro com pontos)
+            const ndDisplayMap = {};
+            cad.forEach(f => {
+                const norm = normalizarND(f.numero);
+                if (norm && !ndDisplayMap[norm]) ndDisplayMap[norm] = String(f.numero);
+            });
+            recs.forEach(r => {
+                const norm = normalizarND(r.nd);
+                if (norm && !ndDisplayMap[norm]) ndDisplayMap[norm] = String(r.nd);
+            });
 
-            if (ndsSet.size === 0) {
+            const ndsNormSet = new Set(Object.keys(ndDisplayMap));
+
+            if (ndsNormSet.size === 0) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Nenhum dado financeiro</td></tr>';
                 return;
             }
 
             // Aplicar filtros
             const filtros = window.filtrosRecGeral || { nd: [] };
-            const ndsFiltrados = Array.from(ndsSet).filter(nd => {
-                if (filtros.nd.length && !filtros.nd.includes(nd)) return false;
+            const ndsFiltrados = Array.from(ndsNormSet).filter(ndNorm => {
+                if (filtros.nd.length) {
+                    // Comparar filtro normalizado
+                    const filtrosNorm = filtros.nd.map(f => normalizarND(f));
+                    if (!filtrosNorm.includes(ndNorm)) return false;
+                }
                 return true;
             });
 
@@ -6912,21 +6926,23 @@
             let totalRealizado = 0;
             const totalMeses = new Map();
 
-            // Ordenar NDs
+            // Ordenar NDs (normalizadas)
             const sortedNDs = ndsFiltrados.sort((a, b) => {
-                const nA = parseFloat(String(a).replace(/[^0-9.-]/g, ''));
-                const nB = parseFloat(String(b).replace(/[^0-9.-]/g, ''));
+                const nA = parseFloat(String(a).replace(/[^0-9]/g, ''));
+                const nB = parseFloat(String(b).replace(/[^0-9]/g, ''));
                 if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
                 return String(a).localeCompare(String(b), undefined, {numeric:true});
             });
 
-            const linhas = sortedNDs.map(nd => {
-                // Previsto: soma do cadastro financeiro para esta ND (todas as UPs)
-                const previsto = cad.filter(f => String(f.numero) === nd)
+            const linhas = sortedNDs.map(ndNorm => {
+                const ndDisplay = ndDisplayMap[ndNorm] || ndNorm;
+
+                // Previsto: soma do cadastro financeiro para esta ND (todas as UPs), comparando normalizado
+                const previsto = cad.filter(f => normalizarND(f.numero) === ndNorm)
                                     .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
 
-                // Realizado: soma dos recursos gerais para esta ND
-                const recsList = recs.filter(r => String(r.nd) === nd);
+                // Realizado: soma dos recursos gerais para esta ND, comparando normalizado
+                const recsList = recs.filter(r => normalizarND(r.nd) === ndNorm);
                 const realizado = recsList.reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
                 const saldo = previsto - realizado;
 
@@ -6947,7 +6963,7 @@
                 });
 
                 let html = `<tr>` +
-                           `<td class="col-nd">${nd}</td>` +
+                           `<td class="col-nd">${ndDisplay}</td>` +
                            `<td class="col-valor">${previsto < 0 ? '<span style="color:#ef4444">' + previsto.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>` +
                            `<td class="col-valor">${realizado < 0 ? '<span style="color:#ef4444">' + realizado.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>` +
                            `<td class="col-saldo"><span style="font-weight:700;color:${saldo < 0 ? '#ef4444' : 'inherit'}">${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>`;
@@ -6956,7 +6972,7 @@
                     const val = mapaMes.get(i);
                     const cellBg = val ? '#e0f2fe' : 'transparent';
                     const display = (val !== undefined && val !== null && val !== '') ? (parseFloat(val) < 0 ? `<span style="color:#ef4444">${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : val.toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
-                    html += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor:pointer;" onclick="editarValorRecursoGeral('${nd}', ${i})" title="Clique para editar">${display}</td>`;
+                    html += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor:pointer;" onclick="editarValorRecursoGeral('${ndDisplay}', ${i})" title="Clique para editar">${display}</td>`;
                 });
 
                 html += '</tr>';
@@ -7764,6 +7780,11 @@
         }
 
         // IMPORTAR RECURSOS GERAIS (CSV do Tesouro Gerencial)
+        // Normalizar ND removendo pontos, traços e espaços para comparação
+        function normalizarND(nd) {
+            return String(nd || '').replace(/[\.\-\s]/g, '').trim();
+        }
+
         function importarRecursosGerais(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -7788,7 +7809,7 @@
 
                         if (!numTedSiafi) return;
 
-                        const nd = String(
+                        const ndRaw = String(
                             row['NC - Natureza Despesa'] || row['NC - Natureza Despes'] ||
                             row['nc - natureza despesa'] || row['nc - natureza despes'] ||
                             row.nd || row.ND || ''
@@ -7814,10 +7835,8 @@
                             if (partes) {
                                 data = partes[3] + '-' + partes[2].padStart(2,'0') + '-' + partes[1].padStart(2,'0');
                             } else if (/^\d{4}-\d{2}-\d{2}$/.test(dataRaw)) {
-                                // Já está no formato yyyy-mm-dd
                                 data = dataRaw;
                             } else {
-                                // Tentar Date parse genérico
                                 try {
                                     const d = new Date(dataRaw);
                                     if (!isNaN(d.getTime())) {
@@ -7828,25 +7847,43 @@
                         }
 
                         if (!grouped[numTedSiafi]) grouped[numTedSiafi] = [];
-                        grouped[numTedSiafi].push({ nd, valor, data });
+                        grouped[numTedSiafi].push({ nd: ndRaw, valor, data });
                     });
 
                     let countTeds = 0;
                     let countItens = 0;
                     let tedsNaoEncontrados = [];
 
+                    // Normalizar string para comparação de TED (remover zeros à esquerda, espaços, pontos, traços)
+                    const normTed = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim();
+
                     Object.keys(grouped).forEach(numTedSiafi => {
-                        // Procurar TED pelo numTedSiafi OU pelo numTed
+                        // Procurar TED pelo numTedSiafi OU pelo numTed, normalizando a comparação
+                        const numNorm = normTed(numTedSiafi);
                         const ted = dados.teds.find(t =>
-                            String(t.numTedSiafi || '').trim() === numTedSiafi ||
-                            String(t.numTed || '').trim() === numTedSiafi
+                            normTed(t.numTedSiafi) === numNorm ||
+                            normTed(t.numTed) === numNorm
                         );
                         if (ted) {
                             ted.recursosGerais = ted.recursosGerais || [];
+                            // Construir mapa de NDs normalizadas do cadastro financeiro para usar o formato correto
+                            const cadNDs = {};
+                            (ted.financeiros || []).forEach(f => {
+                                const ndNorm = normalizarND(f.numero);
+                                if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
+                            });
+
                             grouped[numTedSiafi].forEach((row, idx) => {
+                                // Tentar casar a ND importada com a ND do cadastro (ignorando pontos)
+                                const ndImportNorm = normalizarND(row.nd);
+                                // Se encontrar no cadastro, usar o formato com pontos do cadastro
+                                const ndFinal = cadNDs[ndImportNorm] || row.nd;
+
                                 ted.recursosGerais.push({
                                     id: Date.now() + idx + Math.random() * 1000,
-                                    ...row
+                                    nd: ndFinal,
+                                    valor: row.valor,
+                                    data: row.data
                                 });
                             });
                             countTeds++;
