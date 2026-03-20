@@ -2324,7 +2324,7 @@
                             <input type="file" accept=".csv" onchange="importarFinanceiros(this.files[0])" style="width: 100%;">
                         </div>
                         <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
-                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Exec. Financeira</label>
+                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Exec. Financeira (CSV/Tesouro Gerencial)</label>
                             <input type="file" accept=".csv" onchange="importarExecFinanceira(this.files[0])" style="width: 100%;">
                         </div>
                         <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
@@ -7748,44 +7748,227 @@
             reader.readAsText(file);
         }
 
-        // IMPORTAR EXECUÇÃO FINANCEIRA
+        // IMPORTAR EXECUÇÃO FINANCEIRA (suporta CSV simplificado e Tesouro Gerencial)
         function importarExecFinanceira(file) {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const rows = parseCSV(e.target.result);
-                    // Agrupar por numTed (normalizado como string)
-                    const grouped = {};
-                    rows.forEach(row => {
-                        if (!row.numTed || !row.nd) return;
-                        const key = String(row.numTed).trim();
-                        if (!grouped[key]) grouped[key] = [];
-                        grouped[key].push(row);
-                    });
-                    // Substituir execuções financeiras para cada TED
-                    let countTeds = 0;
-                    let countItens = 0;
-                    Object.keys(grouped).forEach(numTed => {
-                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
-                        if (ted) {
-                            ted.execFinanceiras = grouped[numTed].map((row, idx) => ({
-                                id: Date.now() + idx,
-                                nd: row.nd,
-                                up: row.up || '',
-                                valor: parseNumber(row.valor) || 0,
-                                data: row.data || ''
-                            }));
-                            // Atualizar gasto (valor realizado) a partir das execFinanceiras importadas
-                            try { atualizarGastoFromExecFinanceiras(ted); } catch(e) { try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}}
-                            countTeds++;
-                            countItens += grouped[numTed].length;
+                    let texto = e.target.result;
+                    if (texto.charCodeAt(0) === 0xFEFF) texto = texto.substring(1);
+
+                    // Mapa de códigos UG → sigla UP
+                    const mapaUP = {
+                        '168003': 'UA', '168005': 'FI', '168008': 'FE',
+                        '168006': 'FJF', '168007': 'FMCE', '168004': 'FPV'
+                    };
+
+                    // Detectar separador
+                    const primeiraLinha = texto.split('\n')[0] || '';
+                    let sep = ';';
+                    if (primeiraLinha.indexOf('\t') > -1) sep = '\t';
+                    else if (primeiraLinha.indexOf(';') === -1 && primeiraLinha.indexOf(',') > -1) sep = ',';
+
+                    // Parser CSV que respeita aspas
+                    function splitCSV(line) {
+                        const result = [];
+                        let current = '';
+                        let inQuotes = false;
+                        for (let i = 0; i < line.length; i++) {
+                            const ch = line[i];
+                            if (ch === '"') {
+                                if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+                                    current += '"'; i++;
+                                } else {
+                                    inQuotes = !inQuotes;
+                                }
+                            } else if (ch === sep && !inQuotes) {
+                                result.push(current.trim());
+                                current = '';
+                            } else {
+                                current += ch;
+                            }
                         }
-                    });
-                    try { salvarDados(); } catch(e) {}
-                    showToast(`${countItens} execução(ões) financeira(s) importada(s) para ${countTeds} TED(s)!`, 'success');
+                        result.push(current.trim());
+                        return result;
+                    }
+
+                    const lines = texto.split('\n').filter(l => l.trim());
+                    if (lines.length < 2) { alert('⚠️ Arquivo vazio.'); return; }
+
+                    const headers = splitCSV(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+
+                    // Detectar formato: Tesouro Gerencial ou simplificado (exportação do sistema)
+                    function findCol(keywords) {
+                        for (const h of headers) {
+                            const hLow = h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                            if (keywords.length > 0 && keywords.every(kw => hLow.indexOf(kw) > -1)) return h;
+                        }
+                        return null;
+                    }
+
+                    const colSiafi = findCol(['transferencia']) || findCol(['transfer']);
+                    const isTesouroGerencial = !!colSiafi;
+
+                    if (isTesouroGerencial) {
+                        // === FORMATO TESOURO GERENCIAL ===
+                        const colUP    = findCol(['favorecido', 'doc']) || findCol(['favorecido']);
+                        const colND    = findCol(['natureza', 'despes']) || findCol(['natureza']);
+                        const colValor = findCol(['valor', 'linha']) || findCol(['valor']);
+                        const colData  = findCol(['emissao', 'dia']) || findCol(['emiss', 'dia']) || findCol(['dia']);
+
+                        console.log('[ExecFin] Tesouro Gerencial - SIAFI=' + (colSiafi||'?') + ', UP=' + (colUP||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
+
+                        if (!colND) { alert('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', ')); return; }
+
+                        // Parsear dados
+                        const rows = [];
+                        for (let i = 1; i < lines.length; i++) {
+                            const values = splitCSV(lines[i]).map(v => v.replace(/^"|"$/g, '').trim());
+                            const obj = {};
+                            headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
+                            rows.push(obj);
+                        }
+
+                        // Agrupar por SIAFI
+                        const grouped = {};
+                        rows.forEach(row => {
+                            const siafi = String(row[colSiafi] || '').trim();
+                            if (!siafi) return;
+
+                            const ndRaw = String(row[colND] || '').trim();
+                            if (!isNDValida(ndRaw)) return;
+
+                            // Converter código UG para sigla UP
+                            let upRaw = colUP ? String(row[colUP] || '').trim() : '';
+                            const upSigla = mapaUP[upRaw] || upRaw;
+
+                            const valor = parseNumber(row[colValor] || 0);
+
+                            let data = '';
+                            const dataRaw = colData ? String(row[colData] || '').trim() : '';
+                            if (dataRaw) {
+                                const p = dataRaw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+                                if (p) data = p[3] + '-' + p[2].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+                                else if (/^\d{4}-\d{2}-\d{2}$/.test(dataRaw)) data = dataRaw;
+                            }
+
+                            if (!grouped[siafi]) grouped[siafi] = { itens: [] };
+                            grouped[siafi].itens.push({ nd: ndRaw, up: upSigla, valor, data });
+                        });
+
+                        const siafiKeys = Object.keys(grouped);
+                        const totalItens = siafiKeys.reduce((s, k) => s + grouped[k].itens.length, 0);
+
+                        if (siafiKeys.length === 0) { alert('❌ Nenhum dado válido encontrado.'); return; }
+
+                        if (!confirm('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Execução Financeira existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?')) return;
+
+                        const normSiafi = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
+
+                        let countTeds = 0, countItens = 0;
+                        let tedsNaoEncontrados = [];
+
+                        siafiKeys.forEach(siafi => {
+                            const grupo = grouped[siafi];
+                            const normS = normSiafi(siafi);
+
+                            const ted = dados.teds.find(t => {
+                                const tSiafi = normSiafi(t.numTedSiafi);
+                                return normS && tSiafi && normS === tSiafi;
+                            });
+
+                            if (!ted) { tedsNaoEncontrados.push(siafi); return; }
+
+                            ted.execFinanceiras = ted.execFinanceiras || [];
+                            // Limpar dados antigos deste TED
+                            ted.execFinanceiras = [];
+
+                            // Mapa NDs do cadastro financeiro
+                            const cadNDs = {};
+                            (ted.financeiros || []).forEach(f => {
+                                const ndNorm = normalizarND(f.numero);
+                                if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
+                            });
+
+                            grupo.itens.forEach((item, idx) => {
+                                const ndImportNorm = normalizarND(item.nd);
+                                const ndFinal = cadNDs[ndImportNorm] || formatarNDComPontos(item.nd);
+
+                                ted.execFinanceiras.push({
+                                    id: Date.now() + idx + Math.random() * 1000,
+                                    nd: ndFinal,
+                                    numero: ndFinal,
+                                    up: item.up,
+                                    ug: item.up,
+                                    valor: item.valor,
+                                    valorRealizado: item.valor,
+                                    data: item.data
+                                });
+                            });
+
+                            try { atualizarGastoFromExecFinanceiras(ted); } catch(ex) {
+                                try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}
+                            }
+                            countTeds++;
+                            countItens += grupo.itens.length;
+                        });
+
+                        try { salvarDados(); } catch(ex) {}
+                        try { atualizarTabelaExecFinanceira(); } catch(ex) {}
+
+                        let msg = countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!';
+                        if (tedsNaoEncontrados.length > 0) {
+                            msg += '\n⚠️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
+                            if (countItens === 0) {
+                                alert('❌ Nenhum dado importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + '\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
+                            } else {
+                                showToast(msg, 'warning');
+                            }
+                        } else if (countItens === 0) {
+                            alert('❌ Nenhum dado importado.\n\nCabeçalhos: ' + headers.join(', '));
+                        } else {
+                            showToast(msg, 'success');
+                        }
+
+                    } else {
+                        // === FORMATO SIMPLIFICADO (exportação do próprio sistema) ===
+                        const rows = parseCSV(texto);
+                        const grouped = {};
+                        rows.forEach(row => {
+                            if (!row.numTed || !row.nd) return;
+                            const key = String(row.numTed).trim();
+                            if (!grouped[key]) grouped[key] = [];
+                            grouped[key].push(row);
+                        });
+                        let countTeds = 0, countItens = 0;
+                        Object.keys(grouped).forEach(numTed => {
+                            const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                            if (ted) {
+                                ted.execFinanceiras = grouped[numTed].map((row, idx) => ({
+                                    id: Date.now() + idx,
+                                    nd: row.nd,
+                                    numero: row.nd,
+                                    up: row.up || '',
+                                    ug: row.up || '',
+                                    valor: parseNumber(row.valor) || 0,
+                                    valorRealizado: parseNumber(row.valor) || 0,
+                                    data: row.data || ''
+                                }));
+                                try { atualizarGastoFromExecFinanceiras(ted); } catch(ex) {
+                                    try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}
+                                }
+                                countTeds++;
+                                countItens += grouped[numTed].length;
+                            }
+                        });
+                        try { salvarDados(); } catch(ex) {}
+                        try { atualizarTabelaExecFinanceira(); } catch(ex) {}
+                        showToast(countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!', 'success');
+                    }
                 } catch (err) {
-                    showToast('Erro ao importar: ' + err.message, 'error');
+                    console.error('Erro na importação:', err);
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
