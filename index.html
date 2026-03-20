@@ -2132,73 +2132,50 @@
 
                     <!-- RECURSOS GERAIS IMBEL (por ND, sem separar por UP) -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL (Tesouro Gerencial)</h3>
-                        <p style="font-size:0.8rem; color:var(--text); margin-bottom:1rem; opacity:0.7;">Controle geral dos recursos repassados para a IMBEL, agrupados por Natureza de Despesa (ND). Dados extraídos do Tesouro Gerencial.</p>
-
-                        <!-- Formulário de adição -->
-                        <div style="display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 0.75rem; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
-                                <label>Ano Emissão *</label>
-                                <input type="number" id="rgAnoEmissao" min="2015" max="2040" placeholder="2024" required>
-                            </div>
-                            <div class="form-group">
-                                <label>ND (Natureza Despesa) *</label>
-                                <input type="text" id="rgND" placeholder="449030" required>
+                                <label>ND *</label>
+                                <select id="ndRecGeral" required>
+                                    <option value="">-- Selecione --</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$) *</label>
-                                <input type="number" id="rgValor" step="0.01" placeholder="0.00" required>
+                                <input type="number" id="valorRecGeral" step="0.01" placeholder="0.00" required>
                             </div>
                             <div class="form-group">
-                                <label>Fonte Recursos</label>
-                                <input type="text" id="rgFonteRecursos" placeholder="0100000000">
+                                <label>Data *</label>
+                                <input type="date" id="dataRecGeral" required>
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="visibility: hidden;">.</label>
                                 <button type="button" class="btn btn-primary" onclick="adicionarRecursoGeral()" style="width: 100%; height: 37px;">Adicionar</button>
                             </div>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
-                            <div class="form-group">
-                                <label>NC (Nota de Crédito)</label>
-                                <input type="text" id="rgNC" placeholder="160087000012020NC002713">
-                            </div>
-                            <div class="form-group">
-                                <label>PTRES</label>
-                                <input type="text" id="rgPTRES" placeholder="171406">
-                            </div>
-                            <div class="form-group">
-                                <label>Plano Interno</label>
-                                <input type="text" id="rgPlanoInterno" placeholder="F8CPRCODEGE">
-                            </div>
-                            <div class="form-group">
-                                <label>Observação</label>
-                                <input type="text" id="rgObservacao" placeholder="Descrição do recurso">
-                            </div>
-                        </div>
 
-                        <!-- Tabela de Recursos Gerais -->
-                        <div class="table-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem;">
-                            <table id="tabelaRecursosGeraisTable" class="tabela-padrao" style="min-width: 700px;">
+                        <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
+                            <!-- Filtros Recursos Gerais -->
+                            <div class="filter-bar" id="filterBarRecGeral">
+                                <span class="filter-bar-label">Filtrar:</span>
+                                <div class="filter-btn" id="filterNdRecGeralBtn" onclick="toggleFilterMenu('filterNdRecGeralMenu')">
+                                    <span id="filterNdRecGeralLabel">ND</span>
+                                    <div class="filter-menu" id="filterNdRecGeralMenu"></div>
+                                </div>
+                            </div>
+                            <table id="tabelaRecursosGeraisTable" class="tabela-padrao" style="min-width: 500px;">
                                 <thead>
                                     <tr>
-                                        <th style="width:100px;">ND</th>
-                                        <th style="text-align:right;">Total Previsto</th>
-                                        <th style="text-align:right;">Qtd Registros</th>
-                                        <th style="width:50px;"></th>
+                                        <th class="col-nd">ND</th>
+                                        <th class="col-valor">Valor Previsto</th>
+                                        <th class="col-valor">Valor Realizado</th>
+                                        <th class="col-saldo">Saldo</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaRecursosGerais">
-                                    <tr><td colspan="4" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum recurso cadastrado</td></tr>
+                                    <tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum recurso geral cadastrado</td></tr>
                                 </tbody>
                             </table>
-                        </div>
-
-                        <!-- Resumo -->
-                        <div style="display: flex; gap: 1.5rem; margin-top: 0.75rem; padding: 0.75rem; background: var(--bg); border-radius: 0.25rem; font-size: 0.85rem;">
-                            <div><strong>Total Geral:</strong> R$ <span id="rgTotalGeral">0,00</span></div>
-                            <div><strong>Total de NDs:</strong> <span id="rgTotalNDs">0</span></div>
-                            <div><strong>Total de Registros:</strong> <span id="rgTotalRegistros">0</span></div>
                         </div>
                     </div>
 
@@ -3374,6 +3351,7 @@
             atualizarTabelaFinanceira();
             atualizarOpcoesExecFinanceira();
             atualizarTabelaExecFinanceira();
+            atualizarOpcoesRecGeral();
             atualizarTabelaRecursosGerais();
             atualizarGantt();
             // Atualizar gráfico de entregas na visualização de detalhes (se ativo)
@@ -4864,6 +4842,7 @@
             salvarDados();
             atualizarTabelasEmCascata('financeiros');
             atualizarOpcoesExecFinanceira();
+            atualizarOpcoesRecGeral();
             atualizarGantt();
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
             document.getElementById('numFinanceiro').value = '';
@@ -4890,6 +4869,7 @@
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
             atualizarTabelasEmCascata('financeiros');
             atualizarOpcoesExecFinanceira();
+            atualizarOpcoesRecGeral();
             atualizarGantt();
         }
 
@@ -4901,6 +4881,7 @@
             salvarDados();
             atualizarTabelasEmCascata('financeiros');
             atualizarOpcoesExecFinanceira();
+            atualizarOpcoesRecGeral();
             atualizarGantt();
         }
 
@@ -6691,6 +6672,31 @@
         // =============================================
         // RECURSOS GERAIS IMBEL (Tesouro Gerencial)
         // =============================================
+        // Mesma lógica da Execução Financeira, porém agrupado somente por ND (sem UP)
+
+        window.filtrosRecGeral = { nd: [] };
+
+        function atualizarOpcoesRecGeral() {
+            const selectND = document.getElementById('ndRecGeral');
+            if (!selectND) return;
+            if (!window.tedSelecionado) {
+                selectND.innerHTML = '<option value="">-- Selecione um TED --</option>';
+                return;
+            }
+            const cad = window.tedSelecionado.financeiros || [];
+            if (!cad.length) {
+                selectND.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
+                return;
+            }
+            const ndsUnicos = Array.from(new Set(cad.map(f => f.numero))).sort((a,b) => {
+                const nA = parseFloat(String(a).replace(/[^0-9.-]/g,''));
+                const nB = parseFloat(String(b).replace(/[^0-9.-]/g,''));
+                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                return String(a).localeCompare(String(b), undefined, {numeric:true});
+            });
+            selectND.innerHTML = '<option value="">-- Selecione ND --</option>' +
+                ndsUnicos.map(nd => `<option value="${nd}">${nd}</option>`).join('');
+        }
 
         function adicionarRecursoGeral() {
             if (!window.tedSelecionado) {
@@ -6698,197 +6704,282 @@
                 return;
             }
 
-            const anoEmissao = parseInt(document.getElementById('rgAnoEmissao').value);
-            const nd = document.getElementById('rgND').value.trim();
-            const valor = parseNumber(document.getElementById('rgValor').value);
-            const fonteRecursos = document.getElementById('rgFonteRecursos').value.trim();
-            const nc = document.getElementById('rgNC').value.trim();
-            const ptres = document.getElementById('rgPTRES').value.trim();
-            const planoInterno = document.getElementById('rgPlanoInterno').value.trim();
-            const observacao = document.getElementById('rgObservacao').value.trim();
+            const nd = document.getElementById('ndRecGeral').value.trim();
+            const valor = parseNumber(document.getElementById('valorRecGeral').value);
+            const data = document.getElementById('dataRecGeral').value;
 
-            if (!anoEmissao || !nd || isNaN(valor)) {
-                alert('⚠️ Preencha Ano, ND e Valor (campos obrigatórios)');
+            if (!nd || isNaN(valor) || !data) {
+                alert('⚠️ Preencha todos os campos (ND, Valor e Data)');
                 return;
             }
 
             window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
-            window.tedSelecionado.recursosGerais.push({
-                id: Date.now(),
-                anoEmissao,
-                nd,
-                valor,
-                fonteRecursos,
-                nc,
-                ptres,
-                planoInterno,
-                observacao
+            window.tedSelecionado.recursosGerais.push({ id: Date.now(), nd, valor, data });
+
+            salvarDados();
+            atualizarTabelaRecursosGerais();
+
+            document.getElementById('ndRecGeral').value = '';
+            document.getElementById('valorRecGeral').value = '';
+            document.getElementById('dataRecGeral').value = '';
+
+            showToast('Recurso Geral adicionado com sucesso!', 'success');
+        }
+
+        function removerRecursoGeral(nd, data) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.recursosGerais = (window.tedSelecionado.recursosGerais || []).filter(r =>
+                !(String(r.nd) === nd && r.data === data)
+            );
+            salvarDados();
+            atualizarTabelaRecursosGerais();
+        }
+
+        function editarValorRecursoGeral(nd, indiceMes) {
+            if (!window.tedSelecionado) return;
+
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                alert('⚠️ Data de descentralização não definida');
+                return;
+            }
+
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + indiceMes);
+            const dataFormatada = d.toISOString().split('T')[0];
+
+            const recs = window.tedSelecionado.recursosGerais || [];
+            const recsDoMes = recs.filter(r => {
+                if (!r.data || String(r.nd) !== nd) return false;
+                const rd = new Date(r.data + 'T00:00:00');
+                const diff = (rd.getFullYear() - startDate.getFullYear()) * 12 + (rd.getMonth() - startDate.getMonth());
+                return diff === indiceMes;
             });
 
+            const valorAtual = recsDoMes.reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+            const novoValor = prompt(`Editar valor de ND: ${nd} em ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}:\n\nValor atual: ${valorAtual.toLocaleString('pt-BR',{minimumFractionDigits:2})}\nDigite o novo valor:`, valorAtual);
+
+            if (novoValor === null) return;
+            const val = parseNumber(novoValor);
+            if (isNaN(val)) { alert('⚠️ Valor inválido'); return; }
+
+            // Remover registros antigos deste mês/ND
+            window.tedSelecionado.recursosGerais = recs.filter(r => {
+                if (!r.data || String(r.nd) !== nd) return true;
+                const rd = new Date(r.data + 'T00:00:00');
+                const diff = (rd.getFullYear() - startDate.getFullYear()) * 12 + (rd.getMonth() - startDate.getMonth());
+                return diff !== indiceMes;
+            });
+
+            // Adicionar novo registro se valor != 0
+            if (val !== 0) {
+                window.tedSelecionado.recursosGerais.push({ id: Date.now(), nd, valor: val, data: dataFormatada });
+            }
+
             salvarDados();
             atualizarTabelaRecursosGerais();
-
-            // Limpar formulário
-            document.getElementById('rgAnoEmissao').value = '';
-            document.getElementById('rgND').value = '';
-            document.getElementById('rgValor').value = '';
-            document.getElementById('rgFonteRecursos').value = '';
-            document.getElementById('rgNC').value = '';
-            document.getElementById('rgPTRES').value = '';
-            document.getElementById('rgPlanoInterno').value = '';
-            document.getElementById('rgObservacao').value = '';
-
-            showToast('Recurso adicionado com sucesso!', 'success');
         }
 
-        function removerRecursoGeral(id) {
+        function popularFiltrosRecGeral() {
             if (!window.tedSelecionado) return;
-            if (!confirm('Deseja remover este registro?')) return;
-            window.tedSelecionado.recursosGerais = (window.tedSelecionado.recursosGerais || []).filter(r => r.id !== id);
-            salvarDados();
+            const recs = window.tedSelecionado.recursosGerais || [];
+            const cad = window.tedSelecionado.financeiros || [];
+            const nds = [...new Set([
+                ...cad.map(f => String(f.numero || '')),
+                ...recs.map(r => String(r.nd || ''))
+            ])].filter(Boolean).sort();
+            popularMenuFiltroRecGeral('filterNdRecGeralMenu', nds);
+        }
+
+        function popularMenuFiltroRecGeral(menuId, valores) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            const selecionados = window.filtrosRecGeral.nd || [];
+            let html = '';
+            valores.forEach(v => {
+                const checked = selecionados.includes(v) ? 'checked' : '';
+                html += `<label><input type="checkbox" value="${v}" ${checked} onchange="onFiltroRecGeralChange('${v}', this.checked)">${v}</label>`;
+            });
+            html += `<button class="filter-clear-btn" onclick="limparFiltroRecGeral()">Limpar</button>`;
+            menu.innerHTML = html;
+        }
+
+        function onFiltroRecGeralChange(valor, checked) {
+            if (checked) {
+                if (!window.filtrosRecGeral.nd.includes(valor)) window.filtrosRecGeral.nd.push(valor);
+            } else {
+                window.filtrosRecGeral.nd = window.filtrosRecGeral.nd.filter(v => v !== valor);
+            }
             atualizarTabelaRecursosGerais();
         }
 
-        function editarRecursoGeral(id) {
-            if (!window.tedSelecionado) return;
-            const rec = (window.tedSelecionado.recursosGerais || []).find(r => r.id === id);
-            if (!rec) return;
-
-            // Preencher formulário com dados existentes
-            document.getElementById('rgAnoEmissao').value = rec.anoEmissao || '';
-            document.getElementById('rgND').value = rec.nd || '';
-            document.getElementById('rgValor').value = rec.valor || '';
-            document.getElementById('rgFonteRecursos').value = rec.fonteRecursos || '';
-            document.getElementById('rgNC').value = rec.nc || '';
-            document.getElementById('rgPTRES').value = rec.ptres || '';
-            document.getElementById('rgPlanoInterno').value = rec.planoInterno || '';
-            document.getElementById('rgObservacao').value = rec.observacao || '';
-
-            // Remover para permitir re-adição
-            window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais.filter(r => r.id !== id);
-            salvarDados();
+        function limparFiltroRecGeral() {
+            window.filtrosRecGeral.nd = [];
             atualizarTabelaRecursosGerais();
-        }
-
-        // Estado de expansão dos grupos de ND na tabela
-        window.rgGruposExpandidos = {};
-
-        function toggleGrupoND(nd) {
-            window.rgGruposExpandidos[nd] = !window.rgGruposExpandidos[nd];
-            atualizarTabelaRecursosGerais();
+            popularFiltrosRecGeral();
         }
 
         function atualizarTabelaRecursosGerais() {
             const tbody = document.getElementById('tabelaRecursosGerais');
-            const spanTotal = document.getElementById('rgTotalGeral');
-            const spanNDs = document.getElementById('rgTotalNDs');
-            const spanRegs = document.getElementById('rgTotalRegistros');
+            const tableEl = document.getElementById('tabelaRecursosGeraisTable');
 
-            if (!tbody) return;
+            if (!tbody || !tableEl) return;
+
+            // Popular filtros
+            try { popularFiltrosRecGeral(); } catch(e) {}
 
             if (!window.tedSelecionado) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
-                if (spanTotal) spanTotal.textContent = '0,00';
-                if (spanNDs) spanNDs.textContent = '0';
-                if (spanRegs) spanRegs.textContent = '0';
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
                 return;
             }
 
-            const recursos = window.tedSelecionado.recursosGerais || [];
-
-            if (recursos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:var(--text);">Nenhum recurso cadastrado</td></tr>';
-                if (spanTotal) spanTotal.textContent = '0,00';
-                if (spanNDs) spanNDs.textContent = '0';
-                if (spanRegs) spanRegs.textContent = '0';
-                return;
+            // Base (60 meses) - mesma lógica da Execução Financeira
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
             }
 
-            // Agrupar por ND
-            const grupos = {};
-            recursos.forEach(r => {
-                const nd = r.nd || 'Sem ND';
-                if (!grupos[nd]) grupos[nd] = [];
-                grupos[nd].push(r);
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const dd = new Date(startDate);
+                dd.setMonth(dd.getMonth() + i);
+                const mes = dd.toLocaleString('pt-BR', {month:'short'}).replace('.','').toUpperCase();
+                const ano2 = String(dd.getFullYear()).slice(-2);
+                meses.push({label:`${mes}/${ano2}`, ano:dd.getFullYear(), mes:dd.getMonth()+1, fullYear:dd.getFullYear()});
+            }
+
+            const anos = [];
+            meses.forEach(m => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ano:m.ano, count:1}); else anos[anos.length-1].count += 1;
             });
+
+            // Cabeçalho com rowspan (sem UP)
+            let hr1 = tableEl.querySelector('thead tr');
+            let hdr = '<th rowspan="2" class="col-nd">ND</th>' +
+                      '<th rowspan="2" class="col-valor">Valor Previsto</th>' +
+                      '<th rowspan="2" class="col-valor">Valor Realizado</th>' +
+                      '<th rowspan="2" class="col-saldo">Saldo</th>';
+            anos.forEach(a => {
+                hdr += `<th style="text-align:center;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            hr1.innerHTML = hdr;
+
+            let hr2 = tableEl.querySelector('thead tr:nth-child(2)');
+            if (hr2) hr2.remove();
+            hr2 = document.createElement('tr');
+            hr2.className = 'header-meses';
+            let hdr2 = '';
+            meses.forEach(m => { hdr2 += `<th>${m.label}</th>`; });
+            hr2.innerHTML = hdr2;
+            tableEl.querySelector('thead').appendChild(hr2);
+
+            // Dados: cadastro financeiro (previsto) agrupado por ND (somando todas as UPs)
+            const cad = window.tedSelecionado.financeiros || [];
+            const recs = window.tedSelecionado.recursosGerais || [];
+
+            // Conjunto de NDs presentes no cadastro ou nos recursos gerais
+            const ndsSet = new Set([
+                ...cad.map(f => String(f.numero || '')),
+                ...recs.map(r => String(r.nd || ''))
+            ].filter(Boolean));
+
+            if (ndsSet.size === 0) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Nenhum dado financeiro</td></tr>';
+                return;
+            }
+
+            // Aplicar filtros
+            const filtros = window.filtrosRecGeral || { nd: [] };
+            const ndsFiltrados = Array.from(ndsSet).filter(nd => {
+                if (filtros.nd.length && !filtros.nd.includes(nd)) return false;
+                return true;
+            });
+
+            if (ndsFiltrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Nenhum dado com os filtros aplicados</td></tr>';
+                return;
+            }
+
+            let totalPrevisto = 0;
+            let totalRealizado = 0;
+            const totalMeses = new Map();
 
             // Ordenar NDs
-            const ndsOrdenados = Object.keys(grupos).sort((a, b) => {
-                const nA = parseFloat(a.replace(/[^0-9.-]/g, ''));
-                const nB = parseFloat(b.replace(/[^0-9.-]/g, ''));
+            const sortedNDs = ndsFiltrados.sort((a, b) => {
+                const nA = parseFloat(String(a).replace(/[^0-9.-]/g, ''));
+                const nB = parseFloat(String(b).replace(/[^0-9.-]/g, ''));
                 if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
-                return a.localeCompare(b, undefined, { numeric: true });
+                return String(a).localeCompare(String(b), undefined, {numeric:true});
             });
 
-            let html = '';
-            let totalGeral = 0;
-            let totalRegistros = 0;
+            const linhas = sortedNDs.map(nd => {
+                // Previsto: soma do cadastro financeiro para esta ND (todas as UPs)
+                const previsto = cad.filter(f => String(f.numero) === nd)
+                                    .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
 
-            ndsOrdenados.forEach(nd => {
-                const itens = grupos[nd];
-                const totalND = itens.reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
-                totalGeral += totalND;
-                totalRegistros += itens.length;
-                const expandido = window.rgGruposExpandidos[nd];
-                const icone = expandido ? '▼' : '▶';
+                // Realizado: soma dos recursos gerais para esta ND
+                const recsList = recs.filter(r => String(r.nd) === nd);
+                const realizado = recsList.reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+                const saldo = previsto - realizado;
 
-                // Linha do grupo (ND)
-                html += `<tr style="background: var(--bg); cursor: pointer; font-weight: 600;" onclick="toggleGrupoND('${nd.replace(/'/g, "\\'")}')">`;
-                html += `<td><span style="margin-right:0.3rem;">${icone}</span> ${nd}</td>`;
-                html += `<td style="text-align:right;">${totalND.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>`;
-                html += `<td style="text-align:right;">${itens.length}</td>`;
-                html += `<td></td>`;
-                html += `</tr>`;
+                totalPrevisto += previsto;
+                totalRealizado += realizado;
 
-                // Linhas detalhadas (se expandido)
-                if (expandido) {
-                    // Sub-cabeçalho
-                    html += `<tr style="background: #f0f4f8; font-size:0.75rem; font-weight:600;">`;
-                    html += `<td>Ano</td><td>NC</td><td>Fonte</td><td>PTRES</td>`;
-                    html += `</tr>`;
-                    html += `<tr style="background: #f0f4f8; font-size:0.75rem; font-weight:600;">`;
-                    html += `<td>Plano Interno</td><td style="text-align:right;">Valor</td><td colspan="1">Observação</td><td>Ações</td>`;
-                    html += `</tr>`;
+                // Mapear valores por mês (cronograma 60 meses)
+                const mapaMes = new Map();
+                recsList.forEach(r => {
+                    if (!r.data) return;
+                    const rd = new Date(r.data + 'T00:00:00');
+                    const diff = (rd.getFullYear() - startDate.getFullYear()) * 12 + (rd.getMonth() - startDate.getMonth());
+                    if (diff >= 0 && diff < 60) mapaMes.set(diff, (mapaMes.get(diff) || 0) + (parseFloat(r.valor) || 0));
+                });
 
-                    // Ordenar itens por ano e valor
-                    const itensOrdenados = [...itens].sort((a, b) => {
-                        if (a.anoEmissao !== b.anoEmissao) return (a.anoEmissao || 0) - (b.anoEmissao || 0);
-                        return (parseNumber(b.valor) || 0) - (parseNumber(a.valor) || 0);
-                    });
+                mapaMes.forEach((val, idxMes) => {
+                    totalMeses.set(idxMes, (totalMeses.get(idxMes) || 0) + val);
+                });
 
-                    itensOrdenados.forEach(r => {
-                        const val = parseNumber(r.valor) || 0;
-                        // Linha 1: Ano, NC, Fonte, PTRES
-                        html += `<tr style="font-size:0.8rem; border-bottom: none;">`;
-                        html += `<td>${r.anoEmissao || '-'}</td>`;
-                        html += `<td style="font-size:0.7rem;">${r.nc || '-'}</td>`;
-                        html += `<td>${r.fonteRecursos || '-'}</td>`;
-                        html += `<td>${r.ptres || '-'}</td>`;
-                        html += `</tr>`;
-                        // Linha 2: Plano Interno, Valor, Obs, Ações
-                        html += `<tr style="font-size:0.8rem; border-bottom: 1px solid #e5e7eb;">`;
-                        html += `<td>${r.planoInterno || '-'}</td>`;
-                        html += `<td style="text-align:right; font-weight:600;${val < 0 ? ' color:#ef4444;' : ''}">${val.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>`;
-                        html += `<td style="font-size:0.7rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${(r.observacao || '').replace(/"/g, '&quot;')}">${r.observacao || '-'}</td>`;
-                        html += `<td style="white-space:nowrap;"><button class="btn" style="padding:2px 6px; font-size:0.7rem; margin-right:2px;" onclick="editarRecursoGeral(${r.id})">✏️</button><button class="btn" style="padding:2px 6px; font-size:0.7rem; color:#ef4444;" onclick="removerRecursoGeral(${r.id})">🗑</button></td>`;
-                        html += `</tr>`;
-                    });
-                }
-            });
+                let html = `<tr>` +
+                           `<td class="col-nd">${nd}</td>` +
+                           `<td class="col-valor">${previsto < 0 ? '<span style="color:#ef4444">' + previsto.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>` +
+                           `<td class="col-valor">${realizado < 0 ? '<span style="color:#ef4444">' + realizado.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>` +
+                           `<td class="col-saldo"><span style="font-weight:700;color:${saldo < 0 ? '#ef4444' : 'inherit'}">${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>`;
+
+                meses.forEach((_, i) => {
+                    const val = mapaMes.get(i);
+                    const cellBg = val ? '#e0f2fe' : 'transparent';
+                    const display = (val !== undefined && val !== null && val !== '') ? (parseFloat(val) < 0 ? `<span style="color:#ef4444">${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : val.toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
+                    html += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor:pointer;" onclick="editarValorRecursoGeral('${nd}', ${i})" title="Clique para editar">${display}</td>`;
+                });
+
+                html += '</tr>';
+                return html;
+            }).join('');
+
+            const totalSaldo = totalPrevisto - totalRealizado;
 
             // Linha de total
-            html += `<tr class="linha-total" style="font-weight:700; background: var(--bg);">`;
-            html += `<td>TOTAL</td>`;
-            html += `<td style="text-align:right;">${totalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>`;
-            html += `<td style="text-align:right;">${totalRegistros}</td>`;
-            html += `<td></td>`;
-            html += `</tr>`;
+            let totalRow = '<tr class="linha-total">';
+            totalRow += '<td class="col-nd">TOTAL</td>';
+            totalRow += `<td class="col-valor">${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td class="col-valor">${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+            totalRow += `<td class="col-saldo"><span style="font-weight:700;color:${totalSaldo < 0 ? '#ef4444' : 'inherit'}">${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>`;
+            meses.forEach((_, idx) => {
+                const val = totalMeses.get(idx);
+                const cellBg = val ? '#e0f2fe' : 'transparent';
+                const display = (val !== undefined && val !== null && val !== '') ? (parseFloat(val) < 0 ? `<span style="color:#ef4444">${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : val.toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
+                totalRow += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem;">${display}</td>`;
+            });
+            totalRow += '</tr>';
 
-            tbody.innerHTML = html;
-
-            if (spanTotal) spanTotal.textContent = totalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2});
-            if (spanNDs) spanNDs.textContent = ndsOrdenados.length;
-            if (spanRegs) spanRegs.textContent = totalRegistros;
+            tbody.innerHTML = linhas + totalRow;
         }
 
         // Atualizar tabelas em cascata após alteração de dados
@@ -7163,19 +7254,13 @@
                 (ted.recursosGerais || []).forEach(r => {
                     rows.push({
                         numTed: ted.numTed,
-                        id: r.id,
-                        anoEmissao: r.anoEmissao,
                         nd: r.nd,
                         valor: r.valor,
-                        fonteRecursos: r.fonteRecursos,
-                        nc: r.nc,
-                        ptres: r.ptres,
-                        planoInterno: r.planoInterno,
-                        observacao: r.observacao
+                        data: r.data
                     });
                 });
             });
-            const headers = ['numTed', 'id', 'anoEmissao', 'nd', 'valor', 'fonteRecursos', 'nc', 'ptres', 'planoInterno', 'observacao'];
+            const headers = ['numTed', 'nd', 'valor', 'data'];
             const csv = arrayToCSV(rows, headers);
             downloadFile(csv, 'recursos_gerais_export.csv');
             showToast('Recursos Gerais exportados com sucesso!', 'success');
@@ -7685,23 +7770,16 @@
             reader.onload = function(e) {
                 try {
                     const rows = parseCSV(e.target.result);
-                    // Agrupar por numTed (normalizado como string)
                     const grouped = {};
                     rows.forEach(row => {
-                        // Tentar mapear colunas do Tesouro Gerencial
-                        const numTed = String(row.numTed || row['numTed'] || '').trim();
+                        const numTed = String(row.numTed || '').trim();
                         if (!numTed) return;
                         if (!grouped[numTed]) grouped[numTed] = [];
 
                         grouped[numTed].push({
-                            anoEmissao: parseInt(row.anoEmissao || row['Emissão - Ano'] || row['Emissao - Ano'] || row['anoEmissao'] || 0),
-                            nd: String(row.nd || row['NC - Natureza Despes'] || row['NC - Natureza Despesa'] || row['ND'] || '').trim(),
-                            valor: parseNumber(row.valor || row['NC - Valor Linha'] || row['Valor'] || 0),
-                            fonteRecursos: String(row.fonteRecursos || row['NC - Fonte Recursos'] || row['Fonte'] || '').trim(),
-                            nc: String(row.nc || row['NC'] || row['NC - Transferência'] || '').trim(),
-                            ptres: String(row.ptres || row['NC - PTRES'] || row['PTRES'] || '').trim(),
-                            planoInterno: String(row.planoInterno || row['NC - Plano Interno'] || row['Plano Interno'] || '').trim(),
-                            observacao: String(row.observacao || row['Doc - Observação'] || row['Doc - Observacao'] || row['Observação'] || '').trim()
+                            nd: String(row.nd || row['ND'] || '').trim(),
+                            valor: parseNumber(row.valor || row['Valor'] || 0),
+                            data: String(row.data || row['Data'] || '').trim()
                         });
                     });
 
