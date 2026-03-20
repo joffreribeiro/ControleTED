@@ -6790,10 +6790,22 @@
             if (!window.tedSelecionado) return;
             const recs = window.tedSelecionado.recursosGerais || [];
             const cad = window.tedSelecionado.financeiros || [];
-            const nds = [...new Set([
-                ...cad.map(f => String(f.numero || '')),
-                ...recs.map(r => String(r.nd || ''))
-            ])].filter(Boolean).sort();
+            // Agrupar por ND normalizada, preferindo formato com pontos do cadastro
+            const ndMap = {};
+            cad.forEach(f => {
+                const norm = normalizarND(f.numero);
+                if (norm && !ndMap[norm]) ndMap[norm] = String(f.numero || '');
+            });
+            recs.forEach(r => {
+                const norm = normalizarND(r.nd);
+                if (norm && !ndMap[norm]) ndMap[norm] = String(r.nd || '');
+            });
+            const nds = Object.values(ndMap).filter(Boolean).sort((a, b) => {
+                const nA = parseFloat(String(a).replace(/[^0-9]/g, ''));
+                const nB = parseFloat(String(b).replace(/[^0-9]/g, ''));
+                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                return String(a).localeCompare(String(b), undefined, {numeric: true});
+            });
             popularMenuFiltroRecGeral('filterNdRecGeralMenu', nds);
         }
 
@@ -7785,6 +7797,30 @@
             return String(nd || '').replace(/[\.\-\s]/g, '').trim();
         }
 
+        // Formatar ND com pontos: 339030 → 33.90.30, 449052 → 44.90.52
+        function formatarNDComPontos(nd) {
+            const digits = String(nd || '').replace(/[^0-9]/g, '');
+            if (digits.length === 6) {
+                return digits.substring(0, 2) + '.' + digits.substring(2, 4) + '.' + digits.substring(4, 6);
+            }
+            if (digits.length === 8) {
+                return digits.substring(0, 2) + '.' + digits.substring(2, 4) + '.' + digits.substring(4, 6) + '.' + digits.substring(6, 8);
+            }
+            // Se já tem pontos ou formato diferente, retornar como está
+            return String(nd || '').trim();
+        }
+
+        // Validar se um string parece ser uma ND (somente dígitos, opcionalmente com pontos/traços)
+        function isNDValida(nd) {
+            const s = String(nd || '').trim();
+            if (!s) return false;
+            // ND deve conter apenas dígitos, pontos e traços, e ter entre 4 e 10 caracteres
+            if (!/^[\d\.\-]+$/.test(s)) return false;
+            // Deve ter pelo menos 4 dígitos
+            const digits = s.replace(/[^0-9]/g, '');
+            return digits.length >= 4 && digits.length <= 10;
+        }
+
         function importarRecursosGerais(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -7836,11 +7872,7 @@
 
                     const headers = splitCSVLine(lines[0], separador).map(h => h.replace(/^"|"$/g, '').trim());
 
-                    // DEBUG: Mostrar cabeçalhos encontrados para diagnóstico
-                    console.log('=== DIAGNÓSTICO IMPORTAÇÃO RECURSOS GERAIS ===');
-                    console.log('Separador detectado:', separador === '\t' ? 'TAB' : separador);
-                    console.log('Cabeçalhos encontrados (' + headers.length + '):', JSON.stringify(headers));
-                    console.log('Total de linhas de dados:', lines.length - 1);
+                    console.log('[RecGerais] Importando:', headers.length, 'colunas,', lines.length - 1, 'linhas, sep:', separador === '\t' ? 'TAB' : separador);
 
                     // Parsear dados com parser que respeita aspas
                     const rows = [];
@@ -7854,10 +7886,6 @@
                             if (low && obj[low] === undefined) obj[low] = values[idx] || '';
                         });
                         rows.push(obj);
-                    }
-
-                    if (rows.length > 0) {
-                        console.log('Primeira linha de dados:', JSON.stringify(rows[0]));
                     }
 
                     // Buscar dinamicamente os cabeçalhos que contêm as palavras-chave
@@ -7886,12 +7914,7 @@
                     const colValor = findHeader(['valor', 'linha'], 'NC - Valor Linha') || findHeader(['valor']);
                     const colData = findHeader(['emiss', 'dia'], 'Emissão - Dia') || findHeader(['dia']) || findHeader(['data']);
 
-                    console.log('Colunas mapeadas:');
-                    console.log('  TED (nome):', colTedNome || 'NÃO ENCONTRADA');
-                    console.log('  Transferência (SIAFI):', colTransf || 'NÃO ENCONTRADA');
-                    console.log('  Natureza Despesa (ND):', colND || 'NÃO ENCONTRADA');
-                    console.log('  Valor Linha:', colValor || 'NÃO ENCONTRADA');
-                    console.log('  Emissão Dia (Data):', colData || 'NÃO ENCONTRADA');
+                    console.log('[RecGerais] Colunas: TED=' + (colTedNome||'?') + ', SIAFI=' + (colTransf||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
 
                     if (!colTransf && !colTedNome) {
                         // Fallback: tentar formato simplificado (numTed/numTedSiafi)
@@ -7901,7 +7924,6 @@
                             return;
                         }
                         // Usar formato simplificado
-                        console.log('  Usando formato simplificado, coluna TED:', colTed);
                     }
 
                     // Estrutura: agrupar por TED, usando nome do TED (coluna "TED") como chave principal
@@ -7989,14 +8011,14 @@
                         grouped[chave].itens.push({ nd: ndRaw, valor, data });
                     });
 
-                    console.log('TEDs agrupados:', Object.keys(grouped).map(k => k + ' (nome:' + grouped[k].tedNome + ', siafi:' + grouped[k].siafi + ', itens:' + grouped[k].itens.length + ')'));
-                    console.log('Linhas ignoradas (sem TED):', linhasIgnoradas);
+                    console.log('[RecGerais] TEDs no CSV:', Object.keys(grouped).length, '| Linhas s/ TED:', linhasIgnoradas);
 
-                    // Listar TEDs cadastrados para comparação
-                    console.log('TEDs cadastrados no sistema:');
-                    dados.teds.forEach(t => {
-                        console.log('  numTed:', t.numTed, '| numTedSiafi:', t.numTedSiafi);
-                    });
+                    // Perguntar ao usuário se deseja substituir os dados existentes
+                    const totalGrupos = Object.keys(grouped).length;
+                    const totalItensCSV = Object.values(grouped).reduce((s, g) => s + g.itens.length, 0);
+                    if (!confirm(`O arquivo contém ${totalItensCSV} registro(s) de ${totalGrupos} TED(s).\n\n⚠️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS pelos dados do arquivo.\n\nDeseja continuar?`)) {
+                        return;
+                    }
 
                     let countTeds = 0;
                     let countItens = 0;
@@ -8012,8 +8034,6 @@
                         const nomNome = normTed(tedNome);
                         const nomSiafi = normTed(siafi);
 
-                        console.log('Procurando TED - nome:', tedNome, '(norm:', nomNome + ') | siafi:', siafi, '(norm:', nomSiafi + ')');
-
                         const ted = dados.teds.find(t => {
                             const tNome = normTed(t.numTed);
                             const tSiafi = normTed(t.numTedSiafi);
@@ -8028,17 +8048,24 @@
                         });
 
                         if (ted) {
-                            console.log('  → Encontrou TED:', ted.numTed);
-                            ted.recursosGerais = ted.recursosGerais || [];
+                            // LIMPAR dados antigos antes de importar (evitar acumulação)
+                            ted.recursosGerais = [];
                             const cadNDs = {};
                             (ted.financeiros || []).forEach(f => {
                                 const ndNorm = normalizarND(f.numero);
                                 if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
                             });
 
+                            let itensValidos = 0;
                             grupo.itens.forEach((row, idx) => {
+                                // Validar se o campo ND é realmente uma ND (somente dígitos/pontos)
+                                if (!isNDValida(row.nd)) {
+                                    return; // pular ND inválida (texto etc)
+                                }
+
                                 const ndImportNorm = normalizarND(row.nd);
-                                const ndFinal = cadNDs[ndImportNorm] || row.nd;
+                                // Usar ND do cadastro (com pontos) se existir, senão formatar automaticamente
+                                const ndFinal = cadNDs[ndImportNorm] || formatarNDComPontos(row.nd);
 
                                 ted.recursosGerais.push({
                                     id: Date.now() + idx + Math.random() * 1000,
@@ -8046,12 +8073,12 @@
                                     valor: row.valor,
                                     data: row.data
                                 });
+                                itensValidos++;
                             });
                             countTeds++;
-                            countItens += grupo.itens.length;
+                            countItens += itensValidos;
                         } else {
                             tedsNaoEncontrados.push(tedNome || siafi);
-                            console.log('  → NÃO encontrou TED!');
                         }
                     });
 
