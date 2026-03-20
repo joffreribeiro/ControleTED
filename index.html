@@ -2130,6 +2130,78 @@
                         </div>
                     </div>
 
+                    <!-- RECURSOS GERAIS IMBEL (por ND, sem separar por UP) -->
+                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL (Tesouro Gerencial)</h3>
+                        <p style="font-size:0.8rem; color:var(--text); margin-bottom:1rem; opacity:0.7;">Controle geral dos recursos repassados para a IMBEL, agrupados por Natureza de Despesa (ND). Dados extraídos do Tesouro Gerencial.</p>
+
+                        <!-- Formulário de adição -->
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 0.75rem; margin-bottom: 0.5rem;">
+                            <div class="form-group">
+                                <label>Ano Emissão *</label>
+                                <input type="number" id="rgAnoEmissao" min="2015" max="2040" placeholder="2024" required>
+                            </div>
+                            <div class="form-group">
+                                <label>ND (Natureza Despesa) *</label>
+                                <input type="text" id="rgND" placeholder="449030" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor (R$) *</label>
+                                <input type="number" id="rgValor" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Fonte Recursos</label>
+                                <input type="text" id="rgFonteRecursos" placeholder="0100000000">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="visibility: hidden;">.</label>
+                                <button type="button" class="btn btn-primary" onclick="adicionarRecursoGeral()" style="width: 100%; height: 37px;">Adicionar</button>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="form-group">
+                                <label>NC (Nota de Crédito)</label>
+                                <input type="text" id="rgNC" placeholder="160087000012020NC002713">
+                            </div>
+                            <div class="form-group">
+                                <label>PTRES</label>
+                                <input type="text" id="rgPTRES" placeholder="171406">
+                            </div>
+                            <div class="form-group">
+                                <label>Plano Interno</label>
+                                <input type="text" id="rgPlanoInterno" placeholder="F8CPRCODEGE">
+                            </div>
+                            <div class="form-group">
+                                <label>Observação</label>
+                                <input type="text" id="rgObservacao" placeholder="Descrição do recurso">
+                            </div>
+                        </div>
+
+                        <!-- Tabela de Recursos Gerais -->
+                        <div class="table-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem;">
+                            <table id="tabelaRecursosGeraisTable" class="tabela-padrao" style="min-width: 700px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width:100px;">ND</th>
+                                        <th style="text-align:right;">Total Previsto</th>
+                                        <th style="text-align:right;">Qtd Registros</th>
+                                        <th style="width:50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaRecursosGerais">
+                                    <tr><td colspan="4" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum recurso cadastrado</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Resumo -->
+                        <div style="display: flex; gap: 1.5rem; margin-top: 0.75rem; padding: 0.75rem; background: var(--bg); border-radius: 0.25rem; font-size: 0.85rem;">
+                            <div><strong>Total Geral:</strong> R$ <span id="rgTotalGeral">0,00</span></div>
+                            <div><strong>Total de NDs:</strong> <span id="rgTotalNDs">0</span></div>
+                            <div><strong>Total de Registros:</strong> <span id="rgTotalRegistros">0</span></div>
+                        </div>
+                    </div>
+
                     <!-- Resumo Anual por Ano -->
                     <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
                         <h3 style="margin: 0 0 1rem 0;"><i data-lucide="bar-chart" class="inline-icon-sm"></i> Resumo Anual por Ano</h3>
@@ -2241,6 +2313,7 @@
                         <button class="btn btn-primary" onclick="exportarExecFisica()">Exportar Exec. Física</button>
                         <button class="btn btn-primary" onclick="exportarFinanceiros()">Exportar Financeiro</button>
                         <button class="btn btn-primary" onclick="exportarExecFinanceira()">Exportar Exec. Financeira</button>
+                        <button class="btn btn-primary" onclick="exportarRecursosGerais()">Exportar Recursos Gerais</button>
                         <button class="btn btn-secondary" onclick="exportarTudo()">📦 Exportar Tudo (ZIP)</button>
                     </div>
                 </div>
@@ -2276,6 +2349,10 @@
                         <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
                             <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Exec. Financeira</label>
                             <input type="file" accept=".csv" onchange="importarExecFinanceira(this.files[0])" style="width: 100%;">
+                        </div>
+                        <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
+                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Recursos Gerais (CSV/Tesouro Gerencial)</label>
+                            <input type="file" accept=".csv" onchange="importarRecursosGerais(this.files[0])" style="width: 100%;">
                         </div>
                     </div>
                 </div>
@@ -2672,6 +2749,7 @@
                 execFisicas: [],
                 financeiros: [],
                 execFinanceiras: [],
+                recursosGerais: [],
                 marcos: [],
                 despesas: [],
                 dataCriacao: new Date().toLocaleDateString('pt-BR')
@@ -3280,6 +3358,7 @@
             window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas || [];
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros || [];
             window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras || [];
+            window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
 
             document.getElementById('tedsDetalheContainer').style.display = 'block';
             
@@ -3295,6 +3374,7 @@
             atualizarTabelaFinanceira();
             atualizarOpcoesExecFinanceira();
             atualizarTabelaExecFinanceira();
+            atualizarTabelaRecursosGerais();
             atualizarGantt();
             // Atualizar gráfico de entregas na visualização de detalhes (se ativo)
             try { renderEntregasChart(tedId, 'entregasChartFull'); } catch(e) {}
@@ -6608,6 +6688,209 @@
             });
         }
 
+        // =============================================
+        // RECURSOS GERAIS IMBEL (Tesouro Gerencial)
+        // =============================================
+
+        function adicionarRecursoGeral() {
+            if (!window.tedSelecionado) {
+                alert('⚠️ Selecione um TED primeiro!');
+                return;
+            }
+
+            const anoEmissao = parseInt(document.getElementById('rgAnoEmissao').value);
+            const nd = document.getElementById('rgND').value.trim();
+            const valor = parseNumber(document.getElementById('rgValor').value);
+            const fonteRecursos = document.getElementById('rgFonteRecursos').value.trim();
+            const nc = document.getElementById('rgNC').value.trim();
+            const ptres = document.getElementById('rgPTRES').value.trim();
+            const planoInterno = document.getElementById('rgPlanoInterno').value.trim();
+            const observacao = document.getElementById('rgObservacao').value.trim();
+
+            if (!anoEmissao || !nd || isNaN(valor)) {
+                alert('⚠️ Preencha Ano, ND e Valor (campos obrigatórios)');
+                return;
+            }
+
+            window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
+            window.tedSelecionado.recursosGerais.push({
+                id: Date.now(),
+                anoEmissao,
+                nd,
+                valor,
+                fonteRecursos,
+                nc,
+                ptres,
+                planoInterno,
+                observacao
+            });
+
+            salvarDados();
+            atualizarTabelaRecursosGerais();
+
+            // Limpar formulário
+            document.getElementById('rgAnoEmissao').value = '';
+            document.getElementById('rgND').value = '';
+            document.getElementById('rgValor').value = '';
+            document.getElementById('rgFonteRecursos').value = '';
+            document.getElementById('rgNC').value = '';
+            document.getElementById('rgPTRES').value = '';
+            document.getElementById('rgPlanoInterno').value = '';
+            document.getElementById('rgObservacao').value = '';
+
+            showToast('Recurso adicionado com sucesso!', 'success');
+        }
+
+        function removerRecursoGeral(id) {
+            if (!window.tedSelecionado) return;
+            if (!confirm('Deseja remover este registro?')) return;
+            window.tedSelecionado.recursosGerais = (window.tedSelecionado.recursosGerais || []).filter(r => r.id !== id);
+            salvarDados();
+            atualizarTabelaRecursosGerais();
+        }
+
+        function editarRecursoGeral(id) {
+            if (!window.tedSelecionado) return;
+            const rec = (window.tedSelecionado.recursosGerais || []).find(r => r.id === id);
+            if (!rec) return;
+
+            // Preencher formulário com dados existentes
+            document.getElementById('rgAnoEmissao').value = rec.anoEmissao || '';
+            document.getElementById('rgND').value = rec.nd || '';
+            document.getElementById('rgValor').value = rec.valor || '';
+            document.getElementById('rgFonteRecursos').value = rec.fonteRecursos || '';
+            document.getElementById('rgNC').value = rec.nc || '';
+            document.getElementById('rgPTRES').value = rec.ptres || '';
+            document.getElementById('rgPlanoInterno').value = rec.planoInterno || '';
+            document.getElementById('rgObservacao').value = rec.observacao || '';
+
+            // Remover para permitir re-adição
+            window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais.filter(r => r.id !== id);
+            salvarDados();
+            atualizarTabelaRecursosGerais();
+        }
+
+        // Estado de expansão dos grupos de ND na tabela
+        window.rgGruposExpandidos = {};
+
+        function toggleGrupoND(nd) {
+            window.rgGruposExpandidos[nd] = !window.rgGruposExpandidos[nd];
+            atualizarTabelaRecursosGerais();
+        }
+
+        function atualizarTabelaRecursosGerais() {
+            const tbody = document.getElementById('tabelaRecursosGerais');
+            const spanTotal = document.getElementById('rgTotalGeral');
+            const spanNDs = document.getElementById('rgTotalNDs');
+            const spanRegs = document.getElementById('rgTotalRegistros');
+
+            if (!tbody) return;
+
+            if (!window.tedSelecionado) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
+                if (spanTotal) spanTotal.textContent = '0,00';
+                if (spanNDs) spanNDs.textContent = '0';
+                if (spanRegs) spanRegs.textContent = '0';
+                return;
+            }
+
+            const recursos = window.tedSelecionado.recursosGerais || [];
+
+            if (recursos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:var(--text);">Nenhum recurso cadastrado</td></tr>';
+                if (spanTotal) spanTotal.textContent = '0,00';
+                if (spanNDs) spanNDs.textContent = '0';
+                if (spanRegs) spanRegs.textContent = '0';
+                return;
+            }
+
+            // Agrupar por ND
+            const grupos = {};
+            recursos.forEach(r => {
+                const nd = r.nd || 'Sem ND';
+                if (!grupos[nd]) grupos[nd] = [];
+                grupos[nd].push(r);
+            });
+
+            // Ordenar NDs
+            const ndsOrdenados = Object.keys(grupos).sort((a, b) => {
+                const nA = parseFloat(a.replace(/[^0-9.-]/g, ''));
+                const nB = parseFloat(b.replace(/[^0-9.-]/g, ''));
+                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                return a.localeCompare(b, undefined, { numeric: true });
+            });
+
+            let html = '';
+            let totalGeral = 0;
+            let totalRegistros = 0;
+
+            ndsOrdenados.forEach(nd => {
+                const itens = grupos[nd];
+                const totalND = itens.reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
+                totalGeral += totalND;
+                totalRegistros += itens.length;
+                const expandido = window.rgGruposExpandidos[nd];
+                const icone = expandido ? '▼' : '▶';
+
+                // Linha do grupo (ND)
+                html += `<tr style="background: var(--bg); cursor: pointer; font-weight: 600;" onclick="toggleGrupoND('${nd.replace(/'/g, "\\'")}')">`;
+                html += `<td><span style="margin-right:0.3rem;">${icone}</span> ${nd}</td>`;
+                html += `<td style="text-align:right;">${totalND.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>`;
+                html += `<td style="text-align:right;">${itens.length}</td>`;
+                html += `<td></td>`;
+                html += `</tr>`;
+
+                // Linhas detalhadas (se expandido)
+                if (expandido) {
+                    // Sub-cabeçalho
+                    html += `<tr style="background: #f0f4f8; font-size:0.75rem; font-weight:600;">`;
+                    html += `<td>Ano</td><td>NC</td><td>Fonte</td><td>PTRES</td>`;
+                    html += `</tr>`;
+                    html += `<tr style="background: #f0f4f8; font-size:0.75rem; font-weight:600;">`;
+                    html += `<td>Plano Interno</td><td style="text-align:right;">Valor</td><td colspan="1">Observação</td><td>Ações</td>`;
+                    html += `</tr>`;
+
+                    // Ordenar itens por ano e valor
+                    const itensOrdenados = [...itens].sort((a, b) => {
+                        if (a.anoEmissao !== b.anoEmissao) return (a.anoEmissao || 0) - (b.anoEmissao || 0);
+                        return (parseNumber(b.valor) || 0) - (parseNumber(a.valor) || 0);
+                    });
+
+                    itensOrdenados.forEach(r => {
+                        const val = parseNumber(r.valor) || 0;
+                        // Linha 1: Ano, NC, Fonte, PTRES
+                        html += `<tr style="font-size:0.8rem; border-bottom: none;">`;
+                        html += `<td>${r.anoEmissao || '-'}</td>`;
+                        html += `<td style="font-size:0.7rem;">${r.nc || '-'}</td>`;
+                        html += `<td>${r.fonteRecursos || '-'}</td>`;
+                        html += `<td>${r.ptres || '-'}</td>`;
+                        html += `</tr>`;
+                        // Linha 2: Plano Interno, Valor, Obs, Ações
+                        html += `<tr style="font-size:0.8rem; border-bottom: 1px solid #e5e7eb;">`;
+                        html += `<td>${r.planoInterno || '-'}</td>`;
+                        html += `<td style="text-align:right; font-weight:600;${val < 0 ? ' color:#ef4444;' : ''}">${val.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>`;
+                        html += `<td style="font-size:0.7rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${(r.observacao || '').replace(/"/g, '&quot;')}">${r.observacao || '-'}</td>`;
+                        html += `<td style="white-space:nowrap;"><button class="btn" style="padding:2px 6px; font-size:0.7rem; margin-right:2px;" onclick="editarRecursoGeral(${r.id})">✏️</button><button class="btn" style="padding:2px 6px; font-size:0.7rem; color:#ef4444;" onclick="removerRecursoGeral(${r.id})">🗑</button></td>`;
+                        html += `</tr>`;
+                    });
+                }
+            });
+
+            // Linha de total
+            html += `<tr class="linha-total" style="font-weight:700; background: var(--bg);">`;
+            html += `<td>TOTAL</td>`;
+            html += `<td style="text-align:right;">${totalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>`;
+            html += `<td style="text-align:right;">${totalRegistros}</td>`;
+            html += `<td></td>`;
+            html += `</tr>`;
+
+            tbody.innerHTML = html;
+
+            if (spanTotal) spanTotal.textContent = totalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2});
+            if (spanNDs) spanNDs.textContent = ndsOrdenados.length;
+            if (spanRegs) spanRegs.textContent = totalRegistros;
+        }
+
         // Atualizar tabelas em cascata após alteração de dados
         function atualizarTabelasEmCascata(origem) {
             // origem pode ser: 'objetos', 'fisicos', 'metas', 'financeiros', 'execFisica', 'execFinanceira', 'ted'
@@ -6874,6 +7157,30 @@
             showToast('Execução Financeira exportada com sucesso!', 'success');
         }
 
+        function exportarRecursosGerais() {
+            const rows = [];
+            dados.teds.forEach(ted => {
+                (ted.recursosGerais || []).forEach(r => {
+                    rows.push({
+                        numTed: ted.numTed,
+                        id: r.id,
+                        anoEmissao: r.anoEmissao,
+                        nd: r.nd,
+                        valor: r.valor,
+                        fonteRecursos: r.fonteRecursos,
+                        nc: r.nc,
+                        ptres: r.ptres,
+                        planoInterno: r.planoInterno,
+                        observacao: r.observacao
+                    });
+                });
+            });
+            const headers = ['numTed', 'id', 'anoEmissao', 'nd', 'valor', 'fonteRecursos', 'nc', 'ptres', 'planoInterno', 'observacao'];
+            const csv = arrayToCSV(rows, headers);
+            downloadFile(csv, 'recursos_gerais_export.csv');
+            showToast('Recursos Gerais exportados com sucesso!', 'success');
+        }
+
         // EXPORTAR TUDO (múltiplos arquivos)
         function exportarTudo() {
             exportarTEDs();
@@ -6883,6 +7190,7 @@
             setTimeout(() => exportarExecFisica(), 800);
             setTimeout(() => exportarFinanceiros(), 1000);
             setTimeout(() => exportarExecFinanceira(), 1200);
+            setTimeout(() => exportarRecursosGerais(), 1400);
         }
 
         // EXPORTAR BACKUP JSON COMPLETO
@@ -7363,6 +7671,60 @@
                     });
                     try { salvarDados(); } catch(e) {}
                     showToast(`${countItens} execução(ões) financeira(s) importada(s) para ${countTeds} TED(s)!`, 'success');
+                } catch (err) {
+                    showToast('Erro ao importar: ' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // IMPORTAR RECURSOS GERAIS (CSV do Tesouro Gerencial)
+        function importarRecursosGerais(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rows = parseCSV(e.target.result);
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
+                    rows.forEach(row => {
+                        // Tentar mapear colunas do Tesouro Gerencial
+                        const numTed = String(row.numTed || row['numTed'] || '').trim();
+                        if (!numTed) return;
+                        if (!grouped[numTed]) grouped[numTed] = [];
+
+                        grouped[numTed].push({
+                            anoEmissao: parseInt(row.anoEmissao || row['Emissão - Ano'] || row['Emissao - Ano'] || row['anoEmissao'] || 0),
+                            nd: String(row.nd || row['NC - Natureza Despes'] || row['NC - Natureza Despesa'] || row['ND'] || '').trim(),
+                            valor: parseNumber(row.valor || row['NC - Valor Linha'] || row['Valor'] || 0),
+                            fonteRecursos: String(row.fonteRecursos || row['NC - Fonte Recursos'] || row['Fonte'] || '').trim(),
+                            nc: String(row.nc || row['NC'] || row['NC - Transferência'] || '').trim(),
+                            ptres: String(row.ptres || row['NC - PTRES'] || row['PTRES'] || '').trim(),
+                            planoInterno: String(row.planoInterno || row['NC - Plano Interno'] || row['Plano Interno'] || '').trim(),
+                            observacao: String(row.observacao || row['Doc - Observação'] || row['Doc - Observacao'] || row['Observação'] || '').trim()
+                        });
+                    });
+
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            ted.recursosGerais = ted.recursosGerais || [];
+                            grouped[numTed].forEach((row, idx) => {
+                                ted.recursosGerais.push({
+                                    id: Date.now() + idx + Math.random() * 1000,
+                                    ...row
+                                });
+                            });
+                            countTeds++;
+                            countItens += grouped[numTed].length;
+                        }
+                    });
+
+                    try { salvarDados(); } catch(e) {}
+                    try { atualizarTabelaRecursosGerais(); } catch(e) {}
+                    showToast(`${countItens} recurso(s) importado(s) para ${countTeds} TED(s)!`, 'success');
                 } catch (err) {
                     showToast('Erro ao importar: ' + err.message, 'error');
                 }
