@@ -7803,13 +7803,38 @@
                         separador = ',';
                     }
 
+                    // Parser CSV que respeita campos entre aspas (o Tesouro Gerencial pode ter ; dentro de campos entre aspas)
+                    function splitCSVLine(line, sep) {
+                        const result = [];
+                        let current = '';
+                        let inQuotes = false;
+                        for (let c = 0; c < line.length; c++) {
+                            const ch = line[c];
+                            if (ch === '"') {
+                                if (inQuotes && c + 1 < line.length && line[c + 1] === '"') {
+                                    current += '"'; // escaped quote
+                                    c++;
+                                } else {
+                                    inQuotes = !inQuotes;
+                                }
+                            } else if (ch === sep && !inQuotes) {
+                                result.push(current.trim());
+                                current = '';
+                            } else {
+                                current += ch;
+                            }
+                        }
+                        result.push(current.trim());
+                        return result;
+                    }
+
                     const lines = texto.split('\n').filter(l => l.trim());
                     if (lines.length < 2) {
                         alert('⚠️ Arquivo vazio ou sem dados (apenas ' + lines.length + ' linha(s))');
                         return;
                     }
 
-                    const headers = lines[0].split(separador).map(h => h.trim().replace(/^"|"$/g, ''));
+                    const headers = splitCSVLine(lines[0], separador).map(h => h.replace(/^"|"$/g, '').trim());
 
                     // DEBUG: Mostrar cabeçalhos encontrados para diagnóstico
                     console.log('=== DIAGNÓSTICO IMPORTAÇÃO RECURSOS GERAIS ===');
@@ -7817,10 +7842,10 @@
                     console.log('Cabeçalhos encontrados (' + headers.length + '):', JSON.stringify(headers));
                     console.log('Total de linhas de dados:', lines.length - 1);
 
-                    // Parsear dados
+                    // Parsear dados com parser que respeita aspas
                     const rows = [];
                     for (let i = 1; i < lines.length; i++) {
-                        const values = lines[i].split(separador).map(v => v.trim().replace(/^"|"$/g, ''));
+                        const values = splitCSVLine(lines[i], separador).map(v => v.replace(/^"|"$/g, '').trim());
                         const obj = {};
                         headers.forEach((h, idx) => {
                             obj[h] = values[idx] || '';
@@ -7856,17 +7881,19 @@
                     };
 
                     const colTransf = findHeader(['transfer'], 'NC - Transferência') || findHeader(['transfer']);
+                    const colTedNome = findHeader([], 'TED'); // Coluna "TED" com o nome do TED (ex: 18-EME-069)
                     const colND = findHeader(['natureza', 'despes'], 'NC - Natureza Despesa') || findHeader(['natureza']);
                     const colValor = findHeader(['valor', 'linha'], 'NC - Valor Linha') || findHeader(['valor']);
                     const colData = findHeader(['emiss', 'dia'], 'Emissão - Dia') || findHeader(['dia']) || findHeader(['data']);
 
                     console.log('Colunas mapeadas:');
-                    console.log('  Transferência (TED):', colTransf || 'NÃO ENCONTRADA');
+                    console.log('  TED (nome):', colTedNome || 'NÃO ENCONTRADA');
+                    console.log('  Transferência (SIAFI):', colTransf || 'NÃO ENCONTRADA');
                     console.log('  Natureza Despesa (ND):', colND || 'NÃO ENCONTRADA');
                     console.log('  Valor Linha:', colValor || 'NÃO ENCONTRADA');
                     console.log('  Emissão Dia (Data):', colData || 'NÃO ENCONTRADA');
 
-                    if (!colTransf) {
+                    if (!colTransf && !colTedNome) {
                         // Fallback: tentar formato simplificado (numTed/numTedSiafi)
                         const colTed = findHeader(['numted']) || findHeader(['ted']);
                         if (!colTed) {
@@ -7877,21 +7904,33 @@
                         console.log('  Usando formato simplificado, coluna TED:', colTed);
                     }
 
-                    const grouped = {};
+                    // Estrutura: agrupar por TED, usando nome do TED (coluna "TED") como chave principal
+                    // e nº SIAFI (coluna "NC - Transferência") como identificador secundário
+                    const grouped = {}; // chave = tedNome ou siafi, valor = { siafi, tedNome, itens: [] }
                     let linhasIgnoradas = 0;
 
                     rows.forEach(row => {
-                        // Obter TED SIAFI
-                        let numTedSiafi = '';
-                        if (colTransf) {
-                            numTedSiafi = String(row[colTransf] || '').trim();
-                        }
-                        if (!numTedSiafi) {
-                            // Fallback para formato simplificado
-                            numTedSiafi = String(row.numTedSiafi || row.numTed || row['numTed'] || '').trim();
+                        // Obter nome do TED (ex: "18-EME-069")
+                        let tedNome = '';
+                        if (colTedNome) {
+                            tedNome = String(row[colTedNome] || '').trim();
                         }
 
-                        if (!numTedSiafi) {
+                        // Obter nº SIAFI (ex: "695556")
+                        let siafi = '';
+                        if (colTransf) {
+                            siafi = String(row[colTransf] || '').trim();
+                        }
+
+                        // Fallback para formato simplificado
+                        if (!tedNome && !siafi) {
+                            tedNome = String(row.numTed || row['numTed'] || '').trim();
+                            siafi = String(row.numTedSiafi || '').trim();
+                        }
+
+                        // Chave de agrupamento: preferir nome do TED, senão usar SIAFI
+                        const chave = tedNome || siafi;
+                        if (!chave) {
                             linhasIgnoradas++;
                             return;
                         }
@@ -7943,11 +7982,14 @@
                             }
                         }
 
-                        if (!grouped[numTedSiafi]) grouped[numTedSiafi] = [];
-                        grouped[numTedSiafi].push({ nd: ndRaw, valor, data });
+                        if (!grouped[chave]) grouped[chave] = { tedNome, siafi, itens: [] };
+                        // Atualizar siafi/tedNome se estiverem vazios no grupo
+                        if (siafi && !grouped[chave].siafi) grouped[chave].siafi = siafi;
+                        if (tedNome && !grouped[chave].tedNome) grouped[chave].tedNome = tedNome;
+                        grouped[chave].itens.push({ nd: ndRaw, valor, data });
                     });
 
-                    console.log('TEDs agrupados:', Object.keys(grouped));
+                    console.log('TEDs agrupados:', Object.keys(grouped).map(k => k + ' (nome:' + grouped[k].tedNome + ', siafi:' + grouped[k].siafi + ', itens:' + grouped[k].itens.length + ')'));
                     console.log('Linhas ignoradas (sem TED):', linhasIgnoradas);
 
                     // Listar TEDs cadastrados para comparação
@@ -7961,25 +8003,28 @@
                     let tedsNaoEncontrados = [];
 
                     // Normalizar string para comparação de TED
-                    const normTed = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim();
+                    const normTed = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
 
-                    Object.keys(grouped).forEach(numTedSiafi => {
-                        const numNorm = normTed(numTedSiafi);
-                        console.log('Procurando TED:', numTedSiafi, '(normalizado:', numNorm + ')');
+                    Object.keys(grouped).forEach(chave => {
+                        const grupo = grouped[chave];
+                        const tedNome = grupo.tedNome;
+                        const siafi = grupo.siafi;
+                        const nomNome = normTed(tedNome);
+                        const nomSiafi = normTed(siafi);
+
+                        console.log('Procurando TED - nome:', tedNome, '(norm:', nomNome + ') | siafi:', siafi, '(norm:', nomSiafi + ')');
 
                         const ted = dados.teds.find(t => {
-                            const siafi = normTed(t.numTedSiafi);
-                            const num = normTed(t.numTed);
-                            const match = siafi === numNorm || num === numNorm;
-                            if (!match) {
-                                // Tentar correspondência parcial (contém)
-                                const contem = (siafi && numNorm && (siafi.indexOf(numNorm) > -1 || numNorm.indexOf(siafi) > -1)) ||
-                                               (num && numNorm && (num.indexOf(numNorm) > -1 || numNorm.indexOf(num) > -1));
-                                if (contem) {
-                                    console.log('  Match parcial com TED:', t.numTed, '(siafi:', t.numTedSiafi + ')');
-                                }
-                            }
-                            return match;
+                            const tNome = normTed(t.numTed);
+                            const tSiafi = normTed(t.numTedSiafi);
+                            // Tentar casar por nome do TED
+                            if (nomNome && tNome && nomNome === tNome) return true;
+                            // Tentar casar por nº SIAFI
+                            if (nomSiafi && tSiafi && nomSiafi === tSiafi) return true;
+                            // Tentar casar nome do CSV com SIAFI do sistema e vice-versa
+                            if (nomNome && tSiafi && nomNome === tSiafi) return true;
+                            if (nomSiafi && tNome && nomSiafi === tNome) return true;
+                            return false;
                         });
 
                         if (ted) {
@@ -7991,7 +8036,7 @@
                                 if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
                             });
 
-                            grouped[numTedSiafi].forEach((row, idx) => {
+                            grupo.itens.forEach((row, idx) => {
                                 const ndImportNorm = normalizarND(row.nd);
                                 const ndFinal = cadNDs[ndImportNorm] || row.nd;
 
@@ -8003,9 +8048,9 @@
                                 });
                             });
                             countTeds++;
-                            countItens += grouped[numTedSiafi].length;
+                            countItens += grupo.itens.length;
                         } else {
-                            tedsNaoEncontrados.push(numTedSiafi);
+                            tedsNaoEncontrados.push(tedNome || siafi);
                             console.log('  → NÃO encontrou TED!');
                         }
                     });
