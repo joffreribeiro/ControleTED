@@ -6175,10 +6175,25 @@
             const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
 
             // Função auxiliar: retorna HTML de marcador vertical para o índice i
-            function ganttVLine(i) {
-                if (i === todayIdx) return '<div class="gantt-vline gantt-vline-today"></div>';
-                if (yearStartSet.has(i)) return '<div class="gantt-vline gantt-vline-year"></div>';
-                return '';
+            // leftPx = offset horizontal opcional (para linhas dentro de colspan)
+            function ganttVLine(i, leftPx) {
+                let cls = '';
+                if (i === todayIdx) cls = 'gantt-vline gantt-vline-today';
+                else if (yearStartSet.has(i)) cls = 'gantt-vline gantt-vline-year';
+                if (!cls) return '';
+                const style = (leftPx != null && leftPx > 0) ? ` style="left:${leftPx}px"` : '';
+                return `<div class="${cls}"${style}></div>`;
+            }
+
+            // Coleta TODAS as vlines dentro de um range [fromIdx..toIdx]
+            // cada uma posicionada no offset correto em px relativo ao início do range
+            function ganttVLinesForRange(fromIdx, toIdx) {
+                let html = '';
+                for (let j = fromIdx; j <= toIdx; j++) {
+                    const leftPx = (j - fromIdx) * monthWidth;
+                    html += ganttVLine(j, leftPx);
+                }
+                return html;
             }
 
             // Cabeçalhos (sem wrapper divs — linhas virão como overlay)
@@ -6215,13 +6230,14 @@
 
                     // Render meses com colspan para a vigência
                     for (let i=0;i<months.length;i++) {
-                        const vl = ganttVLine(i);
                         if (i === startIdx) {
                             const span = endIdx - startIdx + 1;
-                            table += `<td colspan="${span}" style="padding:0;"><div class="gantt-cell-wrap" style="padding:6px 4px;"><div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div>${vl}</div></td>`;
+                            const vlines = ganttVLinesForRange(startIdx, endIdx);
+                            table += `<td colspan="${span}" style="padding:0;"><div class="gantt-cell-wrap" style="padding:6px 4px;"><div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div>${vlines}</div></td>`;
                             i += (span - 1);
                             continue;
                         }
+                        const vl = ganttVLine(i);
                         if (vl) {
                             table += `<td style="padding:0;"><div class="gantt-cell-wrap">${vl}</div></td>`;
                         } else {
