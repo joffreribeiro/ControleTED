@@ -1223,7 +1223,8 @@
         /* Estilos isolados para a tabela do Gantt - manter consistente com .tabela-padrao */
         .gantt-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 0.8rem;
         }
         .gantt-table thead tr {
@@ -1233,8 +1234,16 @@
         .gantt-table th,
         .gantt-table td {
             padding: 0.5rem;
-            border: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
             vertical-align: middle;
+        }
+        .gantt-table th:first-child,
+        .gantt-table td:first-child {
+            border-left: 1px solid #ddd;
+        }
+        .gantt-table thead tr:first-child th {
+            border-top: 1px solid #ddd;
         }
         .gantt-table th {
             font-weight: 600;
@@ -1253,32 +1262,28 @@
         .gantt-table .sticky-up,
         .gantt-table .sticky-ted {
             position: sticky;
-            background-clip: padding-box;
         }
         .gantt-table th.sticky-up,
         .gantt-table th.sticky-ted {
             z-index: 30;
             background: #2c5aa0;
+            color: white;
         }
         .gantt-table td.sticky-up,
         .gantt-table td.sticky-ted {
             z-index: 20;
-        }
-        .gantt-table .sticky-up {
-            left: 0;
-            box-shadow: 2px 0 0 rgba(0,0,0,0.08);
-        }
-        .gantt-table .sticky-ted {
-            left: 140px;
-            box-shadow: 2px 0 0 rgba(0,0,0,0.08);
-        }
-        .gantt-table tbody tr:nth-child(odd) td.sticky-up,
-        .gantt-table tbody tr:nth-child(odd) td.sticky-ted {
             background: #fff;
         }
         .gantt-table tbody tr:nth-child(even) td.sticky-up,
         .gantt-table tbody tr:nth-child(even) td.sticky-ted {
             background: #f9f9f9;
+        }
+        .gantt-table .sticky-up {
+            left: 0;
+        }
+        .gantt-table .sticky-ted {
+            left: 140px;
+            box-shadow: 4px 0 6px rgba(0,0,0,0.15);
         }
         /* Barra do Gantt (vigência) */
         .gantt-bar {
@@ -6182,14 +6187,14 @@
                     table += '</tr>';
                 });
 
-                // Separador visual após grupo (linha escura)
-                table += `<tr><td colspan="${2 + months.length}" style="padding:0; border-top:3px solid #1f2937; height:4px;"></td></tr>`;
+                // Separador visual após grupo (linha escura) - usar cells separadas para não sobrepor sticky
+                table += `<tr><td class="sticky-up" style="padding:0; border-top:3px solid #1f2937; height:4px; background:#fff;"></td><td class="sticky-ted" style="padding:0; border-top:3px solid #1f2937; height:4px; background:#fff;"></td><td colspan="${months.length}" style="padding:0; border-top:3px solid #1f2937; height:4px;"></td></tr>`;
             });
             table += '</tbody>';
             table += '</table>';
 
             // Overlay para linhas verticais (anos e mês atual)
-            table += `<div class="gantt-overlay" style="position:absolute; top:0; left:0; height:100%; width:100%; pointer-events:none; z-index:5;"></div>`;
+            table += `<div class="gantt-overlay" style="position:absolute; top:0; left:0; height:100%; width:100%; pointer-events:none; z-index:3;"></div>`;
             table += '</div>';
 
             container.innerHTML = table;
