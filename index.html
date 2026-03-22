@@ -1253,15 +1253,16 @@
         .gantt-table .sticky-up,
         .gantt-table .sticky-ted {
             position: sticky;
-            background: inherit;
+            background-clip: padding-box;
         }
         .gantt-table th.sticky-up,
         .gantt-table th.sticky-ted {
-            z-index: 12;
+            z-index: 30;
+            background: #2c5aa0;
         }
         .gantt-table td.sticky-up,
         .gantt-table td.sticky-ted {
-            z-index: 9;
+            z-index: 20;
         }
         .gantt-table .sticky-up {
             left: 0;
@@ -1270,6 +1271,14 @@
         .gantt-table .sticky-ted {
             left: 140px;
             box-shadow: 2px 0 0 rgba(0,0,0,0.08);
+        }
+        .gantt-table tbody tr:nth-child(odd) td.sticky-up,
+        .gantt-table tbody tr:nth-child(odd) td.sticky-ted {
+            background: #fff;
+        }
+        .gantt-table tbody tr:nth-child(even) td.sticky-up,
+        .gantt-table tbody tr:nth-child(even) td.sticky-ted {
+            background: #f9f9f9;
         }
         /* Barra do Gantt (vigência) */
         .gantt-bar {
