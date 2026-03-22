@@ -1331,11 +1331,11 @@
         /* Estilo aditivo: valor original tachado + novo valor */
         .valor-original-tachado {
             text-decoration: line-through;
-            color: #999;
+            color: rgba(255,255,255,0.5);
             font-size: 0.85em;
         }
         .valor-aditivo-novo {
-            color: #16a34a;
+            color: #4ade80;
             font-weight: 700;
             margin-left: 6px;
         }
@@ -1368,9 +1368,9 @@
         }
         .aditivo-modal h3 { margin: 0 0 1.5rem 0; }
         .aditivo-historico { margin-top: 1rem; font-size: 0.85rem; }
-        .aditivo-historico table { width: 100%; border-collapse: collapse; }
-        .aditivo-historico th, .aditivo-historico td { padding: 4px 8px; border-bottom: 1px solid #ddd; text-align: left; }
-        .aditivo-historico th { background: #f3f4f6; font-weight: 600; }
+        .aditivo-historico table { width: 100%; border-collapse: collapse; color: rgba(255,255,255,0.9); }
+        .aditivo-historico th, .aditivo-historico td { padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; }
+        .aditivo-historico th { background: rgba(255,255,255,0.1); font-weight: 600; }
         /* Entregas chart styles */
         .entregas-controls { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; }
         .entregas-chart { display:flex; gap:2rem; align-items:flex-end; padding:1rem 0; }
@@ -1893,7 +1893,7 @@
                             <!-- Linha aditivo: botão + histórico -->
                             <div style="display:flex; align-items:center; gap:1rem; margin: 0.5rem 0;">
                                 <button class="btn-edit" onclick="abrirModalAditivo()" style="font-size:0.85rem; padding:4px 12px;"><i data-lucide="plus-circle" class="btn-icon-sm"></i> Adicionar Aditivo de Vigência</button>
-                                <span id="info_aditivoResumo" style="font-size:0.85rem; color:#666;"></span>
+                                <span id="info_aditivoResumo" style="font-size:0.85rem; color:rgba(255,255,255,0.7);"></span>
                             </div>
                             <div id="info_aditivoHistorico" class="aditivo-historico" style="display:none;"></div>
 
@@ -3542,7 +3542,8 @@
                 document.getElementById('info_aditivoResumo').textContent = `Total de aditivos: +${totalAditivoMeses} meses (${aditivos.length} aditivo${aditivos.length > 1 ? 's' : ''})`;
                 let histHtml = '<table><thead><tr><th>#</th><th>Meses</th><th>Data do Aditivo</th><th>Observação</th><th></th></tr></thead><tbody>';
                 aditivos.forEach((a, ai) => {
-                    histHtml += `<tr><td>${ai+1}</td><td>+${a.meses}</td><td>${a.data || '-'}</td><td>${a.obs || '-'}</td><td><button onclick="removerAditivo(${ai})" style="color:red;border:none;background:none;cursor:pointer;" title="Remover aditivo">✖</button></td></tr>`;
+                    const dataAdit = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+                    histHtml += `<tr><td>${ai+1}</td><td>+${a.meses}</td><td>${dataAdit}</td><td>${a.obs || '-'}</td><td><button onclick="removerAditivo(${ai})" style="color:#ff6b6b;border:none;background:none;cursor:pointer;font-size:1rem;" title="Remover aditivo">✖</button></td></tr>`;
                 });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_aditivoHistorico').innerHTML = histHtml;
