@@ -1296,6 +1296,29 @@
             box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
         }
         .gantt-row-label { white-space: nowrap; font-weight:600; }
+        /* Linhas verticais de ano e mês atual - sobrepostas às barras via ::after */
+        .gantt-year-line,
+        .gantt-today-line {
+            position: relative;
+        }
+        .gantt-year-line::after,
+        .gantt-today-line::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .gantt-year-line::after {
+            width: 3px;
+            background: rgba(31,41,55,0.92);
+        }
+        .gantt-today-line::after {
+            width: 4px;
+            background: #f97316;
+        }
         /* Entregas chart styles */
         .entregas-controls { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; }
         .entregas-chart { display:flex; gap:2rem; align-items:flex-end; padding:1rem 0; }
@@ -6153,10 +6176,10 @@
             const hoje = new Date();
             const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
 
-            // Função auxiliar: retorna estilo de border-left para uma célula no índice i
-            function ganttBorderStyle(i) {
-                if (i === todayIdx) return 'border-left:4px solid #f97316;';
-                if (yearStartSet.has(i)) return 'border-left:3px solid rgba(31,41,55,0.92);';
+            // Função auxiliar: retorna classe CSS para marcação de ano/mês atual
+            function ganttLineClass(i) {
+                if (i === todayIdx) return ' gantt-today-line';
+                if (yearStartSet.has(i)) return ' gantt-year-line';
                 return '';
             }
 
@@ -6166,14 +6189,14 @@
             table += '<th class="sticky-up" rowspan="2" style="width:'+upColWidth+'px;">UP</th>';
             table += '<th class="sticky-ted" rowspan="2" style="width:'+tedColWidth+'px;">TED</th>';
             years.forEach(y => {
-                const bs = ganttBorderStyle(y.startIdx);
-                table += `<th colspan="${y.count}" style="text-align:center; font-size:0.85rem;${bs}">${y.year}</th>`;
+                const cls = ganttLineClass(y.startIdx);
+                table += `<th class="${cls}" colspan="${y.count}" style="text-align:center; font-size:0.85rem;">${y.year}</th>`;
             });
             table += '</tr>';
             table += '<tr class="header-meses">';
             months.forEach((m, idx) => {
-                const bs = ganttBorderStyle(idx);
-                table += `<th style="text-align:center; font-size:0.75rem;${bs}">${m.label}/${String(m.year).slice(-2)}</th>`;
+                const cls = ganttLineClass(idx);
+                table += `<th class="${cls}" style="text-align:center; font-size:0.75rem;">${m.label}/${String(m.year).slice(-2)}</th>`;
             });
             table += '</tr>';
             table += '</thead>';
@@ -6194,14 +6217,14 @@
 
                     // Render meses com colspan para a vigência
                     for (let i=0;i<months.length;i++) {
-                        const bs = ganttBorderStyle(i);
+                        const cls = ganttLineClass(i);
                         if (i === startIdx) {
                             const span = endIdx - startIdx + 1;
-                            table += `<td colspan="${span}" style="padding:6px 4px;${bs}"><div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div></td>`;
+                            table += `<td class="${cls}" colspan="${span}" style="padding:6px 4px;"><div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div></td>`;
                             i += (span - 1);
                             continue;
                         }
-                        table += `<td style="${bs}"></td>`;
+                        table += `<td class="${cls}"></td>`;
                     }
 
                     table += '</tr>';
