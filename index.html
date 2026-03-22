@@ -6207,6 +6207,20 @@
                     tline.style.borderLeft = '5px solid #f97316';
                     tline.style.zIndex = 7;
                     overlay.appendChild(tline);
+
+                    // Centralizar visualização no mês atual
+                    const targetLeft = x - (wrap.clientWidth / 2);
+                    const maxScroll = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+                    const clamped = Math.max(0, Math.min(targetLeft, maxScroll));
+                    requestAnimationFrame(() => {
+                        wrap.scrollLeft = clamped;
+                    });
+                } else {
+                    // Se o mês atual estiver fora da faixa exibida, centralizar no meio do gráfico
+                    const middle = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
+                    requestAnimationFrame(() => {
+                        wrap.scrollLeft = middle;
+                    });
                 }
             }
         }
