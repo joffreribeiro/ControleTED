@@ -2941,7 +2941,10 @@
                 const inicioNorm = normalizarData(t.inicioVigencia);
                 const fimNorm = normalizarData(t.fimVigencia);
                 const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
-                const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                const fimOriginal = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                // Considerar aditivos na data fim efetiva
+                const fimEfetivo = calcularFimComAditivos(t) || fimOriginal;
+                const fim = fimEfetivo;
                 const inicioValido = inicio && !isNaN(inicio.getTime());
                 const fimValido = fim && !isNaN(fim.getTime());
                 const emExecucao = inicioValido && fimValido && hoje >= inicio && hoje <= fim;
