@@ -1296,32 +1296,28 @@
             box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
         }
         .gantt-row-label { white-space: nowrap; font-weight:600; }
-        /* Wrapper div dentro de cada <td> de meses para posicionamento confiável */
-        .gantt-cell {
+        /* Linha marcadora vertical dentro de células do Gantt */
+        .gantt-cell-wrap {
             position: relative;
-            width: 100%;
             min-height: 28px;
         }
-        .gantt-cell .gantt-bar {
+        .gantt-cell-wrap .gantt-bar {
             position: relative;
             z-index: 1;
         }
-        /* Linhas verticais de ano e mês atual - sobrepostas às barras via ::after no wrapper */
-        .gantt-cell.gantt-year-line::after,
-        .gantt-cell.gantt-today-line::after {
-            content: '';
+        .gantt-vline {
             position: absolute;
-            top: -6px;
-            bottom: -6px;
+            top: 0;
+            bottom: 0;
             left: 0;
             pointer-events: none;
-            z-index: 3;
+            z-index: 5;
         }
-        .gantt-cell.gantt-year-line::after {
+        .gantt-vline-year {
             width: 3px;
             background: rgba(31,41,55,0.92);
         }
-        .gantt-cell.gantt-today-line::after {
+        .gantt-vline-today {
             width: 4px;
             background: #f97316;
         }
@@ -6182,27 +6178,27 @@
             const hoje = new Date();
             const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
 
-            // Função auxiliar: retorna classe CSS para marcação de ano/mês atual
-            function ganttLineClass(i) {
-                if (i === todayIdx) return ' gantt-today-line';
-                if (yearStartSet.has(i)) return ' gantt-year-line';
+            // Função auxiliar: retorna HTML de marcador vertical para o índice i
+            function ganttVLine(i) {
+                if (i === todayIdx) return '<div class="gantt-vline gantt-vline-today"></div>';
+                if (yearStartSet.has(i)) return '<div class="gantt-vline gantt-vline-year"></div>';
                 return '';
             }
 
-            // Cabeçalhos
+            // Cabeçalhos (sem wrapper divs — linhas virão como overlay)
             table += '<thead>';
             table += '<tr>';
             table += '<th class="sticky-up" rowspan="2" style="width:'+upColWidth+'px;">UP</th>';
             table += '<th class="sticky-ted" rowspan="2" style="width:'+tedColWidth+'px;">TED</th>';
             years.forEach(y => {
-                const cls = ganttLineClass(y.startIdx);
-                table += `<th colspan="${y.count}" style="text-align:center; font-size:0.85rem;"><div class="gantt-cell${cls}">${y.year}</div></th>`;
+                const vl = ganttVLine(y.startIdx);
+                table += `<th colspan="${y.count}" style="text-align:center; font-size:0.85rem; position:relative;">${vl}${y.year}</th>`;
             });
             table += '</tr>';
             table += '<tr class="header-meses">';
             months.forEach((m, idx) => {
-                const cls = ganttLineClass(idx);
-                table += `<th style="text-align:center; font-size:0.75rem;"><div class="gantt-cell${cls}">${m.label}/${String(m.year).slice(-2)}</div></th>`;
+                const vl = ganttVLine(idx);
+                table += `<th style="text-align:center; font-size:0.75rem; position:relative;">${vl}${m.label}/${String(m.year).slice(-2)}</th>`;
             });
             table += '</tr>';
             table += '</thead>';
@@ -6223,14 +6219,18 @@
 
                     // Render meses com colspan para a vigência
                     for (let i=0;i<months.length;i++) {
-                        const cls = ganttLineClass(i);
+                        const vl = ganttVLine(i);
                         if (i === startIdx) {
                             const span = endIdx - startIdx + 1;
-                            table += `<td colspan="${span}" style="padding:0;"><div class="gantt-cell${cls}" style="padding:6px 4px;"><div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div></div></td>`;
+                            table += `<td colspan="${span}" style="padding:0;"><div class="gantt-cell-wrap" style="padding:6px 4px;">${vl}<div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div></div></td>`;
                             i += (span - 1);
                             continue;
                         }
-                        table += `<td style="padding:0;"><div class="gantt-cell${cls}"></div></td>`;
+                        if (vl) {
+                            table += `<td style="padding:0;"><div class="gantt-cell-wrap">${vl}</div></td>`;
+                        } else {
+                            table += `<td></td>`;
+                        }
                     }
 
                     table += '</tr>';
@@ -6241,17 +6241,16 @@
             });
             table += '</tbody>';
             table += '</table>';
-            // Sem overlay - as linhas de ano e mês atual são aplicadas diretamente nas bordas das cells
             table += '</div>';
 
             container.innerHTML = table;
 
-            // Medir a largura real da coluna UP e ajustar o left das sticky-ted cells
             const wrap = container.querySelector('.gantt-wrap');
+
+            // Medir a largura real da coluna UP e ajustar o left das sticky-ted cells
             const firstUpCell = wrap.querySelector('.sticky-up');
             if (firstUpCell) {
                 const realUpWidth = firstUpCell.getBoundingClientRect().width;
-                // Aplicar left dinâmico a todas as cells sticky-ted
                 wrap.querySelectorAll('.sticky-ted').forEach(cell => {
                     cell.style.left = realUpWidth + 'px';
                 });
@@ -6259,7 +6258,6 @@
 
             // Centralizar visualização no mês atual
             if (todayIdx >= 0 && todayIdx < months.length) {
-                // Calcular posição do mês atual usando o offset da coluna
                 const scrollTarget = upColWidth + tedColWidth + (todayIdx * monthWidth) - (wrap.clientWidth / 2);
                 const maxScroll = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
                 const clamped = Math.max(0, Math.min(scrollTarget, maxScroll));
