@@ -1237,6 +1237,7 @@
             border-right: 1px solid #ddd;
             border-bottom: 1px solid #ddd;
             vertical-align: middle;
+            box-sizing: border-box;
         }
         .gantt-table th:first-child,
         .gantt-table td:first-child {
@@ -6216,8 +6217,18 @@
 
             container.innerHTML = table;
 
-            // Centralizar visualização no mês atual
+            // Medir a largura real da coluna UP e ajustar o left das sticky-ted cells
             const wrap = container.querySelector('.gantt-wrap');
+            const firstUpCell = wrap.querySelector('.sticky-up');
+            if (firstUpCell) {
+                const realUpWidth = firstUpCell.getBoundingClientRect().width;
+                // Aplicar left dinâmico a todas as cells sticky-ted
+                wrap.querySelectorAll('.sticky-ted').forEach(cell => {
+                    cell.style.left = realUpWidth + 'px';
+                });
+            }
+
+            // Centralizar visualização no mês atual
             if (todayIdx >= 0 && todayIdx < months.length) {
                 // Calcular posição do mês atual usando o offset da coluna
                 const scrollTarget = upColWidth + tedColWidth + (todayIdx * monthWidth) - (wrap.clientWidth / 2);
