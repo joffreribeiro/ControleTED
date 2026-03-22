@@ -6139,7 +6139,7 @@
             const monthWidth = 40; // px
 
             // Construir tabela (colgroup para larguras fixas das colunas)
-            let table = '<div class="gantt-wrap" style="position:relative; overflow:auto;">';
+            let table = '<div class="gantt-wrap" style="overflow:auto;">';
             table += '<table class="gantt-table" style="margin-top:0.5rem; width:auto; table-layout:fixed;">';
             table += '<colgroup>';
             table += `<col style="width:${upColWidth}px">`;
@@ -6147,15 +6147,33 @@
             for (let i=0;i<months.length;i++) table += `<col style="width:${monthWidth}px">`;
             table += '</colgroup>';
 
+            // Pré-calcular conjunto de índices que são início de ano e índice do mês atual
+            const yearStartSet = new Set(years.map(y => y.startIdx));
+            const hoje = new Date();
+            const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+
+            // Função auxiliar: retorna estilo de border-left para uma célula no índice i
+            function ganttBorderStyle(i) {
+                if (i === todayIdx) return 'border-left:4px solid #f97316;';
+                if (yearStartSet.has(i)) return 'border-left:3px solid rgba(31,41,55,0.92);';
+                return '';
+            }
+
             // Cabeçalhos
             table += '<thead>';
             table += '<tr>';
             table += '<th class="sticky-up" rowspan="2" style="width:'+upColWidth+'px;">UP</th>';
             table += '<th class="sticky-ted" rowspan="2" style="width:'+tedColWidth+'px;">TED</th>';
-            years.forEach(y => table += `<th colspan="${y.count}" style="text-align:center; font-size:0.85rem;">${y.year}</th>`);
+            years.forEach(y => {
+                const bs = ganttBorderStyle(y.startIdx);
+                table += `<th colspan="${y.count}" style="text-align:center; font-size:0.85rem;${bs}">${y.year}</th>`;
+            });
             table += '</tr>';
             table += '<tr class="header-meses">';
-            months.forEach((m, idx) => table += `<th style="text-align:center; font-size:0.75rem;">${m.label}/${String(m.year).slice(-2)}</th>`);
+            months.forEach((m, idx) => {
+                const bs = ganttBorderStyle(idx);
+                table += `<th style="text-align:center; font-size:0.75rem;${bs}">${m.label}/${String(m.year).slice(-2)}</th>`;
+            });
             table += '</tr>';
             table += '</thead>';
 
@@ -6175,13 +6193,14 @@
 
                     // Render meses com colspan para a vigência
                     for (let i=0;i<months.length;i++) {
+                        const bs = ganttBorderStyle(i);
                         if (i === startIdx) {
                             const span = endIdx - startIdx + 1;
-                            table += `<td colspan="${span}" style="padding:6px 4px;"><div class=\"gantt-bar\" title=\"${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}\"></div></td>`;
+                            table += `<td colspan="${span}" style="padding:6px 4px;${bs}"><div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div></td>`;
                             i += (span - 1);
                             continue;
                         }
-                        table += `<td></td>`;
+                        table += `<td style="${bs}"></td>`;
                     }
 
                     table += '</tr>';
@@ -6192,72 +6211,22 @@
             });
             table += '</tbody>';
             table += '</table>';
-
-            // Overlay para linhas verticais (anos e mês atual)
-            table += `<div class="gantt-overlay" style="position:absolute; top:0; left:0; height:100%; width:100%; pointer-events:none; z-index:3;"></div>`;
+            // Sem overlay - as linhas de ano e mês atual são aplicadas diretamente nas bordas das cells
             table += '</div>';
 
             container.innerHTML = table;
 
-            // Calcular e desenhar linhas no overlay (usar posições reais dos <th> para alinhamento preciso)
+            // Centralizar visualização no mês atual
             const wrap = container.querySelector('.gantt-wrap');
-            const overlay = wrap.querySelector('.gantt-overlay');
-            // garantir overlay cobre o conteúdo
-            overlay.style.height = wrap.scrollHeight + 'px';
-
-            const monthThs = wrap.querySelectorAll('thead tr.header-meses th');
-            if (monthThs && monthThs.length) {
-                const wrapRect = wrap.getBoundingClientRect();
-
-                // Adicionar linhas dos anos usando a posição do <th> correspondente ao primeiro mês do ano
-                years.forEach(y => {
-                    const idx = y.startIdx;
-                    const th = monthThs[idx];
-                    if (!th) return;
-                    const thRect = th.getBoundingClientRect();
-                    const x = thRect.left - wrapRect.left + wrap.scrollLeft;
-                    const line = document.createElement('div');
-                    line.style.position = 'absolute';
-                    line.style.left = x + 'px';
-                    line.style.top = '0';
-                    line.style.bottom = '0';
-                    line.style.width = '0px';
-                    line.style.borderLeft = '4px solid rgba(31,41,55,0.95)';
-                    line.style.zIndex = 6;
-                    overlay.appendChild(line);
-                });
-
-                // Linha do mês atual (destaque) usando posição do <th>
-                const hoje = new Date();
-                const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-                if (todayIdx >= 0 && todayIdx < monthThs.length) {
-                    const th = monthThs[todayIdx];
-                    const thRect = th.getBoundingClientRect();
-                    const x = thRect.left - wrapRect.left + wrap.scrollLeft;
-                    const tline = document.createElement('div');
-                    tline.style.position = 'absolute';
-                    tline.style.left = x + 'px';
-                    tline.style.top = '0';
-                    tline.style.bottom = '0';
-                    tline.style.width = '0px';
-                    tline.style.borderLeft = '5px solid #f97316';
-                    tline.style.zIndex = 7;
-                    overlay.appendChild(tline);
-
-                    // Centralizar visualização no mês atual
-                    const targetLeft = x - (wrap.clientWidth / 2);
-                    const maxScroll = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
-                    const clamped = Math.max(0, Math.min(targetLeft, maxScroll));
-                    requestAnimationFrame(() => {
-                        wrap.scrollLeft = clamped;
-                    });
-                } else {
-                    // Se o mês atual estiver fora da faixa exibida, centralizar no meio do gráfico
-                    const middle = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
-                    requestAnimationFrame(() => {
-                        wrap.scrollLeft = middle;
-                    });
-                }
+            if (todayIdx >= 0 && todayIdx < months.length) {
+                // Calcular posição do mês atual usando o offset da coluna
+                const scrollTarget = upColWidth + tedColWidth + (todayIdx * monthWidth) - (wrap.clientWidth / 2);
+                const maxScroll = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+                const clamped = Math.max(0, Math.min(scrollTarget, maxScroll));
+                requestAnimationFrame(() => { wrap.scrollLeft = clamped; });
+            } else {
+                const middle = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
+                requestAnimationFrame(() => { wrap.scrollLeft = middle; });
             }
         }
 
