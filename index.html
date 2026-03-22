@@ -1286,21 +1286,32 @@
             left: 140px;
             box-shadow: 4px 0 6px rgba(0,0,0,0.15);
         }
-        /* Barra do Gantt (vigência) */
-        .gantt-bar {
-            height: 16px;
-            display: block;
-            width: 100%;
-            border-radius: 3px;
-            background: linear-gradient(90deg, #2c5aa0 0%, #2c7bd3 100%);
-            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
-        }
+        /* Barra do Gantt (vigência) - legado, mantido para compatibilidade */
         .gantt-row-label { white-space: nowrap; font-weight:600; }
-        /* Linha marcadora vertical dentro de células do Gantt */
-        .gantt-cell-wrap {
+        /* Célula de mês do Gantt - container posicionado para vlines */
+        td.gantt-m {
             position: relative;
-            min-height: 28px;
+            padding: 6px 0 !important;
         }
+        /* Barra dentro de células de vigência */
+        td.gantt-m .gantt-bar-seg {
+            height: 16px;
+            background: #2c6fc2;
+        }
+        td.gantt-m.bar-start .gantt-bar-seg {
+            margin-left: 4px;
+            border-radius: 3px 0 0 3px;
+        }
+        td.gantt-m.bar-end .gantt-bar-seg {
+            margin-right: 4px;
+            border-radius: 0 3px 3px 0;
+        }
+        td.gantt-m.bar-start.bar-end .gantt-bar-seg {
+            margin-left: 4px;
+            margin-right: 4px;
+            border-radius: 3px;
+        }
+        /* Linha vertical marcadora (ano / hoje) */
         .gantt-vline {
             position: absolute;
             top: 0;
@@ -6175,28 +6186,13 @@
             const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
 
             // Função auxiliar: retorna HTML de marcador vertical para o índice i
-            // leftPx = offset horizontal opcional (para linhas dentro de colspan)
-            function ganttVLine(i, leftPx) {
-                let cls = '';
-                if (i === todayIdx) cls = 'gantt-vline gantt-vline-today';
-                else if (yearStartSet.has(i)) cls = 'gantt-vline gantt-vline-year';
-                if (!cls) return '';
-                const style = (leftPx != null && leftPx > 0) ? ` style="left:${leftPx}px"` : '';
-                return `<div class="${cls}"${style}></div>`;
+            function ganttVLine(i) {
+                if (i === todayIdx) return '<div class="gantt-vline gantt-vline-today"></div>';
+                if (yearStartSet.has(i)) return '<div class="gantt-vline gantt-vline-year"></div>';
+                return '';
             }
 
-            // Coleta TODAS as vlines dentro de um range [fromIdx..toIdx]
-            // cada uma posicionada no offset correto em px relativo ao início do range
-            function ganttVLinesForRange(fromIdx, toIdx) {
-                let html = '';
-                for (let j = fromIdx; j <= toIdx; j++) {
-                    const leftPx = (j - fromIdx) * monthWidth;
-                    html += ganttVLine(j, leftPx);
-                }
-                return html;
-            }
-
-            // Cabeçalhos (sem wrapper divs — linhas virão como overlay)
+            // Cabeçalhos
             table += '<thead>';
             table += '<tr>';
             table += '<th class="sticky-up" rowspan="2" style="width:'+upColWidth+'px;">UP</th>';
@@ -6214,13 +6210,14 @@
             table += '</tr>';
             table += '</thead>';
 
-            // Corpo: percorrer grupos e inserir rowspan na coluna UP
+            // Corpo: cada mês é uma <td> individual (sem colspan)
             table += '<tbody>';
             groups.forEach(group => {
                 const up = group.up;
                 group.teds.forEach((r, idx) => {
                     const startIdx = Math.max(0, monthDiff(minDate, new Date(r.inicio.getFullYear(), r.inicio.getMonth(), 1)));
                     const endIdx = Math.min(totalMonths-1, monthDiff(minDate, new Date(r.fim.getFullYear(), r.fim.getMonth(), 1)));
+                    const title = `${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}`;
                     table += '<tr>';
                     if (idx === 0) {
                         table += `<td class="gantt-row-up sticky-up" rowspan="${group.teds.length}" style="vertical-align:middle; font-weight:700;">${up}</td>`;
@@ -6228,20 +6225,22 @@
                     const label = `${r.ted.numTed || ''} - ${r.ted.objeto || r.ted.objetivo || ''}`;
                     table += `<td class="gantt-row-label sticky-ted" title="UP: ${r.up}">${label}</td>`;
 
-                    // Render meses com colspan para a vigência
+                    // Render cada mês como <td> individual
                     for (let i=0;i<months.length;i++) {
-                        if (i === startIdx) {
-                            const span = endIdx - startIdx + 1;
-                            const vlines = ganttVLinesForRange(startIdx, endIdx);
-                            table += `<td colspan="${span}" style="padding:0;"><div class="gantt-cell-wrap" style="padding:6px 4px;"><div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div>${vlines}</div></td>`;
-                            i += (span - 1);
-                            continue;
-                        }
                         const vl = ganttVLine(i);
-                        if (vl) {
-                            table += `<td style="padding:0;"><div class="gantt-cell-wrap">${vl}</div></td>`;
+                        if (i >= startIdx && i <= endIdx) {
+                            // Célula dentro da vigência
+                            let cls = 'gantt-m';
+                            if (i === startIdx) cls += ' bar-start';
+                            if (i === endIdx) cls += ' bar-end';
+                            table += `<td class="${cls}" title="${title}">${vl}<div class="gantt-bar-seg"></div></td>`;
                         } else {
-                            table += `<td></td>`;
+                            // Célula fora da vigência
+                            if (vl) {
+                                table += `<td class="gantt-m">${vl}</td>`;
+                            } else {
+                                table += `<td></td>`;
+                            }
                         }
                     }
 
