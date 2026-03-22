@@ -1301,10 +1301,6 @@
             position: relative;
             min-height: 28px;
         }
-        .gantt-cell-wrap .gantt-bar {
-            position: relative;
-            z-index: 1;
-        }
         .gantt-vline {
             position: absolute;
             top: 0;
@@ -6222,7 +6218,7 @@
                         const vl = ganttVLine(i);
                         if (i === startIdx) {
                             const span = endIdx - startIdx + 1;
-                            table += `<td colspan="${span}" style="padding:0;"><div class="gantt-cell-wrap" style="padding:6px 4px;">${vl}<div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div></div></td>`;
+                            table += `<td colspan="${span}" style="padding:0;"><div class="gantt-cell-wrap" style="padding:6px 4px;"><div class="gantt-bar" title="${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}"></div>${vl}</div></td>`;
                             i += (span - 1);
                             continue;
                         }
