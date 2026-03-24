@@ -2483,8 +2483,7 @@
     </div>
 
     <script>
-        // Armazenamento Local (LocalStorage)
-        const STORAGE_KEY = 'ted_sistema';
+        // Firestore-only persistence (localStorage removed)
 
         // ===== SISTEMA DE TOAST/NOTIFICAÇÕES =====
         function showToast(message, type = 'info', duration = 3000) {
@@ -2613,27 +2612,8 @@
 
         // Inicializar
         function inicializar() {
-            // Quick local fallback load (will be migrated to Firestore if present there)
-            try {
-                const salvo = localStorage.getItem(STORAGE_KEY);
-                if (salvo) {
-                    dados = JSON.parse(salvo);
-                    // Recalcular valorTed a partir dos registros financeiros para garantir consistência
-                    if (dados.teds && dados.teds.length) {
-                        dados.teds.forEach(t => {
-                            t.financeiros = t.financeiros || [];
-                            t.execFinanceiras = t.execFinanceiras || [];
-                            try { t.valorTed = calcularTotalFinanceiro(t) || 0; } catch(e) { t.valorTed = t.valorTed || 0; }
-                            try { t.gasto = calcularTotalExecFinanceira(t) || 0; } catch(e) { t.gasto = t.gasto || 0; }
-                            try { t.progressoFisico = calcularProgressoFisico(t) || 0; } catch(e) { t.progressoFisico = t.progressoFisico || 0; }
-                        });
-                    }
-                }
-            } catch(e) { console.warn('Erro lendo localStorage inicial (fallback):', e); }
-
-            // Try to load/migrate data from Firestore asynchronously
+            // Initialize from Firestore `teds` collection and attach real-time listener
             (async function() {
-                // wait for firebase helpers to be available
                 const waitFor = (fnName, timeout = 5000) => new Promise(resolve => {
                     const start = Date.now();
                     (function check(){
@@ -2643,63 +2623,58 @@
                     })();
                 });
 
-                const ok = await waitFor('firestoreGetDoc', 5000);
+                const ok = await waitFor('firestoreGetCollection', 5000);
                 if (!ok) {
-                    console.info('Firestore helpers not available yet; running in offline/local mode');
+                    console.info('Firestore helpers not available; running with empty local state.');
                     return;
                 }
 
                 try {
-                    const remote = await window.firestoreGetDoc('app/dados');
-                    if (remote) {
-                        dados = remote;
-                        console.info('Dados carregados do Firestore.');
-                    } else {
-                        // No remote data; if we have local data, migrate it
-                        try {
-                            const local = localStorage.getItem(STORAGE_KEY);
-                            if (local) {
-                                const parsed = JSON.parse(local);
-                                await window.firestoreSetDoc('app/dados', parsed, { merge: false });
-                                localStorage.removeItem(STORAGE_KEY);
-                                dados = parsed;
-                                console.info('Dados locais migrados para Firestore.');
+                    const items = await window.firestoreGetCollection('teds');
+                    const normalized = (items || []).map(d => {
+                        const copy = Object.assign({}, d);
+                        if (!copy.id) {
+                            if (copy._docId) {
+                                const n = Number(copy._docId);
+                                copy.id = isFinite(n) ? n : copy._docId;
                             }
-                        } catch (e) { console.warn('Erro migrando local->firestore', e); }
-                    }
+                        }
+                        try { delete copy._docId; } catch(e) {}
+                        return copy;
+                    });
+                    dados.teds = normalized;
+                    dados.proxiId = dados.teds.length ? Math.max(...dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
+                    console.info('Dados teds carregados do Firestore. Count:', dados.teds.length);
 
-                    // Recalcular e atualizar UI after loading remote
-                    if (dados.teds && dados.teds.length) {
-                        dados.teds.forEach(t => {
-                            t.financeiros = t.financeiros || [];
-                            t.execFinanceiras = t.execFinanceiras || [];
-                            try { t.valorTed = calcularTotalFinanceiro(t) || 0; } catch(e) { t.valorTed = t.valorTed || 0; }
-                            try { t.gasto = calcularTotalExecFinanceira(t) || 0; } catch(e) { t.gasto = t.gasto || 0; }
-                            try { t.progressoFisico = calcularProgressoFisico(t) || 0; } catch(e) { t.progressoFisico = t.progressoFisico || 0; }
-                        });
-                    }
-
-                    // Listen for remote changes and keep in sync
+                    // Attach real-time listener to the collection
                     try {
-                        const unsub = window.firestoreOnSnapshot('app/dados', snap => {
+                        const unsub = window.firestoreOnCollectionSnapshot('teds', snap => {
                             try {
-                                const data = (snap && snap.data) ? snap.data() : null;
-                                if (data) {
-                                    dados = data;
-                                    try { atualizarDashboard(); } catch(e) {}
-                                    try { atualizarListaTEDs(); } catch(e) {}
-                                    try { atualizarSeletorTED(); } catch(e) {}
-                                    try { atualizarGantt(); } catch(e) {}
-                                }
-                            } catch(err) { console.warn('erro snapshot', err); }
+                                const arr = [];
+                                snap.forEach(d => {
+                                    const obj = Object.assign({}, d.data());
+                                    if (!obj.id) {
+                                        const docId = d.id;
+                                        const n = Number(docId);
+                                        obj.id = isFinite(n) ? n : docId;
+                                    }
+                                    arr.push(obj);
+                                });
+                                dados.teds = arr;
+                                dados.proxiId = dados.teds.length ? Math.max(...dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
+                                try { atualizarDashboard(); } catch(e) {}
+                                try { atualizarListaTEDs(); } catch(e) {}
+                                try { atualizarSeletorTED(); } catch(e) {}
+                                try { atualizarGantt(); } catch(e) {}
+                            } catch(err) { console.warn('erro snapshot teds', err); }
                         });
-                        // store unsub if needed later (not used now)
-                        window._firestoreDadosUnsub = unsub;
-                    } catch(e) { console.warn('Não foi possível ativar listener Firestore:', e); }
-                } catch(e) {
-                    console.warn('Erro carregando dados do Firestore:', e);
+                        window._firestoreTedsUnsub = unsub;
+                    } catch(e) { console.warn('Não foi possível ativar listener Firestore (teds):', e); }
+                } catch (e) {
+                    console.warn('Erro carregando coleção teds do Firestore:', e);
                 }
             })();
+
             atualizarDashboard();
             atualizarListaTEDs();
             atualizarSeletorTED();
@@ -2862,7 +2837,7 @@
         }
 
         // Criar TED
-        function criarTED(event) {
+        async function criarTED(event) {
             event.preventDefault();
 
             // Extrair mês e ano da data de descentralização
@@ -2875,8 +2850,25 @@
             try { calcularPrazoRelatorioCreate(); } catch(e) {}
             try { atualizarStatusCreate(); } catch(e) {}
 
+            // Allocate a numeric id atomically via Firestore if available
+            let allocatedId = null;
+            try {
+                if (window && window.firestoreGetNextId) {
+                    allocatedId = await window.firestoreGetNextId('teds');
+                }
+            } catch (e) {
+                console.warn('Erro alocando id via Firestore, fallback local', e);
+            }
+
+            if (!allocatedId) {
+                allocatedId = dados.proxiId++;
+            } else {
+                // ensure local proxiId stays ahead
+                if (!dados.proxiId || Number(allocatedId) >= dados.proxiId) dados.proxiId = Number(allocatedId) + 1;
+            }
+
             const ted = {
-                id: dados.proxiId++,
+                id: allocatedId,
                 planoTrabalho: document.getElementById('planoTrabalho').value,
                 numTed: document.getElementById('numTed').value,
                 codigoPlano: document.getElementById('codigoPlano').value,
@@ -7360,20 +7352,20 @@
             }
         }
 
-        // Salvar Dados (para Firestore)
+        // Salvar Dados: persist all TEDs as individual documents in `teds` collection
         async function salvarDados() {
-            // Prefer Firestore when available
             try {
-                if (window && window.firestoreSetDoc) {
-                    await window.firestoreSetDoc('app/dados', dados, { merge: false });
+                if (window && window.firestoreBatchSet) {
+                    // batch-write all TEDs into `teds` collection (per-document storage)
+                    await window.firestoreBatchSet('teds', dados.teds || []);
                     return;
                 }
             } catch (e) {
-                console.warn('Erro salvando em Firestore, fallback para localStorage', e);
+                console.warn('Erro salvando colecao teds no Firestore', e);
             }
 
-            // Fallback: write to localStorage (temporary, should be migrated)
-            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dados)); } catch(e) { console.warn('Erro salvando localmente', e); }
+            // No localStorage fallback — removed as persistence is Firestore-only
+            console.warn('Firestore batch helper not available; dados not persisted locally.');
         }
 
         // =============================================

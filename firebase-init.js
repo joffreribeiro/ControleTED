@@ -1,6 +1,6 @@
 // Firebase initialization for Controle TED
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, doc as fsDoc, getDoc as fsGetDoc, setDoc as fsSetDoc, onSnapshot as fsOnSnapshot } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, doc as fsDoc, getDoc as fsGetDoc, setDoc as fsSetDoc, onSnapshot as fsOnSnapshot, collection as fsCollection, getDocs as fsGetDocs, writeBatch as fsWriteBatch, deleteDoc as fsDeleteDoc, addDoc as fsAddDoc, runTransaction as fsRunTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
@@ -64,6 +64,92 @@ window.firestoreOnSnapshot = function(path, cb) {
   } catch (e) {
     console.warn('firestoreOnSnapshot error', e);
     return null;
+  }
+};
+
+// Collection helpers
+window.firestoreGetCollection = async function(collPath) {
+  try {
+    const parts = String(collPath || '').split('/').filter(Boolean);
+    if (parts.length === 0) return [];
+    const ref = fsCollection(db, ...parts);
+    const snap = await fsGetDocs(ref);
+    const items = [];
+    snap.forEach(d => items.push(Object.assign({ _docId: d.id }, d.data())));
+    return items;
+  } catch (e) {
+    console.warn('firestoreGetCollection error', e);
+    return [];
+  }
+};
+
+window.firestoreOnCollectionSnapshot = function(collPath, cb) {
+  try {
+    const parts = String(collPath || '').split('/').filter(Boolean);
+    if (parts.length === 0) return null;
+    const ref = fsCollection(db, ...parts);
+    return fsOnSnapshot(ref, cb);
+  } catch (e) {
+    console.warn('firestoreOnCollectionSnapshot error', e);
+    return null;
+  }
+};
+
+window.firestoreBatchSet = async function(collPath, docs) {
+  try {
+    if (!Array.isArray(docs)) return false;
+    const parts = String(collPath || '').split('/').filter(Boolean);
+    if (parts.length === 0) throw new Error('Invalid collection path');
+    const batch = fsWriteBatch(db);
+    for (const d of docs) {
+      const id = (d && (d.id || d._docId)) ? String(d.id || d._docId) : String(Date.now()) + Math.floor(Math.random()*1000);
+      const ref = fsDoc(db, ...parts, id);
+      const copy = Object.assign({}, d);
+      // ensure id is stored as property
+      copy.id = parseInt(id) || id;
+      batch.set(ref, copy);
+    }
+    await batch.commit();
+    return true;
+  } catch (e) {
+    console.warn('firestoreBatchSet error', e);
+    return false;
+  }
+};
+
+window.firestoreDeleteDoc = async function(path) {
+  try {
+    const parts = String(path || '').split('/').filter(Boolean);
+    if (parts.length % 2 === 1) throw new Error('Invalid doc path');
+    const ref = fsDoc(db, ...parts);
+    await fsDeleteDoc(ref);
+    return true;
+  } catch (e) {
+    console.warn('firestoreDeleteDoc error', e);
+    return false;
+  }
+};
+
+// Allocate an atomic numeric id stored in `meta/{key}` document
+window.firestoreGetNextId = async function(key = 'teds') {
+  try {
+    const metaRef = fsDoc(db, 'meta', String(key));
+    const next = await fsRunTransaction(db, async (tx) => {
+      const snap = await tx.get(metaRef);
+      if (!snap.exists()) {
+        tx.set(metaRef, { nextId: 2 });
+        return 1;
+      }
+      const data = snap.data() || {};
+      const cur = Number(data.nextId) || 1;
+      tx.update(metaRef, { nextId: cur + 1 });
+      return cur;
+    });
+    return next;
+  } catch (e) {
+    console.warn('firestoreGetNextId error', e);
+    // fallback: timestamp-based id (not ideal for sequential numeric ids)
+    return Date.now();
   }
 };
 
