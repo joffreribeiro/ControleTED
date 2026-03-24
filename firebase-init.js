@@ -1,7 +1,7 @@
 // Firebase initialization for Controle TED
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, enableIndexedDbPersistence, doc as fsDoc, getDoc as fsGetDoc, setDoc as fsSetDoc, onSnapshot as fsOnSnapshot, collection as fsCollection, getDocs as fsGetDocs, writeBatch as fsWriteBatch, deleteDoc as fsDeleteDoc, addDoc as fsAddDoc, runTransaction as fsRunTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged as fbOnAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -27,6 +27,56 @@ enableIndexedDbPersistence(db).catch((err) => {
 window.firebaseApp = app;
 window.firebaseDB = db;
 window.firebaseAuth = auth;
+
+// ===== Auth helpers =====
+window.authCreateUser = async function(email, password, profile = {}) {
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, String(email), String(password));
+    const user = cred && cred.user ? cred.user : null;
+    if (user) {
+      // update displayName if provided
+      try { if (profile.displayName) await updateProfile(user, { displayName: profile.displayName }); } catch(e){}
+      // create user profile in Firestore under `users/{uid}`
+      try {
+        const uref = fsDoc(db, 'users', user.uid);
+        await fsSetDoc(uref, Object.assign({ uid: user.uid, email: user.email, role: profile.role || 'user', displayName: profile.displayName || user.displayName || '' }));
+      } catch (e) { console.warn('authCreateUser: error creating user profile', e); }
+    }
+    return user;
+  } catch (e) {
+    console.warn('authCreateUser error', e);
+    throw e;
+  }
+};
+
+window.authSignIn = async function(email, password) {
+  try {
+    const cred = await signInWithEmailAndPassword(auth, String(email), String(password));
+    return cred && cred.user ? cred.user : null;
+  } catch (e) {
+    console.warn('authSignIn error', e);
+    throw e;
+  }
+};
+
+window.authSignOut = async function() {
+  try {
+    await fbSignOut(auth);
+    return true;
+  } catch (e) {
+    console.warn('authSignOut error', e);
+    return false;
+  }
+};
+
+window.authOnStateChanged = function(cb) {
+  try {
+    return fbOnAuthStateChanged(auth, cb);
+  } catch (e) {
+    console.warn('authOnStateChanged error', e);
+    return null;
+  }
+};
 
 // Helper wrappers to use Firestore from non-module inline scripts
 window.firestoreGetDoc = async function(path) {

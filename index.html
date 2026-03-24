@@ -3368,6 +3368,43 @@
                         </p>
                     </div>
                 </div>
+                
+                <!-- Usuários e Perfis -->
+                <div style="margin-top:1.5rem;">
+                    <h3 style="margin-bottom: 1rem; color: #2c5aa0;">👥 Usuários e Perfis</h3>
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div style="flex:1; min-width:300px; background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
+                            <label style="font-weight:600; display:block; margin-bottom:0.5rem;">Login</label>
+                            <input id="login_email" placeholder="email@exemplo.com" style="width:100%; margin-bottom:0.5rem;" />
+                            <input id="login_password" type="password" placeholder="Senha" style="width:100%; margin-bottom:0.5rem;" />
+                            <div style="display:flex; gap:0.5rem;">
+                                <button class="btn btn-primary" onclick="handleSignIn()">Entrar</button>
+                                <button class="btn" onclick="handleSignOut()">Sair</button>
+                            </div>
+                        </div>
+
+                        <div style="flex:1; min-width:320px; background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
+                            <label style="font-weight:600; display:block; margin-bottom:0.5rem;">Criar Usuário (Administrador)</label>
+                            <input id="create_email" placeholder="email@exemplo.com" style="width:100%; margin-bottom:0.5rem;" />
+                            <input id="create_password" type="password" placeholder="Senha" style="width:100%; margin-bottom:0.5rem;" />
+                            <input id="create_name" placeholder="Nome completo" style="width:100%; margin-bottom:0.5rem;" />
+                            <label style="display:block; margin-bottom:0.5rem;">Perfil</label>
+                            <select id="create_role" style="width:100%; margin-bottom:0.5rem;">
+                                <option value="user">Usuário (somente leitura)</option>
+                                <option value="admin">Administrador (editar tudo)</option>
+                            </select>
+                            <div style="display:flex; gap:0.5rem;">
+                                <button class="btn btn-primary" onclick="handleCreateUser()">Criar Usuário</button>
+                                <button class="btn" onclick="loadUsersList()">Carregar Usuários</button>
+                            </div>
+                        </div>
+
+                        <div style="flex-basis:100%; margin-top:0.5rem; background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
+                            <h4 style="margin-top:0;">Lista de Usuários</h4>
+                            <div id="usersListContainer">Nenhum usuário carregado.</div>
+                        </div>
+                    </div>
+                </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
                     <div>
@@ -6923,7 +6960,18 @@
         // Logout
         function logout() {
             if (confirm('Tem certeza que deseja sair?')) {
-                alert('Até logo! 👋');
+                // Try Firebase sign-out if available
+                try {
+                    if (window.authSignOut) {
+                        window.authSignOut().then(() => {
+                            alert('Até logo! 👋');
+                        }).catch(() => { alert('Até logo! 👋'); });
+                    } else {
+                        alert('Até logo! 👋');
+                    }
+                } catch (e) {
+                    alert('Até logo! 👋');
+                }
             }
         }
 

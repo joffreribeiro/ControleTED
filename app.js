@@ -201,3 +201,153 @@ window.testFirestoreConnection = async function() {
     setLastSync(null);
 
   })();
+
+  // ===== User management and role enforcement =====
+  // Apply role-based UI permissions (admin vs user)
+  function isCurrentUserAdmin() {
+    try {
+      return window.currentUserProfile && window.currentUserProfile.role === 'admin';
+    } catch (e) { return false; }
+  }
+
+  function applyRolePermissions() {
+    const admin = isCurrentUserAdmin();
+    // disable create/edit/delete TED actions for non-admins
+    try {
+      const selectors = ['[onclick*="criarTED" ]','[onclick*="criarTED("]','[onclick*="editarTED" ]','[onclick*="editarTED("]','[onclick*="deletarTED" ]','[onclick*="deletarTED("]'];
+      selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => { try { el.disabled = !admin; } catch(e){} });
+      });
+    } catch (e) { console.warn('applyRolePermissions error', e); }
+
+    // disable modal edit buttons (by text)
+    try {
+      document.querySelectorAll('#modalDetalhes .btn').forEach(b => {
+        const txt = (b.textContent || '').toLowerCase();
+        if (txt.includes('editar') || txt.includes('deletar')) b.disabled = !admin;
+      });
+    } catch (e) {}
+
+    // disable create user form for non-admins
+    try { document.getElementById('create_email').disabled = !admin; } catch(e){}
+    try { document.getElementById('create_password').disabled = !admin; } catch(e){}
+    try { document.getElementById('create_name').disabled = !admin; } catch(e){}
+    try { document.getElementById('create_role').disabled = !admin; } catch(e){}
+  }
+
+  // Sign-in handler
+  window.handleSignIn = async function() {
+    try {
+      const email = (document.getElementById('login_email') || {}).value || '';
+      const password = (document.getElementById('login_password') || {}).value || '';
+      if (!email || !password) { showToast('Informe email e senha', 'warning'); return; }
+      showToast('Entrando...', 'info');
+      await waitForHelper('authSignIn', 3000);
+      const user = await window.authSignIn(email, password);
+      if (user) {
+        showToast('Login realizado', 'success');
+        // profile will be loaded by authOnStateChanged listener
+      }
+    } catch (e) {
+      console.error('handleSignIn error', e);
+      showToast('Erro ao entrar: ' + (e.message || e), 'error');
+    }
+  };
+
+  // Sign-out handler
+  window.handleSignOut = async function() {
+    try {
+      if (window.authSignOut) await window.authSignOut();
+      window.currentUserProfile = null;
+      applyRolePermissions();
+      showToast('Desconectado', 'info');
+    } catch (e) { console.warn('handleSignOut', e); showToast('Erro ao sair', 'error'); }
+  };
+
+  // Create user (requires admin or bootstrap when no users exist)
+  window.handleCreateUser = async function() {
+    try {
+      const email = (document.getElementById('create_email') || {}).value || '';
+      const password = (document.getElementById('create_password') || {}).value || '';
+      const name = (document.getElementById('create_name') || {}).value || '';
+      const role = (document.getElementById('create_role') || {}).value || 'user';
+      if (!email || !password) { showToast('Email e senha são obrigatórios', 'warning'); return; }
+
+      // check if admin or bootstrap (no users exist)
+      let allow = false;
+      try {
+        const users = await (window.firestoreGetCollection ? window.firestoreGetCollection('users') : Promise.resolve([]));
+        if (!users || users.length === 0) allow = true;
+      } catch(e){ }
+      if (!allow) allow = isCurrentUserAdmin();
+      if (!allow) { showToast('Apenas administradores podem criar usuários', 'error'); return; }
+
+      showToast('Criando usuário...', 'info');
+      await waitForHelper('authCreateUser', 3000);
+      const user = await window.authCreateUser(email, password, { displayName: name, role: role });
+      if (user) {
+        showToast('Usuário criado', 'success');
+        loadUsersList();
+      }
+    } catch (e) {
+      console.error('handleCreateUser error', e);
+      showToast('Erro ao criar usuário: ' + (e.message || e), 'error');
+    }
+  };
+
+  // Load and render users list
+  window.loadUsersList = async function() {
+    try {
+      await waitForHelper('firestoreGetCollection', 3000);
+      const users = await window.firestoreGetCollection('users');
+      const wrap = document.getElementById('usersListContainer');
+      if (!wrap) return;
+      if (!users || users.length === 0) { wrap.innerHTML = '<div>Nenhum usuário cadastrado.</div>'; return; }
+      const html = users.map(u => {
+        const role = u.role || 'user';
+        const name = u.displayName || u.email || u.uid;
+        const uid = u.uid || u._docId || '';
+        const deleteBtn = isCurrentUserAdmin() ? `<button class="btn" onclick="(function(){ deleteUser('${uid}'); })()">Remover</button>` : '';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px;border-bottom:1px solid var(--border);"><div><strong>${name}</strong><div style="font-size:12px;color:var(--text-muted)">${u.email} · ${role}</div></div><div>${deleteBtn}</div></div>`;
+      }).join('');
+      wrap.innerHTML = html;
+    } catch (e) { console.warn('loadUsersList error', e); }
+  };
+
+  // Delete user profile (Firestore doc). Note: does not delete Firebase Auth user.
+  window.deleteUser = async function(uid) {
+    try {
+      if (!isCurrentUserAdmin()) { showToast('Apenas administradores podem remover usuários', 'error'); return; }
+      if (!confirm('Remover perfil deste usuário (somente Firestore)?')) return;
+      await waitForHelper('firestoreDeleteDoc', 2000);
+      const ok = await window.firestoreDeleteDoc('users/' + uid);
+      if (ok) { showToast('Perfil removido (Firestore)', 'success'); loadUsersList(); }
+      else showToast('Erro removendo perfil', 'error');
+    } catch (e) { console.warn('deleteUser', e); showToast('Erro ao remover usuário', 'error'); }
+  };
+
+  // Listen to auth state and load profile
+  ;(async function(){
+    await waitForHelper('authOnStateChanged', 5000);
+    if (window.authOnStateChanged) {
+      window.authOnStateChanged(async (user) => {
+        try {
+          if (user) {
+            window.currentUser = user;
+            // fetch profile
+            let profile = null;
+            try {
+              if (window.firestoreGetDoc) profile = await window.firestoreGetDoc('users/' + user.uid);
+            } catch (e) { console.warn('error loading user profile', e); }
+            window.currentUserProfile = profile || { uid: user.uid, email: user.email, role: 'user', displayName: user.displayName || '' };
+            showToast('Conectado como ' + (window.currentUserProfile.displayName || window.currentUserProfile.email), 'info');
+          } else {
+            window.currentUser = null;
+            window.currentUserProfile = null;
+          }
+        } catch (e) { console.warn('auth state handler', e); }
+        try { applyRolePermissions(); } catch(e) {}
+        try { loadUsersList(); } catch(e) {}
+      });
+    }
+  })();
