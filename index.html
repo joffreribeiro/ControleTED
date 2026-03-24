@@ -1512,6 +1512,8 @@
                     <i data-lucide="sun" class="theme-icon-light"></i>
                     <i data-lucide="moon" class="theme-icon-dark"></i>
                 </button>
+                <button class="btn" onclick="salvarNoCloud()" title="Salvar dados na nuvem">Salvar na Cloud</button>
+                <button class="btn" onclick="carregarDoCloud()" title="Carregar dados da nuvem">Carregar da Cloud</button>
                 <button onclick="logout()">Sair</button>
             </div>
         </nav>
@@ -8573,6 +8575,7 @@
 
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js"></script>
+    <script type="module" src="./app.js"></script>
 
 </body>
 </html>
