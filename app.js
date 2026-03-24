@@ -401,3 +401,46 @@ async function createBootstrapAdminIfNeeded() {
   } catch(e) { console.warn('createBootstrapAdminIfNeeded error', e); }
   return false;
 }
+
+// Force create the admin account and sign in (used by UI button)
+window.forceCreateAdmin = async function() {
+  const email = 'joffre.ribeiro@imbel.gov.br';
+  const password = '123';
+  const name = 'Joffre Ribeiro';
+  try {
+    showToast('Criando admin (forçado)...', 'info');
+    await waitForHelper('authCreateUser', 5000);
+    try {
+      const user = await window.authCreateUser(email, password, { displayName: name, role: 'admin' });
+      if (user) {
+        showToast('Admin criado com sucesso', 'success');
+      }
+    } catch (e) {
+      // If email already in use, show message and attempt sign-in
+      console.warn('forceCreateAdmin:create error', e);
+      if (e && e.code && e.code === 'auth/email-already-in-use') {
+        showToast('Email já existe, tentando entrar...', 'warning');
+      } else {
+        showToast('Erro criando admin: ' + (e.message || e), 'error');
+      }
+    }
+
+    // Try to sign in as the admin
+    try {
+      await waitForHelper('authSignIn', 3000);
+      const u = await window.authSignIn(email, password);
+      if (u) {
+        showToast('Logado como admin', 'success');
+      }
+    } catch (e) {
+      console.warn('forceCreateAdmin: signin error', e);
+      showToast('Não foi possível entrar automaticamente: ' + (e.message || e), 'warning');
+    }
+
+    // Refresh users list
+    try { await loadUsersList(); } catch(e) {}
+  } catch (e) {
+    console.error('forceCreateAdmin error', e);
+    showToast('Erro forçando criação de admin: ' + (e.message || e), 'error');
+  }
+};
