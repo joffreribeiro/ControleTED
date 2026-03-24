@@ -2527,20 +2527,23 @@
         </div>
     </div>
 
-    <!-- Modal de Login (aparece quando não autenticado) -->
-    <div id="loginModal" class="modal" onclick="(event) => { if(event.target === document.getElementById('loginModal')) hideLoginModal(); }">
-        <div class="modal-content" style="max-width:420px;" onclick="event.stopPropagation()">
-            <div class="modal-header">Entrar no Sistema</div>
-            <div style="padding:1rem;">
-                <label style="display:block;margin-bottom:0.25rem;">Email</label>
-                <input id="modal_login_email" type="email" placeholder="email@exemplo.com" style="width:100%; margin-bottom:0.5rem;" />
-                <label style="display:block;margin-bottom:0.25rem;">Senha</label>
-                <input id="modal_login_password" type="password" placeholder="Senha" style="width:100%; margin-bottom:0.5rem;" />
-                <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.5rem;">
-                    <button class="btn" onclick="hideLoginModal()">Fechar</button>
-                    <button class="btn btn-primary" onclick="handleSignIn()">Entrar</button>
-                </div>
+    <!-- Tela de Login (full-page, visível por padrão) -->
+    <div id="loginScreen" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
+        <div style="background:white; border-radius:1rem; padding:2.5rem; max-width:420px; width:90%; box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+            <div style="text-align:center; margin-bottom:1.5rem;">
+                <div style="font-size:2.5rem; margin-bottom:0.5rem;">📋</div>
+                <h2 style="margin:0; color:#1e40af; font-size:1.5rem;">Controle TED</h2>
+                <p style="margin:0.25rem 0 0; color:#64748b; font-size:0.875rem;">Sistema de Execução Descentralizada</p>
             </div>
+            <div id="loginError" style="display:none; background:#fee2e2; color:#dc2626; padding:0.5rem 0.75rem; border-radius:0.5rem; margin-bottom:0.75rem; font-size:0.875rem;"></div>
+            <div id="loginSuccess" style="display:none; background:#d1fae5; color:#059669; padding:0.5rem 0.75rem; border-radius:0.5rem; margin-bottom:0.75rem; font-size:0.875rem;"></div>
+            <label style="display:block; margin-bottom:0.25rem; font-weight:600; color:#374151;">Email</label>
+            <input id="modal_login_email" type="email" placeholder="email@exemplo.com" style="width:100%; padding:0.6rem 0.75rem; margin-bottom:0.75rem; border:1px solid #d1d5db; border-radius:0.5rem; font-size:1rem;" />
+            <label style="display:block; margin-bottom:0.25rem; font-weight:600; color:#374151;">Senha</label>
+            <input id="modal_login_password" type="password" placeholder="Senha" style="width:100%; padding:0.6rem 0.75rem; margin-bottom:1rem; border:1px solid #d1d5db; border-radius:0.5rem; font-size:1rem;" onkeydown="if(event.key==='Enter') doLogin()" />
+            <button onclick="doLogin()" style="width:100%; padding:0.75rem; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:white; border:none; border-radius:0.5rem; font-size:1rem; font-weight:600; cursor:pointer; margin-bottom:0.5rem;">Entrar</button>
+            <button onclick="doForceCreateAdmin()" style="width:100%; padding:0.6rem; background:#f59e0b; color:white; border:none; border-radius:0.5rem; font-size:0.875rem; font-weight:600; cursor:pointer;">⚡ Criar Admin e Entrar</button>
+            <p id="loginStatus" style="text-align:center; margin-top:0.75rem; font-size:0.8rem; color:#94a3b8;">Aguardando conexão com Firebase...</p>
         </div>
     </div>
 
@@ -8640,6 +8643,121 @@
             }
         }
 
+        // ===== LOGIN SCREEN HELPERS (inline, não depende de módulos) =====
+        function showLoginScreen() {
+            var el = document.getElementById('loginScreen');
+            if (el) el.style.display = 'flex';
+        }
+        function hideLoginScreen() {
+            var el = document.getElementById('loginScreen');
+            if (el) el.style.display = 'none';
+        }
+        // Alias for module compatibility
+        function showLoginModal() { showLoginScreen(); }
+        function hideLoginModal() { hideLoginScreen(); }
+        window.showLoginModal = showLoginScreen;
+        window.hideLoginModal = hideLoginScreen;
+
+        function setLoginError(msg) {
+            var el = document.getElementById('loginError');
+            if (!el) return;
+            if (msg) { el.style.display = 'block'; el.textContent = msg; }
+            else { el.style.display = 'none'; el.textContent = ''; }
+        }
+        function setLoginSuccess(msg) {
+            var el = document.getElementById('loginSuccess');
+            if (!el) return;
+            if (msg) { el.style.display = 'block'; el.textContent = msg; }
+            else { el.style.display = 'none'; el.textContent = ''; }
+        }
+        function setLoginStatus(msg) {
+            var el = document.getElementById('loginStatus');
+            if (el) el.textContent = msg || '';
+        }
+
+        // Wait for a window property to be available
+        function waitForGlobal(name, timeout) {
+            return new Promise(function(resolve) {
+                var start = Date.now();
+                (function check() {
+                    if (window[name]) return resolve(true);
+                    if (Date.now() - start > (timeout || 8000)) return resolve(false);
+                    setTimeout(check, 200);
+                })();
+            });
+        }
+
+        // Login handler (inline — works even if app.js not loaded yet)
+        async function doLogin() {
+            setLoginError('');
+            setLoginSuccess('');
+            var email = (document.getElementById('modal_login_email') || {}).value || '';
+            var password = (document.getElementById('modal_login_password') || {}).value || '';
+            if (!email.trim() || !password.trim()) { setLoginError('Informe email e senha.'); return; }
+            setLoginStatus('Conectando...');
+            var ok = await waitForGlobal('authSignIn', 8000);
+            if (!ok) { setLoginError('Firebase não carregou. Verifique sua conexão.'); setLoginStatus(''); return; }
+            try {
+                var user = await window.authSignIn(email.trim(), password.trim());
+                if (user) {
+                    setLoginSuccess('Login realizado!');
+                    setLoginStatus('');
+                    // hideLoginScreen will be called by authOnStateChanged in app.js
+                }
+            } catch (e) {
+                console.error('doLogin error', e);
+                var msg = 'Erro ao entrar.';
+                if (e && e.code) {
+                    if (e.code === 'auth/user-not-found') msg = 'Usuário não encontrado.';
+                    else if (e.code === 'auth/wrong-password') msg = 'Senha incorreta.';
+                    else if (e.code === 'auth/invalid-email') msg = 'Email inválido.';
+                    else if (e.code === 'auth/invalid-credential') msg = 'Credenciais inválidas.';
+                    else if (e.code === 'auth/too-many-requests') msg = 'Muitas tentativas. Tente mais tarde.';
+                    else msg = e.code + ': ' + (e.message || '');
+                }
+                setLoginError(msg);
+                setLoginStatus('');
+            }
+        }
+        window.doLogin = doLogin;
+
+        // Force create admin (inline)
+        async function doForceCreateAdmin() {
+            setLoginError('');
+            setLoginSuccess('');
+            setLoginStatus('Criando administrador...');
+            var email = 'joffre.ribeiro@imbel.gov.br';
+            var password = '123';
+            var ok = await waitForGlobal('authCreateUser', 8000);
+            if (!ok) { setLoginError('Firebase não carregou. Verifique sua conexão.'); setLoginStatus(''); return; }
+            try {
+                await window.authCreateUser(email, password, { displayName: 'Joffre Ribeiro', role: 'admin' });
+                setLoginSuccess('Admin criado! Entrando...');
+            } catch (e) {
+                console.warn('doForceCreateAdmin create error', e);
+                if (e && e.code === 'auth/email-already-in-use') {
+                    setLoginSuccess('Admin já existe. Entrando...');
+                } else {
+                    setLoginError('Erro criando admin: ' + (e.message || e));
+                    setLoginStatus('');
+                    return;
+                }
+            }
+            // sign in
+            try {
+                var okSign = await waitForGlobal('authSignIn', 3000);
+                if (okSign) {
+                    await window.authSignIn(email, password);
+                    setLoginSuccess('Logado como admin!');
+                }
+            } catch (e) {
+                console.warn('doForceCreateAdmin signin error', e);
+                setLoginError('Admin criado mas não foi possível entrar: ' + (e.message || e));
+            }
+            setLoginStatus('');
+        }
+        window.doForceCreateAdmin = doForceCreateAdmin;
+
         // Iniciar ao carregar a página
         window.onload = function() {
             initTheme();
@@ -8648,6 +8766,13 @@
             initLucideIcons();
             // Observar wrappers de tabela
             document.querySelectorAll('.table-wrapper').forEach(w => resizeObserver.observe(w));
+            // Show login screen by default (will be hidden by auth listener)
+            showLoginScreen();
+            // Update login status when firebase loads
+            waitForGlobal('authSignIn', 10000).then(function(ok) {
+                if (ok) setLoginStatus('Pronto para login.');
+                else setLoginStatus('Firebase não disponível. Verifique conexão.');
+            });
         };
     </script>
 
