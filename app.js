@@ -73,3 +73,80 @@ window.carregarDoCloud = async function() {
     showToast('Erro ao carregar da nuvem: ' + (e.message || e), 'error');
   }
 };
+
+  // Cloud status / last sync indicator + autosave
+  ;(async function() {
+    // helpers
+    function setCloudStatus(connected) {
+      const el = document.getElementById('cloudStatusIcon');
+      if (!el) return;
+      if (connected) {
+        el.style.color = 'var(--success)';
+        el.title = 'Conectado ao Firestore';
+      } else {
+        el.style.color = 'var(--danger)';
+        el.title = 'Desconectado do Firestore';
+      }
+    }
+
+    function setLastSync(ts) {
+      const el = document.getElementById('cloudLastSync');
+      if (!el) return;
+      if (!ts) {
+        el.textContent = 'Nunca sincronizado';
+        return;
+      }
+      const d = (ts instanceof Date) ? ts : new Date(ts);
+      el.textContent = 'Última sync: ' + d.toLocaleString();
+    }
+
+    // Wait for firestore helpers (collection snapshot + salvarDados)
+    await waitForHelper('firestoreOnCollectionSnapshot', 5000);
+    await waitForHelper('salvarDados', 1000);
+
+    // Track last saved snapshot to detect changes
+    window._lastSavedTedsSnapshot = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
+
+    // Attach collection snapshot to detect server connectivity and last sync
+    try {
+      if (window.firestoreOnCollectionSnapshot) {
+        window.firestoreOnCollectionSnapshot('teds', snap => {
+          try {
+            // If snapshot metadata indicates data not from cache, we consider connected
+            const meta = snap && snap.metadata ? snap.metadata : null;
+            const fromCache = meta ? !!meta.fromCache : false;
+            setCloudStatus(!fromCache);
+            setLastSync(new Date());
+          } catch (e) { console.warn('cloud snapshot handler error', e); }
+        });
+      }
+    } catch (e) { console.warn('Erro anexando snapshot de teds para status', e); }
+
+    // Listen to online/offline browser events
+    window.addEventListener('online', () => { setCloudStatus(true); });
+    window.addEventListener('offline', () => { setCloudStatus(false); });
+
+    // Autosave loop: every 12s check for changes and call salvarDados()
+    setInterval(async () => {
+      try {
+        const current = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
+        if (current !== window._lastSavedTedsSnapshot) {
+          // dirty
+          if (typeof window.salvarDados === 'function') {
+            await window.salvarDados();
+            window._lastSavedTedsSnapshot = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
+            setLastSync(new Date());
+            setCloudStatus(true);
+          }
+        }
+      } catch (e) {
+        console.warn('autosave error', e);
+        setCloudStatus(false);
+      }
+    }, 12000);
+
+    // initial UI
+    setCloudStatus(navigator.onLine);
+    setLastSync(null);
+
+  })();

@@ -1514,6 +1514,10 @@
                 </button>
                 <button class="btn" onclick="salvarNoCloud()" title="Salvar dados na nuvem">Salvar na Cloud</button>
                 <button class="btn" onclick="carregarDoCloud()" title="Carregar dados da nuvem">Carregar da Cloud</button>
+                <div id="cloudIndicator" style="display:flex;align-items:center;gap:0.5rem;margin-left:0.5rem;">
+                    <span id="cloudStatusIcon" title="Status da nuvem" style="font-size:14px;color:var(--text-muted)">●</span>
+                    <span id="cloudLastSync" style="font-size:12px;color:var(--text-muted)">Nunca sincronizado</span>
+                </div>
                 <button onclick="logout()">Sair</button>
             </div>
         </nav>
