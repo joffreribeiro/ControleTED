@@ -2526,6 +2526,23 @@
         </div>
     </div>
 
+    <!-- Modal de Login (aparece quando não autenticado) -->
+    <div id="loginModal" class="modal" onclick="(event) => { if(event.target === document.getElementById('loginModal')) hideLoginModal(); }">
+        <div class="modal-content" style="max-width:420px;" onclick="event.stopPropagation()">
+            <div class="modal-header">Entrar no Sistema</div>
+            <div style="padding:1rem;">
+                <label style="display:block;margin-bottom:0.25rem;">Email</label>
+                <input id="modal_login_email" type="email" placeholder="email@exemplo.com" style="width:100%; margin-bottom:0.5rem;" />
+                <label style="display:block;margin-bottom:0.25rem;">Senha</label>
+                <input id="modal_login_password" type="password" placeholder="Senha" style="width:100%; margin-bottom:0.5rem;" />
+                <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.5rem;">
+                    <button class="btn" onclick="hideLoginModal()">Fechar</button>
+                    <button class="btn btn-primary" onclick="handleSignIn()">Entrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Firestore-only persistence (localStorage removed)
 

@@ -238,14 +238,17 @@ window.testFirestoreConnection = async function() {
   // Sign-in handler
   window.handleSignIn = async function() {
     try {
-      const email = (document.getElementById('login_email') || {}).value || '';
-      const password = (document.getElementById('login_password') || {}).value || '';
+      const emailEl = document.getElementById('modal_login_email') || document.getElementById('login_email') || {};
+      const passEl = document.getElementById('modal_login_password') || document.getElementById('login_password') || {};
+      const email = (emailEl.value || '').trim();
+      const password = (passEl.value || '').trim();
       if (!email || !password) { showToast('Informe email e senha', 'warning'); return; }
       showToast('Entrando...', 'info');
       await waitForHelper('authSignIn', 3000);
       const user = await window.authSignIn(email, password);
       if (user) {
         showToast('Login realizado', 'success');
+        try { hideLoginModal(); } catch(e){}
         // profile will be loaded by authOnStateChanged listener
       }
     } catch (e) {
@@ -341,13 +344,60 @@ window.testFirestoreConnection = async function() {
             } catch (e) { console.warn('error loading user profile', e); }
             window.currentUserProfile = profile || { uid: user.uid, email: user.email, role: 'user', displayName: user.displayName || '' };
             showToast('Conectado como ' + (window.currentUserProfile.displayName || window.currentUserProfile.email), 'info');
+            try { hideLoginModal(); } catch(e){}
           } else {
             window.currentUser = null;
             window.currentUserProfile = null;
+            try { showLoginModal(); } catch(e){}
           }
         } catch (e) { console.warn('auth state handler', e); }
         try { applyRolePermissions(); } catch(e) {}
         try { loadUsersList(); } catch(e) {}
       });
     }
+    // After setting auth listener, ensure bootstrap admin exists if no users
+    try {
+      await createBootstrapAdminIfNeeded();
+    } catch(e) {}
   })();
+
+// Show/hide login modal helpers
+function showLoginModal() {
+  try {
+    const el = document.getElementById('loginModal');
+    if (!el) return;
+    el.classList.add('active');
+  } catch(e) {}
+}
+
+function hideLoginModal() {
+  try {
+    const el = document.getElementById('loginModal');
+    if (!el) return;
+    el.classList.remove('active');
+  } catch(e) {}
+}
+
+// Bootstrap an admin user if users collection is empty
+async function createBootstrapAdminIfNeeded() {
+  try {
+    await waitForHelper('firestoreGetCollection', 3000);
+    const users = await window.firestoreGetCollection('users');
+    if (users && users.length > 0) return false;
+    // no users — create the provided admin account
+    await waitForHelper('authCreateUser', 3000);
+    const email = 'joffre.ribeiro@imbel.gov.br';
+    const password = '123';
+    const name = 'Joffre Ribeiro';
+    try {
+      const user = await window.authCreateUser(email, password, { displayName: name, role: 'admin' });
+      if (user) {
+        showToast('Admin criado e conectado: ' + email, 'success');
+        return true;
+      }
+    } catch (e) {
+      console.warn('createBootstrapAdminIfNeeded error creating user', e);
+    }
+  } catch(e) { console.warn('createBootstrapAdminIfNeeded error', e); }
+  return false;
+}
