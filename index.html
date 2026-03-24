@@ -2613,34 +2613,93 @@
 
         // Inicializar
         function inicializar() {
-            const salvo = localStorage.getItem(STORAGE_KEY);
-            if (salvo) {
-                dados = JSON.parse(salvo);
-                // Recalcular valorTed a partir dos registros financeiros para garantir consistência
-                if (dados.teds && dados.teds.length) {
-                    dados.teds.forEach(t => {
-                        t.financeiros = t.financeiros || [];
-                        t.execFinanceiras = t.execFinanceiras || [];
-                        // garantir campos numéricos e recalcular valores
-                        try {
-                            t.valorTed = calcularTotalFinanceiro(t) || 0;
-                        } catch(e) {
-                            t.valorTed = t.valorTed || 0;
-                        }
-                        try {
-                            t.gasto = calcularTotalExecFinanceira(t) || 0;
-                        } catch(e) {
-                            t.gasto = t.gasto || 0;
-                        }
-                        try {
-                            t.progressoFisico = calcularProgressoFisico(t) || 0;
-                        } catch(e) {
-                            t.progressoFisico = t.progressoFisico || 0;
-                        }
-                    });
-                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dados)); } catch(e) {}
+            // Quick local fallback load (will be migrated to Firestore if present there)
+            try {
+                const salvo = localStorage.getItem(STORAGE_KEY);
+                if (salvo) {
+                    dados = JSON.parse(salvo);
+                    // Recalcular valorTed a partir dos registros financeiros para garantir consistência
+                    if (dados.teds && dados.teds.length) {
+                        dados.teds.forEach(t => {
+                            t.financeiros = t.financeiros || [];
+                            t.execFinanceiras = t.execFinanceiras || [];
+                            try { t.valorTed = calcularTotalFinanceiro(t) || 0; } catch(e) { t.valorTed = t.valorTed || 0; }
+                            try { t.gasto = calcularTotalExecFinanceira(t) || 0; } catch(e) { t.gasto = t.gasto || 0; }
+                            try { t.progressoFisico = calcularProgressoFisico(t) || 0; } catch(e) { t.progressoFisico = t.progressoFisico || 0; }
+                        });
+                    }
                 }
-            }
+            } catch(e) { console.warn('Erro lendo localStorage inicial (fallback):', e); }
+
+            // Try to load/migrate data from Firestore asynchronously
+            (async function() {
+                // wait for firebase helpers to be available
+                const waitFor = (fnName, timeout = 5000) => new Promise(resolve => {
+                    const start = Date.now();
+                    (function check(){
+                        if (window[fnName]) return resolve(true);
+                        if (Date.now() - start > timeout) return resolve(false);
+                        setTimeout(check, 200);
+                    })();
+                });
+
+                const ok = await waitFor('firestoreGetDoc', 5000);
+                if (!ok) {
+                    console.info('Firestore helpers not available yet; running in offline/local mode');
+                    return;
+                }
+
+                try {
+                    const remote = await window.firestoreGetDoc('app/dados');
+                    if (remote) {
+                        dados = remote;
+                        console.info('Dados carregados do Firestore.');
+                    } else {
+                        // No remote data; if we have local data, migrate it
+                        try {
+                            const local = localStorage.getItem(STORAGE_KEY);
+                            if (local) {
+                                const parsed = JSON.parse(local);
+                                await window.firestoreSetDoc('app/dados', parsed, { merge: false });
+                                localStorage.removeItem(STORAGE_KEY);
+                                dados = parsed;
+                                console.info('Dados locais migrados para Firestore.');
+                            }
+                        } catch (e) { console.warn('Erro migrando local->firestore', e); }
+                    }
+
+                    // Recalcular e atualizar UI after loading remote
+                    if (dados.teds && dados.teds.length) {
+                        dados.teds.forEach(t => {
+                            t.financeiros = t.financeiros || [];
+                            t.execFinanceiras = t.execFinanceiras || [];
+                            try { t.valorTed = calcularTotalFinanceiro(t) || 0; } catch(e) { t.valorTed = t.valorTed || 0; }
+                            try { t.gasto = calcularTotalExecFinanceira(t) || 0; } catch(e) { t.gasto = t.gasto || 0; }
+                            try { t.progressoFisico = calcularProgressoFisico(t) || 0; } catch(e) { t.progressoFisico = t.progressoFisico || 0; }
+                        });
+                    }
+
+                    // Listen for remote changes and keep in sync
+                    try {
+                        const unsub = window.firestoreOnSnapshot('app/dados', snap => {
+                            try {
+                                const data = (snap && snap.data) ? snap.data() : null;
+                                if (data) {
+                                    dados = data;
+                                    try { atualizarDashboard(); } catch(e) {}
+                                    try { atualizarListaTEDs(); } catch(e) {}
+                                    try { atualizarSeletorTED(); } catch(e) {}
+                                    try { atualizarGantt(); } catch(e) {}
+                                }
+                            } catch(err) { console.warn('erro snapshot', err); }
+                        });
+                        // store unsub if needed later (not used now)
+                        window._firestoreDadosUnsub = unsub;
+                    } catch(e) { console.warn('Não foi possível ativar listener Firestore:', e); }
+                } catch(e) {
+                    console.warn('Erro carregando dados do Firestore:', e);
+                }
+            })();
             atualizarDashboard();
             atualizarListaTEDs();
             atualizarSeletorTED();
@@ -7301,9 +7360,20 @@
             }
         }
 
-        // Salvar Dados
-        function salvarDados() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+        // Salvar Dados (para Firestore)
+        async function salvarDados() {
+            // Prefer Firestore when available
+            try {
+                if (window && window.firestoreSetDoc) {
+                    await window.firestoreSetDoc('app/dados', dados, { merge: false });
+                    return;
+                }
+            } catch (e) {
+                console.warn('Erro salvando em Firestore, fallback para localStorage', e);
+            }
+
+            // Fallback: write to localStorage (temporary, should be migrated)
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dados)); } catch(e) { console.warn('Erro salvando localmente', e); }
         }
 
         // =============================================
@@ -8508,5 +8578,9 @@
             document.querySelectorAll('.table-wrapper').forEach(w => resizeObserver.observe(w));
         };
     </script>
+
+    <!-- Firebase initialization (module) -->
+    <script type="module" src="./firebase-init.js"></script>
+
 </body>
 </html>
