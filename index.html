@@ -2857,7 +2857,7 @@
             const inicioValido = inicio && !isNaN(inicio.getTime());
             const fimValido = fim && !isNaN(fim.getTime());
             if (inicioValido && fimValido) {
-                if (hoje >= inicio && hoje <= fim) return { text: 'EM EXECUÇÃO', origin: 'inferido (vigência)', vigenciaVencida: false };
+                if (hoje >= inicio && hoje <= fim) return { text: 'Em Execução', origin: 'inferido (vigência)', vigenciaVencida: false };
                 if (fim < hoje) return { text: 'Vigência Vencida', origin: 'inferido (vigência)', vigenciaVencida: true };
             }
 
