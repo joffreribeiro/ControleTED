@@ -6848,6 +6848,7 @@
 
         // Editar valor da Execução Física
         function editarValorExecFisica(objeto, indiceMes) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             if (!window.tedSelecionado) return;
             
             // Calcular a data correspondente ao índice do mês
@@ -6909,6 +6910,7 @@
 
         // Editar valor da Execução Financeira
         function editarValorExecFinanceira(nd, up, indiceMes) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             if (!window.tedSelecionado) return;
             
             // Calcular a data correspondente ao índice do mês
@@ -7111,6 +7113,7 @@
         }
 
         function editarValorRecursoGeral(nd, indiceMes) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             if (!window.tedSelecionado) return;
 
             let startDate;
@@ -7422,6 +7425,12 @@
 
         // Salvar Dados: persist all TEDs as individual documents in `teds` collection
         async function salvarDados() {
+            // Bloquear gravação em modo leitura (não-admin)
+            if (!window.currentUserProfile || window.currentUserProfile.role !== 'admin') {
+                console.warn('[Modo Leitura] Gravação bloqueada. Faça login como admin.');
+                showToast('Modo leitura: não é possível salvar. Faça login como admin.', 'warning');
+                return;
+            }
             try {
                 if (window && window.firestoreBatchSet) {
                     // batch-write all TEDs into `teds` collection (per-document storage)
@@ -8805,24 +8814,63 @@
         }
         window.updateAdminUI = updateAdminUI;
 
-        // Habilitar/desabilitar botões de criar/editar/deletar TED
+        // Habilitar/desabilitar TODOS os botões e formulários de edição
         function enableEditButtons(enabled) {
-            // Botões com onclick de criar/editar/deletar TED
+            // Todos os seletores de botões que modificam dados
             var selectors = [
+                // TED level
                 '[onclick*="criarTED"]',
                 '[onclick*="editarTED"]',
                 '[onclick*="deletarTED"]',
-                '#tab-novo'
+                '[onclick*="excluirTED"]',
+                '#tab-novo',
+                // Info edit
+                '[onclick*="toggleEditarInfo"]',
+                '[onclick*="salvarEdicaoInfo"]',
+                // Aditivos
+                '[onclick*="abrirModalAditivo"]',
+                '[onclick*="confirmarAditivo"]',
+                '[onclick*="removerAditivo"]',
+                // Objetos
+                '[onclick*="adicionarObjeto"]',
+                '[onclick*="editarObjeto"]',
+                '[onclick*="removerObjeto"]',
+                // Metas
+                '[onclick*="adicionarMeta"]',
+                '[onclick*="editarMeta"]',
+                '[onclick*="removerMeta"]',
+                // Físico
+                '[onclick*="adicionarFisico"]',
+                '[onclick*="editarFisico"]',
+                '[onclick*="removerFisico"]',
+                // Exec Física
+                '[onclick*="adicionarExecFisica"]',
+                '[onclick*="removerExecFisica"]',
+                // Financeiro
+                '[onclick*="adicionarFinanceiro"]',
+                '[onclick*="editarFinanceiro"]',
+                '[onclick*="removerFinanceiro"]',
+                // Exec Financeira
+                '[onclick*="adicionarExecFinanceira"]',
+                '[onclick*="removerExecFinanceira"]',
+                // Recursos Gerais
+                '[onclick*="adicionarRecursoGeral"]',
+                '[onclick*="removerRecursoGeral"]',
+                // Cloud save
+                '[onclick*="salvarNoCloud"]',
+                // Force admin
+                '[onclick*="forceCreateAdmin"]'
             ];
             selectors.forEach(function(sel) {
-                document.querySelectorAll(sel).forEach(function(el) {
-                    try {
+                try {
+                    document.querySelectorAll(sel).forEach(function(el) {
                         el.disabled = !enabled;
                         el.style.opacity = enabled ? '1' : '0.5';
                         el.style.pointerEvents = enabled ? 'auto' : 'none';
-                    } catch(e) {}
-                });
+                    });
+                } catch(e) {}
             });
+
             // Modal edit/delete buttons
             try {
                 document.querySelectorAll('#modalDetalhes .btn').forEach(function(b) {
@@ -8830,11 +8878,63 @@
                     if (txt.includes('editar') || txt.includes('deletar')) {
                         b.disabled = !enabled;
                         b.style.opacity = enabled ? '1' : '0.5';
+                        b.style.pointerEvents = enabled ? 'auto' : 'none';
                     }
                 });
             } catch(e) {}
+
+            // Formulários de criação: desabilitar inputs e form submit
+            try {
+                var formSelectors = [
+                    '#novo form input', '#novo form select', '#novo form button',
+                    '#novo form textarea'
+                ];
+                formSelectors.forEach(function(sel) {
+                    document.querySelectorAll(sel).forEach(function(el) {
+                        el.disabled = !enabled;
+                    });
+                });
+            } catch(e) {}
+
+            // CSV/JSON imports: desabilitar file inputs
+            try {
+                document.querySelectorAll('[onchange*="importar"]').forEach(function(el) {
+                    el.disabled = !enabled;
+                    if (el.parentElement && el.parentElement.tagName === 'LABEL') {
+                        el.parentElement.style.opacity = enabled ? '1' : '0.5';
+                        el.parentElement.style.pointerEvents = enabled ? 'auto' : 'none';
+                    }
+                });
+            } catch(e) {}
+
+            // Bloquear click-to-edit nas células das tabelas de execução
+            window._readOnlyMode = !enabled;
         }
         window.enableEditButtons = enableEditButtons;
+
+        // MutationObserver: reaplicar bloqueio quando botões dinâmicos são criados
+        (function() {
+            var _reapplyTimer = null;
+            var observer = new MutationObserver(function() {
+                // Debounce: reagir após 300ms de estabilidade
+                clearTimeout(_reapplyTimer);
+                _reapplyTimer = setTimeout(function() {
+                    if (window._readOnlyMode) {
+                        enableEditButtons(false);
+                    }
+                }, 300);
+            });
+            // Observar todo o container principal
+            document.addEventListener('DOMContentLoaded', function() {
+                var container = document.querySelector('.container');
+                if (container) {
+                    observer.observe(container, { childList: true, subtree: true });
+                }
+            });
+        })();
+
+        // Modo leitura ativado por padrão
+        window._readOnlyMode = true;
 
         // Iniciar ao carregar a página
         window.onload = function() {
