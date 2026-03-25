@@ -2810,6 +2810,7 @@
 
         // Retorna o status a ser exibido para um TED e sua origem.
         // Retorna um objeto: { text: string, origin: 'campo'|'inferido', vigenciaVencida: boolean }
+        // Usa a mesma lógica de atualizarStatusPorEntregaRelatorio() para consistência com Detalhes.
         function getDisplayStatus(t) {
             if (!t) return { text: '-', origin: 'inferido', vigenciaVencida: false };
 
@@ -2827,40 +2828,20 @@
                 }
             }
 
-            // Calcular o status usando a mesma lógica de atualizarStatusPorEntregaRelatorio()
-            // para garantir consistência entre card e Detalhes do TED
-            if (typeof t.statusTED !== 'undefined' && t.statusTED !== null) {
-                let s = String(t.statusTED).trim();
-                if (s !== '') {
-                    // Recalcular status real (mesma lógica de atualizarStatusPorEntregaRelatorio)
-                    // para que o card mostre o mesmo que a tela de Detalhes
-                    let statusRecalc = 'Em Execução';
-                    if (t.dataEntregaRelatorio) {
-                        statusRecalc = 'TED Finalizado';
-                    } else if (t.situacaoTED === 'finalizado' || t.situacaoTED === 'denunciado') {
-                        statusRecalc = 'Relatório Final';
-                    }
-                    return { text: statusRecalc, origin: 'campo (recalculado)', vigenciaVencida: vigenciaVencida };
-                }
+            // Calcular status pela mesma lógica de atualizarStatusPorEntregaRelatorio()
+            // Prioridade: dataEntregaRelatorio → situacaoTED → fallback
+            if (t.dataEntregaRelatorio) {
+                return { text: 'TED Finalizado', origin: 'calculado (dataEntregaRelatorio)', vigenciaVencida: false };
+            }
+            if (t.situacaoTED === 'finalizado' || t.situacaoTED === 'denunciado') {
+                return { text: 'Relatório Final', origin: 'calculado (situacaoTED)', vigenciaVencida: vigenciaVencida };
+            }
+            if (t.situacaoTED && String(t.situacaoTED).toLowerCase().includes('denunci')) {
+                return { text: 'TED Denunciado', origin: 'calculado (situacaoTED)', vigenciaVencida: false };
             }
 
-            // Senão, inferimos o status a partir de outras propriedades (origem: inferido)
-            if (t.dataEntregaRelatorio) return { text: 'TED Finalizado', origin: 'inferido (dataEntregaRelatorio)', vigenciaVencida: false };
-            if (t.situacaoTED && String(t.situacaoTED).toLowerCase().includes('denunci')) return { text: 'TED Denunciado', origin: 'inferido (situacaoTED)', vigenciaVencida: false };
-
-            const inicioNorm = normalizarData(t.inicioVigencia);
-            const fimNorm = normalizarData(t.fimVigencia);
-            const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
-            const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
-            const inicioValido = inicio && !isNaN(inicio.getTime());
-            const fimValido = fim && !isNaN(fim.getTime());
-            if (inicioValido && fimValido) {
-                if (hoje >= inicio && hoje <= fim) return { text: 'Em Execução', origin: 'inferido (vigência)', vigenciaVencida: false };
-                if (fim < hoje) return { text: 'Vigência Vencida', origin: 'inferido (vigência)', vigenciaVencida: true };
-            }
-
-            // Fallback
-            return { text: 'Em Execução', origin: 'inferido', vigenciaVencida: false };
+            // Sem situação especial → "Em Execução" (consistente com Detalhes)
+            return { text: 'Em Execução', origin: 'calculado', vigenciaVencida: vigenciaVencida };
         }
 
         // Trocar Abas
