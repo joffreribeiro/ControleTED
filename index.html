@@ -6843,7 +6843,12 @@
                         table += `<td class="gantt-row-up sticky-up" rowspan="${group.teds.length}" style="vertical-align:middle; font-weight:700;">${up}</td>`;
                     }
                     const label = `${r.ted.numTed || ''} - ${r.ted.objeto || r.ted.objetivo || ''}`;
-                    table += `<td class="gantt-row-label sticky-ted" title="UP: ${r.up}">${label}</td>`;
+                    // Tornar o label clicável: abre o detalhe do TED correspondente
+                    table += `<td class="gantt-row-label sticky-ted" title="UP: ${r.up}" style="cursor:pointer;">
+                        <a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${r.ted.id}); return false;" style="color:inherit; text-decoration:none; display:block; width:100%;">
+                            ${label}
+                        </a>
+                    </td>`;
 
                     // Render cada mês como <td> individual
                     let prevCor = null;
