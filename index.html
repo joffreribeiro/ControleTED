@@ -644,8 +644,8 @@
         }
 
         .badge-finalizado {
-            background: #dcfce7;
-            color: #166534;
+            background: #fee2e2;
+            color: #dc2626;
         }
 
         .badge-encerrado {
@@ -3111,16 +3111,24 @@
                     badgeClassLocal = 'badge-execucao';
                 } else if (/encerr/.test(stNorm)) {
                     badgeClassLocal = 'badge-encerrado';
-                } else if (/conclu|finaliz|finalizado/.test(stNorm)) {
+                } else if (/finaliz|finalizado/.test(stNorm)) {
+                    badgeClassLocal = 'badge-finalizado';
+                } else if (/conclu/.test(stNorm)) {
                     badgeClassLocal = 'badge-concluido';
                 } else if (/denunci/.test(stNorm)) {
                     badgeClassLocal = 'badge-denunciado';
                 } else if (/suspens|suspenso/.test(stNorm)) {
                     badgeClassLocal = 'badge-suspenso';
                 }
+
+                // Estilo do card: borda vermelha clara para TED Finalizado ou Encerrado
+                const isFinalizadoOuEncerrado = /finaliz|finalizado|encerr/.test(stNorm);
+                const cardStyle = isFinalizadoOuEncerrado
+                    ? 'margin: 0 0 1rem 0; border-left: 4px solid #ef4444; background: rgba(239,68,68,0.04);'
+                    : 'margin: 0 0 1rem 0;';
                 
                 return `
-                    <div class="card" style="margin: 0 0 1rem 0;">
+                    <div class="card" style="${cardStyle}">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
                             <div style="flex: 1;">
                                 <h3><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${t.id}); return false;" style="color:inherit; text-decoration:none;">TED ${t.numTed}</a></h3>
@@ -3457,7 +3465,9 @@
                                 const sNorm = computedStatusModal.toLowerCase();
                                 let cls = 'badge-planejamento';
                                 if (/execu|em execução/.test(sNorm)) cls = 'badge-execucao';
-                                else if (/encerr|conclu|finaliz|finalizado/.test(sNorm)) cls = 'badge-concluido';
+                                else if (/encerr/.test(sNorm)) cls = 'badge-encerrado';
+                                else if (/finaliz|finalizado/.test(sNorm)) cls = 'badge-finalizado';
+                                else if (/conclu/.test(sNorm)) cls = 'badge-concluido';
                                 else if (/denunci/.test(sNorm)) cls = 'badge-denunciado';
                                 else if (/suspens|suspenso/.test(sNorm)) cls = 'badge-suspenso';
                                 return `<span class="badge ${cls}" title="Origem: ${originModal}">${computedStatusModal}</span>`;
