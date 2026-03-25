@@ -2827,22 +2827,20 @@
                 }
             }
 
-            // Se o campo statusTED estiver definido e não vazio, usamos seu valor (origem: campo)
+            // Calcular o status usando a mesma lógica de atualizarStatusPorEntregaRelatorio()
+            // para garantir consistência entre card e Detalhes do TED
             if (typeof t.statusTED !== 'undefined' && t.statusTED !== null) {
                 let s = String(t.statusTED).trim();
                 if (s !== '') {
-                    // "ENCERRADO" é legado — recalcular o status real usando a mesma lógica
-                    // de atualizarStatusPorEntregaRelatorio() para ficar consistente com Detalhes
-                    if (/^encerrad/i.test(s)) {
-                        let statusRecalc = 'Em Execução';
-                        if (t.dataEntregaRelatorio) {
-                            statusRecalc = 'TED Finalizado';
-                        } else if (t.situacaoTED === 'finalizado' || t.situacaoTED === 'denunciado') {
-                            statusRecalc = 'Relatório Final';
-                        }
-                        return { text: statusRecalc, origin: 'campo (recalculado de ENCERRADO)', vigenciaVencida: vigenciaVencida };
+                    // Recalcular status real (mesma lógica de atualizarStatusPorEntregaRelatorio)
+                    // para que o card mostre o mesmo que a tela de Detalhes
+                    let statusRecalc = 'Em Execução';
+                    if (t.dataEntregaRelatorio) {
+                        statusRecalc = 'TED Finalizado';
+                    } else if (t.situacaoTED === 'finalizado' || t.situacaoTED === 'denunciado') {
+                        statusRecalc = 'Relatório Final';
                     }
-                    return { text: s, origin: 'campo', vigenciaVencida: vigenciaVencida };
+                    return { text: statusRecalc, origin: 'campo (recalculado)', vigenciaVencida: vigenciaVencida };
                 }
             }
 
