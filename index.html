@@ -8713,7 +8713,7 @@
             setLoginSuccess('');
             setLoginStatus('Criando administrador...');
             var email = 'joffre.ribeiro@imbel.gov.br';
-            var password = '123';
+            var password = '123456';
             var ok = await waitForGlobal('authCreateUser', 8000);
             if (!ok) { setLoginError('Firebase não carregou. Verifique sua conexão.'); setLoginStatus(''); return; }
             try {

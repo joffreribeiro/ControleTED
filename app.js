@@ -358,7 +358,7 @@ async function createBootstrapAdminIfNeeded() {
     // no users — create the provided admin account
     await waitForHelper('authCreateUser', 3000);
     const email = 'joffre.ribeiro@imbel.gov.br';
-    const password = '123';
+    const password = '123456';
     const name = 'Joffre Ribeiro';
     try {
       const user = await window.authCreateUser(email, password, { displayName: name, role: 'admin' });
@@ -376,7 +376,7 @@ async function createBootstrapAdminIfNeeded() {
 // Force create the admin account and sign in (used by UI button)
 window.forceCreateAdmin = async function() {
   const email = 'joffre.ribeiro@imbel.gov.br';
-  const password = '123';
+  const password = '123456';
   const name = 'Joffre Ribeiro';
   try {
     showToast('Criando admin (forçado)...', 'info');
