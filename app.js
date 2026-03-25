@@ -177,24 +177,27 @@ window.testFirestoreConnection = async function() {
     window.addEventListener('online', () => { setCloudStatus(true); });
     window.addEventListener('offline', () => { setCloudStatus(false); });
 
-    // Autosave loop: every 12s check for changes and call salvarDados()
+    // Autosave loop de segurança: every 30s check for unsaved changes
+    // (O salvamento principal agora é via debounce de 1.5s em salvarDados())
     setInterval(async () => {
       try {
         const current = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
         if (current !== window._lastSavedTedsSnapshot) {
-          // dirty
-          if (typeof window.salvarDados === 'function') {
+          // dirty – forçar salvamento imediato
+          if (typeof window.salvarDadosImediato === 'function') {
+            await window.salvarDadosImediato();
+          } else if (typeof window.salvarDados === 'function') {
             await window.salvarDados();
-            window._lastSavedTedsSnapshot = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
-            setLastSync(new Date());
-            setCloudStatus(true);
           }
+          window._lastSavedTedsSnapshot = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
+          setLastSync(new Date());
+          setCloudStatus(true);
         }
       } catch (e) {
         console.warn('autosave error', e);
         setCloudStatus(false);
       }
-    }, 12000);
+    }, 30000);
 
     // initial UI
     setCloudStatus(navigator.onLine);

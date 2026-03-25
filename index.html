@@ -7592,25 +7592,58 @@
         }
 
         // Salvar Dados: persist all TEDs as individual documents in `teds` collection
+        // Flag para evitar salvamentos simultâneos
+        let _salvandoEmAndamento = false;
+        let _salvarDebounceTimer = null;
+
         async function salvarDados() {
             // Bloquear gravação em modo leitura (não-admin)
             if (!window.currentUserProfile || window.currentUserProfile.role !== 'admin') {
                 console.warn('[Modo Leitura] Gravação bloqueada. Faça login como admin.');
-                showToast('Modo leitura: não é possível salvar. Faça login como admin.', 'warning');
                 return;
             }
+            // Agendar salvamento debounced (1.5s) para não sobrecarregar
+            // Se já houver um timer pendente, cancelar e reagendar
+            if (_salvarDebounceTimer) clearTimeout(_salvarDebounceTimer);
+            _salvarDebounceTimer = setTimeout(async () => {
+                _salvarDebounceTimer = null;
+                await _executarSalvamento();
+            }, 1500);
+        }
+
+        // Salvamento imediato (sem debounce) — para usar em importações etc.
+        async function salvarDadosImediato() {
+            if (!window.currentUserProfile || window.currentUserProfile.role !== 'admin') return;
+            if (_salvarDebounceTimer) { clearTimeout(_salvarDebounceTimer); _salvarDebounceTimer = null; }
+            await _executarSalvamento();
+        }
+
+        async function _executarSalvamento() {
+            if (_salvandoEmAndamento) return; // evitar duplicação
+            _salvandoEmAndamento = true;
+            // Feedback visual: indicador de salvando
+            const syncEl = document.getElementById('cloudLastSync');
+            if (syncEl) syncEl.textContent = '💾 Salvando...';
             try {
                 if (window && window.firestoreBatchSet) {
-                    // batch-write all TEDs into `teds` collection (per-document storage)
                     await window.firestoreBatchSet('teds', dados.teds || []);
-                    return;
+                    // Atualizar snapshot de referência para o autosave loop
+                    window._lastSavedTedsSnapshot = JSON.stringify(dados.teds || []);
+                    // Feedback visual de sucesso
+                    if (syncEl) syncEl.textContent = 'Salvo: ' + new Date().toLocaleTimeString('pt-BR');
+                    const iconEl = document.getElementById('cloudStatusIcon');
+                    if (iconEl) { iconEl.style.color = 'var(--success)'; iconEl.title = 'Conectado ao Firestore'; }
+                } else {
+                    console.warn('Firestore batch helper not available; dados not persisted.');
+                    if (syncEl) syncEl.textContent = '⚠️ Sem conexão';
                 }
             } catch (e) {
-                console.warn('Erro salvando colecao teds no Firestore', e);
+                console.warn('Erro salvando no Firestore', e);
+                if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
+                showToast('Erro ao salvar dados. Tentando novamente em breve...', 'danger');
+            } finally {
+                _salvandoEmAndamento = false;
             }
-
-            // No localStorage fallback — removed as persistence is Firestore-only
-            console.warn('Firestore batch helper not available; dados not persisted locally.');
         }
 
         // =============================================
@@ -7884,7 +7917,7 @@
                     const imported = JSON.parse(e.target.result);
                     if (confirm('⚠️ Isso substituirá TODOS os dados atuais. Deseja continuar?')) {
                         dados = imported;
-                        salvarDados();
+                        salvarDadosImediato();
                         atualizarDashboard();
                         atualizarListaTEDs();
                         atualizarSeletorTED();
@@ -7981,7 +8014,7 @@
                             countNovos++;
                         }
                     });
-                    salvarDados();
+                    salvarDadosImediato();
                     atualizarDashboard();
                     atualizarListaTEDs();
                     atualizarSeletorTED();
@@ -8031,7 +8064,7 @@
                             countItens += grouped[numTed].length;
                         }
                     });
-                    salvarDados();
+                    salvarDadosImediato();
                     atualizarTabelasEmCascata('objetos');
                     alert(`✅ ${countItens} objeto(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
@@ -8110,7 +8143,7 @@
                             countItens += grouped[numTed].length;
                         }
                     });
-                    salvarDados();
+                    salvarDadosImediato();
                     atualizarTabelasEmCascata('metas');
                     alert(`✅ ${countItens} meta(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
@@ -8190,7 +8223,7 @@
                             countItens += grouped[numTed].length;
                         }
                     });
-                    salvarDados();
+                    salvarDadosImediato();
                     atualizarTabelasEmCascata('fisicos');
                     alert(`✅ ${countItens} registro(s) físico(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
@@ -8233,7 +8266,7 @@
                             countItens += grouped[numTed].length;
                         }
                     });
-                    try { salvarDados(); } catch(e) {}
+                    try { salvarDadosImediato(); } catch(e) {}
                     alert(`✅ ${countItens} execução(ões) física(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
                     alert('❌ Erro ao importar: ' + err.message);
@@ -8300,7 +8333,7 @@
                             countItens += grouped[numTed].length;
                         }
                     });
-                    salvarDados();
+                    salvarDadosImediato();
                     atualizarTabelasEmCascata('financeiros');
                     alert(`✅ ${countItens} registro(s) financeiro(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
@@ -8476,7 +8509,7 @@
                             countItens += grupo.itens.length;
                         });
 
-                        try { salvarDados(); } catch(ex) {}
+                        try { salvarDadosImediato(); } catch(ex) {}
                         try { atualizarTabelaExecFinanceira(); } catch(ex) {}
 
                         let msg = countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!';
@@ -8524,7 +8557,7 @@
                                 countItens += grouped[numTed].length;
                             }
                         });
-                        try { salvarDados(); } catch(ex) {}
+                        try { salvarDadosImediato(); } catch(ex) {}
                         try { atualizarTabelaExecFinanceira(); } catch(ex) {}
                         showToast(countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!', 'success');
                     }
@@ -8742,7 +8775,7 @@
                         countItens += grupo.itens.length;
                     });
 
-                    try { salvarDados(); } catch(e) {}
+                    try { salvarDadosImediato(); } catch(e) {}
                     try { atualizarTabelaRecursosGerais(); } catch(e) {}
 
                     let msg = countItens + ' recurso(s) importado(s) para ' + countTeds + ' TED(s)!';
