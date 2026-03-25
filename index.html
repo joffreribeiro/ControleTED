@@ -2829,8 +2829,14 @@
 
             // Se o campo statusTED estiver definido e não vazio, usamos seu valor (origem: campo)
             if (typeof t.statusTED !== 'undefined' && t.statusTED !== null) {
-                const s = String(t.statusTED).trim();
-                if (s !== '') return { text: s, origin: 'campo', vigenciaVencida: vigenciaVencida };
+                let s = String(t.statusTED).trim();
+                if (s !== '') {
+                    // Converter "ENCERRADO" legado para "Vigência Vencida"
+                    if (/^encerrad/i.test(s)) {
+                        return { text: 'Vigência Vencida', origin: 'campo (convertido de ENCERRADO)', vigenciaVencida: true };
+                    }
+                    return { text: s, origin: 'campo', vigenciaVencida: vigenciaVencida };
+                }
             }
 
             // Senão, inferimos o status a partir de outras propriedades (origem: inferido)
