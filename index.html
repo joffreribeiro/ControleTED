@@ -2754,6 +2754,13 @@
                     dados.proxiId = dados.teds.length ? Math.max(...dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
                     console.info('Dados teds carregados do Firestore. Count:', dados.teds.length);
 
+                    // Garantir que filtros e gráficos relacionados sejam atualizados
+                    try { atualizarFiltroTedEntregas(); } catch(e) {}
+                    try { renderEntregasFromFilter(); } catch(e) {}
+                    try { renderResumoFinanceiroFromFilter(); } catch(e) {}
+                    try { popularFiltrosRelatorios(); } catch(e) {}
+                    try { renderRelatorios(); } catch(e) {}
+
                     // Attach real-time listener to the collection
                     try {
                         const unsub = window.firestoreOnCollectionSnapshot('teds', snap => {
@@ -2774,6 +2781,11 @@
                                 try { atualizarListaTEDs(); } catch(e) {}
                                 try { atualizarSeletorTED(); } catch(e) {}
                                 try { atualizarGantt(); } catch(e) {}
+                                try { atualizarFiltroTedEntregas(); } catch(e) {}
+                                try { renderEntregasFromFilter(); } catch(e) {}
+                                try { renderResumoFinanceiroFromFilter(); } catch(e) {}
+                                try { popularFiltrosRelatorios(); } catch(e) {}
+                                try { renderRelatorios(); } catch(e) {}
                             } catch(err) { console.warn('erro snapshot teds', err); }
                         });
                         window._firestoreTedsUnsub = unsub;
