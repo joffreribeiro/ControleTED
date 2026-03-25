@@ -1337,14 +1337,41 @@
             font-weight: 700;
             margin-left: 6px;
         }
-        /* Barra de aditivo no Gantt */
-        td.gantt-m .gantt-bar-seg.bar-aditivo {
-            background: #16a34a;
-            opacity: 0.7;
+        /* Barra de aditivo no Gantt - cores por aditivo */
+        td.gantt-m .gantt-bar-seg.bar-aditivo-1 { background: #16a34a; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-2 { background: #d97706; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-3 { background: #dc2626; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-4 { background: #7c3aed; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-5 { background: #0891b2; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-6 { background: #be185d; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-7 { background: #4d7c0f; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-8 { background: #9333ea; }
+        /* Transição suave entre segmentos: remover border-radius interno */
+        td.gantt-m.bar-seg-transition .gantt-bar-seg {
+            border-radius: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
         }
-        td.gantt-m.bar-start .gantt-bar-seg.bar-aditivo {
-            border-radius: 0;
-            margin-left: 0;
+        /* Legenda do Gantt */
+        .gantt-legenda {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 0.5rem 0.25rem;
+            font-size: 0.8rem;
+            color: var(--text);
+            align-items: center;
+        }
+        .gantt-legenda-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .gantt-legenda-cor {
+            display: inline-block;
+            width: 14px;
+            height: 10px;
+            border-radius: 2px;
         }
         /* Modal de aditivo */
         .aditivo-modal-overlay {
@@ -2997,12 +3024,19 @@
             const tedsEmExecucao = dados.teds.filter(t => {
                 const hoje = new Date();
                 const inicioNorm = normalizarData(t.inicioVigencia);
-                const fimNorm = normalizarData(t.fimVigencia);
-                if (!inicioNorm || !fimNorm) return false;
+                if (!inicioNorm) return false;
                 const inicio = new Date(inicioNorm + 'T00:00:00');
-                const fim = new Date(fimNorm + 'T00:00:00');
-                if (isNaN(inicio.getTime()) || isNaN(fim.getTime())) return false;
-                return hoje >= inicio && hoje <= fim;
+                if (isNaN(inicio.getTime())) return false;
+                // Usar fim com aditivos quando disponível
+                const fimEfetivo = calcularFimComAditivos(t);
+                if (!fimEfetivo) {
+                    const fimNorm = normalizarData(t.fimVigencia);
+                    if (!fimNorm) return false;
+                    const fim = new Date(fimNorm + 'T00:00:00');
+                    if (isNaN(fim.getTime())) return false;
+                    return hoje >= inicio && hoje <= fim;
+                }
+                return hoje >= inicio && hoje <= fimEfetivo;
             }).length;
             document.getElementById('tedsExecucao').textContent = tedsEmExecucao;
 
@@ -3327,11 +3361,18 @@
 
             const items = [];
             (dados.teds || []).forEach(t => {
-                if (!t.fimVigencia) return;
-                const fimNorm = normalizarData(t.fimVigencia);
-                if (!fimNorm) return;
-                const d = new Date(fimNorm + 'T00:00:00');
-                if (isNaN(d.getTime())) return;
+                if (!t.fimVigencia && !t.inicioVigencia) return;
+                // Usar fim com aditivos quando disponível
+                const fimEfetivo = calcularFimComAditivos(t);
+                let d;
+                if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
+                    d = fimEfetivo;
+                } else {
+                    const fimNorm = normalizarData(t.fimVigencia);
+                    if (!fimNorm) return;
+                    d = new Date(fimNorm + 'T00:00:00');
+                    if (isNaN(d.getTime())) return;
+                }
                 
                 // Incluir se o fim da vigência está entre hoje e maxDate
                 if (d >= today && d <= maxDate) {
@@ -6459,14 +6500,47 @@
                 return;
             }
 
-            // Normalizar datas (com suporte a aditivos)
+            // Paleta de cores para os aditivos
+            const aditivoCores = ['#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#be185d','#4d7c0f','#9333ea'];
+            const corOriginal = '#2c6fc2';
+
+            // Normalizar datas e construir segmentos por aditivo
             const rows = teds.map(t => {
                 const inicio = new Date(normalizarData(t.inicioVigencia) + 'T00:00:00');
-                const fimOriginal = new Date(normalizarData(t.fimVigencia) + 'T00:00:00');
-                const fimComAditivo = calcularFimComAditivos(t) || fimOriginal;
-                const temAditivo = (t.aditivos && t.aditivos.length > 0);
-                const fim = temAditivo ? fimComAditivo : fimOriginal;
-                return { ted: t, up: (t.upResponsavel || t.up || '').toString(), inicio, fimOriginal, fim, temAditivo };
+                const vigOriginal = parseInt(t.vigencia) || 0;
+                let fimOriginal;
+                if (vigOriginal > 0) {
+                    fimOriginal = new Date(inicio);
+                    fimOriginal.setMonth(fimOriginal.getMonth() + vigOriginal);
+                } else {
+                    // Se não tem vigência em meses, usar fimVigencia salvo
+                    fimOriginal = new Date(normalizarData(t.fimVigencia) + 'T00:00:00');
+                }
+
+                // Construir lista de segmentos: [{ de, ate, label, cor }]
+                const segmentos = [];
+                segmentos.push({ de: new Date(inicio), ate: new Date(fimOriginal), label: 'Vigência Original', cor: corOriginal, cssClass: 'gantt-bar-seg' });
+
+                // Base de meses acumulados para posicionar aditivos
+                let acumulado = vigOriginal > 0 ? vigOriginal
+                    : ((fimOriginal.getFullYear()-inicio.getFullYear())*12 + (fimOriginal.getMonth()-inicio.getMonth()));
+                const aditivos = t.aditivos || [];
+                aditivos.forEach((a, ai) => {
+                    const mesesAdit = parseInt(a.meses) || 0;
+                    if (mesesAdit <= 0) return;
+                    const segInicio = new Date(inicio);
+                    segInicio.setMonth(segInicio.getMonth() + acumulado);
+                    acumulado += mesesAdit;
+                    const segFim = new Date(inicio);
+                    segFim.setMonth(segFim.getMonth() + acumulado);
+                    const corIdx = ai % aditivoCores.length;
+                    const dataAditStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                    const lbl = `Aditivo ${ai+1}: +${mesesAdit}m` + (dataAditStr ? ` (${dataAditStr})` : '') + (a.obs ? ` - ${a.obs}` : '');
+                    segmentos.push({ de: segInicio, ate: segFim, label: lbl, cor: aditivoCores[corIdx], cssClass: `gantt-bar-seg bar-aditivo-${corIdx+1}` });
+                });
+
+                const fimTotal = segmentos[segmentos.length - 1].ate;
+                return { ted: t, up: (t.upResponsavel || t.up || '').toString(), inicio, fimOriginal, fim: fimTotal, segmentos, temAditivo: aditivos.length > 0 };
             }).filter(r => !isNaN(r.inicio.getTime()) && !isNaN(r.fim.getTime()));
 
             // Agrupar por UP e ordenar por UP e início
@@ -6555,18 +6629,48 @@
             table += '</tr>';
             table += '</thead>';
 
+            // Pré-calcular mapa mês→segmento para cada row (para saber a cor de cada célula)
+            function buildSegmentMap(r) {
+                // Para cada mês-idx, armazena { cssClass, cor, tooltip }
+                const map = {};
+                r.segmentos.forEach(seg => {
+                    const sIdx = Math.max(0, monthDiff(minDate, new Date(seg.de.getFullYear(), seg.de.getMonth(), 1)));
+                    const eIdx = Math.min(totalMonths-1, monthDiff(minDate, new Date(seg.ate.getFullYear(), seg.ate.getMonth(), 1)));
+                    for (let m = sIdx; m <= eIdx; m++) {
+                        // Último segmento que cobre este mês vence (aditivo sobrescreve original)
+                        map[m] = { cssClass: seg.cssClass, cor: seg.cor, tooltip: seg.label };
+                    }
+                });
+                return map;
+            }
+
             // Corpo: cada mês é uma <td> individual (sem colspan)
             table += '<tbody>';
+            // Rastrear se algum aditivo aparece (para legenda)
+            let maxAditivoIdx = 0;
+            const aditivosUsados = new Set();
+
             groups.forEach(group => {
                 const up = group.up;
                 group.teds.forEach((r, idx) => {
+                    const segMap = buildSegmentMap(r);
                     const startIdx = Math.max(0, monthDiff(minDate, new Date(r.inicio.getFullYear(), r.inicio.getMonth(), 1)));
                     const endIdx = Math.min(totalMonths-1, monthDiff(minDate, new Date(r.fim.getFullYear(), r.fim.getMonth(), 1)));
-                    // Índice onde termina a vigência original (antes do aditivo)
-                    const endOrigIdx = r.temAditivo
-                        ? Math.min(totalMonths-1, monthDiff(minDate, new Date(r.fimOriginal.getFullYear(), r.fimOriginal.getMonth(), 1)))
-                        : endIdx;
-                    const title = `${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}`;
+
+                    // Rastrear aditivos usados para legenda
+                    if (r.temAditivo) {
+                        (r.ted.aditivos || []).forEach((a, ai) => {
+                            if ((parseInt(a.meses) || 0) > 0) aditivosUsados.add(ai);
+                            if (ai + 1 > maxAditivoIdx) maxAditivoIdx = ai + 1;
+                        });
+                    }
+
+                    const titleParts = [`${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}`];
+                    if (r.temAditivo) {
+                        r.segmentos.slice(1).forEach(s => titleParts.push(s.label));
+                    }
+                    const title = titleParts.join('\n');
+
                     table += '<tr>';
                     if (idx === 0) {
                         table += `<td class="gantt-row-up sticky-up" rowspan="${group.teds.length}" style="vertical-align:middle; font-weight:700;">${up}</td>`;
@@ -6575,18 +6679,29 @@
                     table += `<td class="gantt-row-label sticky-ted" title="UP: ${r.up}">${label}</td>`;
 
                     // Render cada mês como <td> individual
+                    let prevCor = null;
                     for (let i=0;i<months.length;i++) {
                         const vl = ganttVLine(i);
-                        if (i >= startIdx && i <= endIdx) {
-                            // Célula dentro da vigência (original ou aditivo)
-                            const isAditivo = r.temAditivo && i > endOrigIdx;
+                        const seg = segMap[i];
+                        if (seg && i >= startIdx && i <= endIdx) {
+                            // Célula dentro da vigência
                             let cls = 'gantt-m';
                             if (i === startIdx) cls += ' bar-start';
                             if (i === endIdx) cls += ' bar-end';
-                            const segCls = isAditivo ? 'gantt-bar-seg bar-aditivo' : 'gantt-bar-seg';
-                            table += `<td class="${cls}" title="${title}">${vl}<div class="${segCls}"></div></td>`;
+                            // Detectar transição de cor entre segmentos (remover arredondamento interno)
+                            const nextSeg = segMap[i+1];
+                            const isTransitionEnd = nextSeg && nextSeg.cor !== seg.cor && i !== endIdx;
+                            const isTransitionStart = prevCor && prevCor !== seg.cor && i !== startIdx;
+                            // Aplicar inline style para cor do segmento
+                            let style = `background:${seg.cor};`;
+                            let barCls = 'gantt-bar-seg';
+                            if (isTransitionStart) style += 'border-radius: 0 !important; margin-left: 0 !important;';
+                            if (isTransitionEnd) style += 'border-radius: 0 !important; margin-right: 0 !important;';
+                            table += `<td class="${cls}" title="${seg.tooltip}">${vl}<div class="${barCls}" style="${style}"></div></td>`;
+                            prevCor = seg.cor;
                         } else {
                             // Célula fora da vigência
+                            prevCor = null;
                             if (vl) {
                                 table += `<td class="gantt-m">${vl}</td>`;
                             } else {
@@ -6598,11 +6713,23 @@
                     table += '</tr>';
                 });
 
-                // Separador visual após grupo (linha escura) - usar cells separadas para não sobrepor sticky
+                // Separador visual após grupo (linha escura)
                 table += `<tr><td class="sticky-up" style="padding:0; border-top:3px solid #1f2937; height:4px; background:#fff;"></td><td class="sticky-ted" style="padding:0; border-top:3px solid #1f2937; height:4px; background:#fff;"></td><td colspan="${months.length}" style="padding:0; border-top:3px solid #1f2937; height:4px;"></td></tr>`;
             });
             table += '</tbody>';
             table += '</table>';
+
+            // Legenda
+            let legenda = '<div class="gantt-legenda">';
+            legenda += `<div class="gantt-legenda-item"><span class="gantt-legenda-cor" style="background:${corOriginal}"></span> Vigência Original</div>`;
+            for (let ai = 0; ai < maxAditivoIdx; ai++) {
+                const cor = aditivoCores[ai % aditivoCores.length];
+                legenda += `<div class="gantt-legenda-item"><span class="gantt-legenda-cor" style="background:${cor}"></span> Aditivo ${ai+1}</div>`;
+            }
+            legenda += '<div class="gantt-legenda-item"><span class="gantt-legenda-cor" style="background:#f97316"></span> Mês Atual</div>';
+            legenda += '</div>';
+
+            table += legenda;
             table += '</div>';
 
             container.innerHTML = table;
