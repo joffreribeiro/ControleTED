@@ -1881,17 +1881,17 @@
                                 <div class="ted-info-card">
                                     <label class="ted-info-label">Início de Vigência</label>
                                     <div class="ted-info-value" id="info_inicioVigencia"></div>
-                                    <input type="date" class="ted-info-input" id="edit_inicioVigencia" style="display: none;">
+                                    <input type="date" class="ted-info-input" id="edit_inicioVigencia" style="display: none;" onchange="calcularFimVigenciaEdit()">
                                 </div>
                                 <div class="ted-info-card">
                                     <label class="ted-info-label">Vigência em Meses</label>
                                     <div class="ted-info-value" id="info_vigencia"></div>
-                                    <input type="number" class="ted-info-input" id="edit_vigencia" min="0" style="display: none;">
+                                    <input type="number" class="ted-info-input" id="edit_vigencia" min="0" style="display: none;" oninput="calcularFimVigenciaEdit()">
                                 </div>
                                 <div class="ted-info-card">
                                     <label class="ted-info-label">Fim de Vigência</label>
                                     <div class="ted-info-value" id="info_fimVigencia"></div>
-                                    <input type="date" class="ted-info-input" id="edit_fimVigencia" style="display: none;">
+                                    <input type="date" class="ted-info-input" id="edit_fimVigencia" style="display: none;" readonly>
                                 </div>
                                 <div class="ted-info-card">
                                     <label class="ted-info-label">1ª Descentralização</label>
@@ -3609,18 +3609,27 @@
             
             const ted = window.tedSelecionado;
             
-            // Formatar data
+            // Formatar data (para exibição DD/MM/YYYY)
             const formatarData = (data) => {
                 if (!data) return '';
-                const d = new Date(data);
+                const norm = normalizarData(String(data));
+                // Usar T00:00:00 para evitar deslocamento de fuso horário
+                const d = new Date(norm + 'T00:00:00');
+                if (isNaN(d.getTime())) return '';
                 return d.toLocaleDateString('pt-BR');
             };
             
             // Formatar data para input (YYYY-MM-DD)
             const formatarDataInput = (data) => {
                 if (!data) return '';
-                const d = new Date(data);
-                return d.toISOString().split('T')[0];
+                const norm = normalizarData(String(data));
+                // Usar T00:00:00 para evitar deslocamento de fuso horário
+                const d = new Date(norm + 'T00:00:00');
+                if (isNaN(d.getTime())) return '';
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
             };
             
             // Preencher campos de visualização
@@ -3752,6 +3761,9 @@
             document.getElementById('btnEditarInfo').style.display = 'none';
             document.getElementById('btnSalvarInfo').style.display = 'block';
             document.getElementById('btnCancelarInfo').style.display = 'block';
+
+            // Recalcular Fim de Vigência ao abrir edição (considera aditivos)
+            calcularFimVigenciaEdit();
         }
 
         // Salvar edição
@@ -3783,6 +3795,8 @@
             
             window.tedSelecionado.inicioVigencia = document.getElementById('edit_inicioVigencia').value;
             window.tedSelecionado.vigencia = document.getElementById('edit_vigencia').value;
+            // Recalcular Fim de Vigência automaticamente
+            calcularFimVigenciaEdit();
             window.tedSelecionado.fimVigencia = document.getElementById('edit_fimVigencia').value;
             window.tedSelecionado.primeiraDescentralizacao = document.getElementById('edit_primeiraDescentralizacao').value;
             // Novos campos
@@ -4123,6 +4137,35 @@
             const d = new Date(inicioVal + 'T00:00:00');
             const fim = new Date(d);
             fim.setMonth(fim.getMonth() + meses);
+
+            const yyyy = fim.getFullYear();
+            const mm = String(fim.getMonth() + 1).padStart(2, '0');
+            const dd = String(fim.getDate()).padStart(2, '0');
+            fimEl.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Calcular Fim de Vigência na tela de edição (Detalhes TED)
+        function calcularFimVigenciaEdit() {
+            const inicioEl = document.getElementById('edit_inicioVigencia');
+            const vigenciaEl = document.getElementById('edit_vigencia');
+            const fimEl = document.getElementById('edit_fimVigencia');
+            if (!inicioEl || !vigenciaEl || !fimEl) return;
+
+            const inicioVal = inicioEl.value;
+            const meses = parseInt(vigenciaEl.value, 10);
+            if (!inicioVal || isNaN(meses) || meses <= 0) { fimEl.value = ''; return; }
+
+            // Considerar aditivos se existirem
+            let totalMeses = meses;
+            if (window.tedSelecionado && window.tedSelecionado.aditivos && window.tedSelecionado.aditivos.length > 0) {
+                window.tedSelecionado.aditivos.forEach(function(a) {
+                    totalMeses += (parseInt(a.meses) || 0);
+                });
+            }
+
+            const d = new Date(inicioVal + 'T00:00:00');
+            const fim = new Date(d);
+            fim.setMonth(fim.getMonth() + totalMeses);
 
             const yyyy = fim.getFullYear();
             const mm = String(fim.getMonth() + 1).padStart(2, '0');
