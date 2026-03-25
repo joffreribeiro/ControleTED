@@ -2809,20 +2809,33 @@
         }
 
         // Retorna o status a ser exibido para um TED e sua origem.
-        // Retorna um objeto: { text: string, origin: 'campo'|'inferido' }
+        // Retorna um objeto: { text: string, origin: 'campo'|'inferido', vigenciaVencida: boolean }
         function getDisplayStatus(t) {
-            if (!t) return { text: '-', origin: 'inferido' };
+            if (!t) return { text: '-', origin: 'inferido', vigenciaVencida: false };
+
+            // Verificar se a vigência está vencida (considerando aditivos)
+            const hoje = new Date();
+            let vigenciaVencida = false;
+            const fimEfetivo = calcularFimComAditivos(t);
+            if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
+                vigenciaVencida = fimEfetivo < hoje;
+            } else {
+                const fimNormChk = normalizarData(t.fimVigencia);
+                const fimChk = fimNormChk ? new Date(fimNormChk + 'T00:00:00') : null;
+                if (fimChk && !isNaN(fimChk.getTime()) && fimChk < hoje) {
+                    vigenciaVencida = true;
+                }
+            }
 
             // Se o campo statusTED estiver definido e não vazio, usamos seu valor (origem: campo)
             if (typeof t.statusTED !== 'undefined' && t.statusTED !== null) {
                 const s = String(t.statusTED).trim();
-                if (s !== '') return { text: s, origin: 'campo' };
+                if (s !== '') return { text: s, origin: 'campo', vigenciaVencida: vigenciaVencida };
             }
 
             // Senão, inferimos o status a partir de outras propriedades (origem: inferido)
-            const hoje = new Date();
-            if (t.dataEntregaRelatorio) return { text: 'TED Finalizado', origin: 'inferido (dataEntregaRelatorio)' };
-            if (t.situacaoTED && String(t.situacaoTED).toLowerCase().includes('denunci')) return { text: 'TED Denunciado', origin: 'inferido (situacaoTED)' };
+            if (t.dataEntregaRelatorio) return { text: 'TED Finalizado', origin: 'inferido (dataEntregaRelatorio)', vigenciaVencida: false };
+            if (t.situacaoTED && String(t.situacaoTED).toLowerCase().includes('denunci')) return { text: 'TED Denunciado', origin: 'inferido (situacaoTED)', vigenciaVencida: false };
 
             const inicioNorm = normalizarData(t.inicioVigencia);
             const fimNorm = normalizarData(t.fimVigencia);
@@ -2831,12 +2844,12 @@
             const inicioValido = inicio && !isNaN(inicio.getTime());
             const fimValido = fim && !isNaN(fim.getTime());
             if (inicioValido && fimValido) {
-                if (hoje >= inicio && hoje <= fim) return { text: 'EM EXECUÇÃO', origin: 'inferido (vigência)' };
-                if (fim < hoje) return { text: 'Vigência Vencida', origin: 'inferido (vigência)' };
+                if (hoje >= inicio && hoje <= fim) return { text: 'EM EXECUÇÃO', origin: 'inferido (vigência)', vigenciaVencida: false };
+                if (fim < hoje) return { text: 'Vigência Vencida', origin: 'inferido (vigência)', vigenciaVencida: true };
             }
 
             // Fallback
-            return { text: 'Em Execução', origin: 'inferido' };
+            return { text: 'Em Execução', origin: 'inferido', vigenciaVencida: false };
         }
 
         // Trocar Abas
@@ -3115,13 +3128,14 @@
                 const inicioStr = inicioValido ? inicio.toLocaleDateString('pt-BR') : '-';
                 const fimStr = fimValido ? fim.toLocaleDateString('pt-BR') : '-';
                 // Determinar status a partir do campo de informações do TED quando disponível
-                const statusObj = getDisplayStatus(t) || { text: '-', origin: 'inferido' };
+                const statusObj = getDisplayStatus(t) || { text: '-', origin: 'inferido', vigenciaVencida: false };
                 const computedStatusLocal = statusObj.text || '';
                 const originLocal = statusObj.origin || '';
+                const vigenciaVencidaFlag = statusObj.vigenciaVencida || false;
                 const stNorm = String(computedStatusLocal).toLowerCase();
                 let badgeClassLocal = 'badge-planejamento';
                 if (/execu|em execução/.test(stNorm)) {
-                    badgeClassLocal = 'badge-execucao';
+                    badgeClassLocal = vigenciaVencidaFlag ? 'badge-vigencia-vencida' : 'badge-execucao';
                 } else if (/vigênc.*venc|vigencia.*venc/.test(stNorm)) {
                     badgeClassLocal = 'badge-vigencia-vencida';
                 } else if (/finaliz|finalizado/.test(stNorm)) {
@@ -3134,17 +3148,25 @@
                     badgeClassLocal = 'badge-suspenso';
                 } else if (/encerr/.test(stNorm)) {
                     badgeClassLocal = 'badge-vigencia-vencida';
+                } else if (vigenciaVencidaFlag) {
+                    badgeClassLocal = 'badge-vigencia-vencida';
                 }
 
                 // Estilo do card: borda vermelha para Finalizado, borda amarela para Vigência Vencida
                 const isFinalizado = /finaliz|finalizado/.test(stNorm);
-                const isVigenciaVencida = /vigênc.*venc|vigencia.*venc|encerr/.test(stNorm);
+                const isVigenciaVencida = vigenciaVencidaFlag || /vigênc.*venc|vigencia.*venc|encerr/.test(stNorm);
                 let cardStyle = 'margin: 0 0 1rem 0;';
                 if (isFinalizado) {
                     cardStyle = 'margin: 0 0 1rem 0; border-left: 4px solid #ef4444; background: rgba(239,68,68,0.04);';
                 } else if (isVigenciaVencida) {
                     cardStyle = 'margin: 0 0 1rem 0; border-left: 4px solid #f59e0b; background: rgba(245,158,11,0.04);';
                 }
+
+                // Nota de vigência vencida (exibir abaixo do badge quando status é diferente de "Vigência Vencida" mas vigência está vencida)
+                const mostrarNotaVigencia = vigenciaVencidaFlag && !/vigênc.*venc|vigencia.*venc|encerr/.test(stNorm) && !isFinalizado;
+                const notaVigenciaHtml = mostrarNotaVigencia
+                    ? '<div style="font-size:0.7rem; color:#b45309; font-weight:600; margin-top:2px; text-align:right;">⚠ Vigência Vencida</div>'
+                    : '';
                 
                 return `
                     <div class="card" style="${cardStyle}">
@@ -3153,8 +3175,11 @@
                                 <h3><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${t.id}); return false;" style="color:inherit; text-decoration:none;">TED ${t.numTed}</a></h3>
                                 <p style="font-size: 0.875rem; color: var(--text); margin: 0.5rem 0 0 0;">${t.objetivo}</p>
                             </div>
-                            <div style="display:flex; gap:0.5rem; align-items:center;">
-                                <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
+                            <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+                                <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                                    <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
+                                    ${notaVigenciaHtml}
+                                </div>
                                 <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete">✕</button>
                             </div>
                         </div>
@@ -3478,19 +3503,24 @@
                         <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Status</p>
                         <p style="margin: 0;">
                             ${(() => {
-                                const statusModalObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido' };
+                                const statusModalObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido', vigenciaVencida: false };
                                 const computedStatusModal = statusModalObj.text || '';
                                 const originModal = statusModalObj.origin || '';
+                                const vigVencModal = statusModalObj.vigenciaVencida || false;
                                 const sNorm = computedStatusModal.toLowerCase();
                                 let cls = 'badge-planejamento';
-                                if (/execu|em execução/.test(sNorm)) cls = 'badge-execucao';
+                                if (/execu|em execução/.test(sNorm)) cls = vigVencModal ? 'badge-vigencia-vencida' : 'badge-execucao';
                                 else if (/vigênc.*venc|vigencia.*venc/.test(sNorm)) cls = 'badge-vigencia-vencida';
                                 else if (/encerr/.test(sNorm)) cls = 'badge-vigencia-vencida';
                                 else if (/finaliz|finalizado/.test(sNorm)) cls = 'badge-finalizado';
                                 else if (/conclu/.test(sNorm)) cls = 'badge-concluido';
                                 else if (/denunci/.test(sNorm)) cls = 'badge-denunciado';
                                 else if (/suspens|suspenso/.test(sNorm)) cls = 'badge-suspenso';
-                                return `<span class="badge ${cls}" title="Origem: ${originModal}">${computedStatusModal}</span>`;
+                                else if (vigVencModal) cls = 'badge-vigencia-vencida';
+                                const isFinalizadoModal = /finaliz|finalizado/.test(sNorm);
+                                const mostrarNotaModal = vigVencModal && !/vigênc.*venc|vigencia.*venc|encerr/.test(sNorm) && !isFinalizadoModal;
+                                const notaModal = mostrarNotaModal ? '<span style="font-size:0.7rem; color:#b45309; font-weight:600; margin-left:6px;">⚠ Vigência Vencida</span>' : '';
+                                return `<span class="badge ${cls}" title="Origem: ${originModal}">${computedStatusModal}</span>${notaModal}`;
                             })()}
                         </p>
                     </div>
@@ -3787,11 +3817,31 @@
                 try { mostrarAvisoPrazo('info_prazoRelatorio', new Date(ted.prazoRelatorio + 'T00:00:00')); } catch(e) {}
             }
             document.getElementById('info_dataEntregaRelatorio').textContent = formatarData(ted.dataEntregaRelatorio);
-            const statusInfoObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido' };
+            const statusInfoObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido', vigenciaVencida: false };
             document.getElementById('info_statusTED').textContent = statusInfoObj.text || '-';
             // adicionar tooltip que indica a origem do status
             const infoStatusEl = document.getElementById('info_statusTED');
-            if (infoStatusEl) infoStatusEl.title = `Origem: ${statusInfoObj.origin || ''}`;
+            if (infoStatusEl) {
+                infoStatusEl.title = `Origem: ${statusInfoObj.origin || ''}`;
+                // Se vigência vencida e status não é já "Vigência Vencida"/"Finalizado", adicionar nota visual
+                const stInfoNorm = (statusInfoObj.text || '').toLowerCase();
+                const vigVencInfo = statusInfoObj.vigenciaVencida || false;
+                const isFinalizadoInfo = /finaliz|finalizado/.test(stInfoNorm);
+                const jaIndicaVigVenc = /vigênc.*venc|vigencia.*venc|encerr/.test(stInfoNorm);
+                // Limpar nota anterior se existir
+                const notaAnterior = infoStatusEl.parentElement ? infoStatusEl.parentElement.querySelector('.nota-vigencia-vencida') : null;
+                if (notaAnterior) notaAnterior.remove();
+                if (vigVencInfo && !jaIndicaVigVenc && !isFinalizadoInfo) {
+                    infoStatusEl.style.color = '#b45309';
+                    const nota = document.createElement('span');
+                    nota.className = 'nota-vigencia-vencida';
+                    nota.style.cssText = 'font-size:0.75rem; color:#b45309; font-weight:600; margin-left:8px;';
+                    nota.textContent = '⚠ Vigência Vencida';
+                    infoStatusEl.parentElement.appendChild(nota);
+                } else {
+                    infoStatusEl.style.color = '';
+                }
+            }
 
             document.getElementById('edit_situacaoTED').value = ted.situacaoTED || '';
             document.getElementById('edit_dataEntregaDenuncia').value = formatarDataInput(ted.dataEntregaDenuncia) || '';
@@ -6587,8 +6637,11 @@
             const chkOcultar = document.getElementById('ganttOcultarFinalizados');
             if (chkOcultar && chkOcultar.checked) {
                 teds = teds.filter(t => {
-                    const s = ((getDisplayStatus(t) || {}).text || '').toLowerCase();
-                    return !/finaliz|finalizado|vigênc.*venc|vigencia.*venc|encerrad/.test(s);
+                    const statusResult = getDisplayStatus(t) || { text: '', vigenciaVencida: false };
+                    const s = (statusResult.text || '').toLowerCase();
+                    if (/finaliz|finalizado|vigênc.*venc|vigencia.*venc|encerrad/.test(s)) return false;
+                    if (statusResult.vigenciaVencida) return false;
+                    return true;
                 });
             }
 
