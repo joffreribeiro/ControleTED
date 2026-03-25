@@ -1512,14 +1512,19 @@
                     <i data-lucide="sun" class="theme-icon-light"></i>
                     <i data-lucide="moon" class="theme-icon-dark"></i>
                 </button>
-                <button class="btn" onclick="salvarNoCloud()" title="Salvar dados na nuvem">Salvar na Cloud</button>
-                <button class="btn" onclick="carregarDoCloud()" title="Carregar dados da nuvem">Carregar da Cloud</button>
-                <div id="cloudIndicator" style="display:flex;align-items:center;gap:0.5rem;margin-left:0.5rem;">
-                    <span id="cloudStatusIcon" title="Status da nuvem" style="font-size:14px;color:var(--text-muted)">●</span>
-                    <span id="cloudLastSync" style="font-size:12px;color:var(--text-muted)">Nunca sincronizado</span>
+                <!-- Cloud controls (visíveis apenas para admin) -->
+                <div id="adminCloudControls" style="display:none; align-items:center; gap:0.35rem;">
+                    <button class="btn" onclick="salvarNoCloud()" title="Salvar dados na nuvem" style="font-size:0.8rem; padding:0.3rem 0.6rem;">☁ Salvar</button>
+                    <button class="btn" onclick="carregarDoCloud()" title="Carregar dados da nuvem" style="font-size:0.8rem; padding:0.3rem 0.6rem;">☁ Carregar</button>
                 </div>
-                <button class="btn" onclick="testFirestoreConnection()" title="Testar conexão com Firestore" style="margin-left:0.5rem;">Testar Conexão</button>
-                <button onclick="logout()">Sair</button>
+                <div id="cloudIndicator" style="display:flex;align-items:center;gap:0.35rem;margin-left:0.25rem;">
+                    <span id="cloudStatusIcon" title="Status da nuvem" style="font-size:12px;color:var(--text-muted)">●</span>
+                    <span id="cloudLastSync" style="font-size:11px;color:var(--text-muted)"></span>
+                </div>
+                <!-- Indicador de modo + Login/Logout -->
+                <span id="modeIndicator" style="font-size:0.75rem; padding:0.2rem 0.6rem; border-radius:1rem; background:#e0e7ff; color:#3730a3; font-weight:600; margin-left:0.5rem;">👁 Leitura</span>
+                <button id="btnAdminLogin" onclick="showLoginScreen()" style="font-size:0.8rem; padding:0.3rem 0.7rem; background:none; border:1px solid var(--border); border-radius:0.4rem; cursor:pointer; color:var(--text-muted); margin-left:0.25rem;" title="Login administrador">🔑 Admin</button>
+                <button id="btnAdminLogout" onclick="doLogout()" style="display:none; font-size:0.8rem; padding:0.3rem 0.7rem; background:#fee2e2; border:1px solid #fca5a5; border-radius:0.4rem; cursor:pointer; color:#dc2626; margin-left:0.25rem;" title="Sair do modo admin">Sair</button>
             </div>
         </nav>
 
@@ -2473,40 +2478,14 @@
                     </div>
                 </div>
 
-                <!-- Usuários e Perfis -->
-                <div style="margin-top:1.5rem;">
-                    <h3 style="margin-bottom: 1rem; color: #2c5aa0;">👥 Usuários e Perfis</h3>
-                    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-                        <div style="flex:1; min-width:300px; background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
-                            <label style="font-weight:600; display:block; margin-bottom:0.5rem;">Login</label>
-                            <input id="login_email" placeholder="email@exemplo.com" style="width:100%; margin-bottom:0.5rem;" />
-                            <input id="login_password" type="password" placeholder="Senha" style="width:100%; margin-bottom:0.5rem;" />
-                            <div style="display:flex; gap:0.5rem;">
-                                <button class="btn btn-primary" onclick="handleSignIn()">Entrar</button>
-                                <button class="btn" onclick="handleSignOut()">Sair</button>
-                            </div>
-                        </div>
-
-                        <div style="flex:1; min-width:320px; background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
-                            <label style="font-weight:600; display:block; margin-bottom:0.5rem;">Criar Usuário (Administrador)</label>
-                            <input id="create_email" placeholder="email@exemplo.com" style="width:100%; margin-bottom:0.5rem;" />
-                            <input id="create_password" type="password" placeholder="Senha" style="width:100%; margin-bottom:0.5rem;" />
-                            <input id="create_name" placeholder="Nome completo" style="width:100%; margin-bottom:0.5rem;" />
-                            <label style="display:block; margin-bottom:0.5rem;">Perfil</label>
-                            <select id="create_role" style="width:100%; margin-bottom:0.5rem;">
-                                <option value="user">Usuário (somente leitura)</option>
-                                <option value="admin">Administrador (editar tudo)</option>
-                            </select>
-                            <div style="display:flex; gap:0.5rem;">
-                                <button class="btn btn-primary" onclick="handleCreateUser()">Criar Usuário</button>
-                                <button class="btn" onclick="loadUsersList()">Carregar Usuários</button>
-                                <button class="btn" style="background:#d94660;color:white;" onclick="forceCreateAdmin()">Forçar Criar Admin</button>
-                            </div>
-                        </div>
-
-                        <div style="flex-basis:100%; margin-top:0.5rem; background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
-                            <h4 style="margin-top:0;">Lista de Usuários</h4>
-                            <div id="usersListContainer">Nenhum usuário carregado.</div>
+                <!-- Administração (visível apenas para admin logado) -->
+                <div id="adminPanel" style="margin-top:1.5rem; display:none;">
+                    <h3 style="margin-bottom: 1rem; color: #2c5aa0;">🔐 Administração</h3>
+                    <div style="background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
+                        <p style="margin:0 0 0.5rem; font-size:0.9rem; color:var(--text-muted);">Logado como: <strong id="adminLoggedAs">—</strong></p>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                            <button class="btn" onclick="testFirestoreConnection()" title="Testar conexão com Firestore">🔌 Testar Conexão</button>
+                            <button class="btn" onclick="doLogout()" style="background:#fee2e2; color:#dc2626;">Sair do modo Admin</button>
                         </div>
                     </div>
                 </div>
@@ -2527,13 +2506,14 @@
         </div>
     </div>
 
-    <!-- Tela de Login (full-page, visível por padrão) -->
-    <div id="loginScreen" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
-        <div style="background:white; border-radius:1rem; padding:2.5rem; max-width:420px; width:90%; box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+    <!-- Tela de Login (full-page, oculta por padrão — modo leitura) -->
+    <div id="loginScreen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
+        <div style="background:white; border-radius:1rem; padding:2.5rem; max-width:420px; width:90%; box-shadow:0 25px 50px rgba(0,0,0,0.25); position:relative;">
+            <button onclick="hideLoginScreen()" style="position:absolute; top:0.75rem; right:0.75rem; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#94a3b8; line-height:1;" title="Fechar e continuar em modo leitura">&times;</button>
             <div style="text-align:center; margin-bottom:1.5rem;">
                 <div style="font-size:2.5rem; margin-bottom:0.5rem;">📋</div>
-                <h2 style="margin:0; color:#1e40af; font-size:1.5rem;">Controle TED</h2>
-                <p style="margin:0.25rem 0 0; color:#64748b; font-size:0.875rem;">Sistema de Execução Descentralizada</p>
+                <h2 style="margin:0; color:#1e40af; font-size:1.5rem;">Acesso Administrador</h2>
+                <p style="margin:0.25rem 0 0; color:#64748b; font-size:0.875rem;">Faça login para editar dados</p>
             </div>
             <div id="loginError" style="display:none; background:#fee2e2; color:#dc2626; padding:0.5rem 0.75rem; border-radius:0.5rem; margin-bottom:0.75rem; font-size:0.875rem;"></div>
             <div id="loginSuccess" style="display:none; background:#d1fae5; color:#059669; padding:0.5rem 0.75rem; border-radius:0.5rem; margin-bottom:0.75rem; font-size:0.875rem;"></div>
@@ -6981,22 +6961,7 @@
         }
 
         // Logout
-        function logout() {
-            if (confirm('Tem certeza que deseja sair?')) {
-                // Try Firebase sign-out if available
-                try {
-                    if (window.authSignOut) {
-                        window.authSignOut().then(() => {
-                            alert('Até logo! 👋');
-                        }).catch(() => { alert('Até logo! 👋'); });
-                    } else {
-                        alert('Até logo! 👋');
-                    }
-                } catch (e) {
-                    alert('Até logo! 👋');
-                }
-            }
-        }
+        // Função logout substituída por doLogout() no bloco de login helpers
 
         // =============================================
         // FUNÇÕES DE ATUALIZAÇÃO EM CASCATA
@@ -8702,7 +8667,8 @@
                 if (user) {
                     setLoginSuccess('Login realizado!');
                     setLoginStatus('');
-                    // hideLoginScreen will be called by authOnStateChanged in app.js
+                    hideLoginScreen();
+                    // authOnStateChanged in app.js will update admin UI
                 }
             } catch (e) {
                 console.error('doLogin error', e);
@@ -8749,6 +8715,8 @@
                 if (okSign) {
                     await window.authSignIn(email, password);
                     setLoginSuccess('Logado como admin!');
+                    hideLoginScreen();
+                    // authOnStateChanged in app.js will update admin UI
                 }
             } catch (e) {
                 console.warn('doForceCreateAdmin signin error', e);
@@ -8758,6 +8726,96 @@
         }
         window.doForceCreateAdmin = doForceCreateAdmin;
 
+        // Logout: sair do modo admin e voltar para leitura
+        function doLogout() {
+            try {
+                if (window.authSignOut) {
+                    window.authSignOut().then(function() {
+                        window.currentUser = null;
+                        window.currentUserProfile = null;
+                        updateAdminUI(false);
+                        showToast('Voltou ao modo leitura', 'info');
+                    }).catch(function() {
+                        window.currentUser = null;
+                        window.currentUserProfile = null;
+                        updateAdminUI(false);
+                    });
+                } else {
+                    window.currentUser = null;
+                    window.currentUserProfile = null;
+                    updateAdminUI(false);
+                }
+            } catch(e) {
+                window.currentUser = null;
+                window.currentUserProfile = null;
+                updateAdminUI(false);
+            }
+        }
+        window.doLogout = doLogout;
+
+        // Atualizar UI de admin/leitura
+        function updateAdminUI(isAdmin) {
+            var modeEl = document.getElementById('modeIndicator');
+            var loginBtn = document.getElementById('btnAdminLogin');
+            var logoutBtn = document.getElementById('btnAdminLogout');
+            var cloudCtrl = document.getElementById('adminCloudControls');
+            var adminPanel = document.getElementById('adminPanel');
+            var adminLoggedAs = document.getElementById('adminLoggedAs');
+
+            if (isAdmin) {
+                if (modeEl) { modeEl.textContent = '✏️ Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+                if (cloudCtrl) cloudCtrl.style.display = 'flex';
+                if (adminPanel) adminPanel.style.display = 'block';
+                if (adminLoggedAs && window.currentUserProfile) {
+                    adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '—');
+                }
+                // Habilitar botões de edição
+                enableEditButtons(true);
+            } else {
+                if (modeEl) { modeEl.textContent = '👁 Leitura'; modeEl.style.background = '#e0e7ff'; modeEl.style.color = '#3730a3'; }
+                if (loginBtn) loginBtn.style.display = 'inline-block';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+                if (cloudCtrl) cloudCtrl.style.display = 'none';
+                if (adminPanel) adminPanel.style.display = 'none';
+                // Desabilitar botões de edição
+                enableEditButtons(false);
+            }
+        }
+        window.updateAdminUI = updateAdminUI;
+
+        // Habilitar/desabilitar botões de criar/editar/deletar TED
+        function enableEditButtons(enabled) {
+            // Botões com onclick de criar/editar/deletar TED
+            var selectors = [
+                '[onclick*="criarTED"]',
+                '[onclick*="editarTED"]',
+                '[onclick*="deletarTED"]',
+                '#tab-novo'
+            ];
+            selectors.forEach(function(sel) {
+                document.querySelectorAll(sel).forEach(function(el) {
+                    try {
+                        el.disabled = !enabled;
+                        el.style.opacity = enabled ? '1' : '0.5';
+                        el.style.pointerEvents = enabled ? 'auto' : 'none';
+                    } catch(e) {}
+                });
+            });
+            // Modal edit/delete buttons
+            try {
+                document.querySelectorAll('#modalDetalhes .btn').forEach(function(b) {
+                    var txt = (b.textContent || '').toLowerCase();
+                    if (txt.includes('editar') || txt.includes('deletar')) {
+                        b.disabled = !enabled;
+                        b.style.opacity = enabled ? '1' : '0.5';
+                    }
+                });
+            } catch(e) {}
+        }
+        window.enableEditButtons = enableEditButtons;
+
         // Iniciar ao carregar a página
         window.onload = function() {
             initTheme();
@@ -8766,9 +8824,9 @@
             initLucideIcons();
             // Observar wrappers de tabela
             document.querySelectorAll('.table-wrapper').forEach(w => resizeObserver.observe(w));
-            // Show login screen by default (will be hidden by auth listener)
-            showLoginScreen();
-            // Update login status when firebase loads
+            // Iniciar em modo LEITURA (sem login)
+            updateAdminUI(false);
+            // Atualizar status do Firebase no fundo
             waitForGlobal('authSignIn', 10000).then(function(ok) {
                 if (ok) setLoginStatus('Pronto para login.');
                 else setLoginStatus('Firebase não disponível. Verifique conexão.');

@@ -212,27 +212,10 @@ window.testFirestoreConnection = async function() {
 
   function applyRolePermissions() {
     const admin = isCurrentUserAdmin();
-    // disable create/edit/delete TED actions for non-admins
-    try {
-      const selectors = ['[onclick*="criarTED" ]','[onclick*="criarTED("]','[onclick*="editarTED" ]','[onclick*="editarTED("]','[onclick*="deletarTED" ]','[onclick*="deletarTED("]'];
-      selectors.forEach(sel => {
-        document.querySelectorAll(sel).forEach(el => { try { el.disabled = !admin; } catch(e){} });
-      });
-    } catch (e) { console.warn('applyRolePermissions error', e); }
-
-    // disable modal edit buttons (by text)
-    try {
-      document.querySelectorAll('#modalDetalhes .btn').forEach(b => {
-        const txt = (b.textContent || '').toLowerCase();
-        if (txt.includes('editar') || txt.includes('deletar')) b.disabled = !admin;
-      });
-    } catch (e) {}
-
-    // disable create user form for non-admins
-    try { document.getElementById('create_email').disabled = !admin; } catch(e){}
-    try { document.getElementById('create_password').disabled = !admin; } catch(e){}
-    try { document.getElementById('create_name').disabled = !admin; } catch(e){}
-    try { document.getElementById('create_role').disabled = !admin; } catch(e){}
+    // Delegate to the inline updateAdminUI function for UI updates
+    if (window.updateAdminUI) {
+      window.updateAdminUI(admin);
+    }
   }
 
   // Sign-in handler
@@ -261,9 +244,10 @@ window.testFirestoreConnection = async function() {
   window.handleSignOut = async function() {
     try {
       if (window.authSignOut) await window.authSignOut();
+      window.currentUser = null;
       window.currentUserProfile = null;
       applyRolePermissions();
-      showToast('Desconectado', 'info');
+      showToast('Voltou ao modo leitura', 'info');
     } catch (e) { console.warn('handleSignOut', e); showToast('Erro ao sair', 'error'); }
   };
 
@@ -344,17 +328,16 @@ window.testFirestoreConnection = async function() {
             } catch (e) { console.warn('error loading user profile', e); }
             window.currentUserProfile = profile || { uid: user.uid, email: user.email, role: 'user', displayName: user.displayName || '' };
             showToast('Conectado como ' + (window.currentUserProfile.displayName || window.currentUserProfile.email), 'info');
-            // Hide login screen
+            // Hide login screen if it was open
             try { if (window.hideLoginModal) window.hideLoginModal(); } catch(e){}
           } else {
             window.currentUser = null;
             window.currentUserProfile = null;
-            // Show login screen
-            try { if (window.showLoginModal) window.showLoginModal(); } catch(e){}
+            // DO NOT show login screen — read mode is the default
+            // User can click the admin login button if they want
           }
         } catch (e) { console.warn('auth state handler', e); }
         try { applyRolePermissions(); } catch(e) {}
-        try { loadUsersList(); } catch(e) {}
       });
     }
     // After setting auth listener, ensure bootstrap admin exists if no users
