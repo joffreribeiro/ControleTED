@@ -987,23 +987,19 @@
             background: transparent;
             border: none;
             cursor: pointer;
-            padding: 1px 2px;
+            padding: 1px 3px;
             border-radius: 3px;
             transition: var(--transition);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-muted);
-            font-weight: 400;
+            font-size: 12px;
             line-height: 1;
+            opacity: 0.8;
         }
 
-        .btn-icon-action i,
-        .btn-icon-action svg {
-            width: 13px !important;
-            height: 13px !important;
-            stroke-width: 2;
-            opacity: 0.75;
+        .btn-icon-action:hover {
+            opacity: 1;
         }
 
         .btn-icon-action.delete {
@@ -3098,7 +3094,7 @@
                             </div>
                             <div style="display:flex; gap:0.5rem; align-items:center;">
                                 <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
-                                <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete"><i data-lucide="trash-2"></i></button>
+                                <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete">✕</button>
                             </div>
                         </div>
                         
@@ -4057,8 +4053,8 @@
                         <td class="col-valor">${vu.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td class="col-valor">${vt.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td class="col-acao">
-                            <button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar"><i data-lucide="edit-2"></i></button>
-                            <button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover"><i data-lucide="trash-2"></i></button>
+                            <button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar">✎</button>
+                            <button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover">✕</button>
                         </td>
                     </tr>
                 `;
@@ -4545,8 +4541,8 @@
                     <td class="col-mes">${inicioStr}</td>
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
-                        <button class="btn-icon-action edit" onclick="editarMeta(${meta.id})" title="Editar"><i data-lucide="edit-2"></i></button>
-                        <button class="btn-icon-action delete" onclick="removerMeta(${meta.id})" title="Remover"><i data-lucide="trash-2"></i></button>
+                        <button class="btn-icon-action edit" onclick="editarMeta(${meta.id})" title="Editar">✎</button>
+                        <button class="btn-icon-action delete" onclick="removerMeta(${meta.id})" title="Remover">✕</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -4808,8 +4804,8 @@
                     <td class="col-mes">${inicioStr}</td>
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
-                        <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar"><i data-lucide="edit-2"></i></button>
-                        <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover"><i data-lucide="trash-2"></i></button>
+                        <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar">✎</button>
+                        <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover">✕</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -5378,8 +5374,8 @@
                     <td class="col-mes">${mesDescStr}</td>
                     <td class="col-valor">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td class="col-acao">
-                        <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="edit-2"></i></button>
-                        <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover"><i data-lucide="trash-2"></i></button>
+                        <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar">✎</button>
+                        <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover">✕</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - mostrar valor com fundo azul claro no mês correspondente
