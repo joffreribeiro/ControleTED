@@ -2831,9 +2831,16 @@
             if (typeof t.statusTED !== 'undefined' && t.statusTED !== null) {
                 let s = String(t.statusTED).trim();
                 if (s !== '') {
-                    // Converter "ENCERRADO" legado para "Vigência Vencida"
+                    // "ENCERRADO" é legado — recalcular o status real usando a mesma lógica
+                    // de atualizarStatusPorEntregaRelatorio() para ficar consistente com Detalhes
                     if (/^encerrad/i.test(s)) {
-                        return { text: 'Vigência Vencida', origin: 'campo (convertido de ENCERRADO)', vigenciaVencida: true };
+                        let statusRecalc = 'Em Execução';
+                        if (t.dataEntregaRelatorio) {
+                            statusRecalc = 'TED Finalizado';
+                        } else if (t.situacaoTED === 'finalizado' || t.situacaoTED === 'denunciado') {
+                            statusRecalc = 'Relatório Final';
+                        }
+                        return { text: statusRecalc, origin: 'campo (recalculado de ENCERRADO)', vigenciaVencida: vigenciaVencida };
                     }
                     return { text: s, origin: 'campo', vigenciaVencida: vigenciaVencida };
                 }
