@@ -3099,6 +3099,12 @@
                         const statusObj = getDisplayStatus(t) || { text: '-' };
                         return selStatusList.includes(String(statusObj.text || '').trim());
                     });
+                } else {
+                    // Nenhum status selecionado: por padrão mostrar apenas os TEDs "Em Execução"
+                    listaFiltrada = listaFiltrada.filter(t => {
+                        const statusObj = getDisplayStatus(t) || { text: '-' };
+                        return String((statusObj.text || '').trim()) === 'Em Execução';
+                    });
                 }
             } catch (e) { console.warn('Erro aplicando filtros TEDs', e); }
 
@@ -5437,6 +5443,25 @@
                 if (filtros.m.length && !filtros.m.includes(String(f.m || ''))) return false;
                 return true;
             });
+
+            // Ordenar por coluna M (campo 'm') e depois por ND (campo 'numero' ou 'nd')
+            try {
+                dadosFiltrados.sort((a, b) => {
+                    const am = parseInt(a.m, 10) || 0;
+                    const bm = parseInt(b.m, 10) || 0;
+                    if (am !== bm) return am - bm;
+                    const anRaw = String(a.numero || a.nd || '').trim();
+                    const bnRaw = String(b.numero || b.nd || '').trim();
+                    const anNum = Number(anRaw);
+                    const bnNum = Number(bnRaw);
+                    const anIsNum = anRaw !== '' && isFinite(anNum);
+                    const bnIsNum = bnRaw !== '' && isFinite(bnNum);
+                    if (anIsNum && bnIsNum) return anNum - bnNum;
+                    return anRaw.localeCompare(bnRaw, undefined, { numeric: true, sensitivity: 'base' });
+                });
+            } catch (e) {
+                console.warn('Erro ao ordenar cadastro financeiro:', e);
+            }
 
             // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
             let startDate;
