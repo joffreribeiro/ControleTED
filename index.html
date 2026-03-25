@@ -987,21 +987,22 @@
             background: transparent;
             border: none;
             cursor: pointer;
-            padding: 4px 6px;
-            border-radius: 6px;
+            padding: 2px 3px;
+            border-radius: 4px;
             transition: var(--transition);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: var(--text-muted);
             font-weight: 400;
+            line-height: 1;
         }
 
         .btn-icon-action i {
-            width: 14px;
-            height: 14px;
+            width: 11px;
+            height: 11px;
             stroke-width: 2;
-            opacity: 0.85;
+            opacity: 0.75;
         }
 
         .btn-icon-action.delete {
@@ -1537,7 +1538,7 @@
             <button id="tab-novo" class="tab-btn" onclick="switchTab('novo')" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
             <button class="tab-btn" onclick="switchTab('detalhes')"><i data-lucide="search"></i> Detalhes TED</button>
             <button class="tab-btn" onclick="switchTab('relatorios')"><i data-lucide="file-bar-chart"></i> Relatórios</button>
-            <button class="tab-btn" onclick="switchTab('config')"><i data-lucide="settings"></i> Configurações</button>
+            <button id="tab-config" class="tab-btn" onclick="switchTab('config')"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
         <!-- TAB 1: Dashboard -->
@@ -8790,6 +8791,7 @@
             var cloudCtrl = document.getElementById('adminCloudControls');
             var adminPanel = document.getElementById('adminPanel');
             var adminLoggedAs = document.getElementById('adminLoggedAs');
+            var tabConfig = document.getElementById('tab-config');
 
             if (isAdmin) {
                 if (modeEl) { modeEl.textContent = '✏️ Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
@@ -8797,6 +8799,7 @@
                 if (logoutBtn) logoutBtn.style.display = 'inline-block';
                 if (cloudCtrl) cloudCtrl.style.display = 'flex';
                 if (adminPanel) adminPanel.style.display = 'block';
+                if (tabConfig) tabConfig.style.display = '';
                 if (adminLoggedAs && window.currentUserProfile) {
                     adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '—');
                 }
@@ -8808,6 +8811,14 @@
                 if (logoutBtn) logoutBtn.style.display = 'none';
                 if (cloudCtrl) cloudCtrl.style.display = 'none';
                 if (adminPanel) adminPanel.style.display = 'none';
+                if (tabConfig) tabConfig.style.display = 'none';
+                // Se está na aba config, voltar para dashboard
+                try {
+                    var configTab = document.getElementById('config');
+                    if (configTab && configTab.classList.contains('active')) {
+                        switchTab('dashboard');
+                    }
+                } catch(e) {}
                 // Desabilitar botões de edição
                 enableEditButtons(false);
             }
