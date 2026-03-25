@@ -648,9 +648,11 @@
             color: #dc2626;
         }
 
-        .badge-encerrado {
-            background: #fee2e2;
-            color: #dc2626;
+        .badge-encerrado,
+        .badge-vigencia-vencida {
+            background: #fef3c7;
+            color: #b45309;
+            font-weight: 600;
         }
 
         /* Filtros Multi-Select estilo Excel */
@@ -1625,7 +1627,7 @@
                     <select id="filterStatus_gantt" multiple size="4" onchange="renderGanttVigencia()" style="min-width:160px; padding:0.25rem; font-size:0.8rem;"></select>
                     <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px; margin-left:0.5rem; cursor:pointer; color:var(--text);">
                         <input type="checkbox" id="ganttOcultarFinalizados" checked onchange="renderGanttVigencia()">
-                        Ocultar Finalizados/Encerrados
+                        Ocultar Finalizados/Vig. Vencida
                     </label>
                     <button class="btn" style="font-size:0.75rem; padding:0.2rem 0.5rem; margin-left:0.25rem;" onclick="limparFiltrosGantt()">Limpar</button>
                 </div>
@@ -2830,7 +2832,7 @@
             const fimValido = fim && !isNaN(fim.getTime());
             if (inicioValido && fimValido) {
                 if (hoje >= inicio && hoje <= fim) return { text: 'EM EXECUÇÃO', origin: 'inferido (vigência)' };
-                if (fim < hoje) return { text: 'ENCERRADO', origin: 'inferido (vigência)' };
+                if (fim < hoje) return { text: 'Vigência Vencida', origin: 'inferido (vigência)' };
             }
 
             // Fallback
@@ -3120,8 +3122,8 @@
                 let badgeClassLocal = 'badge-planejamento';
                 if (/execu|em execução/.test(stNorm)) {
                     badgeClassLocal = 'badge-execucao';
-                } else if (/encerr/.test(stNorm)) {
-                    badgeClassLocal = 'badge-encerrado';
+                } else if (/vigênc.*venc|vigencia.*venc/.test(stNorm)) {
+                    badgeClassLocal = 'badge-vigencia-vencida';
                 } else if (/finaliz|finalizado/.test(stNorm)) {
                     badgeClassLocal = 'badge-finalizado';
                 } else if (/conclu/.test(stNorm)) {
@@ -3130,13 +3132,19 @@
                     badgeClassLocal = 'badge-denunciado';
                 } else if (/suspens|suspenso/.test(stNorm)) {
                     badgeClassLocal = 'badge-suspenso';
+                } else if (/encerr/.test(stNorm)) {
+                    badgeClassLocal = 'badge-vigencia-vencida';
                 }
 
-                // Estilo do card: borda vermelha clara para TED Finalizado ou Encerrado
-                const isFinalizadoOuEncerrado = /finaliz|finalizado|encerr/.test(stNorm);
-                const cardStyle = isFinalizadoOuEncerrado
-                    ? 'margin: 0 0 1rem 0; border-left: 4px solid #ef4444; background: rgba(239,68,68,0.04);'
-                    : 'margin: 0 0 1rem 0;';
+                // Estilo do card: borda vermelha para Finalizado, borda amarela para Vigência Vencida
+                const isFinalizado = /finaliz|finalizado/.test(stNorm);
+                const isVigenciaVencida = /vigênc.*venc|vigencia.*venc|encerr/.test(stNorm);
+                let cardStyle = 'margin: 0 0 1rem 0;';
+                if (isFinalizado) {
+                    cardStyle = 'margin: 0 0 1rem 0; border-left: 4px solid #ef4444; background: rgba(239,68,68,0.04);';
+                } else if (isVigenciaVencida) {
+                    cardStyle = 'margin: 0 0 1rem 0; border-left: 4px solid #f59e0b; background: rgba(245,158,11,0.04);';
+                }
                 
                 return `
                     <div class="card" style="${cardStyle}">
@@ -3476,7 +3484,8 @@
                                 const sNorm = computedStatusModal.toLowerCase();
                                 let cls = 'badge-planejamento';
                                 if (/execu|em execução/.test(sNorm)) cls = 'badge-execucao';
-                                else if (/encerr/.test(sNorm)) cls = 'badge-encerrado';
+                                else if (/vigênc.*venc|vigencia.*venc/.test(sNorm)) cls = 'badge-vigencia-vencida';
+                                else if (/encerr/.test(sNorm)) cls = 'badge-vigencia-vencida';
                                 else if (/finaliz|finalizado/.test(sNorm)) cls = 'badge-finalizado';
                                 else if (/conclu/.test(sNorm)) cls = 'badge-concluido';
                                 else if (/denunci/.test(sNorm)) cls = 'badge-denunciado';
@@ -6574,12 +6583,12 @@
                 }
             }
 
-            // Ocultar Finalizados/Encerrados por padrão
+            // Ocultar Finalizados/Vigência Vencida por padrão
             const chkOcultar = document.getElementById('ganttOcultarFinalizados');
             if (chkOcultar && chkOcultar.checked) {
                 teds = teds.filter(t => {
                     const s = ((getDisplayStatus(t) || {}).text || '').toLowerCase();
-                    return !/finaliz|finalizado|encerrad/.test(s);
+                    return !/finaliz|finalizado|vigênc.*venc|vigencia.*venc|encerrad/.test(s);
                 });
             }
 
