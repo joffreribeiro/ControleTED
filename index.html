@@ -1208,6 +1208,13 @@
         .tabela-padrao .sticky-freeze.sticky-freeze-last {
             box-shadow: 3px 0 6px rgba(0,0,0,0.14);
         }
+        /* Divisão visual de anos (linha preta) */
+        .tabela-padrao .year-divider-cell {
+            border-left: 2px solid #000 !important;
+        }
+        .tabela-padrao thead .year-divider-group {
+            border-left: 2px solid #000 !important;
+        }
         .tabela-padrao th {
             font-weight: 600;
             white-space: nowrap;
@@ -9219,6 +9226,65 @@
             });
         }
 
+        function clearYearDividerStyles(table) {
+            if (!table) return;
+            table.querySelectorAll('.year-divider-cell, .year-divider-group').forEach(cell => {
+                cell.classList.remove('year-divider-cell', 'year-divider-group');
+            });
+        }
+
+        function applyYearDividersToTable(table) {
+            if (!table || !table.tHead || !table.tHead.rows || !table.tHead.rows.length) return;
+            clearYearDividerStyles(table);
+
+            const row1 = table.tHead.rows[0];
+            if (!row1) return;
+
+            // Detectar blocos de ano no 1º header row (células com colspan > 1 e sem rowspan de colunas fixas)
+            let logical = 0;
+            const yearStarts = [];
+            Array.from(row1.cells).forEach(cell => {
+                const cs = Number(cell.colSpan || 1);
+                const rs = Number(cell.rowSpan || 1);
+                const start = logical;
+                if (rs === 1 && cs > 1) {
+                    yearStarts.push(start);
+                    cell.classList.add('year-divider-group');
+                }
+                logical += cs;
+            });
+
+            if (!yearStarts.length) return;
+
+            // Marcar divisão na linha de meses (2º header row), quando existir
+            const row2 = table.tHead.rows[1];
+            if (row2 && row2.cells && row2.cells.length) {
+                const firstYearStart = yearStarts[0];
+                yearStarts.forEach(start => {
+                    const idx = start - firstYearStart;
+                    const cell = row2.cells[idx];
+                    if (cell) cell.classList.add('year-divider-cell');
+                });
+            }
+
+            // Marcar divisão no corpo/rodapé respeitando colspan
+            const sections = [];
+            if (table.tBodies) sections.push(...Array.from(table.tBodies));
+            if (table.tFoot) sections.push(table.tFoot);
+
+            sections.forEach(section => {
+                Array.from(section.rows || []).forEach(row => {
+                    let l = 0;
+                    Array.from(row.cells || []).forEach(cell => {
+                        if (yearStarts.includes(l)) {
+                            cell.classList.add('year-divider-cell');
+                        }
+                        l += Number(cell.colSpan || 1);
+                    });
+                });
+            });
+        }
+
         function applyFrozenColumnsToTable(table) {
             if (!table) return;
             clearFrozenStyles(table);
@@ -9318,6 +9384,7 @@
         function refreshFrozenColumnsAllTables() {
             document.querySelectorAll('table.tabela-padrao').forEach(table => {
                 try { applyFrozenColumnsToTable(table); } catch(e) {}
+                try { applyYearDividersToTable(table); } catch(e) {}
             });
         }
 
