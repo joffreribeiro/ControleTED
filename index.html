@@ -1195,18 +1195,23 @@
         /* Colunas congeladas (aplicadas dinamicamente via JS) */
         .tabela-padrao .sticky-freeze {
             position: sticky;
-            z-index: 20;
+            z-index: 2;
             background-clip: padding-box;
             background: var(--surface, #ffffff);
-            transform: translateZ(0);
+            isolation: isolate;
+        }
+        .tabela-padrao tbody .sticky-freeze,
+        .tabela-padrao tfoot .sticky-freeze {
+            z-index: 2;
+            background: var(--surface, #ffffff);
         }
         .tabela-padrao thead .sticky-freeze {
-            z-index: 40;
-            background: var(--primary-gradient);
+            z-index: 4;
+            background: var(--primary-gradient) !important;
             color: #fff;
         }
         .tabela-padrao .sticky-freeze.sticky-freeze-last {
-            box-shadow: 3px 0 6px rgba(0,0,0,0.14);
+            box-shadow: 3px 0 6px rgba(0,0,0,0.18);
         }
         /* Divisão visual de anos (linha preta) */
         .tabela-padrao .year-divider-cell {
@@ -9405,36 +9410,52 @@
             const freezeCount = firstDateIdx === -1 ? totalCols : firstDateIdx;
             if (freezeCount <= 0) return;
 
-            const sampleRow = (table.tBodies && table.tBodies[0] && table.tBodies[0].rows && table.tBodies[0].rows[0])
-                ? table.tBodies[0].rows[0]
-                : (table.tHead && table.tHead.rows && table.tHead.rows[table.tHead.rows.length - 1]);
-            if (!sampleRow) return;
+            // Obter larguras reais usando a última linha do thead (colspans = 1 por coluna folha)
+            const leafRow = table.tHead && table.tHead.rows.length
+                ? table.tHead.rows[table.tHead.rows.length - 1]
+                : (table.tBodies && table.tBodies[0] && table.tBodies[0].rows[0]);
+            if (!leafRow) return;
 
+            // Montar mapa de larguras por coluna lógica folha usando a última linha do thead
+            // (essa linha tem colspan=1 para cada coluna de mês/dado)
             const colWidths = [];
-            for (let i = 0; i < freezeCount; i++) {
-                const sampleCell = sampleRow.cells[i];
-                const w = sampleCell ? Math.ceil(sampleCell.getBoundingClientRect().width) : 0;
-                colWidths.push(w);
+            {
+                // Usar occupancy para mapear células da leafRow a índices lógicos
+                // Em geral a última linha do thead tem apenas colspan=1
+                let logIdx = 0;
+                Array.from(leafRow.cells).forEach(cell => {
+                    const w = Math.ceil(cell.getBoundingClientRect().width) || 0;
+                    const cs = Number(cell.colSpan || 1);
+                    for (let k = 0; k < cs; k++) {
+                        colWidths[logIdx + k] = w / cs;
+                    }
+                    logIdx += cs;
+                });
             }
 
+            // Calcular offsets acumulados
             const leftOffsets = [];
             let acc = 0;
             for (let i = 0; i < freezeCount; i++) {
-                leftOffsets.push(acc);
+                leftOffsets[i] = acc;
                 acc += (colWidths[i] || 0);
             }
 
-            const applyCell = (cell, logicalColIdx) => {
-                if (!cell || logicalColIdx < 0 || logicalColIdx >= freezeCount) return;
+            const applyCell = (cell, logicalStart, colSpan) => {
+                if (!cell) return;
+                const cs = colSpan || 1;
+                // Congelar célula apenas se ela estiver TOTALMENTE dentro da área congelada
+                if (logicalStart < 0 || (logicalStart + cs) > freezeCount) return;
                 cell.classList.add('sticky-freeze');
-                if (logicalColIdx === freezeCount - 1) cell.classList.add('sticky-freeze-last');
-                cell.style.left = leftOffsets[logicalColIdx] + 'px';
+                // É a última célula congelada se vai até o limite da área congelada
+                if ((logicalStart + cs) === freezeCount) cell.classList.add('sticky-freeze-last');
+                cell.style.left = leftOffsets[logicalStart] + 'px';
                 const bg = window.getComputedStyle(cell).backgroundColor;
-                if (bg && bg !== 'rgba(0, 0, 0, 0)') {
+                if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
                     cell.style.background = bg;
                 } else {
                     const rowBg = cell.parentElement ? window.getComputedStyle(cell.parentElement).backgroundColor : '';
-                    if (rowBg && rowBg !== 'rgba(0, 0, 0, 0)') {
+                    if (rowBg && rowBg !== 'rgba(0, 0, 0, 0)' && rowBg !== 'transparent') {
                         cell.style.background = rowBg;
                     } else if (cell.tagName === 'TH') {
                         cell.style.background = 'var(--primary-gradient)';
@@ -9444,7 +9465,7 @@
                 }
             };
 
-            // THEAD: respeitar colspan/rowspan para mapear índice lógico real por linha
+            // THEAD: respeitar colspan/rowspan com grid de ocupância
             if (table.tHead && table.tHead.rows) {
                 const occupancy = [];
                 Array.from(table.tHead.rows).forEach((row, rIdx) => {
@@ -9457,12 +9478,8 @@
                         const cs = Number(cell.colSpan || 1);
                         const rs = Number(cell.rowSpan || 1);
                         const start = logical;
-                        const end = start + cs;
 
-                        // Congelar somente células totalmente dentro da área congelada
-                        if (start < freezeCount && end <= freezeCount) {
-                            applyCell(cell, start);
-                        }
+                        applyCell(cell, start, cs);
 
                         for (let rr = 0; rr < rs; rr++) {
                             if (!occupancy[rIdx + rr]) occupancy[rIdx + rr] = [];
@@ -9471,19 +9488,23 @@
                             }
                         }
 
-                        logical = end;
+                        logical = start + cs;
                     });
                 });
             }
 
-            // TBODY/TFOOT: células simples por índice
-            [table.tBodies, table.tFoot ? [table.tFoot] : []].forEach(group => {
-                if (!group) return;
-                Array.from(group).forEach(section => {
-                    Array.from(section.rows || []).forEach(row => {
-                        for (let i = 0; i < freezeCount; i++) {
-                            applyCell(row.cells[i], i);
-                        }
+            // TBODY/TFOOT: usar grid de ocupância por linha para suportar colspan
+            const sections = [];
+            if (table.tBodies) Array.from(table.tBodies).forEach(s => sections.push(s));
+            if (table.tFoot) sections.push(table.tFoot);
+
+            sections.forEach(section => {
+                Array.from(section.rows || []).forEach(row => {
+                    let logical = 0;
+                    Array.from(row.cells).forEach(cell => {
+                        const cs = Number(cell.colSpan || 1);
+                        applyCell(cell, logical, cs);
+                        logical += cs;
                     });
                 });
             });
