@@ -2531,6 +2531,38 @@
                         </ul>
                     </div>
                 </div>
+
+                <!-- Filtros específicos para apresentação -->
+                <div style="margin-top:1rem; background:var(--bg-alt); padding:0.75rem; border-radius:0.5rem; border:1px solid var(--border);">
+                    <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Filtros de Apresentação</h4>
+                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem;">
+                        <div style="flex:1; min-width:160px;">
+                            <label for="apresent_filtro_up" style="font-size:0.85rem; color:var(--text);">UP</label>
+                            <select id="apresent_filtro_up" style="width:100%; padding:0.4rem; margin-top:0.25rem;"> 
+                                <option value="">— Todas —</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:160px;">
+                            <label for="apresent_filtro_ted" style="font-size:0.85rem; color:var(--text);">TED</label>
+                            <select id="apresent_filtro_ted" style="width:100%; padding:0.4rem; margin-top:0.25rem;">
+                                <option value="">— Todos —</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:160px;">
+                            <label for="apresent_filtro_status" style="font-size:0.85rem; color:var(--text);">Status</label>
+                            <select id="apresent_filtro_status" style="width:100%; padding:0.4rem; margin-top:0.25rem;">
+                                <option value="">— Todos —</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; align-items:flex-end; gap:0.5rem;">
+                            <button class="btn btn-secondary" style="height:36px;" onclick="clearApresentacaoFilters()">Limpar filtros</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultados filtrados -->
+                <div id="apresentacao_results" style="margin-top:1rem;"></div>
+
                 <div style="margin-top:1rem; display:flex; gap:0.5rem;">
                     <button class="btn btn-primary" onclick="showToast('Ação de demonstração: enviar para revisão (simulada).','info')">Enviar para revisão</button>
                     <button class="btn btn-secondary" onclick="showToast('Ação de demonstração: publicar (não implementado)).','warning')">Publicar</button>
@@ -2971,6 +3003,7 @@
             } catch(e) {}
             try {
                 if (tabName === 'relatorios') renderRelatorios();
+                if (tabName === 'apresentacao') initApresentacaoFilters();
             } catch(e) {}
         }
 
@@ -9931,6 +9964,97 @@
             }
         }
         window.updateAdminUI = updateAdminUI;
+
+        // Funções de filtro para a aba Apresentação (UP, TED, Status)
+        function initApresentacaoFilters() {
+            try {
+                if (window._apresentacaoFiltersInitialized) return;
+                var upEl = document.getElementById('apresent_filtro_up');
+                var tedEl = document.getElementById('apresent_filtro_ted');
+                var statusEl = document.getElementById('apresent_filtro_status');
+                if (!upEl || !tedEl || !statusEl) return;
+                populateApresentacaoFilters();
+                upEl.addEventListener('change', applyApresentacaoFilters);
+                tedEl.addEventListener('change', applyApresentacaoFilters);
+                statusEl.addEventListener('change', applyApresentacaoFilters);
+                window._apresentacaoFiltersInitialized = true;
+                applyApresentacaoFilters();
+            } catch(e) { console.warn('initApresentacaoFilters erro', e); }
+        }
+
+        function populateApresentacaoFilters() {
+            try {
+                var upEl = document.getElementById('apresent_filtro_up');
+                var tedEl = document.getElementById('apresent_filtro_ted');
+                var statusEl = document.getElementById('apresent_filtro_status');
+                if (!upEl || !tedEl || !statusEl) return;
+                upEl.options.length = 1;
+                tedEl.options.length = 1;
+                statusEl.options.length = 1;
+                var ups = new Set();
+                var teds = new Set();
+                var statuses = new Set();
+                (dados.teds || []).forEach(function(t) {
+                    var up = t.upResponsavel || t.up || '';
+                    if (up) ups.add(String(up));
+                    var num = t.numTed || t.num || t.num_ted || String(t.id || '');
+                    if (num) teds.add(String(num));
+                    var st = t.statusTED || t.status || 'Em Execução';
+                    if (st) statuses.add(String(st));
+                });
+                Array.from(ups).sort().forEach(function(u){ var o = document.createElement('option'); o.value = u; o.text = u; upEl.appendChild(o); });
+                Array.from(teds).sort((a,b)=>a.localeCompare(b, undefined, {numeric:true})).forEach(function(n){ var o = document.createElement('option'); o.value = n; o.text = 'TED ' + n; tedEl.appendChild(o); });
+                Array.from(statuses).sort().forEach(function(s){ var o = document.createElement('option'); o.value = s; o.text = s; statusEl.appendChild(o); });
+            } catch(e) { console.warn('populateApresentacaoFilters erro', e); }
+        }
+
+        function applyApresentacaoFilters() {
+            try {
+                var upVal = (document.getElementById('apresent_filtro_up') || {}).value || '';
+                var tedVal = (document.getElementById('apresent_filtro_ted') || {}).value || '';
+                var statusVal = (document.getElementById('apresent_filtro_status') || {}).value || '';
+                var items = (dados.teds || []).filter(function(t){
+                    var up = (t.upResponsavel || t.up || '') + '';
+                    var num = String(t.numTed || t.num || t.num_ted || t.id || '');
+                    var st = String(t.statusTED || t.status || 'Em Execução');
+                    if (upVal && upVal !== '' && up !== upVal) return false;
+                    if (tedVal && tedVal !== '' && num !== tedVal) return false;
+                    if (statusVal && statusVal !== '' && st !== statusVal) return false;
+                    return true;
+                });
+                renderApresentacaoResults(items);
+            } catch(e) { console.warn('applyApresentacaoFilters erro', e); }
+        }
+
+        function clearApresentacaoFilters() {
+            try { if (document.getElementById('apresent_filtro_up')) document.getElementById('apresent_filtro_up').value = ''; if (document.getElementById('apresent_filtro_ted')) document.getElementById('apresent_filtro_ted').value = ''; if (document.getElementById('apresent_filtro_status')) document.getElementById('apresent_filtro_status').value = ''; applyApresentacaoFilters(); } catch(e) { console.warn('clearApresentacaoFilters erro', e); }
+        }
+
+        function renderApresentacaoResults(items) {
+            try {
+                var container = document.getElementById('apresentacao_results');
+                if (!container) return;
+                if (!items || !items.length) { container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Nenhum TED corresponde aos filtros selecionados.</p>'; return; }
+                var html = '<div style="max-height:400px; overflow:auto;">';
+                html += '<table class="tabela-padrao" style="width:100%; font-size:0.9rem;">';
+                html += '<thead><tr><th>TED</th><th>UP</th><th>Status</th><th style="text-align:right;">Valor</th></tr></thead><tbody>';
+                items.forEach(function(t){
+                    var num = t.numTed || t.num || t.num_ted || t.id || '';
+                    var up = t.up || t.upResponsavel || '';
+                    var st = t.statusTED || t.status || 'Em Execução';
+                    var valor = (t.valorTed || t.valor || t.valorTotal || 0);
+                    var valorFmt = (typeof valor === 'number') ? valor.toLocaleString('pt-BR', {minimumFractionDigits:2}) : (parseFloat(valor) ? parseFloat(valor).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-');
+                    html += '<tr>';
+                    html += '<td><a href="#" onclick="switchTab(\'detalhes\'); carregarDetalhes(' + (t.id) + '); return false;">TED ' + num + '</a></td>';
+                    html += '<td>' + (up || '-') + '</td>';
+                    html += '<td>' + (st || '-') + '</td>';
+                    html += '<td style="text-align:right;">' + valorFmt + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+            } catch(e) { console.warn('renderApresentacaoResults erro', e); }
+        }
 
         // Habilitar/desabilitar TODOS os botões e formulários de edição
         function enableEditButtons(enabled) {
