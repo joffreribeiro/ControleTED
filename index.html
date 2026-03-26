@@ -5628,6 +5628,18 @@
                 }
                 return `<td></td>`;
             }).join('');
+
+            // Linha "Previsto Anual" (mesclada por ano) com somatório dos meses de cada ano
+            let idxMesAno = 0;
+            const previstoAnualPorAnoCells = anos.map((a) => {
+                let somaAno = 0;
+                for (let j = 0; j < a.count; j++) {
+                    somaAno += totaisPorMes[idxMesAno + j] || 0;
+                }
+                idxMesAno += a.count;
+                const valorAno = somaAno.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                return `<td colspan="${a.count}" style="background:#dbeafe; text-align:right; font-weight:700;">${valorAno}</td>`;
+            }).join('');
             
             tbody.innerHTML += `
                 <tr class="linha-total">
@@ -5638,6 +5650,10 @@
                     <td class="col-valor">${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td class="col-acao"></td>
                     ${totalCells}
+                </tr>
+                <tr class="linha-total">
+                    <td colspan="6" style="text-align:left; font-weight:700;">Previsto Anual</td>
+                    ${previstoAnualPorAnoCells}
                 </tr>
             `;
 
