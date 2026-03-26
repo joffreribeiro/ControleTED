@@ -1458,6 +1458,8 @@
         .aditivo-historico .btn-icon.edit:hover { background: rgba(255,255,255,0.03); }
         .aditivo-historico .btn-icon.delete { background: transparent; color: #ff6b6b; border: 1px solid rgba(255,255,255,0.03); }
         .aditivo-historico .btn-icon.delete:hover { background: rgba(255,0,0,0.04); }
+        .aditivo-historico td.valor-aditivo { text-align: center; vertical-align: middle; white-space: nowrap; }
+        .aditivo-historico td.valor-aditivo .valor-text { display:inline-block; min-width:6rem; }
 
         /* Forçar contraste no modal (labels/inputs) */
         .aditivo-modal { color: var(--text); }
@@ -3870,7 +3872,7 @@
                 aditivos.forEach((a, ai) => {
                     const dataAdit = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
                         const valAdit = (typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? parseFloat(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
-                        histHtml += `<tr><td>${ai+1}</td><td>+${a.meses}</td><td>${dataAdit}</td><td style="text-align:center;">${valAdit}</td><td>${a.obs || '-'}</td><td>
+                        histHtml += `<tr><td>${ai+1}</td><td>+${a.meses}</td><td>${dataAdit}</td><td class="valor-aditivo"><span class="valor-text">${valAdit}</span></td><td>${a.obs || '-'}</td><td>
                         <button class="btn-icon edit" onclick="abrirModalAditivo(${ai})" title="Editar aditivo">✎</button>
                         <button class="btn-icon delete" onclick="removerAditivo(${ai})" title="Remover aditivo">✖</button>
                     </td></tr>`;
@@ -4447,6 +4449,8 @@
                 const currentVal = (ted && typeof ted.valorTed !== 'undefined') ? ted.valorTed : '';
                 if (valInput) valInput.value = currentVal !== '' ? (Number(currentVal).toLocaleString('pt-BR', {minimumFractionDigits:2})) : '';
             }
+            // aplicar máscara de moeda no campo de valor
+            if (valInput) applyCurrencyMaskToInput(valInput);
             overlay.classList.add('active');
         }
 
@@ -4546,6 +4550,32 @@
             } else {
                 ted.valorTed = calcularTotalFinanceiro(ted) || 0;
             }
+        }
+
+        // Aplica máscara de moeda (pt-BR) em um input enquanto o usuário digita
+        function applyCurrencyMaskToInput(input) {
+            if (!input) return;
+            if (input.dataset.maskCurrency === '1') return; // já aplicado
+            const onInput = function () {
+                const raw = input.value || '';
+                // remover tudo que não for dígito
+                const digits = raw.replace(/\D/g, '');
+                if (!digits) { input.value = ''; return; }
+                // interpretar como centavos
+                const num = parseInt(digits, 10);
+                const cents = num % 100;
+                const units = Math.floor(num / 100);
+                const formattedUnits = units.toLocaleString('pt-BR');
+                const formatted = formattedUnits + ',' + String(cents).padStart(2, '0');
+                input.value = formatted;
+            };
+            // usar paste também para garantir formato
+            const onPaste = function (e) {
+                setTimeout(onInput, 0);
+            };
+            input.addEventListener('input', onInput);
+            input.addEventListener('paste', onPaste);
+            input.dataset.maskCurrency = '1';
         }
 
         // Função auxiliar: calcular fim com aditivos
