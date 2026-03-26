@@ -1632,6 +1632,8 @@
             <button id="tab-novo" class="tab-btn" onclick="switchTab('novo')" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
             <button class="tab-btn" onclick="switchTab('detalhes')"><i data-lucide="search"></i> Detalhes TED</button>
             <button class="tab-btn" onclick="switchTab('relatorios')"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <!-- Aba 'Apresentação' visível apenas para Admin -->
+            <button id="tab-apresentacao-btn" class="tab-btn" onclick="switchTab('apresentacao')" style="display:none;"><i data-lucide="monitor"></i> Apresentação</button>
             <button id="tab-config" class="tab-btn" onclick="switchTab('config')"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
@@ -2506,6 +2508,32 @@
                             <div id="relatorioExecFinanceira"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB Apresentação (admin only) -->
+        <div id="apresentacao" class="tab-content" style="display:none;">
+            <div class="card">
+                <h2><i data-lucide="monitor" class="inline-icon"></i> Apresentação</h2>
+                <p style="color:var(--text); margin-bottom:1rem;">Área de apresentação do sistema — visível somente para administradores. Utilize este espaço para destacar informações institucionais, instruções de publicação ou notas importantes antes de liberar alterações para produção.</p>
+                <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:240px; background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Resumo do Sistema</h4>
+                        <p style="margin:0; color:var(--text); font-size:0.95rem;">Versão: <strong id="apresentacao_versao">1.0.0</strong><br>Última atualização: <span id="apresentacao_data">-</span></p>
+                    </div>
+                    <div style="flex:2; min-width:320px; background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
+                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Notas para Publicação</h4>
+                        <ul style="margin:0; color:var(--text); font-size:0.95rem;">
+                            <li>Revise alterações realizadas no ambiente de desenvolvimento.</li>
+                            <li>Valide fórmulas financeiras e visibilidade das tabelas.</li>
+                            <li>Execute testes rápidos em um servidor local antes de publicar.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+                    <button class="btn btn-primary" onclick="showToast('Ação de demonstração: enviar para revisão (simulada).','info')">Enviar para revisão</button>
+                    <button class="btn btn-secondary" onclick="showToast('Ação de demonstração: publicar (não implementado)).','warning')">Publicar</button>
                 </div>
             </div>
         </div>
@@ -9867,6 +9895,7 @@
             var adminPanel = document.getElementById('adminPanel');
             var adminLoggedAs = document.getElementById('adminLoggedAs');
             var tabConfig = document.getElementById('tab-config');
+            var tabApresentBtn = document.getElementById('tab-apresentacao-btn');
 
             if (isAdmin) {
                 if (modeEl) { modeEl.textContent = '✏️ Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
@@ -9875,6 +9904,7 @@
                 if (cloudCtrl) cloudCtrl.style.display = 'flex';
                 if (adminPanel) adminPanel.style.display = 'block';
                 if (tabConfig) tabConfig.style.display = '';
+                if (tabApresentBtn) tabApresentBtn.style.display = '';
                 if (adminLoggedAs && window.currentUserProfile) {
                     adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '—');
                 }
@@ -9887,10 +9917,12 @@
                 if (cloudCtrl) cloudCtrl.style.display = 'none';
                 if (adminPanel) adminPanel.style.display = 'none';
                 if (tabConfig) tabConfig.style.display = 'none';
+                if (tabApresentBtn) tabApresentBtn.style.display = 'none';
                 // Se está na aba config, voltar para dashboard
                 try {
                     var configTab = document.getElementById('config');
-                    if (configTab && configTab.classList.contains('active')) {
+                    var apresentTab = document.getElementById('apresentacao');
+                    if ((configTab && configTab.classList.contains('active')) || (apresentTab && apresentTab.classList.contains('active'))) {
                         switchTab('dashboard');
                     }
                 } catch(e) {}
