@@ -7297,16 +7297,22 @@
             });
             
             const valorAtual = execsDoMes.reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
-            const novoValor = prompt(`Editar valor de ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\nValor atual: ${valorAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2})}\nDigite o novo valor:`, valorAtual);
-            
-            if (novoValor === null) return;
-            
-            const valor = parseFloat(novoValor);
-            if (isNaN(valor)) {
-                alert('⚠️ Valor inválido');
+            // Exibir detalhes dos lançamentos (NC, valor e data) para este ND/UP no mês
+            if (!execsDoMes || execsDoMes.length === 0) {
+                alert(`Nenhum lançamento encontrado para ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}.`);
                 return;
             }
-            
+            let msg = `Lançamentos para ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\n`;
+            execsDoMes.forEach(e => {
+                const nc = e.numero || e.nd || nd;
+                const val = parseFloat(e.valor || e.valorRealizado) || 0;
+                const dataLinha = e.data || '';
+                msg += `NC: ${nc} | Valor: ${val.toLocaleString('pt-BR', {minimumFractionDigits: 2})} | Data: ${dataLinha}\n`;
+            });
+            msg += `\nTotal: ${valorAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            alert(msg);
+            return;
+
             // Remover execuções antigas deste mês/ND/UP
             window.tedSelecionado.execFinanceiras = execs.filter(e => {
                 if (!e.data) return true;
