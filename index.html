@@ -668,6 +668,20 @@
             margin-bottom: 0.75rem;
             align-items: center;
         }
+        /* Filtro fixo no topo/esquerda da área da tabela (não acompanha scroll horizontal) */
+        .table-wrapper > .filter-bar,
+        .table-freeze-wrapper > .filter-bar {
+            position: sticky;
+            top: 0;
+            left: 0;
+            z-index: 80;
+            background: var(--bg-alt);
+            padding: 0.35rem 0.4rem;
+            margin-bottom: 0.5rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--border-light);
+        }
         .filter-bar-label {
             font-weight: 600;
             font-size: 0.85rem;
@@ -716,7 +730,7 @@
             border: 1px solid var(--border-light);
             border-radius: var(--radius);
             box-shadow: var(--shadow-lg);
-            z-index: 200;
+            z-index: 260;
             padding: 0.35rem 0;
         }
         .filter-menu.open {
