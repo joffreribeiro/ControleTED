@@ -1181,11 +1181,15 @@
         /* Colunas congeladas (aplicadas dinamicamente via JS) */
         .tabela-padrao .sticky-freeze {
             position: sticky;
-            z-index: 6;
+            z-index: 20;
             background-clip: padding-box;
+            background: var(--surface, #ffffff);
+            transform: translateZ(0);
         }
         .tabela-padrao thead .sticky-freeze {
-            z-index: 10;
+            z-index: 40;
+            background: var(--primary-gradient);
+            color: #fff;
         }
         .tabela-padrao .sticky-freeze.sticky-freeze-last {
             box-shadow: 3px 0 6px rgba(0,0,0,0.14);
@@ -9224,10 +9228,15 @@
                 const bg = window.getComputedStyle(cell).backgroundColor;
                 if (bg && bg !== 'rgba(0, 0, 0, 0)') {
                     cell.style.background = bg;
-                } else if (cell.tagName === 'TH') {
-                    cell.style.background = 'var(--primary, #2c5aa0)';
                 } else {
-                    cell.style.background = 'var(--surface, #ffffff)';
+                    const rowBg = cell.parentElement ? window.getComputedStyle(cell.parentElement).backgroundColor : '';
+                    if (rowBg && rowBg !== 'rgba(0, 0, 0, 0)') {
+                        cell.style.background = rowBg;
+                    } else if (cell.tagName === 'TH') {
+                        cell.style.background = 'var(--primary-gradient)';
+                    } else {
+                        cell.style.background = 'var(--surface, #ffffff)';
+                    }
                 }
             };
 
@@ -9237,7 +9246,8 @@
                     let logical = 0;
                     Array.from(row.cells).forEach(cell => {
                         const cs = Number(cell.colSpan || 1);
-                        if (logical < freezeCount) {
+                        // Congelar somente células totalmente dentro da área congelada
+                        if (logical < freezeCount && (logical + cs) <= freezeCount) {
                             applyCell(cell, logical);
                         }
                         logical += cs;
