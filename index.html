@@ -1178,6 +1178,18 @@
             border: 1px solid var(--border-light);
             vertical-align: middle;
         }
+        /* Colunas congeladas (aplicadas dinamicamente via JS) */
+        .tabela-padrao .sticky-freeze {
+            position: sticky;
+            z-index: 6;
+            background-clip: padding-box;
+        }
+        .tabela-padrao thead .sticky-freeze {
+            z-index: 10;
+        }
+        .tabela-padrao .sticky-freeze.sticky-freeze-last {
+            box-shadow: 3px 0 6px rgba(0,0,0,0.14);
+        }
         .tabela-padrao th {
             font-weight: 600;
             white-space: nowrap;
@@ -9124,6 +9136,132 @@
                     wrapper.classList.remove('has-scroll');
                 }
             });
+            try { refreshFrozenColumnsAllTables(); } catch(e) {}
+        }
+
+        // ===== CONGELAMENTO GLOBAL DE COLUNAS (exceto colunas de data) =====
+        function isDateLikeHeaderLabel(label) {
+            const txt = String(label || '').trim().toUpperCase();
+            if (!txt) return false;
+            if (/\bDATA\b/.test(txt)) return true;
+            if (/\b(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\/?\d{0,4}\b/.test(txt)) return true;
+            if (/^\d{1,2}[\/-]\d{2,4}$/.test(txt)) return true;
+            return false;
+        }
+
+        function getLeafHeaderLabels(table) {
+            const thead = table && table.tHead;
+            if (!thead || !thead.rows || !thead.rows.length) return [];
+
+            const rows = Array.from(thead.rows);
+            const grid = [];
+            rows.forEach((row, rIdx) => {
+                if (!grid[rIdx]) grid[rIdx] = [];
+                let cIdx = 0;
+                Array.from(row.cells).forEach(cell => {
+                    while (grid[rIdx][cIdx]) cIdx++;
+                    const rs = Number(cell.rowSpan || 1);
+                    const cs = Number(cell.colSpan || 1);
+                    for (let rr = 0; rr < rs; rr++) {
+                        if (!grid[rIdx + rr]) grid[rIdx + rr] = [];
+                        for (let cc = 0; cc < cs; cc++) {
+                            grid[rIdx + rr][cIdx + cc] = cell;
+                        }
+                    }
+                    cIdx += cs;
+                });
+            });
+
+            const lastRow = grid[grid.length - 1] || [];
+            return lastRow.map(c => (c ? c.textContent : '') || '');
+        }
+
+        function clearFrozenStyles(table) {
+            if (!table) return;
+            table.querySelectorAll('.sticky-freeze').forEach(cell => {
+                cell.classList.remove('sticky-freeze', 'sticky-freeze-last');
+                cell.style.left = '';
+                cell.style.background = '';
+            });
+        }
+
+        function applyFrozenColumnsToTable(table) {
+            if (!table) return;
+            clearFrozenStyles(table);
+
+            const labels = getLeafHeaderLabels(table);
+            const totalCols = labels.length || (table.rows[0] ? table.rows[0].cells.length : 0);
+            if (!totalCols) return;
+
+            const firstDateIdx = labels.findIndex(isDateLikeHeaderLabel);
+            const freezeCount = firstDateIdx === -1 ? totalCols : firstDateIdx;
+            if (freezeCount <= 0) return;
+
+            const sampleRow = (table.tBodies && table.tBodies[0] && table.tBodies[0].rows && table.tBodies[0].rows[0])
+                ? table.tBodies[0].rows[0]
+                : (table.tHead && table.tHead.rows && table.tHead.rows[table.tHead.rows.length - 1]);
+            if (!sampleRow) return;
+
+            const colWidths = [];
+            for (let i = 0; i < freezeCount; i++) {
+                const sampleCell = sampleRow.cells[i];
+                const w = sampleCell ? Math.ceil(sampleCell.getBoundingClientRect().width) : 0;
+                colWidths.push(w);
+            }
+
+            const leftOffsets = [];
+            let acc = 0;
+            for (let i = 0; i < freezeCount; i++) {
+                leftOffsets.push(acc);
+                acc += (colWidths[i] || 0);
+            }
+
+            const applyCell = (cell, logicalColIdx) => {
+                if (!cell || logicalColIdx < 0 || logicalColIdx >= freezeCount) return;
+                cell.classList.add('sticky-freeze');
+                if (logicalColIdx === freezeCount - 1) cell.classList.add('sticky-freeze-last');
+                cell.style.left = leftOffsets[logicalColIdx] + 'px';
+                const bg = window.getComputedStyle(cell).backgroundColor;
+                if (bg && bg !== 'rgba(0, 0, 0, 0)') {
+                    cell.style.background = bg;
+                } else if (cell.tagName === 'TH') {
+                    cell.style.background = 'var(--primary, #2c5aa0)';
+                } else {
+                    cell.style.background = 'var(--surface, #ffffff)';
+                }
+            };
+
+            // THEAD: respeitar colspan/rowspan para mapear índice lógico
+            if (table.tHead && table.tHead.rows) {
+                Array.from(table.tHead.rows).forEach(row => {
+                    let logical = 0;
+                    Array.from(row.cells).forEach(cell => {
+                        const cs = Number(cell.colSpan || 1);
+                        if (logical < freezeCount) {
+                            applyCell(cell, logical);
+                        }
+                        logical += cs;
+                    });
+                });
+            }
+
+            // TBODY/TFOOT: células simples por índice
+            [table.tBodies, table.tFoot ? [table.tFoot] : []].forEach(group => {
+                if (!group) return;
+                Array.from(group).forEach(section => {
+                    Array.from(section.rows || []).forEach(row => {
+                        for (let i = 0; i < freezeCount; i++) {
+                            applyCell(row.cells[i], i);
+                        }
+                    });
+                });
+            });
+        }
+
+        function refreshFrozenColumnsAllTables() {
+            document.querySelectorAll('table.tabela-padrao').forEach(table => {
+                try { applyFrozenColumnsToTable(table); } catch(e) {}
+            });
         }
 
         // Observer para detectar mudanças no DOM
@@ -9449,6 +9587,7 @@
                     if (window._readOnlyMode) {
                         enableEditButtons(false);
                     }
+                    try { refreshFrozenColumnsAllTables(); } catch(e) {}
                 }, 300);
             });
             // Observar todo o container principal
@@ -9469,6 +9608,9 @@
             inicializar();
             checkTableScrolls();
             initLucideIcons();
+            window.addEventListener('resize', function() {
+                try { refreshFrozenColumnsAllTables(); } catch(e) {}
+            });
             // Observar wrappers de tabela
             document.querySelectorAll('.table-wrapper').forEach(w => resizeObserver.observe(w));
             // Iniciar em modo LEITURA (sem login)
