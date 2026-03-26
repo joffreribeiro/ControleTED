@@ -3768,6 +3768,7 @@
             if (!window.tedSelecionado) return;
             
             const ted = window.tedSelecionado;
+            const aditivos = ted.aditivos || [];
             
             // Formatar data (para exibição DD/MM/YYYY)
             const formatarData = (data) => {
@@ -3798,7 +3799,7 @@
             document.getElementById('info_objetivo').textContent = ted.objetivo || '-';
             // Se houver aditivo que alterou o valor do TED, mostrar original tachado + novo valor
             let valorDisplay = '-';
-            const aditivosComValor = (aditivos || []).filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
+            const aditivosComValor = aditivos.filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
             if (aditivosComValor.length) {
                 const lastA = aditivosComValor[aditivosComValor.length - 1];
                 const prev = (typeof lastA.prevValorTed !== 'undefined' && lastA.prevValorTed !== null) ? lastA.prevValorTed : null;
@@ -3824,7 +3825,6 @@
             
             document.getElementById('info_inicioVigencia').textContent = formatarData(ted.inicioVigencia);
             // Vigência e Fim com suporte a aditivos
-            const aditivos = ted.aditivos || [];
             const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
             if (aditivos && aditivos.length > 0) {
                 const vigOriginal = ted.vigencia || 0;
