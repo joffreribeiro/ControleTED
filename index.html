@@ -5647,7 +5647,7 @@
                 }
                 idxMesAno += a.count;
                 const valorAno = somaAno.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                return `<td colspan="${a.count}" style="background:#dbeafe; text-align:right; font-weight:700;">${valorAno}</td>`;
+                return `<td colspan="${a.count}" style="background:#dbeafe; text-align:center; font-weight:700;">${valorAno}</td>`;
             }).join('');
             
             tbody.innerHTML += `
