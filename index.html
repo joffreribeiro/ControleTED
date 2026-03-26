@@ -1937,7 +1937,7 @@
                                 <div class="ted-info-card">
                                     <label class="ted-info-label">Valor do TED (R$)</label>
                                     <div class="ted-info-value" id="info_valorTed"></div>
-                                    <input type="number" class="ted-info-input" id="edit_valorTed" step="0.01" min="0" style="display: none;">
+                                    <input type="text" class="ted-info-input" id="edit_valorTed" style="display: none;">
                                 </div>
                             </div>
 
@@ -3892,7 +3892,8 @@
             document.getElementById('edit_planoTrabalho').value = ted.planoTrabalho || '';
             document.getElementById('edit_numTed').value = ted.numTed || '';
             document.getElementById('edit_objetivo').value = ted.objetivo || '';
-            document.getElementById('edit_valorTed').value = ted.valorTed || '';
+            const editValEl = document.getElementById('edit_valorTed');
+            if (editValEl) editValEl.value = (typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '';
             
             document.getElementById('edit_codigoPlano').value = ted.codigoPlano || '';
             document.getElementById('edit_numTedSiafi').value = ted.numTedSiafi || '';
@@ -3983,6 +3984,8 @@
 
             // Recalcular Fim de Vigência ao abrir edição (considera aditivos)
             calcularFimVigenciaEdit();
+            // aplicar máscara de moeda no campo de edição de valor do TED
+            try { applyCurrencyMaskToInput(document.getElementById('edit_valorTed')); } catch(e) {}
         }
 
         // Salvar edição
