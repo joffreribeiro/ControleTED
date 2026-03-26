@@ -9410,26 +9410,41 @@
             const freezeCount = firstDateIdx === -1 ? totalCols : firstDateIdx;
             if (freezeCount <= 0) return;
 
-            // Obter larguras reais usando a última linha do thead (colspans = 1 por coluna folha)
-            const leafRow = table.tHead && table.tHead.rows.length
-                ? table.tHead.rows[table.tHead.rows.length - 1]
-                : (table.tBodies && table.tBodies[0] && table.tBodies[0].rows[0]);
-            if (!leafRow) return;
-
-            // Montar mapa de larguras por coluna lógica folha usando a última linha do thead
-            // (essa linha tem colspan=1 para cada coluna de mês/dado)
+            // Calcular larguras por índice lógico percorrendo TODAS as linhas do thead
+            // com grid de ocupância — necessário porque colunas fixas têm rowspan="2"
+            // e NÃO aparecem na última linha do thead.
             const colWidths = [];
-            {
-                // Usar occupancy para mapear células da leafRow a índices lógicos
-                // Em geral a última linha do thead tem apenas colspan=1
-                let logIdx = 0;
-                Array.from(leafRow.cells).forEach(cell => {
-                    const w = Math.ceil(cell.getBoundingClientRect().width) || 0;
+            if (table.tHead && table.tHead.rows.length) {
+                const occ = [];
+                Array.from(table.tHead.rows).forEach((row, rIdx) => {
+                    if (!occ[rIdx]) occ[rIdx] = [];
+                    let log = 0;
+                    Array.from(row.cells).forEach(cell => {
+                        while (occ[rIdx][log]) log++;
+                        const cs = Number(cell.colSpan || 1);
+                        const rs = Number(cell.rowSpan || 1);
+                        const w = Math.ceil(cell.getBoundingClientRect().width) || 0;
+                        // Só registrar a largura se ainda não foi preenchida (primeira vez que vemos esse índice)
+                        for (let k = 0; k < cs; k++) {
+                            if (!colWidths[log + k]) colWidths[log + k] = w / cs;
+                        }
+                        for (let rr = 0; rr < rs; rr++) {
+                            if (!occ[rIdx + rr]) occ[rIdx + rr] = [];
+                            for (let cc = 0; cc < cs; cc++) occ[rIdx + rr][log + cc] = true;
+                        }
+                        log += cs;
+                    });
+                });
+            } else {
+                // Fallback: usar primeira linha do tbody
+                const fbRow = table.tBodies && table.tBodies[0] && table.tBodies[0].rows[0];
+                if (!fbRow) return;
+                let log = 0;
+                Array.from(fbRow.cells).forEach(cell => {
                     const cs = Number(cell.colSpan || 1);
-                    for (let k = 0; k < cs; k++) {
-                        colWidths[logIdx + k] = w / cs;
-                    }
-                    logIdx += cs;
+                    const w = Math.ceil(cell.getBoundingClientRect().width) || 0;
+                    for (let k = 0; k < cs; k++) colWidths[log + k] = w / cs;
+                    log += cs;
                 });
             }
 
