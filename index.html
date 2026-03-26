@@ -9240,17 +9240,34 @@
                 }
             };
 
-            // THEAD: respeitar colspan/rowspan para mapear índice lógico
+            // THEAD: respeitar colspan/rowspan para mapear índice lógico real por linha
             if (table.tHead && table.tHead.rows) {
-                Array.from(table.tHead.rows).forEach(row => {
+                const occupancy = [];
+                Array.from(table.tHead.rows).forEach((row, rIdx) => {
+                    if (!occupancy[rIdx]) occupancy[rIdx] = [];
                     let logical = 0;
+
                     Array.from(row.cells).forEach(cell => {
+                        while (occupancy[rIdx][logical]) logical++;
+
                         const cs = Number(cell.colSpan || 1);
+                        const rs = Number(cell.rowSpan || 1);
+                        const start = logical;
+                        const end = start + cs;
+
                         // Congelar somente células totalmente dentro da área congelada
-                        if (logical < freezeCount && (logical + cs) <= freezeCount) {
-                            applyCell(cell, logical);
+                        if (start < freezeCount && end <= freezeCount) {
+                            applyCell(cell, start);
                         }
-                        logical += cs;
+
+                        for (let rr = 0; rr < rs; rr++) {
+                            if (!occupancy[rIdx + rr]) occupancy[rIdx + rr] = [];
+                            for (let cc = 0; cc < cs; cc++) {
+                                occupancy[rIdx + rr][start + cc] = true;
+                            }
+                        }
+
+                        logical = end;
                     });
                 });
             }
