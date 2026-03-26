@@ -7025,10 +7025,9 @@
             const cad = window.tedSelecionado.financeiros || [];
             const execs = window.tedSelecionado.execFinanceiras || [];
 
-            // Conjunto de chaves ND+UP presentes em cadastro ou execução
+            // Conjunto de chaves ND+UP presentes apenas no cadastro financeiro
             const chaves = new Set([
-                ...cad.map(f => `${f.numero}||${f.up || f.ug}`),
-                ...execs.map(e => `${e.nd || e.numero}||${e.up || e.ug}`)
+                ...cad.map(f => `${f.numero}||${f.up || f.ug}`)
             ].filter(Boolean));
 
             if (chaves.size === 0) {
@@ -7056,14 +7055,16 @@
             let totalRealizado = 0;
             const totalMeses = new Map();
 
-            // Ordenar chaves por ND (numérico quando possível) antes de construir linhas
+            // Ordenar chaves por ND (numérico quando possível) e depois por UP
             const sortedChaves = chavesFiltradas.sort((a,b) => {
-                const ndA = String(a).split('||')[0] || '';
-                const ndB = String(b).split('||')[0] || '';
-                const nA = parseFloat(ndA.replace(/[^0-9.-]/g, ''));
-                const nB = parseFloat(ndB.replace(/[^0-9.-]/g, ''));
-                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
-                return String(ndA).localeCompare(String(ndB), undefined, {numeric: true});
+                const [ndA, upA] = String(a).split('||');
+                const [ndB, upB] = String(b).split('||');
+                const nA = parseFloat((ndA||'').replace(/[^0-9.-]/g, ''));
+                const nB = parseFloat((ndB||'').replace(/[^0-9.-]/g, ''));
+                if (!isNaN(nA) && !isNaN(nB) && nA !== nB) return nA - nB;
+                const cmpNd = String(ndA).localeCompare(String(ndB), undefined, {numeric: true});
+                if (cmpNd !== 0) return cmpNd;
+                return String(upA || '').localeCompare(String(upB || ''));
             });
 
             const linhas = sortedChaves.map((chave, idx) => {
@@ -8675,9 +8676,17 @@
                                 if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
                             });
 
+                            // Inserir apenas itens cujas ND existam no cadastro financeiro do TED
+                            let importadosPorTed = 0;
+                            let ignoradosPorTed = 0;
                             grupo.itens.forEach((item, idx) => {
                                 const ndImportNorm = normalizarND(item.nd);
-                                const ndFinal = cadNDs[ndImportNorm] || formatarNDComPontos(item.nd);
+                                const ndFinal = cadNDs[ndImportNorm];
+                                if (!ndFinal) {
+                                    // ND não encontrada no cadastro: ignorar
+                                    ignoradosPorTed++;
+                                    return;
+                                }
 
                                 ted.execFinanceiras.push({
                                     id: Date.now() + idx + Math.random() * 1000,
@@ -8689,30 +8698,35 @@
                                     valorRealizado: item.valor,
                                     data: item.data
                                 });
+                                importadosPorTed++;
                             });
 
                             try { atualizarGastoFromExecFinanceiras(ted); } catch(ex) {
                                 try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}
                             }
-                            countTeds++;
-                            countItens += grupo.itens.length;
+                            if (importadosPorTed > 0) countTeds++;
+                            countItens += importadosPorTed;
+                            // ignoradosPorTed será refletido no total de itens importados vs presentes no arquivo
                         });
 
                         try { salvarDadosImediato(); } catch(ex) {}
                         try { atualizarTabelaExecFinanceira(); } catch(ex) {}
 
                         let msg = countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!';
+                        const skipped = totalItens - countItens;
                         if (tedsNaoEncontrados.length > 0) {
                             msg += '\n⚠️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
-                            if (countItens === 0) {
-                                alert('❌ Nenhum dado importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + '\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
-                            } else {
-                                showToast(msg, 'warning');
-                            }
-                        } else if (countItens === 0) {
-                            alert('❌ Nenhum dado importado.\n\nCabeçalhos: ' + headers.join(', '));
+                        }
+                        if (skipped > 0) {
+                            msg += '\n⚠️ ' + skipped + ' item(ns) ignorado(s) porque a(s) ND(s) não existe(m) no cadastro financeiro.';
+                        }
+                        if (countItens === 0) {
+                            // Nenhum dado importado, mostrar alerta detalhado
+                            alert('❌ Nenhum dado importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + (tedsNaoEncontrados.length ? ('\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ')) : '') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
                         } else {
-                            showToast(msg, 'success');
+                            // Se houve itens importados, exibir toast (warning quando houver problemas)
+                            const level = (tedsNaoEncontrados.length || skipped) ? 'warning' : 'success';
+                            showToast(msg, level);
                         }
 
                     } else {
@@ -8729,26 +8743,49 @@
                         Object.keys(grouped).forEach(numTed => {
                             const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
                             if (ted) {
-                                ted.execFinanceiras = grouped[numTed].map((row, idx) => ({
-                                    id: Date.now() + idx,
-                                    nd: row.nd,
-                                    numero: row.nd,
-                                    up: row.up || '',
-                                    ug: row.up || '',
-                                    valor: parseNumber(row.valor) || 0,
-                                    valorRealizado: parseNumber(row.valor) || 0,
-                                    data: row.data || ''
-                                }));
+                                // Mapa NDs do cadastro financeiro (para permitir somente importação das NDs já cadastradas)
+                                const cadNDs = {};
+                                (ted.financeiros || []).forEach(f => {
+                                    const ndNorm = normalizarND(f.numero);
+                                    if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
+                                });
+
+                                let importados = 0;
+                                let ignorados = 0;
+                                ted.execFinanceiras = [];
+                                grouped[numTed].forEach((row, idx) => {
+                                    const ndImportNorm = normalizarND(row.nd);
+                                    const ndFinal = cadNDs[ndImportNorm];
+                                    if (!ndFinal) { ignorados++; return; }
+                                    ted.execFinanceiras.push({
+                                        id: Date.now() + idx,
+                                        nd: ndFinal,
+                                        numero: ndFinal,
+                                        up: row.up || '',
+                                        ug: row.up || '',
+                                        valor: parseNumber(row.valor) || 0,
+                                        valorRealizado: parseNumber(row.valor) || 0,
+                                        data: row.data || ''
+                                    });
+                                    importados++;
+                                });
+
                                 try { atualizarGastoFromExecFinanceiras(ted); } catch(ex) {
                                     try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}
                                 }
-                                countTeds++;
-                                countItens += grouped[numTed].length;
+                                if (importados > 0) countTeds++;
+                                countItens += importados;
+                                // ignorados serão refletidos no total de itens importados vs presentes no arquivo
                             }
                         });
                         try { salvarDadosImediato(); } catch(ex) {}
                         try { atualizarTabelaExecFinanceira(); } catch(ex) {}
-                        showToast(countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!', 'success');
+                        const totalInFile = Object.keys(grouped).reduce((s,k)=>s+grouped[k].length,0);
+                        const skipped = totalInFile - countItens;
+                        let msg = countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!';
+                        if (skipped > 0) msg += '\n⚠️ ' + skipped + ' item(ns) ignorado(s) porque a(s) ND(s) não existe(m) no cadastro financeiro.';
+                        const level = skipped ? 'warning' : 'success';
+                        showToast(msg, level);
                     }
                 } catch (err) {
                     console.error('Erro na importação:', err);
