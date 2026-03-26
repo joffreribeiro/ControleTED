@@ -1429,20 +1429,26 @@
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            padding: 1rem;
         }
         .aditivo-modal-overlay.active { display: flex; }
         .aditivo-modal {
-            background: var(--bg);
+            background: var(--bg-primary);
             border-radius: 12px;
-            padding: 2rem;
-            min-width: 380px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 1.25rem 1.5rem;
+            min-width: 420px;
+            max-width: 96%;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+            border: 1px solid rgba(0,0,0,0.08);
+            color: var(--text);
         }
-        .aditivo-modal h3 { margin: 0 0 1.5rem 0; }
+        .aditivo-modal h3 { margin: 0 0 1rem 0; color: var(--primary); }
         .aditivo-historico { margin-top: 1rem; font-size: 0.85rem; }
         .aditivo-historico table { width: 100%; border-collapse: collapse; color: rgba(255,255,255,0.95); }
         .aditivo-historico th, .aditivo-historico td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.12); text-align: left; }
@@ -1456,7 +1462,8 @@
         /* Forçar contraste no modal (labels/inputs) */
         .aditivo-modal { color: var(--text); }
         .aditivo-modal label { color: var(--text); font-weight:600; display:block; margin-bottom:6px; }
-        .aditivo-modal input { color: var(--text); background: var(--bg-alt); border:1px solid rgba(0,0,0,0.08); }
+        .aditivo-modal input { color: var(--text); background: var(--bg-secondary); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; }
+        .aditivo-modal input:focus { outline: 2px solid rgba(59,130,246,0.18); box-shadow: 0 4px 12px rgba(59,130,246,0.06); }
         /* Entregas chart styles */
         .entregas-controls { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; }
         .entregas-chart { display:flex; gap:2rem; align-items:flex-end; padding:1rem 0; }
@@ -3862,8 +3869,8 @@
                 let histHtml = '<table><thead><tr><th>#</th><th>Meses</th><th>Data do Aditivo</th><th>Valor do TED</th><th>Observação</th><th></th></tr></thead><tbody>';
                 aditivos.forEach((a, ai) => {
                     const dataAdit = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
-                    const valAdit = (typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? parseFloat(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
-                    histHtml += `<tr><td>${ai+1}</td><td>+${a.meses}</td><td>${dataAdit}</td><td style="text-align:right; padding-right:0.75rem;">${valAdit}</td><td>${a.obs || '-'}</td><td>
+                        const valAdit = (typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? parseFloat(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
+                        histHtml += `<tr><td>${ai+1}</td><td>+${a.meses}</td><td>${dataAdit}</td><td style="text-align:center;">${valAdit}</td><td>${a.obs || '-'}</td><td>
                         <button class="btn-icon edit" onclick="abrirModalAditivo(${ai})" title="Editar aditivo">✎</button>
                         <button class="btn-icon delete" onclick="removerAditivo(${ai})" title="Remover aditivo">✖</button>
                     </td></tr>`;
@@ -4457,6 +4464,7 @@
             const obs = document.getElementById('aditivoObsInput').value || '';
             const rawVal = (document.getElementById('aditivoValorTedInput') ? document.getElementById('aditivoValorTedInput').value : '').trim();
             const novoValor = rawVal !== '' ? parseNumber(rawVal) : null;
+            const currentTedValue = (typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) ? Number(ted.valorTed) : null;
 
             if (!ted.aditivos) ted.aditivos = [];
             const overlay = document.getElementById('aditivoModalOverlay');
@@ -4466,21 +4474,31 @@
             const aditivoObj = { meses, data, obs };
             if (novoValor !== null) {
                 aditivoObj.valorTed = novoValor;
-                // set prevValorTed if not present (capture current TED.valorTed before change)
-                aditivoObj.prevValorTed = (typeof ted.valorTed !== 'undefined' ? ted.valorTed : null);
             }
 
             if (typeof editIndex === 'number' && !isNaN(editIndex)) {
                 // editing existing aditivo
                 const existing = ted.aditivos[editIndex] || {};
-                // if novoValor is provided, ensure prevValorTed preserved if existing has it
-                if (novoValor !== null && existing && typeof existing.prevValorTed !== 'undefined') {
-                    aditivoObj.prevValorTed = existing.prevValorTed;
+                if (novoValor !== null) {
+                    if (typeof existing.valorTed !== 'undefined' && existing.valorTed !== null) {
+                        // existing had a value; set prevValorTed only if value actually changed
+                        if (novoValor !== existing.valorTed) {
+                            aditivoObj.prevValorTed = (typeof existing.prevValorTed !== 'undefined' && existing.prevValorTed !== null) ? existing.prevValorTed : currentTedValue;
+                        }
+                    } else {
+                        // existing had no valorTed; set prev only if novo differs from current TED value
+                        if (currentTedValue === null || novoValor !== currentTedValue) {
+                            aditivoObj.prevValorTed = currentTedValue;
+                        }
+                    }
                 }
                 // replace
                 ted.aditivos[editIndex] = Object.assign({}, existing, aditivoObj);
             } else {
                 // add new
+                if (novoValor !== null && (currentTedValue === null || novoValor !== currentTedValue)) {
+                    aditivoObj.prevValorTed = currentTedValue;
+                }
                 ted.aditivos.push(aditivoObj);
             }
 
