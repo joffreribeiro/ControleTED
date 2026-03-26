@@ -7302,12 +7302,35 @@
                 alert(`Nenhum lançamento encontrado para ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}.`);
                 return;
             }
+            // Formatter DD-MMM-AAAA (meses em PT-BR abreviados maiúsculos)
+            const mesesPt = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            function formatDateDDMMM(dStr) {
+                if (!dStr) return '';
+                try {
+                    const dt = new Date(dStr + 'T00:00:00');
+                    if (isNaN(dt.getTime())) return dStr;
+                    const dd = String(dt.getDate()).padStart(2,'0');
+                    const m = mesesPt[dt.getMonth()] || (dt.toLocaleString('pt-BR',{month:'short'}).toUpperCase());
+                    const yyyy = dt.getFullYear();
+                    return `${dd}-${m}-${yyyy}`;
+                } catch(e) { return dStr; }
+            }
+
             let msg = `Lançamentos para ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\n`;
             execsDoMes.forEach(e => {
-                const nc = e.numero || e.nd || nd;
                 const val = parseFloat(e.valor || e.valorRealizado) || 0;
-                const dataLinha = e.data || '';
-                msg += `NC: ${nc} | Valor: ${val.toLocaleString('pt-BR', {minimumFractionDigits: 2})} | Data: ${dataLinha}\n`;
+                // Se houver origens (lista de lançamentos agregados), listar cada NC
+                if (e.origens && Array.isArray(e.origens) && e.origens.length) {
+                    e.origens.forEach(o => {
+                        const nc = o.nc || (e.numero || e.nd || nd) || '';
+                        const dataLinha = o.data || e.data || '';
+                        msg += `NC: ${nc} | Valor: ${ (parseFloat(o.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) } | Data: ${formatDateDDMMM(dataLinha)}\n`;
+                    });
+                } else {
+                    const nc = e.numero || e.nd || nd;
+                    const dataLinha = e.data || '';
+                    msg += `NC: ${nc} | Valor: ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})} | Data: ${formatDateDDMMM(dataLinha)}\n`;
+                }
             });
             msg += `\nTotal: ${valorAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             alert(msg);
@@ -8623,6 +8646,21 @@
 
                         // Agrupar por SIAFI
                         const grouped = {};
+                        // Detectar coluna NC exata (quando houver) — preferir header igual a 'NC'
+                        const headerLowerMap = headers.reduce((acc,h)=>{ acc[h.toLowerCase().trim()]=h; return acc; }, {});
+                        const colNC = (function(){
+                            // procurar header com nome exatamente 'nc' (ignorando case/espacos)
+                            for (const h of headers) {
+                                if (h && String(h).trim().toLowerCase() === 'nc') return h;
+                            }
+                            // fallback: procurar header que contenha 'nc' mas não 'natureza' (evitar confusão)
+                            for (const h of headers) {
+                                const low = String(h).toLowerCase();
+                                if (low.indexOf('nc') > -1 && low.indexOf('natureza') === -1) return h;
+                            }
+                            return null;
+                        })();
+
                         rows.forEach(row => {
                             const siafi = String(row[colSiafi] || '').trim();
                             if (!siafi) return;
@@ -8644,8 +8682,11 @@
                                 else if (/^\d{4}-\d{2}-\d{2}$/.test(dataRaw)) data = dataRaw;
                             }
 
+                            // Capturar NC original (quando presente)
+                            const ncRaw = colNC ? String(row[colNC] || '').trim() : '';
+
                             if (!grouped[siafi]) grouped[siafi] = { itens: [] };
-                            grouped[siafi].itens.push({ nd: ndRaw, up: upSigla, valor, data });
+                            grouped[siafi].itens.push({ nd: ndRaw, nc: ncRaw, up: upSigla, valor, data });
                         });
 
                         const siafiKeys = Object.keys(grouped);
@@ -8694,8 +8735,9 @@
                                 const dataVal = item.data || '';
                                 const chave = ndFinal + '||' + upVal + '||' + dataVal;
                                 const valorNum = parseFloat(item.valor) || 0;
-                                if (!agregados[chave]) agregados[chave] = { nd: ndFinal, up: upVal, data: dataVal, valor: 0 };
+                                if (!agregados[chave]) agregados[chave] = { nd: ndFinal, up: upVal, data: dataVal, valor: 0, origens: [] };
                                 agregados[chave].valor += valorNum;
+                                agregados[chave].origens.push({ nc: item.nc || '', valor: valorNum, data: dataVal });
                             });
 
                             // Substituir execFinanceiras com os lançamentos agregados
@@ -8705,15 +8747,16 @@
                                 keys.forEach((k, idx) => {
                                     const it = agregados[k];
                                     ted.execFinanceiras.push({
-                                        id: Date.now() + idx + Math.floor(Math.random() * 1000),
-                                        nd: it.nd,
-                                        numero: it.nd,
-                                        up: it.up,
-                                        ug: it.up,
-                                        valor: it.valor,
-                                        valorRealizado: it.valor,
-                                        data: it.data
-                                    });
+                                            id: Date.now() + idx + Math.floor(Math.random() * 1000),
+                                            nd: it.nd,
+                                            numero: it.nd,
+                                            up: it.up,
+                                            ug: it.up,
+                                            valor: it.valor,
+                                            valorRealizado: it.valor,
+                                            data: it.data,
+                                            origens: it.origens || []
+                                        });
                                 });
                             } else {
                                 // não há itens válidos: limpar execFinanceiras
@@ -8779,8 +8822,9 @@
                                     const dataVal = row.data || '';
                                     const chave = ndFinal + '||' + upVal + '||' + dataVal;
                                     const valorNum = parseNumber(row.valor) || 0;
-                                    if (!agreg[chave]) agreg[chave] = { nd: ndFinal, up: upVal, data: dataVal, valor: 0 };
+                                    if (!agreg[chave]) agreg[chave] = { nd: ndFinal, up: upVal, data: dataVal, valor: 0, origens: [] };
                                     agreg[chave].valor += valorNum;
+                                    agreg[chave].origens.push({ nc: row.nc || row.NC || '', valor: valorNum, data: dataVal });
                                 });
 
                                 const chavesAgreg = Object.keys(agreg);
@@ -8795,13 +8839,15 @@
                                         ug: it.up || '',
                                         valor: it.valor,
                                         valorRealizado: it.valor,
-                                        data: it.data || ''
+                                        data: it.data || '',
+                                        origens: it.origens || []
                                     });
                                 });
 
                                 try { atualizarGastoFromExecFinanceiras(ted); } catch(ex) {
                                     try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}
                                 }
+                                const importados = chavesAgreg.length;
                                 if (importados > 0) countTeds++;
                                 countItens += importados;
                                 // ignorados serão refletidos no total de itens importados vs presentes no arquivo
