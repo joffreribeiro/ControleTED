@@ -3853,7 +3853,10 @@
                 aditivos.forEach((a, ai) => {
                     const dataAdit = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
                     const valAdit = (typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? parseFloat(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
-                    histHtml += `<tr><td>${ai+1}</td><td>+${a.meses}</td><td>${dataAdit}</td><td style="text-align:right; padding-right:0.75rem;">${valAdit}</td><td>${a.obs || '-'}</td><td><button onclick="removerAditivo(${ai})" style="color:#ff6b6b;border:none;background:none;cursor:pointer;font-size:1rem;" title="Remover aditivo">✖</button></td></tr>`;
+                    histHtml += `<tr><td>${ai+1}</td><td>+${a.meses}</td><td>${dataAdit}</td><td style="text-align:right; padding-right:0.75rem;">${valAdit}</td><td>${a.obs || '-'}</td><td>
+                        <button onclick="abrirModalAditivo(${ai})" style="color:#1e40af;border:none;background:none;cursor:pointer;font-size:1rem;margin-right:6px;" title="Editar aditivo">✎</button>
+                        <button onclick="removerAditivo(${ai})" style="color:#ff6b6b;border:none;background:none;cursor:pointer;font-size:1rem;" title="Remover aditivo">✖</button>
+                    </td></tr>`;
                 });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_aditivoHistorico').innerHTML = histHtml;
@@ -4372,8 +4375,8 @@
 
         // ========== ADITIVOS DE VIGÊNCIA ==========
 
-        // Abrir modal para adicionar aditivo
-        function abrirModalAditivo() {
+        // Abrir modal para adicionar ou editar aditivo
+        function abrirModalAditivo(editIndex) {
             if (!window.tedSelecionado) return alert('Selecione um TED primeiro.');
             // Criar modal dinamicamente se não existir
             let overlay = document.getElementById('aditivoModalOverlay');
@@ -4409,13 +4412,24 @@
                 document.body.appendChild(overlay);
             }
             // Limpar campos
+            const ted = window.tedSelecionado;
             document.getElementById('aditivoMesesInput').value = '';
             document.getElementById('aditivoDataInput').value = new Date().toISOString().split('T')[0];
             document.getElementById('aditivoObsInput').value = '';
-            // Prefill valor do TED com o valor atual do TED selecionado
-            const currentVal = (window.tedSelecionado && window.tedSelecionado.valorTed !== undefined) ? window.tedSelecionado.valorTed : '';
             const valInput = document.getElementById('aditivoValorTedInput');
-            if (valInput) valInput.value = currentVal !== '' ? (Number(currentVal).toLocaleString('pt-BR', {minimumFractionDigits:2})) : '';
+            // se editIndex fornecido, preencher com valores do aditivo existente
+            if (typeof editIndex === 'number' && ted.aditivos && ted.aditivos[editIndex]) {
+                const a = ted.aditivos[editIndex];
+                document.getElementById('aditivoMesesInput').value = a.meses || '';
+                document.getElementById('aditivoDataInput').value = a.data || new Date().toISOString().split('T')[0];
+                document.getElementById('aditivoObsInput').value = a.obs || '';
+                if (valInput) valInput.value = (typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? Number(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : ((typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '');
+                overlay.dataset.editIndex = String(editIndex);
+            } else {
+                overlay.dataset.editIndex = '';
+                const currentVal = (ted && typeof ted.valorTed !== 'undefined') ? ted.valorTed : '';
+                if (valInput) valInput.value = currentVal !== '' ? (Number(currentVal).toLocaleString('pt-BR', {minimumFractionDigits:2})) : '';
+            }
             overlay.classList.add('active');
         }
 
@@ -4435,17 +4449,33 @@
             const novoValor = rawVal !== '' ? parseNumber(rawVal) : null;
 
             if (!ted.aditivos) ted.aditivos = [];
+            const overlay = document.getElementById('aditivoModalOverlay');
+            const editIndex = overlay && overlay.dataset && overlay.dataset.editIndex ? parseInt(overlay.dataset.editIndex, 10) : null;
+
             // build aditivo object
             const aditivoObj = { meses, data, obs };
             if (novoValor !== null) {
-                // store previous value for rendering
-                aditivoObj.prevValorTed = (typeof ted.valorTed !== 'undefined' ? ted.valorTed : null);
                 aditivoObj.valorTed = novoValor;
-                // update TED current value
-                ted.valorTed = novoValor;
+                // set prevValorTed if not present (capture current TED.valorTed before change)
+                aditivoObj.prevValorTed = (typeof ted.valorTed !== 'undefined' ? ted.valorTed : null);
             }
 
-            ted.aditivos.push(aditivoObj);
+            if (typeof editIndex === 'number' && !isNaN(editIndex)) {
+                // editing existing aditivo
+                const existing = ted.aditivos[editIndex] || {};
+                // if novoValor is provided, ensure prevValorTed preserved if existing has it
+                if (novoValor !== null && existing && typeof existing.prevValorTed !== 'undefined') {
+                    aditivoObj.prevValorTed = existing.prevValorTed;
+                }
+                // replace
+                ted.aditivos[editIndex] = Object.assign({}, existing, aditivoObj);
+            } else {
+                // add new
+                ted.aditivos.push(aditivoObj);
+            }
+
+            // recompute TED.valorTed based on last aditivo with valor or fallback
+            recomputeValorTedFromAditivos(ted);
 
             salvarDados();
             fecharModalAditivo();
@@ -4477,6 +4507,17 @@
             exibirInformacoesTED();
             renderGanttVigencia();
             if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Recompute TED.valorTed from the last aditivo that has valorTed, or fallback to calculated financeiro
+        function recomputeValorTedFromAditivos(ted) {
+            if (!ted) return;
+            const withVal = (ted.aditivos || []).filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
+            if (withVal.length) {
+                ted.valorTed = withVal[withVal.length - 1].valorTed;
+            } else {
+                ted.valorTed = calcularTotalFinanceiro(ted) || 0;
+            }
         }
 
         // Função auxiliar: calcular fim com aditivos
