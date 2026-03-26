@@ -7223,7 +7223,7 @@
             const rowReceberAnterior = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">A Receber Ano Anterior</td>${cellsByAno((ano)=> (previstoByAno[ano-1] || 0) - (recebidoByAno[ano-1] || 0))}</tr>`;
             const rowRecebidoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
             const rowDevolvido = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Devolvido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0) - (devolvidoByAno[ano] || 0))}</tr>`;
+            const rowSaldoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0) + (devolvidoByAno[ano] || 0))}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowRecebidoAnual + rowDevolvido + rowSaldoAnual;
 
@@ -7898,7 +7898,7 @@
             const rowReceberAnterior = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">A Receber Ano Anterior</td>${cellsByAno((ano)=> (previstoByAno[ano-1] || 0) - (recebidoByAno[ano-1] || 0))}</tr>`;
             const rowRecebidoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
             const rowDevolvido = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Devolvido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0) - (devolvidoByAno[ano] || 0))}</tr>`;
+            const rowSaldoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0) + (devolvidoByAno[ano] || 0))}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowRecebidoAnual + rowDevolvido + rowSaldoAnual;
         }
