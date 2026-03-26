@@ -10034,24 +10034,102 @@
             try {
                 var container = document.getElementById('apresentacao_results');
                 if (!container) return;
-                if (!items || !items.length) { container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Nenhum TED corresponde aos filtros selecionados.</p>'; return; }
-                var html = '<div style="max-height:400px; overflow:auto;">';
-                html += '<table class="tabela-padrao" style="width:100%; font-size:0.9rem;">';
-                html += '<thead><tr><th>TED</th><th>UP</th><th>Status</th><th style="text-align:right;">Valor</th></tr></thead><tbody>';
+                if (!items || !items.length) {
+                    container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Nenhum TED corresponde aos filtros selecionados.</p>';
+                    return;
+                }
+
+                // Construir cards para cada TED
+                var html = '<div style="display:flex; flex-direction:column; gap:1rem;">';
                 items.forEach(function(t){
                     var num = t.numTed || t.num || t.num_ted || t.id || '';
-                    var up = t.up || t.upResponsavel || '';
+                    var up = t.up || t.upResponsavel || '-';
                     var st = t.statusTED || t.status || 'Em Execução';
                     var valor = (t.valorTed || t.valor || t.valorTotal || 0);
+                    var gasto = (t.gasto || t.gastoRealizado || 0);
                     var valorFmt = (typeof valor === 'number') ? valor.toLocaleString('pt-BR', {minimumFractionDigits:2}) : (parseFloat(valor) ? parseFloat(valor).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-');
-                    html += '<tr>';
-                    html += '<td><a href="#" onclick="switchTab(\'detalhes\'); carregarDetalhes(' + (t.id) + '); return false;">TED ' + num + '</a></td>';
-                    html += '<td>' + (up || '-') + '</td>';
-                    html += '<td>' + (st || '-') + '</td>';
-                    html += '<td style="text-align:right;">' + valorFmt + '</td>';
-                    html += '</tr>';
+                    var gastoFmt = (typeof gasto === 'number') ? gasto.toLocaleString('pt-BR', {minimumFractionDigits:2}) : (parseFloat(gasto) ? parseFloat(gasto).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-');
+                    var saldo = 0;
+                    try { saldo = (parseFloat(valor) || 0) - (parseFloat(gasto) || 0); } catch(e){ saldo = 0; }
+                    var saldoFmt = (saldo || saldo === 0) ? parseFloat(saldo).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
+
+                    // Pontos de atenção: tentar extrair de t.notas, t.pontos or t.alertas
+                    var pontos = [];
+                    if (Array.isArray(t.alertas) && t.alertas.length) pontos = t.alertas.slice(0,4);
+                    else if (Array.isArray(t.pontos) && t.pontos.length) pontos = t.pontos.slice(0,4);
+                    else if (t.observacoes) pontos = [t.observacoes];
+
+                    html += '<div class="apresent-card" style="display:flex; gap:1rem; padding:1rem; background:var(--bg); border:1px solid var(--border); border-radius:8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">';
+                    // Left column: Execução Física (simplificada)
+                    html += '<div style="flex:1; min-width:180px;">';
+                    html += '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">';
+                    html += '<div style="font-weight:700; font-size:1.05rem;">TED ' + num + '</div>';
+                    html += '<div style="font-size:0.85rem; color:var(--text);">' + (t.up || t.upResponsavel || '') + '</div>';
+                    html += '</div>';
+                    html += '<div style="background:var(--bg-alt); padding:0.6rem; border-radius:6px; border:1px solid var(--border);">';
+                    html += '<div style="font-size:0.8rem; color:var(--text); margin-bottom:0.25rem;">Execução Física</div>';
+                    // Usar campos físicos se disponíveis: t.totalPrevistoFisico, t.entregueFisico, t.saldoFisico
+                    var fisicoPrev = t.totalPrevistoFisico || t.prevFisico || t.totalPrevisto || 0;
+                    var fisicoEnt = t.entregueFisico || t.entregue || t.executadoFisico || 0;
+                    var fisicoSaldo = (fisicoPrev || 0) - (fisicoEnt || 0);
+                    var fisPrevFmt = (fisicoPrev || fisicoPrev === 0) ? Number(fisicoPrev).toLocaleString('pt-BR') : '-';
+                    var fisEntFmt = (fisicoEnt || fisicoEnt === 0) ? Number(fisicoEnt).toLocaleString('pt-BR') : '-';
+                    var fisSaldoFmt = (fisicoSaldo || fisicoSaldo === 0) ? Number(fisicoSaldo).toLocaleString('pt-BR') : '-';
+                    html += '<div style="display:flex; gap:0.5rem;">';
+                    html += '<div style="flex:1; padding:0.5rem; background:#0f1724; color:#fff; border-left:6px solid #2563eb; border-radius:4px;">';
+                    html += '<div style="font-size:0.75rem; opacity:0.8;">Total Previsto</div>';
+                    html += '<div style="font-weight:700; font-size:1.1rem;">' + fisPrevFmt + '</div>';
+                    html += '</div>';
+                    html += '<div style="flex:1; padding:0.5rem; background:#0f1724; color:#fff; border-left:6px solid #10b981; border-radius:4px;">';
+                    html += '<div style="font-size:0.75rem; opacity:0.8;">Entrega</div>';
+                    html += '<div style="font-weight:700; font-size:1.1rem;">' + fisEntFmt + '</div>';
+                    html += '</div>';
+                    html += '<div style="flex:1; padding:0.5rem; background:#0f1724; color:#fff; border-left:6px solid #f59e0b; border-radius:4px;">';
+                    html += '<div style="font-size:0.75rem; opacity:0.8;">Saldo a Entregar</div>';
+                    html += '<div style="font-weight:700; font-size:1.1rem;">' + fisSaldoFmt + '</div>';
+                    html += '</div>';
+                    html += '</div></div></div>';
+
+                    // Middle column: Execução Financeira
+                    html += '<div style="flex:1.4; min-width:260px;">';
+                    html += '<div style="font-size:0.85rem; color:var(--text); margin-bottom:0.25rem;">Execução Financeira</div>';
+                    html += '<div style="display:flex; gap:0.5rem;">';
+                    html += '<div style="flex:1; padding:0.6rem; background:#0f1724; color:#fff; border-left:6px solid #2563eb; border-radius:4px;">';
+                    html += '<div style="font-size:0.75rem; opacity:0.8;">Valor Previsto</div>';
+                    html += '<div style="font-weight:700; font-size:1.1rem;">' + valorFmt + '</div>';
+                    html += '</div>';
+                    html += '<div style="flex:1; padding:0.6rem; background:#0f1724; color:#fff; border-left:6px solid #10b981; border-radius:4px;">';
+                    html += '<div style="font-size:0.75rem; opacity:0.8;">Valor Recebido</div>';
+                    var recebido = t.recebido || t.valorRecebido || (t.execFinanceiras ? t.execFinanceiras.reduce((s,e)=>s+(parseFloat(e.valor)||0),0) : 0);
+                    var recebidoFmt = (typeof recebido === 'number') ? recebido.toLocaleString('pt-BR',{minimumFractionDigits:2}) : (parseFloat(recebido)? parseFloat(recebido).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-');
+                    html += '<div style="font-weight:700; font-size:1.1rem; color:#10b981;">' + recebidoFmt + '</div>';
+                    html += '<div style="font-size:0.75rem; color:#10b981;">' + (valor ? ( ((parseFloat(recebido)||0)/(parseFloat(valor)||1))*100 ).toFixed(1) + '% Concluído' : '') + '</div>';
+                    html += '</div>';
+                    html += '<div style="flex:1; padding:0.6rem; background:#0f1724; color:#fff; border-left:6px solid #f59e0b; border-radius:4px;">';
+                    html += '<div style="font-size:0.75rem; opacity:0.8;">Saldo a Receber</div>';
+                    html += '<div style="font-weight:700; font-size:1.1rem; color:#f59e0b;">' + saldoFmt + '</div>';
+                    html += '</div>';
+                    html += '</div></div>';
+
+                    // Right column: Pontos de Atenção
+                    html += '<div style="flex:0.9; min-width:220px;">';
+                    html += '<div style="background:var(--bg-alt); padding:0.6rem; border-radius:6px; border:1px solid var(--border); height:100%;">';
+                    html += '<div style="font-weight:700; margin-bottom:0.5rem;">Pontos de Atenção</div>';
+                    if (pontos && pontos.length) {
+                        pontos.forEach(function(p){
+                            html += '<div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">';
+                            html += '<div style="width:6px; background:#2563eb; border-radius:3px;"></div>';
+                            html += '<div style="font-size:0.85rem; color:var(--text);">' + (typeof p === 'string' ? p : (p.text || p.titulo || JSON.stringify(p))) + '</div>';
+                            html += '</div>';
+                        });
+                    } else {
+                        html += '<div style="color:var(--text); font-size:0.9rem;">Sem pontos de atenção registrados.</div>';
+                    }
+                    html += '</div></div>';
+
+                    html += '</div>'; // end card
                 });
-                html += '</tbody></table></div>';
+                html += '</div>';
                 container.innerHTML = html;
             } catch(e) { console.warn('renderApresentacaoResults erro', e); }
         }
