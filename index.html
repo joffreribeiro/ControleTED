@@ -8677,36 +8677,48 @@
                             });
 
                             // Inserir apenas itens cujas ND existam no cadastro financeiro do TED
-                            let importadosPorTed = 0;
-                            let ignoradosPorTed = 0;
-                            grupo.itens.forEach((item, idx) => {
+                            // Antes de inserir, agregar por ND+UP+DATA somando os valores
+                            const agregados = {}; // chave = ndFinal||up||data => { nd, up, data, valor }
+                            let itensInvalidos = 0;
+                            grupo.itens.forEach((item) => {
                                 const ndImportNorm = normalizarND(item.nd);
                                 const ndFinal = cadNDs[ndImportNorm];
-                                if (!ndFinal) {
-                                    // ND não encontrada no cadastro: ignorar
-                                    ignoradosPorTed++;
-                                    return;
-                                }
-
-                                ted.execFinanceiras.push({
-                                    id: Date.now() + idx + Math.random() * 1000,
-                                    nd: ndFinal,
-                                    numero: ndFinal,
-                                    up: item.up,
-                                    ug: item.up,
-                                    valor: item.valor,
-                                    valorRealizado: item.valor,
-                                    data: item.data
-                                });
-                                importadosPorTed++;
+                                if (!ndFinal) { itensInvalidos++; return; }
+                                const upVal = item.up || '';
+                                const dataVal = item.data || '';
+                                const chave = ndFinal + '||' + upVal + '||' + dataVal;
+                                const valorNum = parseFloat(item.valor) || 0;
+                                if (!agregados[chave]) agregados[chave] = { nd: ndFinal, up: upVal, data: dataVal, valor: 0 };
+                                agregados[chave].valor += valorNum;
                             });
+
+                            // Substituir execFinanceiras com os lançamentos agregados
+                            const keys = Object.keys(agregados);
+                            if (keys.length > 0) {
+                                ted.execFinanceiras = [];
+                                keys.forEach((k, idx) => {
+                                    const it = agregados[k];
+                                    ted.execFinanceiras.push({
+                                        id: Date.now() + idx + Math.floor(Math.random() * 1000),
+                                        nd: it.nd,
+                                        numero: it.nd,
+                                        up: it.up,
+                                        ug: it.up,
+                                        valor: it.valor,
+                                        valorRealizado: it.valor,
+                                        data: it.data
+                                    });
+                                });
+                            } else {
+                                // não há itens válidos: limpar execFinanceiras
+                                ted.execFinanceiras = [];
+                            }
 
                             try { atualizarGastoFromExecFinanceiras(ted); } catch(ex) {
                                 try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}
                             }
-                            if (importadosPorTed > 0) countTeds++;
-                            countItens += importadosPorTed;
-                            // ignoradosPorTed será refletido no total de itens importados vs presentes no arquivo
+                            if (keys.length > 0) countTeds++;
+                            countItens += keys.length;
                         });
 
                         try { salvarDadosImediato(); } catch(ex) {}
@@ -8750,24 +8762,35 @@
                                     if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
                                 });
 
-                                let importados = 0;
+                                // Agregar linhas por ND+UP+DATA somando valores, e só importar NDs presentes no cadastro
+                                const agreg = {}; // chave = ndFinal||up||data
                                 let ignorados = 0;
-                                ted.execFinanceiras = [];
-                                grouped[numTed].forEach((row, idx) => {
+                                grouped[numTed].forEach((row) => {
                                     const ndImportNorm = normalizarND(row.nd);
                                     const ndFinal = cadNDs[ndImportNorm];
                                     if (!ndFinal) { ignorados++; return; }
+                                    const upVal = row.up || '';
+                                    const dataVal = row.data || '';
+                                    const chave = ndFinal + '||' + upVal + '||' + dataVal;
+                                    const valorNum = parseNumber(row.valor) || 0;
+                                    if (!agreg[chave]) agreg[chave] = { nd: ndFinal, up: upVal, data: dataVal, valor: 0 };
+                                    agreg[chave].valor += valorNum;
+                                });
+
+                                const chavesAgreg = Object.keys(agreg);
+                                ted.execFinanceiras = [];
+                                chavesAgreg.forEach((k, idx) => {
+                                    const it = agreg[k];
                                     ted.execFinanceiras.push({
                                         id: Date.now() + idx,
-                                        nd: ndFinal,
-                                        numero: ndFinal,
-                                        up: row.up || '',
-                                        ug: row.up || '',
-                                        valor: parseNumber(row.valor) || 0,
-                                        valorRealizado: parseNumber(row.valor) || 0,
-                                        data: row.data || ''
+                                        nd: it.nd,
+                                        numero: it.nd,
+                                        up: it.up || '',
+                                        ug: it.up || '',
+                                        valor: it.valor,
+                                        valorRealizado: it.valor,
+                                        data: it.data || ''
                                     });
-                                    importados++;
                                 });
 
                                 try { atualizarGastoFromExecFinanceiras(ted); } catch(ex) {
