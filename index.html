@@ -568,24 +568,24 @@
             font-weight: 500;
         }
 
-        /* Grid */
+        /* Grid (cards mais compactos no dashboard) */
         .grid {
             display: grid;
-            /* cards mais estreitos no dashboard */
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
         }
 
+        /* Cartões compactos do Resumo Geral */
         .stat-card {
             background: white;
-            padding: 1rem;
-            border-radius: var(--radius-lg);
+            padding: 0.6rem;
+            border-radius: var(--radius-md);
             border: 1px solid var(--border-light);
             text-align: center;
             transition: var(--transition);
             box-shadow: var(--shadow-sm);
-            min-height: 72px;
+            min-height: 56px;
             display:flex;
             flex-direction:column;
             justify-content:center;
@@ -597,16 +597,16 @@
         }
 
         .stat-card .label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-light);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 500;
+            letter-spacing: 0.04em;
+            font-weight: 600;
         }
 
         .stat-card .value {
-            font-size: 2rem;
+            font-size: 1.45rem;
             font-weight: 700;
             background: var(--primary-gradient);
             -webkit-background-clip: text;
