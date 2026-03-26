@@ -1211,9 +1211,11 @@
         /* Divisão visual de anos (linha preta) */
         .tabela-padrao .year-divider-cell {
             border-left: 2px solid #000 !important;
+            box-shadow: inset 2px 0 0 #000;
         }
         .tabela-padrao thead .year-divider-group {
             border-left: 2px solid #000 !important;
+            box-shadow: inset 2px 0 0 #000;
         }
         .tabela-padrao th {
             font-weight: 600;
@@ -9237,27 +9239,47 @@
             if (!table || !table.tHead || !table.tHead.rows || !table.tHead.rows.length) return;
             clearYearDividerStyles(table);
 
-            const row1 = table.tHead.rows[0];
-            if (!row1) return;
+            const headRows = Array.from(table.tHead.rows);
+            if (!headRows.length) return;
 
-            // Detectar blocos de ano no 1º header row (células com colspan > 1 e sem rowspan de colunas fixas)
-            let logical = 0;
+            // Encontrar a linha que contém os grupos de ano (células com colspan > 1)
+            const yearRow = headRows.find(r => Array.from(r.cells).some(c => Number(c.colSpan || 1) > 1));
+            if (!yearRow) return;
+
+            // Mapear posições lógicas respeitando rowspan/colspan
+            const occupancy = [];
             const yearStarts = [];
-            Array.from(row1.cells).forEach(cell => {
-                const cs = Number(cell.colSpan || 1);
-                const rs = Number(cell.rowSpan || 1);
-                const start = logical;
-                if (rs === 1 && cs > 1) {
-                    yearStarts.push(start);
-                    cell.classList.add('year-divider-group');
-                }
-                logical += cs;
+            headRows.forEach((row, rIdx) => {
+                if (!occupancy[rIdx]) occupancy[rIdx] = [];
+                let logical = 0;
+
+                Array.from(row.cells).forEach(cell => {
+                    while (occupancy[rIdx][logical]) logical++;
+
+                    const cs = Number(cell.colSpan || 1);
+                    const rs = Number(cell.rowSpan || 1);
+                    const start = logical;
+
+                    if (row === yearRow && cs > 1) {
+                        yearStarts.push(start);
+                        cell.classList.add('year-divider-group');
+                    }
+
+                    for (let rr = 0; rr < rs; rr++) {
+                        if (!occupancy[rIdx + rr]) occupancy[rIdx + rr] = [];
+                        for (let cc = 0; cc < cs; cc++) {
+                            occupancy[rIdx + rr][start + cc] = true;
+                        }
+                    }
+
+                    logical += cs;
+                });
             });
 
             if (!yearStarts.length) return;
 
-            // Marcar divisão na linha de meses (2º header row), quando existir
-            const row2 = table.tHead.rows[1];
+            // Marcar divisão na linha folha de meses (última linha do thead), quando existir
+            const row2 = table.tHead.rows[table.tHead.rows.length - 1];
             if (row2 && row2.cells && row2.cells.length) {
                 const firstYearStart = yearStarts[0];
                 yearStarts.forEach(start => {
