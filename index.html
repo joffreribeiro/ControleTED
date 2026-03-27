@@ -2015,6 +2015,13 @@
                             </div>
                             <div id="info_aditivoHistorico" class="aditivo-historico" style="display:none;"></div>
 
+                            <!-- Linha apostilamento: botão + histórico -->
+                            <div style="display:flex; align-items:center; gap:1rem; margin: 0.75rem 0 0.5rem 0;">
+                                <button class="btn-edit" onclick="abrirModalApostilamento()" style="font-size:0.85rem; padding:4px 12px;"><i data-lucide="plus-circle" class="btn-icon-sm"></i> Adicionar Apostilamento</button>
+                                <span id="info_apostilamentoResumo" style="font-size:0.85rem; color:rgba(255,255,255,0.7);"></span>
+                            </div>
+                            <div id="info_apostilamentoHistorico" class="aditivo-historico" style="display:none;"></div>
+
                             <!-- Linha 5: novos campos (situação, data entrega/denúncia, prazo, data entrega relatório, status) -->
                             <div class="ted-info-row row-5">
                                 <div class="ted-info-card">
@@ -3886,6 +3893,27 @@
                 document.getElementById('info_aditivoResumo').textContent = '';
                 document.getElementById('info_aditivoHistorico').style.display = 'none';
             }
+
+            // Resumo e histórico de apostilamentos
+            const apostilamentos = ted.apostilamentos || [];
+            if (apostilamentos.length > 0) {
+                document.getElementById('info_apostilamentoResumo').textContent = `Total de apostilamentos: ${apostilamentos.length}`;
+                let apostHtml = '<table><thead><tr><th>#</th><th>Data do Apostilamento</th><th>Observação</th><th></th></tr></thead><tbody>';
+                apostilamentos.forEach((ap, ai) => {
+                    const dataApost = ap.data ? new Date(ap.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+                    apostHtml += `<tr><td>${ai+1}</td><td>${dataApost}</td><td>${ap.obs || '-'}</td><td>
+                        <button class="btn-icon edit" onclick="abrirModalApostilamento(${ai})" title="Editar apostilamento">✎</button>
+                        <button class="btn-icon delete" onclick="removerApostilamento(${ai})" title="Remover apostilamento">✖</button>
+                    </td></tr>`;
+                });
+                apostHtml += '</tbody></table>';
+                document.getElementById('info_apostilamentoHistorico').innerHTML = apostHtml;
+                document.getElementById('info_apostilamentoHistorico').style.display = 'block';
+            } else {
+                document.getElementById('info_apostilamentoResumo').textContent = '';
+                document.getElementById('info_apostilamentoHistorico').style.display = 'none';
+            }
+
             document.getElementById('info_primeiraDescentralizacao').textContent = formatarData(ted.primeiraDescentralizacao);
             
             // Preencher campos de edição
@@ -4541,6 +4569,90 @@
             salvarDados();
             exibirInformacoesTED();
             renderGanttVigencia();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // ========== APOSTILAMENTOS ==========
+
+        function abrirModalApostilamento(editIndex) {
+            if (!window.tedSelecionado) return alert('Selecione um TED primeiro.');
+            let overlay = document.getElementById('apostilamentoModalOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'apostilamentoModalOverlay';
+                overlay.className = 'aditivo-modal-overlay';
+                overlay.innerHTML = `
+                    <div class="aditivo-modal">
+                        <h3>📝 Adicionar Apostilamento</h3>
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label>Data do Apostilamento *</label>
+                            <input type="date" id="apostilamentoDataInput" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:1.5rem;">
+                            <label>Observação</label>
+                            <input type="text" id="apostilamentoObsInput" placeholder="Ex: Ajuste de texto/campo" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px;">
+                        </div>
+                        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                            <button onclick="fecharModalApostilamento()" style="padding:8px 16px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer;">Cancelar</button>
+                            <button onclick="confirmarApostilamento()" style="padding:8px 16px; border:none; border-radius:6px; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">Salvar</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+
+            const ted = window.tedSelecionado;
+            const dataInput = document.getElementById('apostilamentoDataInput');
+            const obsInput = document.getElementById('apostilamentoObsInput');
+            if (typeof editIndex === 'number' && ted.apostilamentos && ted.apostilamentos[editIndex]) {
+                const ap = ted.apostilamentos[editIndex];
+                dataInput.value = ap.data || new Date().toISOString().split('T')[0];
+                obsInput.value = ap.obs || '';
+                overlay.dataset.editIndex = String(editIndex);
+            } else {
+                dataInput.value = new Date().toISOString().split('T')[0];
+                obsInput.value = '';
+                overlay.dataset.editIndex = '';
+            }
+            overlay.classList.add('active');
+        }
+
+        function fecharModalApostilamento() {
+            const overlay = document.getElementById('apostilamentoModalOverlay');
+            if (overlay) overlay.classList.remove('active');
+        }
+
+        function confirmarApostilamento() {
+            const ted = window.tedSelecionado;
+            if (!ted) return;
+            const data = document.getElementById('apostilamentoDataInput').value;
+            const obs = (document.getElementById('apostilamentoObsInput').value || '').trim();
+            if (!data) return alert('Informe a data do apostilamento.');
+
+            if (!ted.apostilamentos) ted.apostilamentos = [];
+            const overlay = document.getElementById('apostilamentoModalOverlay');
+            const editIndex = overlay && overlay.dataset && overlay.dataset.editIndex ? parseInt(overlay.dataset.editIndex, 10) : null;
+            const apostObj = { data, obs };
+
+            if (typeof editIndex === 'number' && !isNaN(editIndex)) {
+                ted.apostilamentos[editIndex] = Object.assign({}, ted.apostilamentos[editIndex] || {}, apostObj);
+            } else {
+                ted.apostilamentos.push(apostObj);
+            }
+
+            salvarDados();
+            fecharModalApostilamento();
+            exibirInformacoesTED();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function removerApostilamento(index) {
+            const ted = window.tedSelecionado;
+            if (!ted || !ted.apostilamentos || !ted.apostilamentos[index]) return;
+            if (!confirm(`Remover apostilamento #${index + 1}?`)) return;
+            ted.apostilamentos.splice(index, 1);
+            salvarDados();
+            exibirInformacoesTED();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
@@ -9917,6 +10029,10 @@
                 '[onclick*="abrirModalAditivo"]',
                 '[onclick*="confirmarAditivo"]',
                 '[onclick*="removerAditivo"]',
+                // Apostilamentos
+                '[onclick*="abrirModalApostilamento"]',
+                '[onclick*="confirmarApostilamento"]',
+                '[onclick*="removerApostilamento"]',
                 // Objetos
                 '[onclick*="adicionarObjeto"]',
                 '[onclick*="editarObjeto"]',
