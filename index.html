@@ -1676,6 +1676,33 @@
             background: #0b1a31;
         }
         
+        /* Se o histórico de aditivos/apostilamentos estiver dentro de um detalhe-secao
+           (bloco claro), forçar esquema claro para manter legibilidade) */
+        #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico,
+        #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico {
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            border: 1px solid rgba(30,64,175,0.06);
+            color: var(--text, #0f172a);
+            padding: 0.6rem 0.9rem;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico table,
+        #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico th,
+        #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico th {
+            color: #0f172a;
+            background: rgba(15,23,42,0.02);
+            font-weight: 700;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico td,
+        #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico td {
+            color: var(--text, #0f172a);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(15,23,42,0.04);
+        }
+        
         /* ===== Dashboard: Cards e painéis ===== */
         #dashboard .dashboard-stats {
             display: grid;
