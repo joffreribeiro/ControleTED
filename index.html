@@ -1084,6 +1084,62 @@
             z-index: 1;
         }
 
+        .ted-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.9rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .ted-kpi-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08));
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 1rem;
+            padding: 1rem 1rem 0.9rem;
+            min-height: 92px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ted-kpi-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--kpi-accent, #60a5fa);
+        }
+
+        .ted-kpi-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(255,255,255,0.76);
+            margin-bottom: 0.45rem;
+            font-weight: 700;
+        }
+
+        .ted-kpi-value {
+            font-size: 1.28rem;
+            line-height: 1.2;
+            font-weight: 800;
+            color: #fff;
+            word-break: break-word;
+        }
+
+        .ted-kpi-subtext {
+            margin-top: 0.35rem;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.74);
+        }
+
+        .ted-kpi-card.kpi-valor { --kpi-accent: #60a5fa; }
+        .ted-kpi-card.kpi-recebido { --kpi-accent: #22c55e; }
+        .ted-kpi-card.kpi-saldo { --kpi-accent: #f59e0b; }
+        .ted-kpi-card.kpi-status { --kpi-accent: #f97316; }
+
         .ted-info-row {
             display: grid;
             gap: 1rem;
@@ -1214,6 +1270,7 @@
         }
 
         @media (max-width: 768px) {
+            .ted-kpi-grid,
             .ted-info-row.row-4,
             .ted-info-row.row-3,
             .ted-info-row.row-5 {
@@ -2008,6 +2065,26 @@
                         </div>
                         
                         <div class="ted-info-grid">
+                            <div class="ted-kpi-grid">
+                                <div class="ted-kpi-card kpi-valor">
+                                    <div class="ted-kpi-label">Valor do TED</div>
+                                    <div class="ted-kpi-value" id="kpi_valorTed">R$ 0,00</div>
+                                </div>
+                                <div class="ted-kpi-card kpi-recebido">
+                                    <div class="ted-kpi-label">Recebido</div>
+                                    <div class="ted-kpi-value" id="kpi_recebidoTed">R$ 0,00</div>
+                                    <div class="ted-kpi-subtext" id="kpi_recebidoPercentual">0,0% concluído</div>
+                                </div>
+                                <div class="ted-kpi-card kpi-saldo">
+                                    <div class="ted-kpi-label">Saldo</div>
+                                    <div class="ted-kpi-value" id="kpi_saldoTed">R$ 0,00</div>
+                                </div>
+                                <div class="ted-kpi-card kpi-status">
+                                    <div class="ted-kpi-label">Status</div>
+                                    <div class="ted-kpi-value" id="kpi_statusTed">Em execução</div>
+                                </div>
+                            </div>
+
                             <!-- Linha 1: 4 campos -->
                             <div class="ted-info-row row-4">
                                 <div class="ted-info-card">
@@ -3886,6 +3963,10 @@
             
             const ted = window.tedSelecionado;
             const aditivos = ted.aditivos || [];
+            const totalRecebido = (ted.execFinanceiras || []).reduce((soma, item) => soma + (parseNumber(item.valor) || 0), 0);
+            const valorTedAtual = parseNumber(ted.valorTed) || 0;
+            const saldoTed = valorTedAtual - totalRecebido;
+            const statusTedAtual = ted.statusTED || ted.status || 'Em execução';
             
             // Formatar data (para exibição DD/MM/YYYY)
             const formatarData = (data) => {
@@ -3896,6 +3977,23 @@
                 if (isNaN(d.getTime())) return '';
                 return d.toLocaleDateString('pt-BR');
             };
+
+            const formatarMoeda = (valor) => `R$ ${Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            const elKpiValor = document.getElementById('kpi_valorTed');
+            const elKpiRecebido = document.getElementById('kpi_recebidoTed');
+            const elKpiSaldo = document.getElementById('kpi_saldoTed');
+            const elKpiStatus = document.getElementById('kpi_statusTed');
+            const elKpiPercentual = document.getElementById('kpi_recebidoPercentual');
+
+            if (elKpiValor) elKpiValor.textContent = formatarMoeda(valorTedAtual);
+            if (elKpiRecebido) elKpiRecebido.textContent = formatarMoeda(totalRecebido);
+            if (elKpiSaldo) elKpiSaldo.textContent = formatarMoeda(saldoTed);
+            if (elKpiStatus) elKpiStatus.textContent = statusTedAtual;
+            if (elKpiPercentual) {
+                const percentual = valorTedAtual > 0 ? ((totalRecebido / valorTedAtual) * 100) : 0;
+                elKpiPercentual.textContent = `${percentual.toFixed(1).replace('.', ',')}% concluído`;
+            }
             
             // Formatar data para input (YYYY-MM-DD)
             const formatarDataInput = (data) => {
