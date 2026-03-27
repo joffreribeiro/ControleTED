@@ -2792,7 +2792,7 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física</h3>
                         <div class="detalhe-secao-body">
-                        <div style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 0.9fr 0.9fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>Objeto *</label>
                                 <select id="objetoExecFisica" required></select>
@@ -2804,6 +2804,10 @@
                             <div class="form-group">
                                 <label>Data *</label>
                                 <input type="date" id="dataExec" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nº NF</label>
+                                <input type="text" id="nfExec" placeholder="Opcional">
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="visibility: hidden;">.</label>
@@ -5956,19 +5960,21 @@
             const objeto = document.getElementById('objetoExecFisica').value;
             const qtde = parseNumber(document.getElementById('qtdeExec').value);
             const data = document.getElementById('dataExec').value;
+            const nf = (document.getElementById('nfExec') || {}).value || '';
 
             if (!objeto || isNaN(qtde) || qtde < 0 || !data) {
                 alert('⚠️ Preencha todos os campos da execução física');
                 return;
             }
 
-            window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto, qtde, data });
+            window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto, qtde, data, nf });
             // Atualizar progresso físico e persistir
             atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado);
             atualizarTabelaExecFisica();
             document.getElementById('objetoExecFisica').value = '';
             document.getElementById('qtdeExec').value = '';
             document.getElementById('dataExec').value = '';
+            try { if (document.getElementById('nfExec')) document.getElementById('nfExec').value = ''; } catch(e) {}
             try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
         }
 
@@ -6046,7 +6052,7 @@
             headerRow2.innerHTML = headerRow2HTML;
             tableElement.querySelector('thead').appendChild(headerRow2);
 
-            // Agrupar execuções por objeto e por mês
+                // Agrupar execuções por objeto e por mês
             const execs = window.tedSelecionado.execFisicas || [];
             const fisicos = window.tedSelecionado.fisicos || [];
             // Objetos registrados no cadastro físico (não no cadastro de objetos)
@@ -6068,8 +6074,9 @@
                 if (parseFloat(execPerc) === 100) percColor = '#dcfce7'; // verde claro 100%
                 else if (parseFloat(execPerc) === 0) percColor = '#fee2e2'; // vermelho claro 0%
 
-                // Mapa mês->quantidade entregue
+                // Mapa mês->quantidade entregue e detalhes (data, nf, qtde)
                 const mapaMes = new Map();
+                const mapaDetails = new Map();
                 entregasObj.forEach(e => {
                     if (!e.data) return;
                     const d = new Date(e.data + 'T00:00:00');
@@ -6077,6 +6084,8 @@
                     const diffMonths = (d.getFullYear() - startDate.getFullYear()) * 12 + (d.getMonth() - startDate.getMonth());
                     if (diffMonths >= 0 && diffMonths < 60) {
                         mapaMes.set(diffMonths, (mapaMes.get(diffMonths) || 0) + (parseNumber(e.qtde) || 0));
+                        if (!mapaDetails.has(diffMonths)) mapaDetails.set(diffMonths, []);
+                        mapaDetails.get(diffMonths).push({ data: e.data, nf: e.nf || '', qtde: e.qtde });
                     }
                 });
 
@@ -6090,7 +6099,19 @@
                 meses.forEach((_, idx) => {
                     const val = mapaMes.get(idx) || '';
                     const bg = val ? '#e0f2fe' : 'transparent';
-                    html += `<td class="col-mes" style="background: ${bg}; cursor: pointer;" onclick="editarValorExecFisica('${obj}', ${idx})" title="Clique para editar">${val ? formatNumber(val) : ''}</td>`;
+                    // Build tooltip with date(s) and NF(s) if details exist
+                    let title = 'Clique para editar';
+                    const details = mapaDetails.get(idx) || [];
+                    if (details.length) {
+                        const parts = details.map(d => {
+                            const date = d.data || '';
+                            const nfText = d.nf ? `NF: ${d.nf}` : 'NF: -';
+                            const qt = d.qtde != null ? `Qtd: ${formatNumber(d.qtde)}` : '';
+                            return [date, nfText, qt].filter(Boolean).join(' • ');
+                        });
+                        title = parts.join('\n');
+                    }
+                    html += `<td class="col-mes" style="background: ${bg}; cursor: pointer;" onclick="editarValorExecFisica('${obj}', ${idx})" title="${title}">${val ? formatNumber(val) : ''}</td>`;
                 });
                 html += '</tr>';
                 return html;
@@ -8234,18 +8255,20 @@
                 const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
                 return diff === indiceMes;
             });
-            
+
             const valorAtual = execsDoMes.reduce((s, e) => s + (parseFloat(e.qtde) || 0), 0);
             const novoValor = prompt(`Editar quantidade entregue de "${objeto}" em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\nValor atual: ${valorAtual}\nDigite o novo valor:`, valorAtual);
-            
             if (novoValor === null) return;
-            
             const qtde = parseFloat(novoValor);
             if (isNaN(qtde) || qtde < 0) {
                 alert('⚠️ Valor inválido');
                 return;
             }
-            
+
+            // coletar NF(s) existentes para este mês
+            const existingNFs = Array.from(new Set(execsDoMes.map(e => (e.nf || '').toString()).filter(Boolean))).join(', ');
+            const novoNf = prompt(`Número da NF (opcional) para ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:`, existingNFs || '');
+
             // Remover execuções antigas deste mês/objeto
             window.tedSelecionado.execFisicas = execs.filter(e => {
                 if (!e.data || e.objeto !== objeto) return true;
@@ -8253,14 +8276,15 @@
                 const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
                 return diff !== indiceMes;
             });
-            
+
             // Adicionar nova execução se valor > 0
             if (qtde > 0) {
                 window.tedSelecionado.execFisicas.push({
                     id: Date.now(),
                     objeto: objeto,
                     qtde: qtde,
-                    data: dataFormatada
+                    data: dataFormatada,
+                    nf: (novoNf || '').toString()
                 });
             }
             
@@ -9524,7 +9548,8 @@
                                 id: Date.now() + idx,
                                 objeto: row.objeto,
                                 qtde: parseFloat(row.qtde) || 0,
-                                data: row.data || ''
+                                data: row.data || '',
+                                nf: row.nf || row.NF || ''
                             }));
                             // Atualizar progresso físico a partir das execFisicas importadas
                             try { ted.progressoFisico = calcularProgressoFisico(ted); } catch(e) { ted.progressoFisico = ted.progressoFisico || 0; }
