@@ -465,6 +465,12 @@
             font-size: 0.875rem;
         }
 
+        .btn-sm {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
         .btn-primary {
             background: var(--primary-gradient);
             color: white;
@@ -2164,7 +2170,10 @@
         .modal-realizada .form-row { display:flex; gap:0.5rem; margin-bottom:0.5rem; }
         .modal-realizada label { font-size: 0.85rem; color: var(--text-secondary); }
         .modal-realizada input { width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:0.375rem; }
+        .modal-realizada input:focus { outline:2px solid var(--primary); box-shadow:0 0 0 3px rgba(59,130,246,0.08); }
         .modal-realizada .actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.5rem; }
+        .modal-realizada .error { color:#b91c1c; background:#fff1f2; border:1px solid #fecaca; padding:0.4rem; border-radius:0.35rem; font-size:0.9rem; margin-bottom:0.5rem; display:none; }
+        .modal-realizada .error.open { display:block; }
     </style>
     </head>
     <body>
@@ -2184,22 +2193,85 @@
             const dataEl = document.getElementById('modalDataRealizada');
             const qtdEl = document.getElementById('modalQtdRealizada');
             const nfEl = document.getElementById('modalNfRealizada');
+            const errEl = document.getElementById('modalMarcarRealizadaError');
             if (objEl) objEl.textContent = 'Objeto: ' + (f.objeto || '');
             if (dataEl) dataEl.value = f.dataRealizada || '';
             if (qtdEl) qtdEl.value = (f.qtdeRealizada != null) ? f.qtdeRealizada : '';
             if (nfEl) nfEl.value = f.nfRealizada || f.nf || '';
+            if (errEl) { errEl.textContent = ''; errEl.classList.remove('open'); }
+
+            // render audit snippet
+            const auditContainer = document.getElementById('modalAuditoriaContainer');
+            if (auditContainer) {
+                auditContainer.innerHTML = renderizarAuditoriaModal();
+            }
 
             const backdrop = document.getElementById('modalMarcarRealizadaBackdrop');
-            if (backdrop) backdrop.classList.add('open');
+            if (backdrop) {
+                backdrop.classList.add('open');
+                backdrop.setAttribute('aria-hidden','false');
+            }
+
+            // save previously focused element to restore on close
+            window._prevFocus = document.activeElement;
+
+            // autofocus date input
+            setTimeout(() => {
+                if (dataEl) try { dataEl.focus(); } catch(e) {}
+            }, 50);
+
+            // keyboard handlers: Enter=save, Esc=close ; focus trap
+            window._modalKeyHandler = function(e) {
+                if (!document.getElementById('modalMarcarRealizadaBackdrop') || !document.getElementById('modalMarcarRealizadaBackdrop').classList.contains('open')) return;
+                if (e.key === 'Escape') { e.preventDefault(); fecharModalMarcarRealizada(); }
+                if (e.key === 'Enter') {
+                    // don't submit when pressing Enter inside a text input while composing
+                    const tag = (document.activeElement || {}).tagName || '';
+                    if (tag.toLowerCase() === 'input' || tag.toLowerCase() === 'textarea' || tag.toLowerCase() === 'select') {
+                        // allow Enter when in number/date fields to save
+                        const t = document.activeElement.type || '';
+                        if (t === 'text' || t === 'number' || t === 'date') { e.preventDefault(); salvarModalMarcarRealizada(); }
+                    }
+                }
+            };
+            document.addEventListener('keydown', window._modalKeyHandler);
+
+            // focus trap
+            window._modalTrapHandler = function(e) {
+                if (e.key !== 'Tab') return;
+                const modal = document.querySelector('#modalMarcarRealizadaBackdrop .modal-realizada');
+                if (!modal) return;
+                const focusable = modal.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])');
+                if (!focusable || focusable.length === 0) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length -1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                } else {
+                    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
+            };
+            document.addEventListener('keydown', window._modalTrapHandler);
         }
 
         function fecharModalMarcarRealizada() {
             const backdrop = document.getElementById('modalMarcarRealizadaBackdrop');
-            if (backdrop) backdrop.classList.remove('open');
+            if (backdrop) { backdrop.classList.remove('open'); backdrop.setAttribute('aria-hidden','true'); }
             window._modalFisicoId = null;
+            // remove keyboard handlers
+            try { document.removeEventListener('keydown', window._modalKeyHandler); } catch(e) {}
+            try { document.removeEventListener('keydown', window._modalTrapHandler); } catch(e) {}
+            window._modalKeyHandler = null; window._modalTrapHandler = null;
+            // restore focus
+            try { if (window._prevFocus && window._prevFocus.focus) window._prevFocus.focus(); } catch(e) {}
+            window._prevFocus = null;
+            // clear any inline error
+            const errEl = document.getElementById('modalMarcarRealizadaError'); if (errEl) { errEl.textContent=''; errEl.classList.remove('open'); }
         }
 
         function salvarModalMarcarRealizada() {
+            const errEl = document.getElementById('modalMarcarRealizadaError');
+            if (errEl) { errEl.textContent=''; errEl.classList.remove('open'); }
             if (!window.tedSelecionado) return;
             const id = window._modalFisicoId;
             if (!id) return fecharModalMarcarRealizada();
@@ -2210,14 +2282,14 @@
             const dataEl = document.getElementById('modalDataRealizada');
             const qtdEl = document.getElementById('modalQtdRealizada');
             const nfEl = document.getElementById('modalNfRealizada');
-            const dt = dataEl ? dataEl.value : '';
+            const dt = dataEl ? (dataEl.value || '').trim() : '';
             const qtd = qtdEl ? parseFloat(qtdEl.value || '0') : 0;
-            const nf = nfEl ? nfEl.value || '' : '';
+            const nf = nfEl ? (nfEl.value || '').trim() : '';
 
-            // validate
-            if (!dt) { alert('Informe a data de realização.'); return; }
-            if (isNaN(new Date(dt + 'T00:00:00').getTime())) { alert('Data inválida'); return; }
-            if (isNaN(qtd) || qtd < 0) { alert('Quantidade inválida'); return; }
+            // validate inline
+            if (!dt) { if (errEl) { errEl.textContent='Informe a data de realização.'; errEl.classList.add('open'); dataEl.focus(); } return; }
+            if (isNaN(new Date(dt + 'T00:00:00').getTime())) { if (errEl) { errEl.textContent='Data inválida.'; errEl.classList.add('open'); dataEl.focus(); } return; }
+            if (isNaN(qtd) || qtd < 0) { if (errEl) { errEl.textContent='Quantidade inválida.'; errEl.classList.add('open'); qtdEl.focus(); } return; }
 
             // salvar na fase
             f.realizada = true;
@@ -2241,6 +2313,15 @@
             // remove existing execFisicas with same objeto and date
             window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas.filter(e => !(e.objeto === f.objeto && e.data === dt));
             window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto: f.objeto, qtde: qtd, data: dt, nf: nf });
+
+            // registrar auditoria
+            const jaRealizado = f.realizada; // se era true antes, é edição
+            adicionarRegistroAuditoria(window.tedSelecionado.id, jaRealizado ? 'editar_realizado' : 'marcar_realizado', f.id, {
+                objeto: f.objeto,
+                data: dt,
+                quantidade: qtd,
+                nf: nf
+            });
 
             try { salvarDados(); } catch(e) {}
             try { atualizarTabelasEmCascata('fisicos'); } catch(e) {}
@@ -2269,11 +2350,87 @@
                 return !(e.objeto === f.objeto && e.data === removedDate);
             });
 
+            // registrar auditoria
+            adicionarRegistroAuditoria(window.tedSelecionado.id, 'desmarcar_realizado', f.id, {
+                objeto: f.objeto,
+                dataRemovida: removedDate
+            });
+
             try { salvarDados(); } catch(e) {}
             try { atualizarTabelasEmCascata('fisicos'); } catch(e) {}
             fecharModalMarcarRealizada();
             showToast('Marcação removida.', 'success');
         }
+
+        // AUDITORIA: Registrar ações de alteração em realizações
+        function adicionarRegistroAuditoria(tedId, acao, fisicoId, detalhes) {
+            if (!window.currentUserProfile) {
+                // Se não há usuário logado, tenta usar um padrão
+                window.currentUserProfile = { id: 'anonimo', nome: 'Anônimo' };
+            }
+            
+            dados.auditLog = dados.auditLog || [];
+            
+            const registro = {
+                id: Date.now(),
+                tedId: tedId,
+                fisicoId: fisicoId,
+                acao: acao, // 'marcar_realizado', 'desmarcar_realizado', 'editar_realizado'
+                usuarioId: window.currentUserProfile.id || 'anonimo',
+                usuarioNome: window.currentUserProfile.nome || 'Anônimo',
+                dataHora: new Date().toISOString(),
+                detalhes: detalhes || {}
+            };
+            
+            dados.auditLog.push(registro);
+            
+            // Manter apenas últimos 1000 registros
+            if (dados.auditLog.length > 1000) {
+                dados.auditLog = dados.auditLog.slice(-1000);
+            }
+        }
+
+        // Obter registros de auditoria para um TED
+        function obterRegistrosAuditoriaTED(tedId) {
+            const logs = dados.auditLog || [];
+            return logs.filter(r => r.tedId === tedId).sort((a, b) => {
+                return new Date(b.dataHora) - new Date(a.dataHora);
+            });
+        }
+
+        // Renderizar painel de auditoria na modal
+        function renderizarAuditoriaModal() {
+            if (!window.tedSelecionado || !window._modalFisicoId) return '';
+            
+            const registros = obterRegistrosAuditoriaTED(window.tedSelecionado.id);
+            const registrosRelevantes = registros.filter(r => 
+                r.fisicoId == window._modalFisicoId && 
+                ['marcar_realizado', 'desmarcar_realizado', 'editar_realizado'].includes(r.acao)
+            ).slice(0, 3); // mostrar últimos 3
+            
+            if (registrosRelevantes.length === 0) return '';
+            
+            let html = '<div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.85rem; color:var(--text-secondary);">';
+            html += '<div style="font-weight:600; margin-bottom:0.5rem;">📋 Histórico recente</div>';
+            
+            registrosRelevantes.forEach(r => {
+                const dt = new Date(r.dataHora);
+                const dataHora = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const acaoLabel = {
+                    'marcar_realizado': 'Marcado como realizado',
+                    'desmarcar_realizado': 'Marcação removida',
+                    'editar_realizado': 'Editado'
+                }[r.acao] || r.acao;
+                
+                html += `<div style="padding:0.5rem; background:var(--bg-secondary); border-radius:0.25rem; margin-bottom:0.25rem;">
+                    <div>${acaoLabel} por ${r.usuarioNome} em ${dataHora}</div>
+                </div>`;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+
     </script>
         <!-- Navbar -->
         <nav>
@@ -2301,9 +2458,10 @@
 
         <!-- Modal: Marcar Realizada -->
         <div id="modalMarcarRealizadaBackdrop" class="modal-backdrop" aria-hidden="true">
-            <div class="modal-realizada" role="dialog" aria-modal="true" aria-labelledby="modalMarcarRealizadaTitle">
+            <div class="modal-realizada" role="dialog" aria-modal="true" aria-labelledby="modalMarcarRealizadaTitle" aria-describedby="modalMarcarRealizadaError" tabindex="-1">
                 <h3 id="modalMarcarRealizadaTitle">Marcar fase como realizada</h3>
                 <div style="margin-bottom:0.5rem; color:var(--text-secondary);" id="modalMarcarRealizadaObj">Objeto: </div>
+                <div id="modalMarcarRealizadaError" class="error" role="alert" aria-live="assertive"></div>
                 <div class="form-row">
                     <div style="flex:1;">
                         <label>Data</label>
@@ -2318,6 +2476,7 @@
                     <label>Nº NF</label>
                     <input type="text" id="modalNfRealizada">
                 </div>
+                <div id="modalAuditoriaContainer"></div>
                 <div class="actions">
                     <button class="btn" onclick="fecharModalMarcarRealizada()">Cancelar</button>
                     <button class="btn" onclick="desmarcarModalRealizada()" style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626">Desmarcar</button>
@@ -2603,6 +2762,17 @@
                     <select id="seletorTED" onchange="carregarDetalhes(this.value)" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; width: 100%;">
                         <option value="">-- Escolha um TED --</option>
                     </select>
+                </div>
+
+                <!-- Busca por NF -->
+                <div style="margin-bottom: 1.5rem; padding: 0.75rem; background: var(--bg-secondary); border-radius: 0.5rem;">
+                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">🔍 Buscar por Nº NF:</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="searchNFInput" placeholder="Digite o nº NF..." style="flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem;">
+                        <button class="btn btn-primary" onclick="executarBuscaNF()" style="padding: 0.5rem 1rem;">Buscar</button>
+                        <button class="btn" onclick="limparBuscaNF()" style="padding: 0.5rem 1rem;">Limpar</button>
+                    </div>
+                    <div id="searchNFResults" style="margin-top: 0.75rem; display: none; max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--bg-primary);"></div>
                 </div>
 
                 <div id="tedsDetalheContainer" style="display: none;">
@@ -9298,6 +9468,106 @@
             const csv = arrayToCSV(rows, headers);
             downloadFile(csv, 'exec_fisica_export.csv');
             showToast('Execução Física exportada com sucesso!', 'success');
+        }
+
+        // BUSCAR POR NF
+        window._nfSearchDebounceTimer = null;
+        function executarBuscaNF() {
+            const input = document.getElementById('searchNFInput');
+            const nfQuery = (input ? input.value || '' : '').trim().toUpperCase();
+            
+            if (!nfQuery) {
+                showToast('Digite um nº NF para buscar.', 'info');
+                return;
+            }
+
+            const resultados = [];
+            dados.teds.forEach(ted => {
+                // Buscar em execFisicas
+                (ted.execFisicas || []).forEach(e => {
+                    if ((e.nf || '').toUpperCase().includes(nfQuery)) {
+                        resultados.push({
+                            tipo: 'execFisica',
+                            tedId: ted.id,
+                            numTed: ted.numTed,
+                            tedTitulo: ted.objetivo || ted.planoTrabalho || 'Sem título',
+                            objeto: e.objeto,
+                            data: e.data,
+                            qtde: e.qtde,
+                            nf: e.nf,
+                            fisicoId: null
+                        });
+                    }
+                });
+                // Buscar em fisicos (nfRealizada)
+                (ted.fisicos || []).forEach(f => {
+                    if ((f.nfRealizada || '').toUpperCase().includes(nfQuery) && f.realizada) {
+                        resultados.push({
+                            tipo: 'fisicoRealizado',
+                            tedId: ted.id,
+                            numTed: ted.numTed,
+                            tedTitulo: ted.objetivo || ted.planoTrabalho || 'Sem título',
+                            objeto: f.objeto,
+                            data: f.dataRealizada,
+                            qtde: f.qtdeRealizada,
+                            nf: f.nfRealizada,
+                            fisicoId: f.id
+                        });
+                    }
+                });
+            });
+
+            renderizarResultadosBuscaNF(resultados);
+        }
+
+        function renderizarResultadosBuscaNF(resultados) {
+            const container = document.getElementById('searchNFResults');
+            if (!container) return;
+
+            if (resultados.length === 0) {
+                container.innerHTML = '<div style="padding:1rem; color:var(--text-secondary); text-align:center;">Nenhum resultado encontrado.</div>';
+                container.style.display = 'block';
+                return;
+            }
+
+            let html = `<div style="padding:0.5rem;">
+                <div style="font-size:0.9rem; color:var(--text-secondary); padding:0.5rem; border-bottom:1px solid var(--border);">
+                    ${resultados.length} resultado(s) encontrado(s)
+                </div>`;
+
+            resultados.forEach(r => {
+                const dataFormat = r.data ? new Date(r.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+                html += `<div style="padding:0.75rem; border-bottom:1px solid var(--border); display:flex; gap:0.5rem; align-items:flex-start;">
+                    <div style="flex:1;">
+                        <div style="font-weight:600; color:var(--primary);">TED ${r.numTed} | NF: <strong>${r.nf}</strong></div>
+                        <div style="font-size:0.9rem; color:var(--text-secondary); margin-top:0.25rem;">Objeto: ${r.objeto}</div>
+                        <div style="font-size:0.85rem; color:var(--text-secondary);">Data: ${dataFormat} | Qtd: ${r.qtde}</div>
+                    </div>
+                    <button class="btn btn-sm" onclick="irParaDetalheTED(${r.tedId})" style="white-space:nowrap; padding:0.25rem 0.5rem; font-size:0.8rem;">Ver TED</button>
+                    ${r.fisicoId ? `<button class="btn btn-sm" onclick="abrirModalMarcarRealizada(${r.fisicoId})" style="white-space:nowrap; padding:0.25rem 0.5rem; font-size:0.8rem;">Editar</button>` : ''}
+                </div>`;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function limparBuscaNF() {
+            const input = document.getElementById('searchNFInput');
+            if (input) input.value = '';
+            const container = document.getElementById('searchNFResults');
+            if (container) container.style.display = 'none';
+        }
+
+        function irParaDetalheTED(tedId) {
+            const select = document.getElementById('seletorTED');
+            if (select) {
+                select.value = tedId;
+                carregarDetalhes(tedId);
+                // scroll para o seletor
+                select.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
 
         // EXPORTAR FINANCEIRO
