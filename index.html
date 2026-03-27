@@ -2883,6 +2883,8 @@
                     try { renderResumoFinanceiroFromFilter(); } catch(e) {}
                     try { popularFiltrosRelatorios(); } catch(e) {}
                     try { renderRelatorios(); } catch(e) {}
+                    try { populateApresentacaoFilters(); } catch(e) {}
+                    try { applyApresentacaoFilters(); } catch(e) {}
 
                     // Attach real-time listener to the collection
                     try {
@@ -2909,6 +2911,8 @@
                                 try { renderResumoFinanceiroFromFilter(); } catch(e) {}
                                 try { popularFiltrosRelatorios(); } catch(e) {}
                                 try { renderRelatorios(); } catch(e) {}
+                                try { populateApresentacaoFilters(); } catch(e) {}
+                                try { applyApresentacaoFilters(); } catch(e) {}
                             } catch(err) { console.warn('erro snapshot teds', err); }
                         });
                         window._firestoreTedsUnsub = unsub;
