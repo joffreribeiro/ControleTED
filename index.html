@@ -1446,7 +1446,31 @@
             padding-bottom: 0.65rem;
             position: sticky;
             top: 0;
-            z-index: 3;
+            z-index: 60;
+            background-clip: padding-box;
+        }
+
+        /* Corrige sobreposição ao rolar horizontalmente:
+           garante que cabeçalho e colunas "congeladas" fiquem acima
+           das células roladas, evitando que dados móveis apareçam sobre elas. */
+        #detalhes #tedsDetalheContainer .tabela-padrao .sticky-freeze {
+            position: sticky;
+            z-index: 55;
+            background-clip: padding-box;
+            background: var(--surface, #ffffff);
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao .sticky-freeze.sticky-freeze-last {
+            z-index: 56;
+            box-shadow: 4px 0 8px rgba(0,0,0,0.16);
+        }
+
+        /* Garantir que células da área rolável fiquem sob os elementos sticky */
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody td {
+            position: relative;
+            z-index: 1;
+            background-clip: padding-box;
+            background: inherit;
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(even) {
