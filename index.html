@@ -965,6 +965,13 @@
             letter-spacing: 0.2px;
         }
 
+        .ted-info-title-code {
+            color: rgba(219, 234, 254, 0.95);
+            font-weight: 600;
+            margin-left: 0.4rem;
+            font-size: 1.15rem;
+        }
+
         .ted-info-actions {
             display: flex;
             gap: 0.5rem;
@@ -2057,7 +2064,7 @@
                     <!-- INFORMAÇÕES DO TED -->
                     <div class="ted-info-section" id="infoTEDSection">
                         <div class="ted-info-header">
-                            <h3 class="ted-info-title"><i data-lucide="clipboard-list" class="inline-icon"></i> Informações do TED</h3>
+                            <h3 class="ted-info-title"><i data-lucide="clipboard-list" class="inline-icon"></i> Informações do TED <span id="info_tituloTedCodigo" class="ted-info-title-code"></span></h3>
                             <div class="ted-info-actions">
                                 <button class="btn-edit" id="btnEditarInfo" onclick="toggleEditarInfo()" style="display: block;"><i data-lucide="edit-2" class="btn-icon-sm"></i> Editar</button>
                                 <button class="btn-save" id="btnSalvarInfo" onclick="salvarEdicaoInfo()" style="display: none;"><i data-lucide="save" class="btn-icon-sm"></i> Salvar</button>
@@ -3968,6 +3975,11 @@
             const valorTedAtual = parseNumber(ted.valorTed) || 0;
             const saldoTed = valorTedAtual - totalRecebido;
             const statusTedAtual = ted.statusTED || ted.status || 'Em execução';
+
+            const elTituloTedCodigo = document.getElementById('info_tituloTedCodigo');
+            if (elTituloTedCodigo) {
+                elTituloTedCodigo.textContent = ted.numTed ? String(ted.numTed) : '';
+            }
             
             // Formatar data (para exibição DD/MM/YYYY)
             const formatarData = (data) => {
