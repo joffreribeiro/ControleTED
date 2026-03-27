@@ -928,11 +928,21 @@
         .ted-info-section {
             margin-bottom: 2rem;
             padding: 2rem;
-            background: var(--header-blue);
+            background: linear-gradient(135deg, var(--header-blue) 0%, #2340a3 100%);
             border-radius: 1rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.18);
             position: relative;
             color: white;
+            border: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+
+        .ted-info-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, rgba(255,255,255,0.14), transparent 28%);
+            pointer-events: none;
         }
 
         .ted-info-header {
@@ -940,19 +950,25 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            position: relative;
+            z-index: 1;
         }
 
         .ted-info-title {
             color: #ffffff !important;
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             font-weight: 700;
             margin: 0;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+            letter-spacing: 0.2px;
         }
 
         .ted-info-actions {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .btn-edit, .btn-save, .btn-cancel {
@@ -1063,7 +1079,9 @@
         .ted-info-grid {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.1rem;
+            position: relative;
+            z-index: 1;
         }
 
         .ted-info-row {
@@ -1084,33 +1102,97 @@
         }
 
         .ted-info-card {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 0.75rem;
-            padding: 1rem;
+            background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 0.9rem;
+            padding: 1rem 1rem 0.9rem;
             transition: all 0.18s ease-in-out;
+            backdrop-filter: blur(6px);
+            min-height: 92px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .ted-info-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+            border-color: rgba(255,255,255,0.24);
         }
 
         .ted-info-label {
             font-weight: 600;
-            color: rgba(255,255,255,0.9);
-            font-size: 0.85rem;
+            color: rgba(255,255,255,0.78);
+            font-size: 0.78rem;
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.55rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.75px;
         }
 
         .ted-info-value {
             color: white;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             min-height: 1.5rem;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .ted-info-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            margin: 0.15rem 0 0.1rem;
+            padding: 0.85rem 1rem;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 0.9rem;
+            flex-wrap: wrap;
+        }
+
+        .ted-info-resumo {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.84);
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 999px;
+            padding: 0.35rem 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            min-height: 32px;
+        }
+
+        .ted-info-historico {
+            display: none;
+            background: rgba(8, 15, 41, 0.22);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 0.9rem;
+            padding: 0.3rem 0.75rem 0.75rem;
+            overflow-x: auto;
+        }
+
+        .ted-info-historico table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .ted-info-historico th {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255,255,255,0.78);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .ted-info-historico th,
+        .ted-info-historico td {
+            padding: 0.7rem 0.8rem;
+        }
+
+        .ted-info-historico tbody tr:hover {
+            background: rgba(255,255,255,0.04);
         }
 
         .ted-info-input {
@@ -1133,7 +1215,8 @@
 
         @media (max-width: 768px) {
             .ted-info-row.row-4,
-            .ted-info-row.row-3 {
+            .ted-info-row.row-3,
+            .ted-info-row.row-5 {
                 grid-template-columns: 1fr;
             }
             
@@ -1146,6 +1229,14 @@
             .ted-info-actions {
                 width: 100%;
                 justify-content: flex-end;
+            }
+
+            .ted-info-section {
+                padding: 1.25rem;
+            }
+
+            .ted-info-toolbar {
+                padding: 0.75rem;
             }
         }
 
@@ -2009,18 +2100,18 @@
                             </div>
 
                             <!-- Linha aditivo: botão + histórico -->
-                            <div style="display:flex; align-items:center; gap:1rem; margin: 0.5rem 0;">
+                            <div class="ted-info-toolbar">
                                 <button class="btn-edit" onclick="abrirModalAditivo()" style="font-size:0.85rem; padding:4px 12px;"><i data-lucide="plus-circle" class="btn-icon-sm"></i> Adicionar Aditivo de Vigência/Valor do TED</button>
-                                <span id="info_aditivoResumo" style="font-size:0.85rem; color:rgba(255,255,255,0.7);"></span>
+                                <span id="info_aditivoResumo" class="ted-info-resumo"></span>
                             </div>
-                            <div id="info_aditivoHistorico" class="aditivo-historico" style="display:none;"></div>
+                            <div id="info_aditivoHistorico" class="aditivo-historico ted-info-historico" style="display:none;"></div>
 
                             <!-- Linha apostilamento: botão + histórico -->
-                            <div style="display:flex; align-items:center; gap:1rem; margin: 0.75rem 0 0.5rem 0;">
+                            <div class="ted-info-toolbar">
                                 <button class="btn-edit" onclick="abrirModalApostilamento()" style="font-size:0.85rem; padding:4px 12px;"><i data-lucide="plus-circle" class="btn-icon-sm"></i> Adicionar Apostilamento</button>
-                                <span id="info_apostilamentoResumo" style="font-size:0.85rem; color:rgba(255,255,255,0.7);"></span>
+                                <span id="info_apostilamentoResumo" class="ted-info-resumo"></span>
                             </div>
-                            <div id="info_apostilamentoHistorico" class="aditivo-historico" style="display:none;"></div>
+                            <div id="info_apostilamentoHistorico" class="aditivo-historico ted-info-historico" style="display:none;"></div>
 
                             <!-- Linha 5: novos campos (situação, data entrega/denúncia, prazo, data entrega relatório, status) -->
                             <div class="ted-info-row row-5">
