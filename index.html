@@ -1514,9 +1514,15 @@
         /* ===== Melhorias visuais das tabelas (somente aba Detalhes do TED) ===== */
         #detalhes #tedsDetalheContainer .table-wrapper,
         #detalhes #tedsDetalheContainer .table-freeze-wrapper,
-        #detalhes #tedsDetalheContainer .aditivo-historico,
-        #detalhes #tedsDetalheContainer .ted-info-historico,
         #detalhes #tedsDetalheContainer div[style*="overflow-x: auto"] {
+            border: 1px solid rgba(30, 64, 175, 0.18) !important;
+            border-radius: 0.7rem !important;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+            background: #ffffff;
+        }
+        /* Aditivo/Apostilamento histórico dentro das seções claras (detalhe-secao) */
+        #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico,
+        #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico {
             border: 1px solid rgba(30, 64, 175, 0.18) !important;
             border-radius: 0.7rem !important;
             box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
@@ -1627,9 +1633,13 @@
 
         [data-theme="dark"] #detalhes #tedsDetalheContainer .table-wrapper,
         [data-theme="dark"] #detalhes #tedsDetalheContainer .table-freeze-wrapper,
-        [data-theme="dark"] #detalhes #tedsDetalheContainer .aditivo-historico,
-        [data-theme="dark"] #detalhes #tedsDetalheContainer .ted-info-historico,
         [data-theme="dark"] #detalhes #tedsDetalheContainer div[style*="overflow-x: auto"] {
+            background: #0b1529;
+            border-color: rgba(147, 197, 253, 0.22) !important;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+        }
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico,
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico {
             background: #0b1529;
             border-color: rgba(147, 197, 253, 0.22) !important;
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
@@ -1994,6 +2004,29 @@
         .entregas-bar { width:80px; height:160px; background: linear-gradient(180deg,#66bb6a,#338a3e); box-shadow: inset 0 -6px 0 rgba(0,0,0,0.15); border-radius:6px; position:relative; display:flex; align-items:flex-end; justify-content:center; }
         .entregas-percent { font-weight:700; margin-bottom:6px; }
         .entregas-label { font-size:0.8rem; text-align:center; margin-top:0.6rem; color:var(--text); }
+
+        /* Override: when aditivo/ted-historico is inside detalhe-secao ensure light theme wins
+           Use !important to ensure this block overrides earlier dark-oriented rules. */
+        #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico,
+        #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico {
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+            border: 1px solid rgba(30,64,175,0.06) !important;
+            color: #0f172a !important;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico table,
+        #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico table {
+            color: #0f172a !important;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico th,
+        #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico th {
+            background: rgba(15,23,42,0.02) !important;
+            color: #0f172a !important;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico td,
+        #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico td {
+            color: #0f172a !important;
+            border-bottom: 1px solid rgba(15,23,42,0.04) !important;
+        }
 
         /* Botões de ícone (editar/excluir) */
         .btn-icon {
