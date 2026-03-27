@@ -928,12 +928,12 @@
         .ted-info-section {
             margin-bottom: 2rem;
             padding: 2rem;
-            background: linear-gradient(135deg, var(--header-blue) 0%, #2340a3 100%);
+            background: linear-gradient(135deg, #1f3a8a 0%, #1e40af 38%, #1d4ed8 100%);
             border-radius: 1rem;
-            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.18);
+            box-shadow: 0 14px 36px rgba(15, 23, 42, 0.22);
             position: relative;
             color: white;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.10);
             overflow: hidden;
         }
 
@@ -941,7 +941,7 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at top right, rgba(255,255,255,0.14), transparent 28%);
+            background: radial-gradient(circle at top right, rgba(255,255,255,0.16), transparent 26%), linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
             pointer-events: none;
         }
 
@@ -951,7 +951,7 @@
             align-items: center;
             margin-bottom: 1.5rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
+            border-bottom: 1px solid rgba(255,255,255,0.14);
             position: relative;
             z-index: 1;
         }
@@ -985,14 +985,14 @@
         }
 
         .btn-edit {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.14);
             color: white;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .btn-edit:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.22);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
@@ -1092,12 +1092,12 @@
         }
 
         .ted-kpi-card {
-            background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08));
-            border: 1px solid rgba(255,255,255,0.14);
+            background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.07));
+            border: 1px solid rgba(255,255,255,0.12);
             border-radius: 1rem;
             padding: 1rem 1rem 0.9rem;
             min-height: 92px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 6px 18px rgba(15, 23, 42, 0.10);
             position: relative;
             overflow: hidden;
         }
@@ -1116,7 +1116,7 @@
             font-size: 0.76rem;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            color: rgba(255,255,255,0.76);
+            color: rgba(255,255,255,0.72);
             margin-bottom: 0.45rem;
             font-weight: 700;
         }
@@ -1132,13 +1132,13 @@
         .ted-kpi-subtext {
             margin-top: 0.35rem;
             font-size: 0.78rem;
-            color: rgba(255,255,255,0.74);
+            color: rgba(255,255,255,0.70);
         }
 
-        .ted-kpi-card.kpi-valor { --kpi-accent: #60a5fa; }
-        .ted-kpi-card.kpi-recebido { --kpi-accent: #22c55e; }
-        .ted-kpi-card.kpi-saldo { --kpi-accent: #f59e0b; }
-        .ted-kpi-card.kpi-status { --kpi-accent: #f97316; }
+        .ted-kpi-card.kpi-valor { --kpi-accent: #7dd3fc; }
+        .ted-kpi-card.kpi-recebido { --kpi-accent: #4ade80; }
+        .ted-kpi-card.kpi-saldo { --kpi-accent: #fbbf24; }
+        .ted-kpi-card.kpi-status { --kpi-accent: #fb7185; }
 
         .ted-info-row {
             display: grid;
@@ -1158,8 +1158,8 @@
         }
 
         .ted-info-card {
-            background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
-            border: 1px solid rgba(255,255,255,0.14);
+            background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.12);
             border-radius: 0.9rem;
             padding: 1rem 1rem 0.9rem;
             transition: all 0.18s ease-in-out;
@@ -1168,17 +1168,18 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
         }
 
         .ted-info-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
-            border-color: rgba(255,255,255,0.24);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+            border-color: rgba(255,255,255,0.20);
         }
 
         .ted-info-label {
             font-weight: 600;
-            color: rgba(255,255,255,0.78);
+            color: rgba(219,234,254,0.82);
             font-size: 0.78rem;
             display: block;
             margin-bottom: 0.55rem;
@@ -1201,17 +1202,17 @@
             gap: 0.9rem;
             margin: 0.15rem 0 0.1rem;
             padding: 0.85rem 1rem;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.10);
             border-radius: 0.9rem;
             flex-wrap: wrap;
         }
 
         .ted-info-resumo {
             font-size: 0.85rem;
-            color: rgba(255,255,255,0.84);
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(239,246,255,0.9);
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
             border-radius: 999px;
             padding: 0.35rem 0.75rem;
             display: inline-flex;
@@ -1221,7 +1222,7 @@
 
         .ted-info-historico {
             display: none;
-            background: rgba(8, 15, 41, 0.22);
+            background: rgba(9, 18, 52, 0.26);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 0.9rem;
             padding: 0.3rem 0.75rem 0.75rem;
@@ -1238,8 +1239,8 @@
             font-size: 0.78rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: rgba(255,255,255,0.78);
-            background: rgba(255,255,255,0.05);
+            color: rgba(219,234,254,0.8);
+            background: rgba(255,255,255,0.04);
         }
 
         .ted-info-historico th,
@@ -1248,7 +1249,7 @@
         }
 
         .ted-info-historico tbody tr:hover {
-            background: rgba(255,255,255,0.04);
+            background: rgba(255,255,255,0.035);
         }
 
         .ted-info-input {
