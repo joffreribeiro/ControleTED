@@ -1414,6 +1414,126 @@
         [data-theme="dark"] .tabela-padrao tbody tr:nth-child(odd) { background: #06111b; }
         [data-theme="dark"] .tabela-padrao tbody tr:hover { background: #0b2a44; }
         [data-theme="dark"] .tabela-padrao tbody td { border-bottom: 1px solid rgba(255,255,255,0.03); }
+
+        /* ===== Melhorias visuais das tabelas (somente aba Detalhes do TED) ===== */
+        #detalhes #tedsDetalheContainer .table-wrapper,
+        #detalhes #tedsDetalheContainer .table-freeze-wrapper,
+        #detalhes #tedsDetalheContainer .aditivo-historico,
+        #detalhes #tedsDetalheContainer .ted-info-historico,
+        #detalhes #tedsDetalheContainer div[style*="overflow-x: auto"] {
+            border: 1px solid rgba(30, 64, 175, 0.18) !important;
+            border-radius: 0.7rem !important;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+            background: #ffffff;
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao {
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao thead tr {
+            background: linear-gradient(180deg, #2f57be 0%, #2748a1 100%);
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao thead th {
+            color: #eef4ff;
+            border-color: rgba(255,255,255,0.12);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding-top: 0.65rem;
+            padding-bottom: 0.65rem;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(even) {
+            background: #f7faff;
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(odd) {
+            background: #ffffff;
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover {
+            background: #eaf2ff;
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody td {
+            border-color: rgba(15, 23, 42, 0.08);
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover td {
+            box-shadow: inset 0 0 0 9999px rgba(29, 78, 216, 0.04);
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody td[colspan] {
+            color: #5b6b86 !important;
+            font-style: italic;
+            background: #f8fbff;
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao .col-acao {
+            min-width: 84px;
+        }
+
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody .btn-icon,
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody .btn-icon-action {
+            border-radius: 0.45rem;
+        }
+
+        #detalhes #tedsDetalheContainer .table-wrapper::-webkit-scrollbar,
+        #detalhes #tedsDetalheContainer .table-freeze-wrapper::-webkit-scrollbar,
+        #detalhes #tedsDetalheContainer div[style*="overflow-x: auto"]::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        #detalhes #tedsDetalheContainer .table-wrapper::-webkit-scrollbar-thumb,
+        #detalhes #tedsDetalheContainer .table-freeze-wrapper::-webkit-scrollbar-thumb,
+        #detalhes #tedsDetalheContainer div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.42);
+            border-radius: 999px;
+        }
+
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .table-wrapper,
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .table-freeze-wrapper,
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .aditivo-historico,
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .ted-info-historico,
+        [data-theme="dark"] #detalhes #tedsDetalheContainer div[style*="overflow-x: auto"] {
+            background: #0b1529;
+            border-color: rgba(147, 197, 253, 0.22) !important;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+        }
+
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao thead tr {
+            background: linear-gradient(180deg, #1f4fb8 0%, #183b88 100%);
+        }
+
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(even) {
+            background: #0e1c33;
+        }
+
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(odd) {
+            background: #0b172c;
+        }
+
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover {
+            background: #123057;
+        }
+
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody td {
+            border-color: rgba(226, 232, 240, 0.08);
+            color: #e6edf8;
+        }
+
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody td[colspan] {
+            color: #9fb1cd !important;
+            background: #0b1a31;
+        }
         /* Linha de total */
         .tabela-padrao .linha-total {
             background: #e8f4f8 !important;
