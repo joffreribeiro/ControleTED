@@ -3522,6 +3522,18 @@
             return { text: 'Em Execução', origin: 'calculado', vigenciaVencida: vigenciaVencida };
         }
 
+        // Helper: returns true when a TED should be considered finalizado
+        // (used to style select options in filters/reports)
+        function isTedFinalizado(ted) {
+            if (!ted) return false;
+            try {
+                if (ted.dataEntregaRelatorio) return true;
+                const s = (ted.situacaoTED || '').toString().toLowerCase();
+                if (s.includes('finaliz') || s.includes('denunci')) return true;
+            } catch(e) { /* ignore */ }
+            return false;
+        }
+
         // Trocar Abas
         function switchTab(tabName) {
             // Ocultar todas as abas
@@ -4334,6 +4346,9 @@
                 const option = document.createElement('option');
                 option.value = ted.id;
                 option.textContent = `TED ${ted.numTed} - ${ted.objetivo}`;
+                if (isTedFinalizado(ted)) {
+                    option.style.color = '#ef4444';
+                }
                 seletor.appendChild(option);
             });
         }
@@ -6793,6 +6808,7 @@
                 const opt = document.createElement('option');
                 opt.value = t.id;
                 opt.textContent = `TED ${t.numTed} - ${t.objetivo}`;
+                if (isTedFinalizado(t)) opt.style.color = '#ef4444';
                 sel.appendChild(opt);
             });
             // Atualizar também o seletor full (se existir)
@@ -6846,6 +6862,7 @@
                     const opt = document.createElement('option');
                     opt.value = t.id;
                     opt.textContent = `TED ${t.numTed || ''} - ${t.objetivo || t.objeto || 'Sem título'}`.trim();
+                    if (isTedFinalizado(t)) opt.style.color = '#ef4444';
                     selTed.appendChild(opt);
                 });
             }
