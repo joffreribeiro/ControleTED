@@ -9942,6 +9942,7 @@
                 if (adminPanel) adminPanel.style.display = 'block';
                 if (tabConfig) tabConfig.style.display = '';
                 if (tabApresentBtn) tabApresentBtn.style.display = '';
+                try { initApresentacaoFilters(); } catch(e) {}
                 if (adminLoggedAs && window.currentUserProfile) {
                     adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '—');
                 }
@@ -9985,20 +9986,34 @@
                 applyApresentacaoFilters();
             } catch(e) { console.warn('initApresentacaoFilters erro', e); }
         }
-
-        function populateApresentacaoFilters() {
-            try {
-                var upEl = document.getElementById('apresent_filtro_up');
-                var tedEl = document.getElementById('apresent_filtro_ted');
-                var statusEl = document.getElementById('apresent_filtro_status');
-                if (!upEl || !tedEl || !statusEl) return;
-                upEl.options.length = 1;
-                tedEl.options.length = 1;
-                statusEl.options.length = 1;
-                var ups = new Set();
-                var teds = new Set();
-                var statuses = new Set();
-                (dados.teds || []).forEach(function(t) {
+            attempt = (typeof attempt === 'number') ? attempt : 0;
+            // Se já inicializado com sucesso, apenas reaplica filtros
+            if (window._apresentacaoFiltersInitialized) {
+                try { populateApresentacaoFilters(); } catch(e){}
+                try { applyApresentacaoFilters(); } catch(e){}
+                return;
+            }
+            var upEl = document.getElementById('apresent_filtro_up');
+            var tedEl = document.getElementById('apresent_filtro_ted');
+            var statusEl = document.getElementById('apresent_filtro_status');
+            if (!upEl || !tedEl || !statusEl) {
+                // Se não encontrou elementos ainda, tenta novamente até 10 vezes
+                if (attempt < 10) {
+                    setTimeout(function(){ initApresentacaoFilters(attempt + 1); }, 250);
+                } else {
+                    console.warn('initApresentacaoFilters: elementos não encontrados após várias tentativas');
+                }
+                return;
+            }
+            // Popular opções
+            populateApresentacaoFilters();
+            // Eventos
+            try { upEl.addEventListener('change', applyApresentacaoFilters); } catch(e){}
+            try { tedEl.addEventListener('change', applyApresentacaoFilters); } catch(e){}
+            try { statusEl.addEventListener('change', applyApresentacaoFilters); } catch(e){}
+            window._apresentacaoFiltersInitialized = true;
+            // Aplicar filtro inicial
+            applyApresentacaoFilters();
                     var up = t.upResponsavel || t.up || '';
                     if (up) ups.add(String(up));
                     var num = t.numTed || t.num || t.num_ted || String(t.id || '');
