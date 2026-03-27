@@ -21,63 +21,7 @@
             box-sizing: border-box;
         }
 
-        // Marcar fase física como realizada — pede data e quantidade, marca e cria registro em execFisicas
-        function marcarFisicoRealizado(id) {
-            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
-            if (!window.tedSelecionado) return;
-            const fisicos = window.tedSelecionado.fisicos || [];
-            const f = fisicos.find(x => x.id == id);
-            if (!f) return;
-
-            // calcular data padrão (mFinal)
-            let baseDate;
-            if (window.tedSelecionado.primeiraDescentralizacao) baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
-            else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            else baseDate = new Date();
-
-            let defaultDate = '';
-            try {
-                const d = new Date(baseDate);
-                d.setMonth(d.getMonth() + (isNaN(f.mFinal) ? 0 : Number(f.mFinal)));
-                defaultDate = d.toISOString().split('T')[0];
-            } catch(e) { defaultDate = ''; }
-
-            const dt = prompt(`Data de realização (YYYY-MM-DD):`, f.dataRealizada || defaultDate || new Date().toISOString().split('T')[0]);
-            if (dt === null) return;
-            // validate date
-            let parsed;
-            try { parsed = new Date(dt + 'T00:00:00'); if (isNaN(parsed)) throw new Error('invalid'); } catch(e) { alert('Data inválida'); return; }
-
-            const qtdDefault = (f.qtdeRealizada != null) ? f.qtdeRealizada : f.qtde;
-            const qtdStr = prompt(`Quantidade realizada (use ponto decimal):`, qtdDefault != null ? String(qtdDefault) : '0');
-            if (qtdStr === null) return;
-            const qtd = parseFloat(qtdStr);
-            if (isNaN(qtd) || qtd < 0) { alert('Quantidade inválida'); return; }
-
-            const nf = prompt('Número da NF (opcional):', (f.nfRealizada || f.nf) || '');
-            if (nf === null) return;
-
-            // salvar dados na fase
-            f.realizada = true;
-            f.dataRealizada = dt;
-            f.qtdeRealizada = qtd;
-            f.nfRealizada = nf || '';
-
-            // calcular se realizada antes do previsto
-            try {
-                const scheduled = new Date(baseDate);
-                scheduled.setMonth(scheduled.getMonth() + (isNaN(f.mFinal) ? 0 : Number(f.mFinal)));
-                f.realizadaAntes = (new Date(dt + 'T00:00:00') <= scheduled);
-            } catch(e) { f.realizadaAntes = false; }
-
-            // adicionar execução física correspondente
-            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas || [];
-            window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto: f.objeto, qtde: qtd, data: dt, nf: f.nfRealizada || '' });
-
-            try { salvarDados(); } catch(e) {}
-            try { atualizarTabelasEmCascata('fisicos'); } catch(e) {}
-            showToast('Fase marcada como realizada e execução adicionada.', 'success');
-        }
+        /* JS functions moved to script block to avoid invalid CSS parsing */
 
         /* popularFiltrosTEDs moved to script block (to avoid JS inside <style>) */
 
@@ -2215,6 +2159,65 @@
     </style>
     </head>
     <body>
+    <script>
+        // Marcar fase física como realizada — pede data e quantidade, marca e cria registro em execFisicas
+        function marcarFisicoRealizado(id) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            if (!window.tedSelecionado) return;
+            const fisicos = window.tedSelecionado.fisicos || [];
+            const f = fisicos.find(x => x.id == id);
+            if (!f) return;
+
+            // calcular data padrão (mFinal)
+            let baseDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            else baseDate = new Date();
+
+            let defaultDate = '';
+            try {
+                const d = new Date(baseDate);
+                d.setMonth(d.getMonth() + (isNaN(f.mFinal) ? 0 : Number(f.mFinal)));
+                defaultDate = d.toISOString().split('T')[0];
+            } catch(e) { defaultDate = ''; }
+
+            const dt = prompt(`Data de realização (YYYY-MM-DD):`, f.dataRealizada || defaultDate || new Date().toISOString().split('T')[0]);
+            if (dt === null) return;
+            // validate date
+            let parsed;
+            try { parsed = new Date(dt + 'T00:00:00'); if (isNaN(parsed)) throw new Error('invalid'); } catch(e) { alert('Data inválida'); return; }
+
+            const qtdDefault = (f.qtdeRealizada != null) ? f.qtdeRealizada : f.qtde;
+            const qtdStr = prompt(`Quantidade realizada (use ponto decimal):`, qtdDefault != null ? String(qtdDefault) : '0');
+            if (qtdStr === null) return;
+            const qtd = parseFloat(qtdStr);
+            if (isNaN(qtd) || qtd < 0) { alert('Quantidade inválida'); return; }
+
+            const nf = prompt('Número da NF (opcional):', (f.nfRealizada || f.nf) || '');
+            if (nf === null) return;
+
+            // salvar dados na fase
+            f.realizada = true;
+            f.dataRealizada = dt;
+            f.qtdeRealizada = qtd;
+            f.nfRealizada = nf || '';
+
+            // calcular se realizada antes do previsto
+            try {
+                const scheduled = new Date(baseDate);
+                scheduled.setMonth(scheduled.getMonth() + (isNaN(f.mFinal) ? 0 : Number(f.mFinal)));
+                f.realizadaAntes = (new Date(dt + 'T00:00:00') <= scheduled);
+            } catch(e) { f.realizadaAntes = false; }
+
+            // adicionar execução física correspondente
+            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas || [];
+            window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto: f.objeto, qtde: qtd, data: dt, nf: f.nfRealizada || '' });
+
+            try { salvarDados(); } catch(e) {}
+            try { atualizarTabelasEmCascata('fisicos'); } catch(e) {}
+            showToast('Fase marcada como realizada e execução adicionada.', 'success');
+        }
+    </script>
         <!-- Navbar -->
         <nav>
             <h1><i data-lucide="clipboard-list"></i> Controle TED</h1>
