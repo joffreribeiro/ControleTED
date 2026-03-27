@@ -1415,6 +1415,102 @@
         [data-theme="dark"] .tabela-padrao tbody tr:hover { background: #0b2a44; }
         [data-theme="dark"] .tabela-padrao tbody td { border-bottom: 1px solid rgba(255,255,255,0.03); }
 
+        /* ===== Blocos de seção padronizados (aba Detalhes) ===== */
+        #detalhes #tedsDetalheContainer .detalhe-secao {
+            position: relative;
+            margin-bottom: 1.75rem;
+            padding: 0;
+            background: #ffffff;
+            border: 1px solid rgba(30, 64, 175, 0.13);
+            border-radius: 0.85rem;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(30, 64, 175, 0.04);
+            overflow: hidden;
+            transition: box-shadow 0.2s ease;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao:hover {
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.10), 0 0 0 1px rgba(30, 64, 175, 0.10);
+        }
+
+        /* Cabeçalho da seção — faixa com gradiente */
+        #detalhes #tedsDetalheContainer .detalhe-secao-titulo {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin: 0;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2f57be 0%, #1e40af 100%);
+            letter-spacing: 0.02em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao-titulo .inline-icon-sm,
+        #detalhes #tedsDetalheContainer .detalhe-secao-titulo i {
+            width: 18px;
+            height: 18px;
+            opacity: 0.92;
+        }
+
+        /* Corpo da seção (formulário + tabela) */
+        #detalhes #tedsDetalheContainer .detalhe-secao-body {
+            padding: 1.25rem 1.5rem;
+        }
+
+        /* Form groups dentro das seções: labels mais legíveis */
+        #detalhes #tedsDetalheContainer .detalhe-secao .form-group label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.3rem;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao .form-group input,
+        #detalhes #tedsDetalheContainer .detalhe-secao .form-group select {
+            border: 1px solid #cbd5e1;
+            border-radius: 0.45rem;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao .form-group input:focus,
+        #detalhes #tedsDetalheContainer .detalhe-secao .form-group select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            outline: none;
+        }
+
+        /* Botão "Adicionar" dentro das seções */
+        #detalhes #tedsDetalheContainer .detalhe-secao .btn-primary {
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        /* Dark mode */
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao {
+            background: #0d1b2a;
+            border-color: rgba(147, 197, 253, 0.18);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(147, 197, 253, 0.08);
+        }
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(147, 197, 253, 0.15);
+        }
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao-titulo {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: #e0ecff;
+        }
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao .form-group label {
+            color: #94a3b8;
+        }
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao .form-group input,
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao .form-group select {
+            background: #0f1f36;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+
         /* ===== Melhorias visuais das tabelas (somente aba Detalhes do TED) ===== */
         #detalhes #tedsDetalheContainer .table-wrapper,
         #detalhes #tedsDetalheContainer .table-freeze-wrapper,
@@ -2399,9 +2495,9 @@
                     </div>
 
                     <!-- CADASTRO DE OBJETOS -->
-                    <div style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
-                        <h3 style="margin: 0 0 1rem 0;">📦 Cadastro de Objetos</h3>
-                        
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo">📦 Cadastro de Objetos</h3>
+                        <div class="detalhe-secao-body">
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem; max-width: 900px;">
                             <div class="form-group">
                                 <label>Objeto *</label>
@@ -2434,11 +2530,13 @@
                                 </tbody>
                             </table>
                         </div>
+                        </div>
                     </div>
 
                     <!-- CADASTRO DE METAS -->
-                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
-                        <h3 style="margin: 0 0 1rem 0;">🎯 Cadastro de Metas</h3>
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo">🎯 Cadastro de Metas</h3>
+                        <div class="detalhe-secao-body">
                         
                         <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
@@ -2489,11 +2587,13 @@
                                 </tbody>
                             </table>
                         </div>
+                        </div>
                     </div>
 
                     <!-- CADASTRO FÍSICO -->
-                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
-                        <h3 style="margin: 0 0 1rem 0;">🏗️ Cadastro Físico</h3>
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo">🏗️ Cadastro Físico</h3>
+                        <div class="detalhe-secao-body">
                         <div style="display: grid; grid-template-columns: 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>Fase *</label>
@@ -2548,11 +2648,13 @@
                                 </tbody>
                             </table>
                         </div>
+                        </div>
                     </div>
 
                     <!-- EXECUÇÃO FÍSICA -->
-                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
-                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física</h3>
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física</h3>
+                        <div class="detalhe-secao-body">
                         <div style="display: grid; grid-template-columns: 1fr 0.8fr 0.8fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>Objeto *</label>
@@ -2588,11 +2690,13 @@
                                 </tbody>
                             </table>
                         </div>
+                        </div>
                     </div>
 
                     <!-- CADASTRO FINANCEIRA -->
-                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 2rem;">
-                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro</h3>
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro</h3>
+                        <div class="detalhe-secao-body">
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
@@ -2653,11 +2757,13 @@
                                 </tbody>
                             </table>
                         </div>
+                        </div>
                     </div>
 
                     <!-- EXECUÇÃO FINANCEIRA -->
-                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira</h3>
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira</h3>
+                        <div class="detalhe-secao-body">
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
@@ -2713,11 +2819,13 @@
                                 </tbody>
                             </table>
                         </div>
+                        </div>
                     </div>
 
                     <!-- RECURSOS GERAIS IMBEL (por ND, sem separar por UP) -->
-                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL</h3>
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL</h3>
+                        <div class="detalhe-secao-body">
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
@@ -2762,18 +2870,22 @@
                                 </tbody>
                             </table>
                         </div>
+                        </div>
                     </div>
 
                     <!-- Resumo Anual por Ano -->
-                    <div style="padding: 1.5rem; background: var(--bg-alt); border-radius: 0.5rem;">
-                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="bar-chart" class="inline-icon-sm"></i> Resumo Anual por Ano</h3>
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart" class="inline-icon-sm"></i> Resumo Anual por Ano</h3>
+                        <div class="detalhe-secao-body">
                         <div id="resumoAnualPorAno" style="overflow-x: auto; max-width: 1000px;">
                             <!-- Será preenchido dinamicamente -->
                         </div>
+                        </div>
                     </div>
                     <!-- Seção de gráficos completa (após Resumo Anual) -->
-                    <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem;">
-                        <h3 style="margin: 0 0 1rem 0;"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h3>
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h3>
+                        <div class="detalhe-secao-body">
                         <div id="filterFullWrap" style="display:flex; gap:1rem; align-items:center; margin-bottom:0.5rem;">
                             <label style="font-weight:600; margin-right:0.5rem;">Filtrar TED:</label>
                             <select id="filterTedEntregasFull" onchange="(function(v){ renderEntregasChart(v,'entregasChartFull'); })(this.value)"> 
@@ -2782,6 +2894,7 @@
                         </div>
                         <div id="entregasChartFull" style="min-height:160px; padding:0.5rem; background: linear-gradient(#fff, #f7f7f7); border-radius:0.5rem;">
                             <p style="color:var(--text);">Selecione um TED para ver o gráfico de entregas (visão completa).</p>
+                        </div>
                         </div>
                     </div>
                 </div>
