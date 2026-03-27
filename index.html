@@ -1436,6 +1436,7 @@
             background: linear-gradient(180deg, #2f57be 0%, #2748a1 100%);
         }
 
+        /* ── Cabeçalho da tabela: background OPACO obrigatório ── */
         #detalhes #tedsDetalheContainer .tabela-padrao thead th {
             color: #eef4ff;
             border-color: rgba(255,255,255,0.12);
@@ -1446,45 +1447,50 @@
             padding-bottom: 0.65rem;
             position: sticky;
             top: 0;
-            z-index: 60;
-            background-clip: padding-box;
+            z-index: 10;
+            /* Background opaco explícito – impede que células roladas
+               apareçam "através" do cabeçalho ao rolar horizontalmente */
+            background: linear-gradient(180deg, #2f57be 0%, #2748a1 100%) !important;
         }
 
-        /* Corrige sobreposição ao rolar horizontalmente:
-           garante que cabeçalho e colunas "congeladas" fiquem acima
-           das células roladas, evitando que dados móveis apareçam sobre elas. */
-        #detalhes #tedsDetalheContainer .tabela-padrao .sticky-freeze {
+        /* ── Colunas congeladas (sticky-freeze) ── */
+        /* Corpo/rodapé: background sólido branco */
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody .sticky-freeze,
+        #detalhes #tedsDetalheContainer .tabela-padrao tfoot .sticky-freeze {
             position: sticky;
-            z-index: 55;
-            background-clip: padding-box;
-            background: var(--surface, #ffffff);
+            z-index: 12;
+            background: #ffffff !important;
         }
-
+        /* Zebra: linhas pares dentro de colunas congeladas */
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(even) .sticky-freeze {
+            background: #f7faff !important;
+        }
+        /* Hover dentro de colunas congeladas */
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover .sticky-freeze {
+            background: #eaf2ff !important;
+        }
+        /* Cabeçalho congelado: mesmo gradiente opaco, z-index mais alto */
+        #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze {
+            position: sticky;
+            z-index: 15;
+            background: linear-gradient(180deg, #2f57be 0%, #2748a1 100%) !important;
+            color: #eef4ff;
+        }
+        /* Sombra na última coluna congelada */
         #detalhes #tedsDetalheContainer .tabela-padrao .sticky-freeze.sticky-freeze-last {
-            z-index: 56;
             box-shadow: 4px 0 8px rgba(0,0,0,0.16);
         }
 
-        /* Garantir que células da área rolável fiquem sob os elementos sticky */
-        #detalhes #tedsDetalheContainer .tabela-padrao tbody td {
-            position: relative;
-            z-index: 1;
-            background-clip: padding-box;
-            background: inherit;
-        }
-
+        /* ── Linhas do corpo ── */
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(even) {
             background: #f7faff;
         }
-
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(odd) {
             background: #ffffff;
         }
-
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover {
             background: #eaf2ff;
         }
-
         #detalhes #tedsDetalheContainer .tabela-padrao tbody td {
             border-color: rgba(15, 23, 42, 0.08);
             padding-top: 0.6rem;
@@ -1552,6 +1558,21 @@
         [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody td {
             border-color: rgba(226, 232, 240, 0.08);
             color: #e6edf8;
+        }
+
+        /* Dark mode: colunas congeladas com background opaco */
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze {
+            background: linear-gradient(180deg, #1f4fb8 0%, #183b88 100%) !important;
+        }
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody .sticky-freeze,
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tfoot .sticky-freeze {
+            background: #0b172c !important;
+        }
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(even) .sticky-freeze {
+            background: #0e1c33 !important;
+        }
+        [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover .sticky-freeze {
+            background: #123057 !important;
         }
 
         [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody td[colspan] {
