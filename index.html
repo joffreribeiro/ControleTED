@@ -17,6 +17,64 @@
             box-sizing: border-box;
         }
 
+        // Marcar fase física como realizada — pede data e quantidade, marca e cria registro em execFisicas
+        function marcarFisicoRealizado(id) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            if (!window.tedSelecionado) return;
+            const fisicos = window.tedSelecionado.fisicos || [];
+            const f = fisicos.find(x => x.id == id);
+            if (!f) return;
+
+            // calcular data padrão (mFinal)
+            let baseDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            else baseDate = new Date();
+
+            let defaultDate = '';
+            try {
+                const d = new Date(baseDate);
+                d.setMonth(d.getMonth() + (isNaN(f.mFinal) ? 0 : Number(f.mFinal)));
+                defaultDate = d.toISOString().split('T')[0];
+            } catch(e) { defaultDate = ''; }
+
+            const dt = prompt(`Data de realização (YYYY-MM-DD):`, f.dataRealizada || defaultDate || new Date().toISOString().split('T')[0]);
+            if (dt === null) return;
+            // validate date
+            let parsed;
+            try { parsed = new Date(dt + 'T00:00:00'); if (isNaN(parsed)) throw new Error('invalid'); } catch(e) { alert('Data inválida'); return; }
+
+            const qtdDefault = (f.qtdeRealizada != null) ? f.qtdeRealizada : f.qtde;
+            const qtdStr = prompt(`Quantidade realizada (use ponto decimal):`, qtdDefault != null ? String(qtdDefault) : '0');
+            if (qtdStr === null) return;
+            const qtd = parseFloat(qtdStr);
+            if (isNaN(qtd) || qtd < 0) { alert('Quantidade inválida'); return; }
+
+            const nf = prompt('Número da NF (opcional):', (f.nfRealizada || f.nf) || '');
+            if (nf === null) return;
+
+            // salvar dados na fase
+            f.realizada = true;
+            f.dataRealizada = dt;
+            f.qtdeRealizada = qtd;
+            f.nfRealizada = nf || '';
+
+            // calcular se realizada antes do previsto
+            try {
+                const scheduled = new Date(baseDate);
+                scheduled.setMonth(scheduled.getMonth() + (isNaN(f.mFinal) ? 0 : Number(f.mFinal)));
+                f.realizadaAntes = (new Date(dt + 'T00:00:00') <= scheduled);
+            } catch(e) { f.realizadaAntes = false; }
+
+            // adicionar execução física correspondente
+            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas || [];
+            window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto: f.objeto, qtde: qtd, data: dt, nf: f.nfRealizada || '' });
+
+            try { salvarDados(); } catch(e) {}
+            try { atualizarTabelasEmCascata('fisicos'); } catch(e) {}
+            showToast('Fase marcada como realizada e execução adicionada.', 'success');
+        }
+
         /* popularFiltrosTEDs moved to script block (to avoid JS inside <style>) */
 
         :root {
@@ -5919,6 +5977,12 @@
                     finalStr = f.mesFinal && f.anoFinal ? `${mesesNomes[(f.mesFinal || 1) - 1]}/${f.anoFinal}` : '-';
                 }
 
+                let realizadoBadge = '';
+                if (f.realizada) {
+                    const antesTxt = f.realizadaAntes ? ' (antes do previsto)' : '';
+                    realizadoBadge = `<span class="badge done" title="Realizada em ${f.dataRealizada || ''}${antesTxt}">✔</span>`;
+                }
+
                 let html = `<tr>
                     <td class="col-fase">${f.fase}</td>
                     <td class="col-objeto">${f.objeto}</td>
@@ -5928,15 +5992,37 @@
                     <td class="col-mes">${inicioStr}</td>
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
+                        ${realizadoBadge}
                         <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar">✎</button>
                         <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover">✕</button>
+                        <button class="btn-icon-action done-action" onclick="marcarFisicoRealizado(${f.id})" title="Marcar realizada">✔︎</button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
+                // destaque do período planejado e do mês de realização (se houver)
+                let realizedIdx = null;
+                if (f.dataRealizada) {
+                    try {
+                        const rd = new Date(f.dataRealizada + 'T00:00:00');
+                        realizedIdx = Math.floor((rd.getFullYear() - baseDate.getFullYear()) * 12 + (rd.getMonth() - baseDate.getMonth()));
+                    } catch(e) { realizedIdx = null; }
+                }
+
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoPeríodo = mesIdx >= f.mInicio && mesIdx <= f.mFinal;
-                    const cor = estaNoPeríodo ? '#e0f2fe' : 'transparent';
-                    html += `<td style="background: ${cor};"></td>`;
+                    const isRealizedMonth = (realizedIdx !== null && realizedIdx === mesIdx);
+                    let cor = 'transparent';
+                    if (isRealizedMonth) cor = '#bbf7d0'; // verde claro para realização
+                    else if (estaNoPeríodo) cor = '#e0f2fe'; // azul claro para período planejado
+
+                    // tooltip para mês realizado
+                    let tdTitle = '';
+                    if (isRealizedMonth) {
+                        const nfTxt = f.nfRealizada ? `NF: ${f.nfRealizada}` : (f.nf ? `NF: ${f.nf}` : 'NF: -');
+                        tdTitle = `Realizada em ${f.dataRealizada || ''} • Qtd: ${formatNumber(f.qtdeRealizada ?? f.qtde ?? '')} • ${nfTxt}`;
+                    }
+
+                    html += `<td style="background: ${cor};" title="${tdTitle}"></td>`;
                 });
                 
                 html += '</tr>';
