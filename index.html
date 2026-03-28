@@ -6416,10 +6416,23 @@
             tableElement.querySelector('thead').appendChild(headerRow2);
 
                 // Agrupar execuções por objeto e por mês
-            const execs = window.tedSelecionado.execFisicas || [];
-            const fisicos = window.tedSelecionado.fisicos || [];
-            // Objetos registrados no cadastro físico (não no cadastro de objetos)
-            const objetosUnicos = Array.from(new Set(fisicos.map(f => f.objeto)));
+                const execs = window.tedSelecionado.execFisicas || [];
+                const fisicos = window.tedSelecionado.fisicos || [];
+                // Garantir ordem dos objetos conforme aparecem no Cadastro Físico (ordenado por fase)
+                const fisicosOrdered = Array.from(fisicos || []);
+                fisicosOrdered.sort((a, b) => {
+                    const aVal = a && a.fase != null ? a.fase : '';
+                    const bVal = b && b.fase != null ? b.fase : '';
+                    const aNum = Number(aVal);
+                    const bNum = Number(bVal);
+                    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+                    return String(aVal).localeCompare(String(bVal), 'pt', { numeric: true });
+                });
+                const objetosUnicos = [];
+                fisicosOrdered.forEach(f => {
+                    if (!f || !f.objeto) return;
+                    if (!objetosUnicos.includes(f.objeto)) objetosUnicos.push(f.objeto);
+                });
 
             if (!objetosUnicos.length) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Cadastre o físico para listar objetos</td></tr>';
