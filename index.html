@@ -6222,7 +6222,18 @@
                 baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             }
 
-            tbody.innerHTML = window.tedSelecionado.fisicos.map((f, i) => {
+            // Ordenar cadastro físico por 'fase' em ordem crescente antes de renderizar
+            const fisicosSorted = Array.from(window.tedSelecionado.fisicos || []);
+            fisicosSorted.sort((a, b) => {
+                const aVal = a && a.fase != null ? a.fase : '';
+                const bVal = b && b.fase != null ? b.fase : '';
+                const aNum = Number(aVal);
+                const bNum = Number(bVal);
+                if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+                return String(aVal).localeCompare(String(bVal), 'pt', { numeric: true });
+            });
+
+            tbody.innerHTML = fisicosSorted.map((f, i) => {
                 let inicioStr = '';
                 let finalStr = '';
                 const mesesNomes = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
