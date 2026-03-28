@@ -3248,9 +3248,9 @@
                         <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira</h3>
                         <div class="detalhe-secao-body">
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
-                            <div class="form-group">
+                                <div class="form-group">
                                 <label>ND *</label>
-                                <select id="numExecFin" required>
+                                <select id="numExecFin" required onchange="aplicarFiltroNdExecFin(this.value)">
                                     <option value="">-- Selecione --</option>
                                 </select>
                             </div>
@@ -3312,7 +3312,7 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
-                                <select id="ndRecGeral" required>
+                                <select id="ndRecGeral" required onchange="aplicarFiltroNdRecGeral(this.value)">
                                     <option value="">-- Selecione --</option>
                                 </select>
                             </div>
@@ -6703,6 +6703,34 @@
                 if (count > 0) btn.classList.add('active');
                 else btn.classList.remove('active');
             }
+        }
+
+        // Aplicar seleção rápida de ND a partir dos selects de criação/edição
+        function aplicarFiltroNdExecFin(valor) {
+            window.filtrosExecFin = window.filtrosExecFin || { nd: [], up: [] };
+            if (!valor) {
+                window.filtrosExecFin.nd = [];
+            } else {
+                window.filtrosExecFin.nd = [String(valor)];
+            }
+            try { atualizarLabelFiltro('execFin', 'nd'); } catch(e) {}
+            try { atualizarTabelaExecFinanceira(); } catch(e) {}
+        }
+
+        function aplicarFiltroNdRecGeral(valor) {
+            window.filtrosRecGeral = window.filtrosRecGeral || { nd: [] };
+            const labelEl = document.getElementById('filterNdRecGeralLabel');
+            const btnEl = document.getElementById('filterNdRecGeralBtn');
+            if (!valor) {
+                window.filtrosRecGeral.nd = [];
+                if (labelEl) labelEl.textContent = 'ND';
+                if (btnEl) btnEl.classList.remove('active');
+            } else {
+                window.filtrosRecGeral.nd = [String(valor)];
+                if (labelEl) labelEl.textContent = 'ND (1)';
+                if (btnEl) btnEl.classList.add('active');
+            }
+            try { atualizarTabelaRecursosGerais(); } catch(e) {}
         }
 
         // CADASTRO FINANCEIRO
