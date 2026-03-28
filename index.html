@@ -498,6 +498,10 @@
             font-weight: 700;
             pointer-events: none;
         }
+        /* Entrada animada das linhas da tabela */
+        .exec-row { opacity: 0; transform: translateY(6px); }
+        @keyframes rowEnter { to { opacity: 1; transform: translateY(0); } }
+        .exec-row.animate { animation: rowEnter 360ms cubic-bezier(.2,.9,.2,1) forwards; }
 
         .btn-primary {
             background: var(--primary-gradient);
@@ -6493,18 +6497,19 @@
                     }
                 });
 
-                // construir célula com barra de execução
+                // construir célula com barra de execução e tooltip com detalhes
                 const pct = Math.max(0, Math.min(100, execPercRaw));
                 const isComplete = pct >= 100;
                 const labelColor = isComplete ? '#ffffff' : '#0f172a';
                 const fillWidth = pct.toFixed(2) + '%';
-                let html = `<tr>
+                const tooltipDetails = `Execução: ${execPerc}%\nPrevisto: ${formatNumber(prevista)}\nEntregue: ${formatNumber(entregueTotal)}\nSaldo: ${formatNumber(saldo)}`;
+                let html = `<tr class="exec-row" style="animation-delay:${i * 40}ms;">
                     <td class="col-objeto">${obj}</td>
                     <td class="col-qtde">${formatNumber(prevista)}</td>
                     <td class="col-qtde">${formatNumber(entregueTotal)}</td>
                     <td class="col-qtde">${formatNumber(saldo)}</td>
                     <td class="col-percent">
-                        <div class="exec-bar" title="Execução: ${execPerc}%">
+                        <div class="exec-bar" title="${tooltipDetails}">
                             <div class="exec-bar-fill ${isComplete ? 'complete' : ''}" style="width:${fillWidth};"></div>
                             <div class="exec-bar-label" style="color:${labelColor};">${execPerc}%</div>
                         </div>
@@ -6532,6 +6537,14 @@
             }).join('');
 
             tbody.innerHTML = linhas;
+            // ativar animação por linha (adicionar classe que dispara a keyframe)
+            try {
+                const rows = Array.from(tbody.querySelectorAll('.exec-row'));
+                rows.forEach(r => {
+                    // timeout para permitir que o browser registre o elemento antes de animar
+                    setTimeout(() => r.classList.add('animate'), 30);
+                });
+            } catch(e) {}
         }
 
         // ===== FILTROS MULTI-SELECT PARA TABELAS FINANCEIRAS =====
