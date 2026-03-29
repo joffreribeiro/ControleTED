@@ -3281,6 +3281,7 @@
                             <!-- Filtros Execução Financeira -->
                             <div class="filter-bar" id="filterBarExecFin">
                                 <span class="filter-bar-label">Filtrar:</span>
+                                <button type="button" class="btn btn-sm" style="margin-left:0.5rem;" onclick="limparTodosFiltrosExecFin()">Limpar todos</button>
                                 <div class="filter-btn" id="filterNdExecBtn" onclick="toggleFilterMenu('filterNdExecMenu')">
                                     <span id="filterNdExecLabel">ND</span>
                                     <div class="filter-menu" id="filterNdExecMenu"></div>
@@ -3340,6 +3341,7 @@
                             <!-- Filtros Recursos Gerais -->
                             <div class="filter-bar" id="filterBarRecGeral">
                                 <span class="filter-bar-label">Filtrar:</span>
+                                <button type="button" class="btn btn-sm" style="margin-left:0.5rem;" onclick="limparTodosFiltrosRecGeral()">Limpar todos</button>
                                 <div class="filter-btn" id="filterNdRecGeralBtn" onclick="toggleFilterMenu('filterNdRecGeralMenu')">
                                     <span id="filterNdRecGeralLabel">ND</span>
                                     <div class="filter-menu" id="filterNdRecGeralMenu"></div>
@@ -6708,6 +6710,16 @@
             if (btn) {
                 if (count > 0) btn.classList.add('active');
                 else btn.classList.remove('active');
+                // Atualizar tooltip com valores selecionados
+                try {
+                    const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
+                    let vals = (filtros && filtros[campo]) ? filtros[campo] : [];
+                    if (tipo === 'execFin' && campo === 'nd' && (!vals || !vals.length)) {
+                        // Talvez o filtro de ND esteja vindo de aplicarFiltroNdExecFin (array), mas manter vazio
+                        vals = window.filtrosExecFin && window.filtrosExecFin.nd ? window.filtrosExecFin.nd : [];
+                    }
+                    btn.title = vals && vals.length ? `${campo.toUpperCase()} selecionado(s): ${vals.join(', ')}` : `Filtrar por ${campo.toUpperCase()}`;
+                } catch(e) {}
             }
         }
 
@@ -6720,6 +6732,7 @@
                 window.filtrosExecFin.nd = [String(valor)];
             }
             try { atualizarLabelFiltro('execFin', 'nd'); } catch(e) {}
+            try { _syncSelectExecFinToMenu(); } catch(e) {}
             try { atualizarTabelaExecFinanceira(); } catch(e) {}
         }
 
@@ -6736,7 +6749,42 @@
                 if (labelEl) labelEl.textContent = 'ND (1)';
                 if (btnEl) btnEl.classList.add('active');
             }
+            try { _syncSelectRecGeralToMenu(); } catch(e) {}
             try { atualizarTabelaRecursosGerais(); } catch(e) {}
+        }
+
+        // Sincronizar select com menu de checkboxes (Execução Financeira)
+        function _syncSelectExecFinToMenu() {
+            try {
+                const menu = document.getElementById('filterNdExecMenu');
+                if (!menu) return;
+                const inputs = Array.from(menu.querySelectorAll('input[type="checkbox"]'));
+                const selected = window.filtrosExecFin && window.filtrosExecFin.nd ? window.filtrosExecFin.nd : [];
+                inputs.forEach(inp => {
+                    const v = inp.value;
+                    const should = selected.includes(v);
+                    if (inp.checked !== should) {
+                        inp.checked = should;
+                    }
+                });
+            } catch(e) { console.warn('Erro sincronizando select->menu execFin', e); }
+        }
+
+        // Sincronizar select com menu de checkboxes (Recursos Gerais)
+        function _syncSelectRecGeralToMenu() {
+            try {
+                const menu = document.getElementById('filterNdRecGeralMenu');
+                if (!menu) return;
+                const inputs = Array.from(menu.querySelectorAll('input[type="checkbox"]'));
+                const selected = window.filtrosRecGeral && window.filtrosRecGeral.nd ? window.filtrosRecGeral.nd : [];
+                inputs.forEach(inp => {
+                    const v = inp.value;
+                    const should = selected.includes(v);
+                    if (inp.checked !== should) {
+                        inp.checked = should;
+                    }
+                });
+            } catch(e) { console.warn('Erro sincronizando select->menu recGeral', e); }
         }
 
         // CADASTRO FINANCEIRO
@@ -9099,6 +9147,27 @@
             window.filtrosRecGeral.nd = [];
             atualizarTabelaRecursosGerais();
             popularFiltrosRecGeral();
+        }
+
+        // Limpar todos os filtros da Execução Financeira (ND + UP)
+        function limparTodosFiltrosExecFin() {
+            window.filtrosExecFin = { nd: [], up: [] };
+            // Limpar checkboxes do menu
+            try { _syncSelectExecFinToMenu(); } catch(e) {}
+            // Atualizar labels e tabela
+            try { atualizarLabelFiltro('execFin', 'nd'); } catch(e) {}
+            try { atualizarLabelFiltro('execFin', 'up'); } catch(e) {}
+            try { atualizarOpcoesExecFinanceira(); } catch(e) {}
+            try { atualizarTabelaExecFinanceira(); } catch(e) {}
+        }
+
+        // Limpar todos os filtros da Recursos Gerais (ND)
+        function limparTodosFiltrosRecGeral() {
+            window.filtrosRecGeral = { nd: [] };
+            try { _syncSelectRecGeralToMenu(); } catch(e) {}
+            try { atualizarLabelFiltro('recGeral', 'nd'); } catch(e) {}
+            try { popularFiltrosRecGeral(); } catch(e) {}
+            try { atualizarTabelaRecursosGerais(); } catch(e) {}
         }
 
         function atualizarTabelaRecursosGerais() {
