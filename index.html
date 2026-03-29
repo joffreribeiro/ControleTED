@@ -1643,11 +1643,19 @@
             padding-bottom: 0.6rem;
         }
 
-        /* Garantir legibilidade em modo claro: texto escuro sobre fundo branco nas tabelas da aba Detalhes */
+        /* Garantir legibilidade em modo claro: forçar texto escuro em todas as células
+           dentro das tabelas da aba Detalhes. Usa alta especificidade e !important para
+           sobrepor estilos inline dinâmicos ou regras de maior precedência (ex.: sticky-freeze).
+        */
         #detalhes #tedsDetalheContainer .tabela-padrao tbody td,
         #detalhes #tedsDetalheContainer .tabela-padrao tbody th,
-        #detalhes #tedsDetalheContainer .tabela-padrao tfoot td {
-            color: #0f172a; /* cor escura para leitura */
+        #detalhes #tedsDetalheContainer .tabela-padrao tfoot td,
+        #detalhes #tedsDetalheContainer .tabela-padrao td[style],
+        #detalhes #tedsDetalheContainer .tabela-padrao th[style],
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody .sticky-freeze,
+        #detalhes #tedsDetalheContainer .tabela-padrao tfoot .sticky-freeze,
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody .sticky-freeze * {
+            color: #0f172a !important; /* cor escura para leitura */
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover td {
