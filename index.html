@@ -1643,6 +1643,13 @@
             padding-bottom: 0.6rem;
         }
 
+        /* Garantir legibilidade em modo claro: texto escuro sobre fundo branco nas tabelas da aba Detalhes */
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody td,
+        #detalhes #tedsDetalheContainer .tabela-padrao tbody th,
+        #detalhes #tedsDetalheContainer .tabela-padrao tfoot td {
+            color: #0f172a; /* cor escura para leitura */
+        }
+
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover td {
             box-shadow: inset 0 0 0 9999px rgba(29, 78, 216, 0.04);
         }
