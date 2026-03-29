@@ -3249,11 +3249,14 @@
                         <div class="detalhe-secao-body">
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                                 <div class="form-group">
-                                <label>ND *</label>
-                                <select id="numExecFin" required onchange="aplicarFiltroNdExecFin(this.value)">
-                                    <option value="">-- Selecione --</option>
-                                </select>
-                            </div>
+                                    <label>ND *</label>
+                                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                                        <select id="numExecFin" required onchange="aplicarFiltroNdExecFin(this.value)">
+                                            <option value="">-- Selecione --</option>
+                                        </select>
+                                        <button type="button" class="btn btn-sm" onclick="aplicarFiltroNdExecFin('')" title="Limpar filtro ND">Limpar</button>
+                                    </div>
+                                </div>
                             <div class="form-group">
                                 <label>UP *</label>
                                 <select id="upExecFin" required>
@@ -3312,9 +3315,12 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="form-group">
                                 <label>ND *</label>
-                                <select id="ndRecGeral" required onchange="aplicarFiltroNdRecGeral(this.value)">
-                                    <option value="">-- Selecione --</option>
-                                </select>
+                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                    <select id="ndRecGeral" required onchange="aplicarFiltroNdRecGeral(this.value)">
+                                        <option value="">-- Selecione --</option>
+                                    </select>
+                                    <button type="button" class="btn btn-sm" onclick="aplicarFiltroNdRecGeral('')" title="Limpar filtro ND">Limpar</button>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$) *</label>
@@ -8571,12 +8577,18 @@
             const recebidoByAno = {};
             const devolvidoByAno = {};
 
+            // Somar apenas os lançamentos do cadastro financeiro que estão dentro das chaves filtradas
             (cad || []).forEach(f => {
+                const chave = `${f.numero}||${f.up || f.ug}`;
+                if (chavesFiltradas.length && !chavesFiltradas.includes(chave)) return;
                 const ano = parseInt(f.anoDesc, 10);
                 if (!isNaN(ano)) previstoByAno[ano] = (previstoByAno[ano] || 0) + (parseFloat(f.valor) || 0);
             });
 
+            // Somar apenas execuções financeiras que correspondem às chaves filtradas
             (execs || []).forEach(e => {
+                const chave = `${e.nd || e.numero || ''}||${e.up || e.ug || ''}`;
+                if (chavesFiltradas.length && !chavesFiltradas.includes(chave)) return;
                 if (!e.data) return;
                 const ano = new Date(e.data + 'T00:00:00').getFullYear();
                 if (isNaN(ano)) return;
@@ -8608,55 +8620,69 @@
             // Calcular valores anuais baseados no ano corrente
             const anoAtual = new Date().getFullYear();
             
-            // Previsto Anual: soma do cadastro financeiro do ano corrente
-            const previstoAnual = cad
-                .filter(f => f.anoDesc === anoAtual)
+            // Previsto Anual / Recebido / Devolvido devem respeitar os filtros aplicados
+            const previstoAnual = (cad || [])
+                .filter(f => {
+                    const chave = `${f.numero}||${f.up || f.ug}`;
+                    if (chavesFiltradas.length && !chavesFiltradas.includes(chave)) return false;
+                    return f.anoDesc === anoAtual;
+                })
                 .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
-            
-            // Recebido Anual: soma dos valores positivos recebidos no ano corrente
-            const recebidoAnual = execs
+
+            const recebidoAnual = (execs || [])
                 .filter(e => {
+                    const chave = `${e.nd || e.numero || ''}||${e.up || e.ug || ''}`;
+                    if (chavesFiltradas.length && !chavesFiltradas.includes(chave)) return false;
                     if (!e.data) return false;
                     const ano = new Date(e.data + 'T00:00:00').getFullYear();
                     const valor = parseFloat(e.valor || e.valorRealizado) || 0;
                     return ano === anoAtual && valor > 0;
                 })
                 .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
-            
-            // Devolvido: soma dos valores negativos do ano corrente
-            const devolvido = Math.abs(execs
+
+            const devolvido = Math.abs((execs || [])
                 .filter(e => {
+                    const chave = `${e.nd || e.numero || ''}||${e.up || e.ug || ''}`;
+                    if (chavesFiltradas.length && !chavesFiltradas.includes(chave)) return false;
                     if (!e.data) return false;
                     const ano = new Date(e.data + 'T00:00:00').getFullYear();
                     const valor = parseFloat(e.valor || e.valorRealizado) || 0;
                     return ano === anoAtual && valor < 0;
                 })
                 .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
-            
-            // A Receber ano anterior: calcular saldo do ano anterior
+
+            // A Receber ano anterior: calcular saldo do ano anterior respeitando filtros
             const anoAnterior = anoAtual - 1;
-            const previstoAnoAnterior = cad
-                .filter(f => f.anoDesc === anoAnterior)
+            const previstoAnoAnterior = (cad || [])
+                .filter(f => {
+                    const chave = `${f.numero}||${f.up || f.ug}`;
+                    if (chavesFiltradas.length && !chavesFiltradas.includes(chave)) return false;
+                    return f.anoDesc === anoAnterior;
+                })
                 .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
-            
-            const recebidoAnoAnterior = execs
+
+            const recebidoAnoAnterior = (execs || [])
                 .filter(e => {
+                    const chave = `${e.nd || e.numero || ''}||${e.up || e.ug || ''}`;
+                    if (chavesFiltradas.length && !chavesFiltradas.includes(chave)) return false;
                     if (!e.data) return false;
                     const ano = new Date(e.data + 'T00:00:00').getFullYear();
                     const valor = parseFloat(e.valor || e.valorRealizado) || 0;
                     return ano === anoAnterior && valor > 0;
                 })
                 .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
-            
-            const devolvidoAnoAnterior = Math.abs(execs
+
+            const devolvidoAnoAnterior = Math.abs((execs || [])
                 .filter(e => {
+                    const chave = `${e.nd || e.numero || ''}||${e.up || e.ug || ''}`;
+                    if (chavesFiltradas.length && !chavesFiltradas.includes(chave)) return false;
                     if (!e.data) return false;
                     const ano = new Date(e.data + 'T00:00:00').getFullYear();
                     const valor = parseFloat(e.valor || e.valorRealizado) || 0;
                     return ano === anoAnterior && valor < 0;
                 })
                 .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
-            
+
             const aReceberAnterior = previstoAnoAnterior - recebidoAnoAnterior - devolvidoAnoAnterior;
             
             // Saldo Anual: previsto + a receber anterior - recebido - devolvido
@@ -9256,12 +9282,18 @@
             const recebidoByAno = {};
             const devolvidoByAno = {};
 
+            // Agrupar previsto por ano considerando apenas NDs filtradas
             (cad || []).forEach(f => {
+                const ndNorm = normalizarND(f.numero);
+                if (ndsFiltrados.length && !ndsFiltrados.includes(ndNorm)) return;
                 const ano = parseInt(f.anoDesc, 10);
                 if (!isNaN(ano)) previstoByAno[ano] = (previstoByAno[ano] || 0) + (parseFloat(f.valor) || 0);
             });
 
+            // Agrupar realizado/devolvido por ano considerando apenas NDs filtradas
             (recs || []).forEach(r => {
+                const ndNorm = normalizarND(r.nd);
+                if (ndsFiltrados.length && !ndsFiltrados.includes(ndNorm)) return;
                 if (!r.data) return;
                 const ano = new Date(r.data + 'T00:00:00').getFullYear();
                 if (isNaN(ano)) return;
