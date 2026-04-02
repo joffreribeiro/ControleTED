@@ -5640,16 +5640,6 @@
                 idField: 'id', matchFields: ['fase', 'objeto']
             },
             {
-                key: 'execFisicas', label: '✅ Execução Física',
-                colunas: [
-                    { field: 'objeto', label: 'Objeto' },
-                    { field: 'qtde', label: 'Qtde', type: 'number' },
-                    { field: 'data', label: 'Data', type: 'date' },
-                    { field: 'nf', label: 'NF' }
-                ],
-                idField: 'id', matchFields: ['objeto', 'data']
-            },
-            {
                 key: 'financeiros', label: '💰 Financeiro',
                 colunas: [
                     { field: 'numero', label: 'ND' },
@@ -5924,9 +5914,8 @@
             let html = '';
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
                 const arr = ted[tabDef.key] || [];
-                if (arr.length === 0) return; // não mostrar tabelas vazias
 
-                html += `<div class="aditivo-section-title">${tabDef.label} (${arr.length} ${arr.length === 1 ? 'item' : 'itens'})</div>`;
+                html += `<div class="aditivo-section-title">${tabDef.label} (<span id="${prefix}_count_${tabDef.key}">${arr.length}</span> ${arr.length === 1 ? 'item' : 'itens'})</div>`;
                 html += `<div style="overflow-x:auto; margin-bottom:0.5rem;"><table class="aditivo-clone-table" id="${prefix}_tabela_${tabDef.key}"><thead><tr>`;
                 tabDef.colunas.forEach(col => {
                     html += `<th>${col.label}</th>`;
@@ -5947,18 +5936,83 @@
                     html += '</tr>';
                 });
                 html += '</tbody></table></div>';
+                // Botão para adicionar nova linha
+                html += `<button type="button" onclick="adicionarLinhaCloneAditivo('${prefix}', '${tabDef.key}')" style="font-size:0.78rem;padding:4px 12px;border:1px dashed rgba(34,197,94,0.5);border-radius:6px;background:rgba(34,197,94,0.08);color:#16a34a;cursor:pointer;margin-bottom:0.75rem;" title="Adicionar novo item">➕ Adicionar ${tabDef.label.replace(/^[^\s]+\s/, '')}</button>`;
             });
             return html;
+        }
+
+        // Adicionar nova linha em branco numa tabela clonada do modal
+        function adicionarLinhaCloneAditivo(prefix, tabelaKey) {
+            const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+            if (!tabDef) return;
+            const tabela = document.getElementById(`${prefix}_tabela_${tabelaKey}`);
+            if (!tabela) return;
+            const tbody = tabela.querySelector('tbody');
+            const tr = document.createElement('tr');
+            tr.dataset.tabela = tabelaKey;
+            tr.dataset.idx = 'new'; // marca como novo
+            tr.classList.add('linha-adicionada-aditivo');
+            tabDef.colunas.forEach(col => {
+                const td = document.createElement('td');
+                td.contentEditable = 'true';
+                td.dataset.field = col.field;
+                td.dataset.type = col.type || 'text';
+                td.dataset.orig = '';
+                td.textContent = '';
+                tr.appendChild(td);
+            });
+            // Botão remover
+            const tdBtn = document.createElement('td');
+            tdBtn.innerHTML = `<button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;">✕</button>`;
+            tr.appendChild(tdBtn);
+            tbody.appendChild(tr);
+            // Focar no primeiro campo da nova linha
+            const primeiraCelula = tr.querySelector('td[contenteditable]');
+            if (primeiraCelula) primeiraCelula.focus();
+            // Atualizar contador
+            const countSpan = document.getElementById(`${prefix}_count_${tabelaKey}`);
+            if (countSpan) {
+                const visibleRows = tbody.querySelectorAll('tr:not([data-removido="1"])');
+                countSpan.textContent = visibleRows.length;
+            }
         }
 
         // Remover linha de tabela clonada no modal
         function removerLinhaCloneAditivo(btn) {
             const tr = btn.closest('tr');
             if (tr) {
+                // Se é uma linha nova (adicionada no modal), remover completamente
+                if (tr.dataset.idx === 'new') {
+                    const tbody = tr.closest('tbody');
+                    const tabela = tr.closest('table');
+                    tr.remove();
+                    // Atualizar contador
+                    if (tabela && tbody) {
+                        const tabelaKey = tabela.id.split('_tabela_')[1];
+                        const prefix = tabela.id.split('_tabela_')[0];
+                        const countSpan = document.getElementById(`${prefix}_count_${tabelaKey}`);
+                        if (countSpan) {
+                            countSpan.textContent = tbody.querySelectorAll('tr:not([data-removido="1"])').length;
+                        }
+                    }
+                    return;
+                }
                 tr.style.textDecoration = 'line-through';
                 tr.style.opacity = '0.4';
                 tr.dataset.removido = '1';
                 btn.disabled = true;
+                // Atualizar contador
+                const tabela = tr.closest('table');
+                if (tabela) {
+                    const tbody = tabela.querySelector('tbody');
+                    const tabelaKey = tabela.id.split('_tabela_')[1];
+                    const prefix = tabela.id.split('_tabela_')[0];
+                    const countSpan = document.getElementById(`${prefix}_count_${tabelaKey}`);
+                    if (countSpan) {
+                        countSpan.textContent = tbody.querySelectorAll('tr:not([data-removido="1"])').length;
+                    }
+                }
             }
         }
 
@@ -5990,36 +6044,67 @@
                         }
                         item[col.field] = val;
                     });
-                    // Preservar id original se existir
+                    // Preservar id original se existir, ou gerar novo para linhas adicionadas
                     const idx = parseInt(tr.dataset.idx);
+                    const isNewRow = isNaN(idx) || tr.dataset.idx === 'new';
                     const arrOrig = window.tedSelecionado[tabDef.key] || [];
-                    if (!isNaN(idx) && arrOrig[idx] && arrOrig[idx].id) {
+                    if (!isNewRow && arrOrig[idx] && arrOrig[idx].id) {
                         item.id = arrOrig[idx].id;
+                    } else if (isNewRow) {
+                        item.id = Date.now() + Math.floor(Math.random() * 1000);
                     }
                     // Preservar campos extras não nas colunas
-                    if (!isNaN(idx) && arrOrig[idx]) {
+                    if (!isNewRow && arrOrig[idx]) {
                         Object.keys(arrOrig[idx]).forEach(k => {
                             if (item[k] === undefined) item[k] = arrOrig[idx][k];
                         });
                     }
-                    // Recalcular mesDesc/anoDesc para financeiros quando M muda
+                    // Calcular campos derivados baseados em M para itens novos ou alterados
+                    let startDateCalc;
+                    if (window.tedSelecionado.primeiraDescentralizacao) {
+                        startDateCalc = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                    } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                        startDateCalc = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+                    }
+                    // Recalcular mesDesc/anoDesc para financeiros quando M muda ou é novo
                     if (tabDef.key === 'financeiros' && item.m !== undefined) {
-                        const origM = (!isNaN(idx) && arrOrig[idx]) ? arrOrig[idx].m : null;
-                        if (origM === null || Number(item.m) !== Number(origM)) {
-                            let startDateFin;
-                            if (window.tedSelecionado.primeiraDescentralizacao) {
-                                startDateFin = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
-                            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
-                                startDateFin = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-                            }
-                            if (startDateFin) {
-                                const dCalc = new Date(startDateFin);
+                        const origM = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].m : null;
+                        if (isNewRow || origM === null || Number(item.m) !== Number(origM)) {
+                            if (startDateCalc) {
+                                const dCalc = new Date(startDateCalc);
                                 dCalc.setMonth(dCalc.getMonth() + Number(item.m));
                                 item.mesDesc = dCalc.getMonth() + 1;
                                 item.anoDesc = dCalc.getFullYear();
                             }
                         }
                     }
+                    // Recalcular mesInicio/anoInicio/mesFinal/anoFinal para metas e físico
+                    if ((tabDef.key === 'metas' || tabDef.key === 'fisicos') && startDateCalc) {
+                        if (item.mInicio !== undefined && !isNaN(Number(item.mInicio))) {
+                            const origMI = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].mInicio : null;
+                            if (isNewRow || origMI === null || Number(item.mInicio) !== Number(origMI)) {
+                                const dI = new Date(startDateCalc);
+                                dI.setMonth(dI.getMonth() + Number(item.mInicio));
+                                item.mesInicio = dI.getMonth() + 1;
+                                item.anoInicio = dI.getFullYear();
+                            }
+                        }
+                        if (item.mFinal !== undefined && !isNaN(Number(item.mFinal))) {
+                            const origMF = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].mFinal : null;
+                            if (isNewRow || origMF === null || Number(item.mFinal) !== Number(origMF)) {
+                                const dF = new Date(startDateCalc);
+                                dF.setMonth(dF.getMonth() + Number(item.mFinal));
+                                item.mesFinal = dF.getMonth() + 1;
+                                item.anoFinal = dF.getFullYear();
+                            }
+                        }
+                    }
+                    // Verificar se o item tem pelo menos um campo preenchido (não adicionar linhas totalmente vazias)
+                    const temConteudo = tabDef.colunas.some(col => {
+                        const v = item[col.field];
+                        return v !== undefined && v !== null && v !== '' && v !== 0;
+                    });
+                    if (!temConteudo && isNewRow) return; // pular linhas vazias
                     arr.push(item);
                 });
                 resultado[tabDef.key] = arr;
