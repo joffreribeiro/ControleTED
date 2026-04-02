@@ -5383,6 +5383,8 @@
 
             salvarDados();
             atualizarTabelasEmCascata('objetos');
+            // Verificar consistência de quantidade com Cadastro Físico
+            verificarConsistenciaQtdObjetoFisico(objeto, qtde);
             document.getElementById('objetoCadastro').value = '';
             document.getElementById('qtdeObjetoCadastro').value = '';
             document.getElementById('valorUnitarioCadastro').value = '';
@@ -5410,6 +5412,33 @@
             atualizarTabelasEmCascata('objetos');
         }
 
+        // Verificar consistência entre quantidade do Objeto e soma das quantidades no Cadastro Físico
+        function verificarConsistenciaQtdObjetoFisico(nomeObjeto, qtdeObjeto) {
+            if (!window.tedSelecionado || !window.tedSelecionado.fisicos) return;
+            const somaFisico = window.tedSelecionado.fisicos
+                .filter(f => f.objeto === nomeObjeto)
+                .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+            if (somaFisico > (parseNumber(qtdeObjeto) || 0)) {
+                alert(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${nomeObjeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades no Cadastro Físico para manter a consistência.`);
+            }
+        }
+
+        // Verificar consistência de todos os objetos com o Cadastro Físico (chamada após atualizar tabelas)
+        function verificarTodasConsistenciasObjetoFisico() {
+            if (!window.tedSelecionado || !window.tedSelecionado.objetos) return;
+            const alertas = [];
+            window.tedSelecionado.objetos.forEach(obj => {
+                const somaFisico = (window.tedSelecionado.fisicos || [])
+                    .filter(f => f.objeto === obj.objeto)
+                    .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+                const qtdeObj = parseNumber(obj.qtde) || 0;
+                if (somaFisico > qtdeObj) {
+                    alertas.push(`• "${obj.objeto}": Físico = ${formatNumber(somaFisico)} > Objeto = ${formatNumber(qtdeObj)}`);
+                }
+            });
+            return alertas;
+        }
+
         function atualizarTabelaObjetos() {
             const tbody = document.getElementById('tabelaObjetos');
             
@@ -5435,9 +5464,17 @@
                 const mods = modMapObj[mKey];
                 const isAdded = addSetObj.has(mKey);
                 const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
+                // Verificar consistência com Cadastro Físico
+                const somaFisico = (window.tedSelecionado.fisicos || [])
+                    .filter(f => f.objeto === obj.objeto)
+                    .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+                const qtdeExcedida = somaFisico > qt;
+                const alertaFisico = qtdeExcedida 
+                    ? ` <span title="Soma no Cad. Físico (${formatNumber(somaFisico)}) excede a qtde do Objeto (${formatNumber(qt)})" style="color:#ef4444;font-weight:700;cursor:help;">⚠️</span>` 
+                    : '';
                 // Formatar células com destaque de alteração
                 const tdObjeto = obj.objeto;
-                const tdQtde = mods && mods.qtde ? formatarCelulaAlterada(formatNumber(qt), mods.qtde.de, 'number') : formatNumber(qt);
+                const tdQtde = (mods && mods.qtde ? formatarCelulaAlterada(formatNumber(qt), mods.qtde.de, 'number') : formatNumber(qt)) + alertaFisico;
                 const tdVU = mods && mods.valorUnitario ? formatarCelulaAlterada(vu.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valorUnitario.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : vu.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 const tdVT = mods && mods.valorTotal ? formatarCelulaAlterada(vt.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valorTotal.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : vt.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 return `
@@ -6141,27 +6178,106 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+        // Função auxiliar: restaurar dados do TED a partir do snapshot de um aditivo/apostilamento removido
+        // e depois reaplicar as alterações dos aditivos/apostilamentos restantes em ordem
+        function restaurarDadosAposRemocao(ted) {
+            // Coletar todos os aditivos e apostilamentos com snapshot, em ordem cronológica
+            const eventos = [];
+            (ted.aditivos || []).forEach((a, i) => {
+                if (a.snapshot) eventos.push({ tipo: 'aditivo', idx: i, data: a.data || '', obj: a });
+            });
+            (ted.apostilamentos || []).forEach((ap, i) => {
+                if (ap.snapshot) eventos.push({ tipo: 'apostilamento', idx: i, data: ap.data || '', obj: ap });
+            });
+            eventos.sort((a, b) => a.data.localeCompare(b.data));
+
+            if (eventos.length === 0) {
+                // Sem eventos com snapshot — verificar se o primeiro aditivo/apostilamento tinha snapshot
+                // Não há como restaurar, manter dados atuais
+                return;
+            }
+
+            // Restaurar estado do primeiro snapshot (estado antes de qualquer alteração)
+            const primeiroSnapshot = eventos[0].obj.snapshot;
+            if (primeiroSnapshot) {
+                // Restaurar campos simples
+                ADITIVO_CAMPOS_CLONE.forEach(c => {
+                    if (primeiroSnapshot[c.key] !== undefined) {
+                        ted[c.key] = primeiroSnapshot[c.key];
+                    }
+                });
+                // Restaurar tabelas
+                ADITIVO_TABELAS_CLONE.forEach(t => {
+                    if (primeiroSnapshot[t.key]) {
+                        ted[t.key] = JSON.parse(JSON.stringify(primeiroSnapshot[t.key]));
+                    }
+                });
+            }
+
+            // Reaplicar todas as alterações dos eventos restantes em ordem
+            eventos.forEach(ev => {
+                // Aplicar campos simples alterados
+                if (ev.obj.camposAlterados) {
+                    Object.keys(ev.obj.camposAlterados).forEach(key => {
+                        ted[key] = ev.obj.camposAlterados[key].para;
+                    });
+                }
+                // Aplicar alterações de tabelas: usar snapshot + alterações para reconstruir
+                if (ev.obj.tabelasAlteradas) {
+                    ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                        const diffs = ev.obj.tabelasAlteradas[tabDef.key];
+                        if (!diffs) return;
+                        // Se houve modificações, adições ou remoções, aplicar sobre os dados atuais
+                        const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+                        let arr = ted[tabDef.key] || [];
+                        // Remover itens removidos
+                        if (diffs.removidos && diffs.removidos.length) {
+                            const remKeys = new Set(diffs.removidos.map(r => matchKey(r.item || r)));
+                            arr = arr.filter(item => !remKeys.has(matchKey(item)));
+                        }
+                        // Aplicar modificações
+                        if (diffs.modificados && diffs.modificados.length) {
+                            diffs.modificados.forEach(mod => {
+                                const targetKey = matchKey(mod.atual || {});
+                                const idx = arr.findIndex(item => matchKey(item) === targetKey);
+                                if (idx >= 0 && mod.camposAlterados) {
+                                    Object.keys(mod.camposAlterados).forEach(field => {
+                                        arr[idx][field] = mod.camposAlterados[field].para;
+                                    });
+                                }
+                            });
+                        }
+                        // Adicionar novos itens
+                        if (diffs.adicionados && diffs.adicionados.length) {
+                            diffs.adicionados.forEach(add => {
+                                const item = add.item || add;
+                                if (!arr.some(a => matchKey(a) === matchKey(item))) {
+                                    arr.push(JSON.parse(JSON.stringify(item)));
+                                }
+                            });
+                        }
+                        ted[tabDef.key] = arr;
+                    });
+                }
+            });
+        }
+
         function removerAditivo(index) {
             const ted = window.tedSelecionado;
             if (!ted || !ted.aditivos) return;
             if (!confirm(`Remover aditivo #${index + 1} (+${ted.aditivos[index].meses} meses)?`)) return;
-            // capture removed aditivo to possibly revert valorTed
+            // Capturar o aditivo removido
             const removed = ted.aditivos.splice(index, 1)[0];
 
-            // Determine new valorTed after removal:
-            let novoValor = null;
-            const remainingWithValor = (ted.aditivos || []).filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
-            if (remainingWithValor.length) {
-                novoValor = remainingWithValor[remainingWithValor.length - 1].valorTed;
-            } else if (removed && typeof removed.prevValorTed !== 'undefined' && removed.prevValorTed !== null) {
-                novoValor = removed.prevValorTed;
-            } else {
-                novoValor = calcularTotalFinanceiro(ted) || 0;
-            }
-            ted.valorTed = novoValor;
+            // Restaurar dados do TED baseado nos snapshots restantes
+            restaurarDadosAposRemocao(ted);
+
+            // Recalcular valorTed
+            recomputeValorTedFromAditivos(ted);
 
             salvarDados();
             exibirInformacoesTED();
+            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
             renderGanttVigencia();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
@@ -6331,9 +6447,18 @@
             const ted = window.tedSelecionado;
             if (!ted || !ted.apostilamentos || !ted.apostilamentos[index]) return;
             if (!confirm(`Remover apostilamento #${index + 1}?`)) return;
-            ted.apostilamentos.splice(index, 1);
+            // Capturar o apostilamento removido
+            const removed = ted.apostilamentos.splice(index, 1)[0];
+
+            // Restaurar dados do TED baseado nos snapshots restantes
+            restaurarDadosAposRemocao(ted);
+
+            // Recalcular valorTed
+            recomputeValorTedFromAditivos(ted);
+
             salvarDados();
             exibirInformacoesTED();
+            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
@@ -6838,6 +6963,19 @@
             window.tedSelecionado.fisicos.push({
                 id: Date.now(), fase, objeto, qtde, mInicio, mFinal, mesInicio, anoInicio, mesFinal, anoFinal
             });
+
+            // Verificar consistência: soma de qtde no Físico não pode exceder qtde do Objeto
+            const objRef = (window.tedSelecionado.objetos || []).find(o => o.objeto === objeto);
+            if (objRef) {
+                const somaFisico = window.tedSelecionado.fisicos
+                    .filter(f => f.objeto === objeto)
+                    .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+                const qtdeObjeto = parseNumber(objRef.qtde) || 0;
+                if (somaFisico > qtdeObjeto) {
+                    alert(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${objeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades para manter a consistência.`);
+                }
+            }
+
             salvarDados();
             atualizarTabelasEmCascata('fisicos');
             document.getElementById('faseFisico').value = '';
