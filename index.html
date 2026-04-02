@@ -3703,6 +3703,8 @@
             str = str.replace(/[\u00A0\u202F\u2009]/g, '.');
             // remove spaces
             str = str.replace(/\s+/g, '');
+            // remover caracteres estranhos (manter apenas dígitos, vírgula, ponto e sinal)
+            str = str.replace(/[^\d,\.\-]/g, '');
             // if contains comma as decimal, normalize: remove dots then replace comma with dot
             if (str.includes(',')) {
                 str = str.replace(/\./g, '').replace(',', '.');
@@ -5450,8 +5452,6 @@
 
             let totalValor = 0;
             tbody.innerHTML = window.tedSelecionado.objetos.map(obj => {
-                // DEBUG: rastrear valor qtde
-                console.log(`[atualizarTabelaObjetos] obj.qtde=${JSON.stringify(obj.qtde)} tipo=${typeof obj.qtde} parseNumber=${parseNumber(obj.qtde)} formatNumber=${formatNumber(parseNumber(obj.qtde))}`);
                 const qt = parseNumber(obj.qtde);
                 const vu = parseNumber(obj.valorUnitario);
                 const vt = (!isNaN(parseNumber(obj.valorTotal)) && obj.valorTotal !== undefined && obj.valorTotal !== null) ? parseNumber(obj.valorTotal) : (qt * vu);
@@ -5471,7 +5471,7 @@
                     : '';
                 // Formatar células com destaque de alteração
                 const tdObjeto = obj.objeto;
-                const tdQtde = (mods && mods.qtde ? formatarCelulaAlterada(formatNumber(qt), mods.qtde.de, 'number') : formatNumber(qt)) + alertaFisico;
+                const tdQtde = (mods && mods.qtde ? formatarCelulaAlterada(qt, mods.qtde.de, 'number') : formatNumber(qt)) + alertaFisico;
                 const tdVU = mods && mods.valorUnitario ? formatarCelulaAlterada(vu.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valorUnitario.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : vu.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 const tdVT = mods && mods.valorTotal ? formatarCelulaAlterada(vt.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valorTotal.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : vt.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 return `
@@ -5758,8 +5758,10 @@
                 antigoFormatado = Number(valorAntigo || 0).toLocaleString('pt-BR', {minimumFractionDigits:2});
                 novoFormatado = Number(valorAtual || 0).toLocaleString('pt-BR', {minimumFractionDigits:2});
             } else if (tipo === 'number') {
-                antigoFormatado = formatNumber(valorAntigo);
-                novoFormatado = formatNumber(valorAtual);
+                const antigoNum = (valorAntigo === '' || valorAntigo === null || valorAntigo === undefined) ? '' : parseNumber(valorAntigo);
+                const novoNum = (valorAtual === '' || valorAtual === null || valorAtual === undefined) ? '' : parseNumber(valorAtual);
+                antigoFormatado = antigoNum === '' ? '' : formatNumber(antigoNum);
+                novoFormatado = novoNum === '' ? '' : formatNumber(novoNum);
             } else if (tipo === 'date' && valorAntigo) {
                 try { antigoFormatado = new Date(valorAntigo + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
                 try { novoFormatado = new Date(valorAtual + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
@@ -6064,14 +6066,12 @@
                         const td = tr.querySelector(`td[data-field="${col.field}"]`);
                         if (!td) return;
                         let val = td.textContent.trim();
-                        // DEBUG: rastrear valores lidos das células
-                        if (col.type === 'number' || col.type === 'currency') {
-                            console.log(`[coletarDados] ${tabDef.key}.${col.field}: textContent="${val}" charCodes=[${[...val].map(c=>c.charCodeAt(0))}] → parseNumber=${parseNumber(val)}`);
-                        }
                         if (col.type === 'currency') {
                             val = parseNumber(val) || 0;
                         } else if (col.type === 'number') {
-                            val = parseNumber(val) || 0;
+                            // Inteiros de tabela: usar somente dígitos para evitar casos como "2.000" virar 2
+                            const digitsOnly = String(val || '').replace(/\D/g, '');
+                            val = digitsOnly ? parseInt(digitsOnly, 10) : 0;
                         } else if (col.type === 'date') {
                             // tentar reconverter de DD/MM/YYYY para YYYY-MM-DD
                             const parts = val.split('/');
@@ -6412,15 +6412,10 @@
             // Coletar dados das tabelas editadas no modal
             const dadosTabelas = coletarDadosTabelasModal('alt');
 
-            // DEBUG: ver dados coletados antes de aplicar
-            console.log('[confirmarAlteracao] dadosTabelas:', JSON.stringify(dadosTabelas, null, 2));
-
             // Aplicar dados das tabelas ao TED
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
                 if (dadosTabelas[tabDef.key]) {
                     ted[tabDef.key] = dadosTabelas[tabDef.key];
-                    // DEBUG: verificar valores aplicados
-                    console.log(`[confirmarAlteracao] ted.${tabDef.key} aplicado:`, JSON.stringify(ted[tabDef.key]));
                 }
             });
 
@@ -6469,8 +6464,6 @@
                 });
             }
 
-            // Sincronizar arrays legados
-            sincronizarAlteracoesParaArraysLegado(ted);
 
             // recompute TED.valorTed
             recomputeValorTedFromAditivos(ted);
@@ -7385,7 +7378,7 @@
                 const mods = modMapFis[mKey];
                 const isAdded = addSetFis.has(mKey);
                 const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
-                const tdQtde = mods && mods.qtde ? formatarCelulaAlterada(formatNumber(f.qtde ?? ''), mods.qtde.de, 'number') : formatNumber(f.qtde ?? '');
+                const tdQtde = mods && mods.qtde ? formatarCelulaAlterada((f.qtde ?? ''), mods.qtde.de, 'number') : formatNumber(f.qtde ?? '');
                 const tdMInicio = mods && mods.mInicio ? formatarCelulaAlterada(f.mInicio, mods.mInicio.de, 'number') : f.mInicio;
                 const tdMFinal = mods && mods.mFinal ? formatarCelulaAlterada(f.mFinal, mods.mFinal.de, 'number') : f.mFinal;
 
