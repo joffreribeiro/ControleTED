@@ -2283,7 +2283,7 @@
             const errEl = document.getElementById('modalMarcarRealizadaError');
             if (objEl) objEl.textContent = 'Objeto: ' + (f.objeto || '');
             if (dataEl) dataEl.value = f.dataRealizada || '';
-            if (qtdEl) qtdEl.value = (f.qtdeRealizada != null && f.qtdeRealizada !== '') ? Number(f.qtdeRealizada).toLocaleString('pt-BR') : '';
+            if (qtdEl) qtdEl.value = (f.qtdeRealizada != null && f.qtdeRealizada !== '') ? formatarMilharesPtBR(Number(f.qtdeRealizada)) : '';
             if (nfEl) nfEl.value = f.nfRealizada || f.nf || '';
             if (errEl) { errEl.textContent = ''; errEl.classList.remove('open'); }
 
@@ -3688,7 +3688,9 @@
         function formatNumber(v) {
             if (v === undefined || v === null || v === '') return '';
             const n = Number(v);
-            return isFinite(n) ? n.toLocaleString('pt-BR') : ('' + v);
+            if (!isFinite(n)) return '' + v;
+            if (Number.isInteger(n)) return formatarMilharesPtBR(n);
+            return n.toLocaleString('pt-BR');
         }
 
         // Helper to parse numbers that may come with thousand separators/double delimiters (e.g., "1.234,56")
@@ -3696,6 +3698,9 @@
             if (value === undefined || value === null || value === '') return 0;
             if (typeof value === 'number') return isFinite(value) ? value : 0;
             let str = String(value).trim();
+            // Normalizar caracteres Unicode especiais usados como separadores de milhares
+            // U+00A0 (non-breaking space), U+202F (narrow no-break space), U+2009 (thin space)
+            str = str.replace(/[\u00A0\u202F\u2009]/g, '.');
             // remove spaces
             str = str.replace(/\s+/g, '');
             // if contains comma as decimal, normalize: remove dots then replace comma with dot
@@ -5014,7 +5019,14 @@
             document.getElementById('edit_numTed').value = ted.numTed || '';
             document.getElementById('edit_objetivo').value = ted.objetivo || '';
             const editValEl = document.getElementById('edit_valorTed');
-            if (editValEl) editValEl.value = (typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '';
+            if (editValEl) {
+                if (typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) {
+                    const _ev = Number(ted.valorTed), _evC = Math.round(_ev * 100), _evU = Math.floor(_evC / 100), _evR = _evC % 100;
+                    editValEl.value = formatarMilharesPtBR(_evU) + ',' + String(_evR).padStart(2, '0');
+                } else {
+                    editValEl.value = '';
+                }
+            }
             
             document.getElementById('edit_codigoPlano').value = ted.codigoPlano || '';
             document.getElementById('edit_numTedSiafi').value = ted.numTedSiafi || '';
@@ -5375,13 +5387,13 @@
 
             // Preencher campos de cadastro (mesma seção) para editar e regravar
             document.getElementById('objetoCadastro').value = obj.objeto;
-            document.getElementById('qtdeObjetoCadastro').value = Number(obj.qtde).toLocaleString('pt-BR');
+            document.getElementById('qtdeObjetoCadastro').value = formatarMilharesPtBR(Number(obj.qtde));
             // Formatar valor unitário como moeda (centavos)
             const valUnit = Number(obj.valorUnitario);
             const valUnitCents = Math.round(valUnit * 100);
             const valUnitUnits = Math.floor(valUnitCents / 100);
             const valUnitRemainder = valUnitCents % 100;
-            document.getElementById('valorUnitarioCadastro').value = valUnitUnits.toLocaleString('pt-BR') + ',' + String(valUnitRemainder).padStart(2, '0');
+            document.getElementById('valorUnitarioCadastro').value = formatarMilharesPtBR(valUnitUnits) + ',' + String(valUnitRemainder).padStart(2, '0');
 
             // Remover o objeto antigo para permitir gravação do editado
             window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
@@ -5938,9 +5950,10 @@
                     tabDef.colunas.forEach(col => {
                         let val = item[col.field];
                         if (col.type === 'currency' && val !== undefined && val !== null) {
-                            val = Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                            const _n = Number(val), _cents = Math.round(_n * 100), _units = Math.floor(_cents / 100), _rem = _cents % 100;
+                            val = formatarMilharesPtBR(_units) + ',' + String(_rem).padStart(2, '0');
                         } else if (col.type === 'number' && val !== undefined && val !== null && val !== '') {
-                            val = Number(val).toLocaleString('pt-BR');
+                            val = formatarMilharesPtBR(Number(val));
                         } else if (col.type === 'date' && val) {
                             try { val = new Date(val + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
                         }
@@ -6306,9 +6319,15 @@
                 const valInput = document.getElementById('alteracaoValorTedInput');
                 if (valInput) {
                     if (existente && typeof existente.valorTed !== 'undefined' && existente.valorTed !== null) {
-                        valInput.value = Number(existente.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2});
+                        const _vt = Number(existente.valorTed), _vtC = Math.round(_vt * 100), _vtU = Math.floor(_vtC / 100), _vtR = _vtC % 100;
+                        valInput.value = formatarMilharesPtBR(_vtU) + ',' + String(_vtR).padStart(2, '0');
                     } else {
-                        valInput.value = (ted.valorTed !== undefined && ted.valorTed !== null) ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '';
+                        if (ted.valorTed !== undefined && ted.valorTed !== null) {
+                            const _vt2 = Number(ted.valorTed), _vtC2 = Math.round(_vt2 * 100), _vtU2 = Math.floor(_vtC2 / 100), _vtR2 = _vtC2 % 100;
+                            valInput.value = formatarMilharesPtBR(_vtU2) + ',' + String(_vtR2).padStart(2, '0');
+                        } else {
+                            valInput.value = '';
+                        }
                     }
                     applyCurrencyMaskToInput(valInput);
                 }
@@ -6609,7 +6628,7 @@
                 const num = parseInt(digits, 10);
                 const cents = num % 100;
                 const units = Math.floor(num / 100);
-                const formattedUnits = units.toLocaleString('pt-BR');
+                const formattedUnits = formatarMilharesPtBR(units);
                 const formatted = formattedUnits + ',' + String(cents).padStart(2, '0');
                 input.value = formatted;
             };
@@ -6622,6 +6641,18 @@
             input.dataset.maskCurrency = '1';
         }
 
+        // Helper: formatar número com separador de milhares pt-BR usando ponto ASCII real (U+002E)
+        // Evita problemas com toLocaleString que pode gerar caracteres Unicode especiais no navegador
+        function formatarMilharesPtBR(num) {
+            const s = String(Math.abs(Math.floor(num)));
+            let resultado = '';
+            for (let i = s.length - 1, c = 0; i >= 0; i--, c++) {
+                if (c > 0 && c % 3 === 0) resultado = '.' + resultado;
+                resultado = s[i] + resultado;
+            }
+            return num < 0 ? '-' + resultado : resultado;
+        }
+
         // Máscara para número inteiro em input (1000 → 1.000)
         function applyNumberMaskToInput(input) {
             if (!input) return;
@@ -6631,7 +6662,7 @@
                 const digits = raw.replace(/\D/g, '');
                 if (!digits) { input.value = ''; return; }
                 const num = parseInt(digits, 10);
-                input.value = num.toLocaleString('pt-BR');
+                input.value = formatarMilharesPtBR(num);
             };
             input.addEventListener('input', onInput);
             input.addEventListener('paste', function() { setTimeout(onInput, 0); });
@@ -6646,7 +6677,7 @@
             const num = parseInt(digits, 10);
             const cents = num % 100;
             const units = Math.floor(num / 100);
-            const formattedUnits = units.toLocaleString('pt-BR');
+            const formattedUnits = formatarMilharesPtBR(units);
             const formatted = formattedUnits + ',' + String(cents).padStart(2, '0');
             // Preservar cursor ao final
             td.textContent = formatted;
@@ -6667,7 +6698,7 @@
             const digits = raw.replace(/\D/g, '');
             if (!digits) { td.textContent = ''; return; }
             const num = parseInt(digits, 10);
-            const formatted = num.toLocaleString('pt-BR');
+            const formatted = formatarMilharesPtBR(num);
             td.textContent = formatted;
             try {
                 const range = document.createRange();
@@ -7192,7 +7223,7 @@
             
             document.getElementById('faseFisico').value = fisico.fase;
             document.getElementById('objetoFisico').value = fisico.objeto;
-            document.getElementById('qtdeFisico').value = Number(fisico.qtde).toLocaleString('pt-BR');
+            document.getElementById('qtdeFisico').value = formatarMilharesPtBR(Number(fisico.qtde));
             document.getElementById('mInicioFisico').value = fisico.mInicio;
             document.getElementById('mFinalFisico').value = fisico.mFinal;
             
@@ -7936,7 +7967,7 @@
             const valFinCents = Math.round(valFin * 100);
             const valFinUnits = Math.floor(valFinCents / 100);
             const valFinRemainder = valFinCents % 100;
-            document.getElementById('valorFinanceiro').value = valFinUnits.toLocaleString('pt-BR') + ',' + String(valFinRemainder).padStart(2, '0');
+            document.getElementById('valorFinanceiro').value = formatarMilharesPtBR(valFinUnits) + ',' + String(valFinRemainder).padStart(2, '0');
             
             // Remover o financeiro antigo para permitir edição
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
