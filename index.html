@@ -2283,7 +2283,7 @@
             const errEl = document.getElementById('modalMarcarRealizadaError');
             if (objEl) objEl.textContent = 'Objeto: ' + (f.objeto || '');
             if (dataEl) dataEl.value = f.dataRealizada || '';
-            if (qtdEl) qtdEl.value = (f.qtdeRealizada != null) ? f.qtdeRealizada : '';
+            if (qtdEl) qtdEl.value = (f.qtdeRealizada != null && f.qtdeRealizada !== '') ? Number(f.qtdeRealizada).toLocaleString('pt-BR') : '';
             if (nfEl) nfEl.value = f.nfRealizada || f.nf || '';
             if (errEl) { errEl.textContent = ''; errEl.classList.remove('open'); }
 
@@ -2370,7 +2370,7 @@
             const qtdEl = document.getElementById('modalQtdRealizada');
             const nfEl = document.getElementById('modalNfRealizada');
             const dt = dataEl ? (dataEl.value || '').trim() : '';
-            const qtd = qtdEl ? parseFloat(qtdEl.value || '0') : 0;
+            const qtd = qtdEl ? parseNumber(qtdEl.value) : 0;
             const nf = nfEl ? (nfEl.value || '').trim() : '';
 
             // validate inline
@@ -2556,7 +2556,7 @@
                     </div>
                     <div style="width:110px;">
                         <label>Qtd</label>
-                        <input type="number" id="modalQtdRealizada" step="0.01">
+                        <input type="text" id="modalQtdRealizada" inputmode="numeric" class="mask-numero">
                     </div>
                 </div>
                 <div style="margin-bottom:0.5rem;">
@@ -2742,7 +2742,7 @@
                         </div>
                         <div class="form-group">
                             <label>Valor do TED (R$) *</label>
-                            <input type="number" id="valorTed" placeholder="0.00" step="0.01" min="0" required>
+                            <input type="text" id="valorTed" placeholder="0,00" inputmode="numeric" class="mask-moeda" required>
                         </div>
                         
                         
@@ -2979,19 +2979,12 @@
                                 </div>
                             </div>
 
-                            <!-- Linha aditivo: botão + histórico -->
+                            <!-- Linha aditivo/apostilamento: botão unificado + histórico -->
                             <div class="ted-info-toolbar">
-                                <button class="btn-edit" onclick="abrirModalAditivo()" style="font-size:0.85rem; padding:4px 12px;"><i data-lucide="plus-circle" class="btn-icon-sm"></i> Adicionar Aditivo de Vigência/Valor do TED</button>
-                                <span id="info_aditivoResumo" class="ted-info-resumo"></span>
+                                <button class="btn-edit" onclick="abrirModalAlteracao()" style="font-size:0.85rem; padding:4px 12px;"><i data-lucide="plus-circle" class="btn-icon-sm"></i> Aditivo / Apostilamento</button>
+                                <span id="info_alteracoesResumo" class="ted-info-resumo"></span>
                             </div>
-                            <div id="info_aditivoHistorico" class="aditivo-historico ted-info-historico" style="display:none;"></div>
-
-                            <!-- Linha apostilamento: botão + histórico -->
-                            <div class="ted-info-toolbar">
-                                <button class="btn-edit" onclick="abrirModalApostilamento()" style="font-size:0.85rem; padding:4px 12px;"><i data-lucide="plus-circle" class="btn-icon-sm"></i> Adicionar Apostilamento</button>
-                                <span id="info_apostilamentoResumo" class="ted-info-resumo"></span>
-                            </div>
-                            <div id="info_apostilamentoHistorico" class="aditivo-historico ted-info-historico" style="display:none;"></div>
+                            <div id="info_alteracoesHistorico" class="aditivo-historico ted-info-historico" style="display:none;"></div>
 
                             <!-- Linha 5: novos campos (situação, data entrega/denúncia, prazo, data entrega relatório, status) -->
                             <div class="ted-info-row row-5">
@@ -3039,11 +3032,11 @@
                             </div>
                             <div class="form-group">
                                 <label>Qtde *</label>
-                                <input type="number" id="qtdeObjetoCadastro" placeholder="0" min="0" step="1" required>
+                                <input type="text" id="qtdeObjetoCadastro" placeholder="0" inputmode="numeric" class="mask-numero" required>
                             </div>
                             <div class="form-group">
                                 <label>Valor Unitário (R$) *</label>
-                                <input type="number" id="valorUnitarioCadastro" placeholder="0.00" step="0.01" min="0" required>
+                                <input type="text" id="valorUnitarioCadastro" placeholder="0,00" inputmode="numeric" class="mask-moeda" required>
                             </div>
                             <button type="button" class="btn btn-primary" onclick="adicionarObjeto()" style="align-self: flex-end; min-width: 120px;">Adicionar</button>
                         </div>
@@ -3139,7 +3132,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Qtde *</label>
-                                <input type="number" id="qtdeFisico" min="0" step="0.01" placeholder="0" required>
+                                <input type="text" id="qtdeFisico" inputmode="numeric" class="mask-numero" placeholder="0" required>
                             </div>
                             <div class="form-group">
                                 <label>M Início *</label>
@@ -3196,7 +3189,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Qtde *</label>
-                                <input type="number" id="qtdeExec" min="0" step="0.01" placeholder="0" required>
+                                <input type="text" id="qtdeExec" inputmode="numeric" class="mask-numero" placeholder="0" required>
                             </div>
                             <div class="form-group">
                                 <label>Data *</label>
@@ -3254,7 +3247,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$) *</label>
-                                <input type="number" id="valorFinanceiro" min="0" step="0.01" placeholder="0.00" required>
+                                <input type="text" id="valorFinanceiro" inputmode="numeric" class="mask-moeda" placeholder="0,00" required>
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="visibility: hidden;">.</label>
@@ -3320,7 +3313,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$) *</label>
-                                <input type="number" id="valorExecFin" step="0.01" placeholder="0.00" required>
+                                <input type="text" id="valorExecFin" inputmode="numeric" class="mask-moeda" placeholder="0,00" required>
                             </div>
                             <div class="form-group">
                                 <label>Data *</label>
@@ -3380,7 +3373,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Valor (R$) *</label>
-                                <input type="number" id="valorRecGeral" step="0.01" placeholder="0.00" required>
+                                <input type="text" id="valorRecGeral" inputmode="numeric" class="mask-moeda" placeholder="0,00" required>
                             </div>
                             <div class="form-group">
                                 <label>Data *</label>
@@ -4787,6 +4780,8 @@
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros || [];
             window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras || [];
             window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
+            // Migrar aditivos/apostilamentos para lista unificada
+            migrarParaAlteracoesUnificadas(window.tedSelecionado);
 
             document.getElementById('tedsDetalheContainer').style.display = 'block';
             
@@ -4816,7 +4811,6 @@
             if (!window.tedSelecionado) return;
             
             const ted = window.tedSelecionado;
-            const aditivos = ted.aditivos || [];
             const totalRecebido = (ted.execFinanceiras || []).reduce((soma, item) => soma + (parseNumber(item.valor) || 0), 0);
             const valorTedAtual = parseNumber(ted.valorTed) || 0;
             const saldoTed = valorTedAtual - totalRecebido;
@@ -4870,7 +4864,7 @@
             // Preencher campos de visualização
             // Coletar todas as alterações de aditivos e apostilamentos para destacar campos modificados
             const todasAlteracoes = {};
-            [...aditivos, ...(ted.apostilamentos || [])].forEach(item => {
+            (ted.alteracoes || [...(ted.aditivos || []), ...(ted.apostilamentos || [])]).forEach(item => {
                 if (item.camposAlterados && typeof item.camposAlterados === 'object') {
                     Object.keys(item.camposAlterados).forEach(key => {
                         // Manter a última alteração (mais recente)
@@ -4924,9 +4918,13 @@
             exibirCampoComAlteracao('info_ugDesc', ted.ugDesc, 'ugDesc');
             
             document.getElementById('info_inicioVigencia').textContent = formatarData(ted.inicioVigencia);
+            // Migrar dados legados para lista unificada
+            migrarParaAlteracoesUnificadas(ted);
+            const alteracoes = ted.alteracoes || [];
             // Vigência e Fim com suporte a aditivos
+            const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
             const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
-            if (aditivos && aditivos.length > 0) {
+            if (aditivos.length > 0) {
                 const vigOriginal = ted.vigencia || 0;
                 const vigNova = parseInt(vigOriginal) + totalAditivoMeses;
                 document.getElementById('info_vigencia').innerHTML =
@@ -4945,14 +4943,31 @@
                 }
                 document.getElementById('info_fimVigencia').innerHTML =
                     `<span class="valor-original-tachado">${fimOriginal}</span><span class="valor-aditivo-novo">${novaDataFim}</span>`;
+            } else {
+                document.getElementById('info_vigencia').textContent = ted.vigencia || '-';
+                document.getElementById('info_fimVigencia').textContent = formatarData(ted.fimVigencia);
+            }
 
-                // Resumo e histórico de aditivos
-                document.getElementById('info_aditivoResumo').textContent = `Total de aditivos: +${totalAditivoMeses} meses (${aditivos.length} aditivo${aditivos.length > 1 ? 's' : ''})`;
-                // Incluir coluna para 'Valor do TED' e 'Alterações' após a data do aditivo
-                let histHtml = '<table><thead><tr><th>#</th><th>Meses</th><th>Data do Aditivo</th><th>Valor do TED</th><th>Alterações</th><th>Observação</th><th></th></tr></thead><tbody>';
-                aditivos.forEach((a, ai) => {
-                    const dataAdit = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
-                    const valAdit = (typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? parseFloat(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
+            // Histórico unificado de aditivos e apostilamentos
+            if (alteracoes.length > 0) {
+                const nAditivos = aditivos.length;
+                const nApost = alteracoes.filter(a => a.tipo === 'apostilamento').length;
+                let resumoParts = [];
+                if (nAditivos > 0) resumoParts.push(`${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} (+${totalAditivoMeses} meses)`);
+                if (nApost > 0) resumoParts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
+                document.getElementById('info_alteracoesResumo').textContent = `Total: ${resumoParts.join(', ')}`;
+
+                let histHtml = '<table><thead><tr><th>#</th><th>Tipo</th><th>Meses</th><th>Data</th><th>Valor do TED</th><th>Alterações</th><th>Observação</th><th></th></tr></thead><tbody>';
+                let contAditivo = 0, contApost = 0;
+                alteracoes.forEach((a, idx) => {
+                    const isAditivo = a.tipo === 'aditivo';
+                    if (isAditivo) contAditivo++; else contApost++;
+                    const ordinal = isAditivo ? contAditivo : contApost;
+                    const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
+                    const tipoColor = isAditivo ? '#16a34a' : '#2563eb';
+                    const dataStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+                    const mesesStr = isAditivo ? `+${a.meses || 0}` : '-';
+                    const valStr = (isAditivo && typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? parseFloat(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
                     // Gerar HTML das alterações (campos + tabelas)
                     let alteracoesHtml = '';
                     const temCampos = a.camposAlterados && Object.keys(a.camposAlterados).length > 0;
@@ -4977,63 +4992,17 @@
                     } else {
                         alteracoesHtml = '-';
                     }
-                    histHtml += `<tr><td>${ai+1}</td><td>+${a.meses || 0}</td><td>${dataAdit}</td><td class="valor-aditivo"><span class="valor-text">${valAdit}</span></td><td>${alteracoesHtml}</td><td>${a.obs || '-'}</td><td>
-                        <button class="btn-icon edit" onclick="abrirModalAditivo(${ai})" title="Editar aditivo">✎</button>
-                        <button class="btn-icon delete" onclick="removerAditivo(${ai})" title="Remover aditivo">✖</button>
+                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td>${mesesStr}</td><td>${dataStr}</td><td class="valor-aditivo"><span class="valor-text">${valStr}</span></td><td>${alteracoesHtml}</td><td>${a.obs || '-'}</td><td>
+                        <button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">✎</button>
+                        <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">✖</button>
                     </td></tr>`;
                 });
                 histHtml += '</tbody></table>';
-                document.getElementById('info_aditivoHistorico').innerHTML = histHtml;
-                document.getElementById('info_aditivoHistorico').style.display = 'block';
+                document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
+                document.getElementById('info_alteracoesHistorico').style.display = 'block';
             } else {
-                document.getElementById('info_vigencia').textContent = ted.vigencia || '-';
-                document.getElementById('info_fimVigencia').textContent = formatarData(ted.fimVigencia);
-                document.getElementById('info_aditivoResumo').textContent = '';
-                document.getElementById('info_aditivoHistorico').style.display = 'none';
-            }
-
-            // Resumo e histórico de apostilamentos
-            const apostilamentos = ted.apostilamentos || [];
-            if (apostilamentos.length > 0) {
-                document.getElementById('info_apostilamentoResumo').textContent = `Total de apostilamentos: ${apostilamentos.length}`;
-                let apostHtml = '<table><thead><tr><th>#</th><th>Data do Apostilamento</th><th>Alterações</th><th>Observação</th><th></th></tr></thead><tbody>';
-                apostilamentos.forEach((ap, ai) => {
-                    const dataApost = ap.data ? new Date(ap.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
-                    // Gerar HTML das alterações do apostilamento (campos + tabelas)
-                    let apostAlteracoesHtml = '';
-                    const apTemCampos = ap.camposAlterados && Object.keys(ap.camposAlterados).length > 0;
-                    const apTemTabelas = ap.tabelasAlteradas && Object.keys(ap.tabelasAlteradas).length > 0;
-                    if (apTemCampos || apTemTabelas) {
-                        apostAlteracoesHtml = '<div class="aditivo-changes-list">';
-                        if (apTemCampos) {
-                            const labelMap = {};
-                            ADITIVO_CAMPOS_CLONE.forEach(c => { labelMap[c.key] = c.label; });
-                            Object.keys(ap.camposAlterados).forEach(key => {
-                                const change = ap.camposAlterados[key];
-                                const label = labelMap[key] || key;
-                                const de = String(change.de || '').substring(0, 40) || '(vazio)';
-                                const para = String(change.para || '').substring(0, 40) || '(vazio)';
-                                apostAlteracoesHtml += `<div class="aditivo-change-row"><span class="aditivo-change-field">${label}:</span> <span class="aditivo-change-badge aditivo-change-old">${de}</span> → <span class="aditivo-change-badge aditivo-change-new">${para}</span></div>`;
-                            });
-                        }
-                        if (apTemTabelas) {
-                            apostAlteracoesHtml += gerarResumoTabelasAlteradas(ap.tabelasAlteradas);
-                        }
-                        apostAlteracoesHtml += '</div>';
-                    } else {
-                        apostAlteracoesHtml = '-';
-                    }
-                    apostHtml += `<tr><td>${ai+1}</td><td>${dataApost}</td><td>${apostAlteracoesHtml}</td><td>${ap.obs || '-'}</td><td>
-                        <button class="btn-icon edit" onclick="abrirModalApostilamento(${ai})" title="Editar apostilamento">✎</button>
-                        <button class="btn-icon delete" onclick="removerApostilamento(${ai})" title="Remover apostilamento">✖</button>
-                    </td></tr>`;
-                });
-                apostHtml += '</tbody></table>';
-                document.getElementById('info_apostilamentoHistorico').innerHTML = apostHtml;
-                document.getElementById('info_apostilamentoHistorico').style.display = 'block';
-            } else {
-                document.getElementById('info_apostilamentoResumo').textContent = '';
-                document.getElementById('info_apostilamentoHistorico').style.display = 'none';
+                document.getElementById('info_alteracoesResumo').textContent = '';
+                document.getElementById('info_alteracoesHistorico').style.display = 'none';
             }
 
             document.getElementById('info_primeiraDescentralizacao').textContent = formatarData(ted.primeiraDescentralizacao);
@@ -5358,7 +5327,7 @@
             const valorInput = document.getElementById('valorUnitarioCadastro');
 
             const objeto = objetoInput.value.trim();
-            const qtde = parseInt(qtdeInput.value);
+            const qtde = parseNumber(qtdeInput.value);
             const valorUnitario = parseNumber(valorInput.value);
 
             if (!objeto) {
@@ -5404,8 +5373,13 @@
 
             // Preencher campos de cadastro (mesma seção) para editar e regravar
             document.getElementById('objetoCadastro').value = obj.objeto;
-            document.getElementById('qtdeObjetoCadastro').value = obj.qtde;
-            document.getElementById('valorUnitarioCadastro').value = obj.valorUnitario;
+            document.getElementById('qtdeObjetoCadastro').value = Number(obj.qtde).toLocaleString('pt-BR');
+            // Formatar valor unitário como moeda (centavos)
+            const valUnit = Number(obj.valorUnitario);
+            const valUnitCents = Math.round(valUnit * 100);
+            const valUnitUnits = Math.floor(valUnitCents / 100);
+            const valUnitRemainder = valUnitCents % 100;
+            document.getElementById('valorUnitarioCadastro').value = valUnitUnits.toLocaleString('pt-BR') + ',' + String(valUnitRemainder).padStart(2, '0');
 
             // Remover o objeto antigo para permitir gravação do editado
             window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
@@ -5581,11 +5555,10 @@
 
             // Considerar aditivos se existirem
             let totalMeses = meses;
-            if (window.tedSelecionado && window.tedSelecionado.aditivos && window.tedSelecionado.aditivos.length > 0) {
-                window.tedSelecionado.aditivos.forEach(function(a) {
-                    totalMeses += (parseInt(a.meses) || 0);
-                });
-            }
+            const alteracoesEdit = (window.tedSelecionado && (window.tedSelecionado.alteracoes || window.tedSelecionado.aditivos)) || [];
+            alteracoesEdit.filter(a => (a.tipo || 'aditivo') === 'aditivo').forEach(function(a) {
+                totalMeses += (parseInt(a.meses) || 0);
+            });
 
             const d = new Date(inicioVal + 'T00:00:00');
             const fim = new Date(d);
@@ -5598,6 +5571,41 @@
         }
 
         // ========== ADITIVOS DE VIGÊNCIA ==========
+
+        // Migração: unificar ted.aditivos e ted.apostilamentos em ted.alteracoes
+        function migrarParaAlteracoesUnificadas(ted) {
+            if (!ted) return;
+            if (ted.alteracoes && ted.alteracoes.length) return; // já migrado
+            const alteracoes = [];
+            (ted.aditivos || []).forEach(a => {
+                alteracoes.push(Object.assign({}, a, { tipo: 'aditivo' }));
+            });
+            (ted.apostilamentos || []).forEach(ap => {
+                alteracoes.push(Object.assign({}, ap, { tipo: 'apostilamento' }));
+            });
+            // Ordenar por data
+            alteracoes.sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+            ted.alteracoes = alteracoes;
+            // Manter arrays antigos para compatibilidade de leitura mas não usar mais para escrita
+        }
+
+        // Recomputar ted.aditivos e ted.apostilamentos a partir de ted.alteracoes (sync de volta)
+        function sincronizarAlteracoesParaArraysLegado(ted) {
+            if (!ted || !ted.alteracoes) return;
+            ted.aditivos = ted.alteracoes.filter(a => a.tipo === 'aditivo');
+            ted.apostilamentos = ted.alteracoes.filter(a => a.tipo === 'apostilamento');
+        }
+
+        // Retornar contagem ordinal (nº) de um item na lista unificada, contando apenas itens do mesmo tipo
+        function obterOrdinalAlteracao(ted, idx) {
+            if (!ted || !ted.alteracoes || !ted.alteracoes[idx]) return 1;
+            const tipo = ted.alteracoes[idx].tipo;
+            let count = 0;
+            for (let i = 0; i <= idx; i++) {
+                if (ted.alteracoes[i].tipo === tipo) count++;
+            }
+            return count;
+        }
 
         // Campos do TED que são clonados no aditivo
         const ADITIVO_CAMPOS_CLONE = [
@@ -5663,20 +5671,15 @@
         function obterAlteracoesTabelaAditivos(tabelaKey) {
             const ted = window.tedSelecionado;
             if (!ted) return null;
-            // Percorrer aditivos e apostilamentos de trás para frente para achar o último que alterou esta tabela
+            // Percorrer alterações unificadas (ou legado) para achar o último que alterou esta tabela
             const fontes = [];
-            (ted.aditivos || []).forEach((a, i) => {
-                if (a.tabelasAlteradas && a.tabelasAlteradas[tabelaKey]) {
-                    fontes.push(a.tabelasAlteradas[tabelaKey]);
-                }
-            });
-            (ted.apostilamentos || []).forEach((ap, i) => {
-                if (ap.tabelasAlteradas && ap.tabelasAlteradas[tabelaKey]) {
-                    fontes.push(ap.tabelasAlteradas[tabelaKey]);
+            const lista = ted.alteracoes || [...(ted.aditivos || []), ...(ted.apostilamentos || [])];
+            lista.forEach(item => {
+                if (item.tabelasAlteradas && item.tabelasAlteradas[tabelaKey]) {
+                    fontes.push(item.tabelasAlteradas[tabelaKey]);
                 }
             });
             if (!fontes.length) return null;
-            // Retornar o último (mais recente)
             return fontes[fontes.length - 1];
         }
 
@@ -5934,6 +5937,8 @@
                         let val = item[col.field];
                         if (col.type === 'currency' && val !== undefined && val !== null) {
                             val = Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                        } else if (col.type === 'number' && val !== undefined && val !== null && val !== '') {
+                            val = Number(val).toLocaleString('pt-BR');
                         } else if (col.type === 'date' && val) {
                             try { val = new Date(val + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
                         }
@@ -5974,6 +5979,8 @@
             tdBtn.innerHTML = `<button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;">✕</button>`;
             tr.appendChild(tdBtn);
             tbody.appendChild(tr);
+            // Aplicar máscaras de formatação na nova linha
+            aplicarMascarasCelulasClone(tr);
             // Focar no primeiro campo da nova linha
             const primeiraCelula = tr.querySelector('td[contenteditable]');
             if (primeiraCelula) primeiraCelula.focus();
@@ -6119,441 +6126,193 @@
             return resultado;
         }
 
-        // Abrir modal para adicionar ou editar aditivo (versão expandida com clone)
-        function abrirModalAditivo(editIndex) {
+        // ========== MODAL UNIFICADO: ADITIVO / APOSTILAMENTO ==========
+
+        // Abrir modal unificado para adicionar ou editar aditivo/apostilamento
+        function abrirModalAlteracao(editIndex) {
             if (!window.tedSelecionado) return alert('Selecione um TED primeiro.');
-            // Remover modal anterior se existir (para recriar com dados atuais)
-            let overlay = document.getElementById('aditivoModalOverlay');
+            let overlay = document.getElementById('alteracaoModalOverlay');
             if (overlay) overlay.remove();
 
             const ted = window.tedSelecionado;
-            const isEdit = typeof editIndex === 'number' && ted.aditivos && ted.aditivos[editIndex];
-            const aditivoExistente = isEdit ? ted.aditivos[editIndex] : null;
+            migrarParaAlteracoesUnificadas(ted);
+            if (!ted.alteracoes) ted.alteracoes = [];
 
-            // Gerar campos clone dinamicamente
+            const isEdit = typeof editIndex === 'number' && ted.alteracoes[editIndex];
+            const existente = isEdit ? ted.alteracoes[editIndex] : null;
+            const tipoInicial = existente ? existente.tipo : ''; // vazio = não selecionado ainda
+
+            overlay = document.createElement('div');
+            overlay.id = 'alteracaoModalOverlay';
+            overlay.className = 'aditivo-modal-overlay';
+
+            // Construir HTML do seletor de tipo + conteúdo dinâmico
+            overlay.innerHTML = `
+                <div class="aditivo-modal aditivo-modal-expanded">
+                    <h3 id="alteracaoModalTitulo">➕ ${isEdit ? 'Editar' : 'Novo'} Aditivo / Apostilamento</h3>
+                    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Selecione o tipo e altere campos e tabelas conforme necessário — as mudanças serão rastreadas automaticamente.</p>
+
+                    <div class="aditivo-section-title">📋 Tipo da Alteração</div>
+                    <div style="display:flex; gap:1.5rem; margin-bottom:1rem; padding:0.75rem; background:var(--bg-secondary,#f8fafc); border-radius:8px; border:1px solid var(--border);">
+                        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
+                            <input type="radio" name="alteracaoTipo" value="aditivo" ${tipoInicial === 'aditivo' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#16a34a; width:18px; height:18px;">
+                            <span style="color:#16a34a;">📋 Aditivo</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
+                            <input type="radio" name="alteracaoTipo" value="apostilamento" ${tipoInicial === 'apostilamento' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#2563eb; width:18px; height:18px;">
+                            <span style="color:#2563eb;">📝 Apostilamento</span>
+                        </label>
+                    </div>
+
+                    <div id="alteracaoFormConteudo" style="display:none;">
+                        <!-- Será preenchido dinamicamente por atualizarFormularioAlteracao -->
+                    </div>
+
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+                        <button onclick="fecharModalAlteracao()" style="padding:8px 16px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer; color:var(--text);">Cancelar</button>
+                        <button id="alteracaoBtnConfirmar" onclick="confirmarAlteracao()" style="padding:8px 16px; border:none; border-radius:6px; background:#16a34a; color:#fff; cursor:pointer; font-weight:600;" disabled>${isEdit ? 'Salvar Alterações' : 'Salvar'}</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            // Armazenar dados no overlay
+            overlay.dataset.editIndex = isEdit ? String(editIndex) : '';
+            overlay._snapshotOriginal = capturarSnapshotTed(ted);
+            overlay._existente = existente;
+
+            // Se editando, preencher automaticamente o formulário
+            if (tipoInicial) {
+                atualizarFormularioAlteracao();
+            }
+
+            overlay.classList.add('active');
+        }
+
+        // Atualizar o conteúdo do formulário baseado no tipo selecionado (aditivo ou apostilamento)
+        function atualizarFormularioAlteracao() {
+            const overlay = document.getElementById('alteracaoModalOverlay');
+            if (!overlay) return;
+            const tipoRadio = overlay.querySelector('input[name="alteracaoTipo"]:checked');
+            if (!tipoRadio) return;
+            const tipo = tipoRadio.value; // 'aditivo' ou 'apostilamento'
+            const ted = window.tedSelecionado;
+            if (!ted) return;
+
+            const isEdit = overlay.dataset.editIndex !== '';
+            const editIndex = isEdit ? parseInt(overlay.dataset.editIndex, 10) : null;
+            const existente = isEdit ? (ted.alteracoes || [])[editIndex] : null;
+
+            // Atualizar título e botão
+            const titulo = overlay.querySelector('#alteracaoModalTitulo');
+            const btn = overlay.querySelector('#alteracaoBtnConfirmar');
+            if (tipo === 'aditivo') {
+                titulo.textContent = `➕ ${isEdit ? 'Editar' : 'Novo'} Aditivo de Vigência / Valor do TED`;
+                btn.style.background = '#16a34a';
+                btn.textContent = isEdit ? 'Salvar Alterações' : 'Adicionar Aditivo';
+            } else {
+                titulo.textContent = `📝 ${isEdit ? 'Editar' : 'Novo'} Apostilamento`;
+                btn.style.background = '#2563eb';
+                btn.textContent = isEdit ? 'Salvar Alterações' : 'Salvar Apostilamento';
+            }
+            btn.disabled = false;
+
+            // Gerar campos clone
             let camposCloneHtml = '';
             ADITIVO_CAMPOS_CLONE.forEach(c => {
                 const fw = c.fullWidth ? ' full-width' : '';
-                const val = aditivoExistente && aditivoExistente.snapshot && typeof aditivoExistente.camposAlterados === 'object' && aditivoExistente.camposAlterados[c.key]
-                    ? aditivoExistente.camposAlterados[c.key].para
+                const val = existente && existente.snapshot && typeof existente.camposAlterados === 'object' && existente.camposAlterados[c.key]
+                    ? existente.camposAlterados[c.key].para
                     : (ted[c.key] || '');
                 const escaped = String(val).replace(/"/g, '&quot;');
                 const roAttr = c.readonly ? ' readonly disabled' : '';
                 const roStyle = c.readonly ? ' style="opacity:0.6;cursor:not-allowed;background:var(--bg-tertiary,#f3f4f6);"' : '';
                 if (c.type === 'textarea') {
-                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><textarea id="aditivo_clone_${c.key}" data-campo="${c.key}"${roAttr}${roStyle}>${val}</textarea></div>`;
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><textarea id="alt_clone_${c.key}" data-campo="${c.key}"${roAttr}${roStyle}>${val}</textarea></div>`;
                 } else {
-                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><input type="${c.type}" id="aditivo_clone_${c.key}" data-campo="${c.key}" value="${escaped}"${roAttr}${roStyle}></div>`;
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><input type="${c.type}" id="alt_clone_${c.key}" data-campo="${c.key}" value="${escaped}"${roAttr}${roStyle}></div>`;
                 }
             });
 
-            // Gerar HTML das tabelas clonadas
-            const tabelasCloneHtml = gerarHtmlTabelasClone(ted, 'aditivo', aditivoExistente);
+            // Gerar tabelas clonadas
+            const tabelasCloneHtml = gerarHtmlTabelasClone(ted, 'alt', existente);
 
-            overlay = document.createElement('div');
-            overlay.id = 'aditivoModalOverlay';
-            overlay.className = 'aditivo-modal-overlay';
-            overlay.innerHTML = `
-                <div class="aditivo-modal aditivo-modal-expanded">
-                    <h3>➕ ${isEdit ? 'Editar' : 'Adicionar'} Aditivo de Vigência / Valor do TED</h3>
-                    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Todas as informações do TED foram clonadas abaixo. Altere campos e tabelas conforme necessário — as mudanças serão rastreadas automaticamente.</p>
-
+            // Campos específicos do aditivo (meses, valor TED)
+            let dadosEspecificosHtml = '';
+            if (tipo === 'aditivo') {
+                dadosEspecificosHtml = `
                     <div class="aditivo-section-title">📋 Dados do Aditivo</div>
                     <div class="aditivo-clone-grid">
                         <div class="form-group">
                             <label>Quantidade de meses a acrescentar *</label>
-                            <input type="number" id="aditivoMesesInput" min="0" placeholder="Ex: 12">
+                            <input type="number" id="alteracaoMesesInput" min="0" placeholder="Ex: 12">
                         </div>
                         <div class="form-group">
-                            <label>Data do aditivo</label>
-                            <input type="date" id="aditivoDataInput">
+                            <label>Data do aditivo *</label>
+                            <input type="date" id="alteracaoDataInput">
                         </div>
                         <div class="form-group">
                             <label>Valor do TED</label>
-                            <input type="text" id="aditivoValorTedInput" placeholder="Ex: 45.000.000,00">
+                            <input type="text" id="alteracaoValorTedInput" placeholder="Ex: 45.000.000,00">
                         </div>
                         <div class="form-group">
                             <label>Observação</label>
-                            <input type="text" id="aditivoObsInput" placeholder="Ex: Aditivo de prazo">
+                            <input type="text" id="alteracaoObsInput" placeholder="Ex: Aditivo de prazo">
                         </div>
-                    </div>
-
-                    <div class="aditivo-section-title">📄 Informações Gerais do TED (edite se necessário)</div>
-                    <div class="aditivo-clone-grid">
-                        ${camposCloneHtml}
-                    </div>
-
-                    ${tabelasCloneHtml}
-
-                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
-                        <button onclick="fecharModalAditivo()" style="padding:8px 16px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer; color:var(--text);">Cancelar</button>
-                        <button onclick="confirmarAditivo()" style="padding:8px 16px; border:none; border-radius:6px; background:#16a34a; color:#fff; cursor:pointer; font-weight:600;">${isEdit ? 'Salvar Alterações' : 'Adicionar Aditivo'}</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            // Preencher campos do aditivo
-            document.getElementById('aditivoMesesInput').value = aditivoExistente ? (aditivoExistente.meses || '') : '';
-            document.getElementById('aditivoDataInput').value = aditivoExistente ? (aditivoExistente.data || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
-            document.getElementById('aditivoObsInput').value = aditivoExistente ? (aditivoExistente.obs || '') : '';
-            const valInput = document.getElementById('aditivoValorTedInput');
-            if (aditivoExistente && typeof aditivoExistente.valorTed !== 'undefined' && aditivoExistente.valorTed !== null) {
-                valInput.value = Number(aditivoExistente.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2});
+                    </div>`;
             } else {
-                valInput.value = (ted.valorTed !== undefined && ted.valorTed !== null) ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '';
-            }
-            if (valInput) applyCurrencyMaskToInput(valInput);
-
-            // Salvar snapshot original para comparação
-            overlay.dataset.editIndex = isEdit ? String(editIndex) : '';
-            overlay._snapshotOriginal = capturarSnapshotTed(ted);
-
-            // Listener para destacar campos alterados em tempo real
-            overlay.querySelectorAll('[data-campo]').forEach(el => {
-                const campo = el.dataset.campo;
-                const valorOriginal = String(ted[campo] || '');
-                const checkChange = () => {
-                    const valorAtual = el.value || '';
-                    if (valorAtual !== valorOriginal) {
-                        el.closest('.form-group').classList.add('campo-modificado');
-                    } else {
-                        el.closest('.form-group').classList.remove('campo-modificado');
-                    }
-                };
-                el.addEventListener('input', checkChange);
-                el.addEventListener('change', checkChange);
-                // Verificar no carregamento (para edição de aditivo existente)
-                checkChange();
-            });
-
-            overlay.classList.add('active');
-        }
-
-        function fecharModalAditivo() {
-            const overlay = document.getElementById('aditivoModalOverlay');
-            if (overlay) overlay.classList.remove('active');
-        }
-
-        function confirmarAditivo() {
-            const ted = window.tedSelecionado;
-            if (!ted) return;
-            const meses = parseInt(document.getElementById('aditivoMesesInput').value, 10) || 0;
-            const data = document.getElementById('aditivoDataInput').value || new Date().toISOString().split('T')[0];
-            const obs = document.getElementById('aditivoObsInput').value || '';
-            const rawVal = (document.getElementById('aditivoValorTedInput') ? document.getElementById('aditivoValorTedInput').value : '').trim();
-            const novoValor = rawVal !== '' ? parseNumber(rawVal) : null;
-            const currentTedValue = (typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) ? Number(ted.valorTed) : null;
-
-            if (!ted.aditivos) ted.aditivos = [];
-            const overlay = document.getElementById('aditivoModalOverlay');
-            const editIndex = overlay && overlay.dataset && overlay.dataset.editIndex ? parseInt(overlay.dataset.editIndex, 10) : null;
-
-            // Capturar snapshot original
-            const snapshot = overlay._snapshotOriginal || capturarSnapshotTed(ted);
-
-            // Capturar novos valores dos campos clonados
-            const novosValores = {};
-            ADITIVO_CAMPOS_CLONE.forEach(c => {
-                const el = document.getElementById('aditivo_clone_' + c.key);
-                novosValores[c.key] = el ? el.value : (ted[c.key] || '');
-            });
-            novosValores.valorTed = novoValor !== null ? novoValor : (currentTedValue || 0);
-
-            // Detectar alterações de campos simples
-            const alteracoes = detectarAlteracoesAditivo(snapshot, novosValores);
-
-            // Coletar dados das tabelas editadas no modal
-            const dadosTabelas = coletarDadosTabelasModal('aditivo');
-
-            // Aplicar dados das tabelas ao TED e detectar alterações
-            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
-                if (dadosTabelas[tabDef.key]) {
-                    ted[tabDef.key] = dadosTabelas[tabDef.key];
-                }
-            });
-
-            // Comparar tabelas entre snapshot e estado atual (após aplicar edições)
-            const tabelasAlteradas = compararTabelasAditivo(snapshot, ted);
-
-            // build aditivo object
-            const aditivoObj = { meses, data, obs };
-            if (novoValor !== null) {
-                aditivoObj.valorTed = novoValor;
-            }
-
-            // Salvar snapshot, alterações de campos e alterações de tabelas
-            aditivoObj.snapshot = snapshot;
-            aditivoObj.camposAlterados = alteracoes;
-            aditivoObj.tabelasAlteradas = tabelasAlteradas;
-
-            if (typeof editIndex === 'number' && !isNaN(editIndex)) {
-                const existing = ted.aditivos[editIndex] || {};
-                if (novoValor !== null) {
-                    if (typeof existing.valorTed !== 'undefined' && existing.valorTed !== null) {
-                        if (novoValor !== existing.valorTed) {
-                            aditivoObj.prevValorTed = (typeof existing.prevValorTed !== 'undefined' && existing.prevValorTed !== null) ? existing.prevValorTed : currentTedValue;
-                        }
-                    } else {
-                        if (currentTedValue === null || novoValor !== currentTedValue) {
-                            aditivoObj.prevValorTed = currentTedValue;
-                        }
-                    }
-                }
-                ted.aditivos[editIndex] = Object.assign({}, existing, aditivoObj);
-            } else {
-                if (novoValor !== null && (currentTedValue === null || novoValor !== currentTedValue)) {
-                    aditivoObj.prevValorTed = currentTedValue;
-                }
-                ted.aditivos.push(aditivoObj);
-            }
-
-            // Aplicar alterações de campos simples ao TED
-            if (Object.keys(alteracoes).length > 0) {
-                ADITIVO_CAMPOS_CLONE.forEach(c => {
-                    if (alteracoes[c.key]) {
-                        ted[c.key] = alteracoes[c.key].para;
-                    }
-                });
-            }
-
-            // recompute TED.valorTed based on last aditivo with valor or fallback
-            recomputeValorTedFromAditivos(ted);
-
-            salvarDados();
-            fecharModalAditivo();
-            exibirInformacoesTED();
-            // Atualizar todas as tabelas após alterações
-            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
-            renderGanttVigencia();
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
-        // Função auxiliar: restaurar dados do TED a partir do snapshot de um aditivo/apostilamento removido
-        // e depois reaplicar as alterações dos aditivos/apostilamentos restantes em ordem
-        function restaurarDadosAposRemocao(ted) {
-            // Coletar todos os aditivos e apostilamentos com snapshot, em ordem cronológica
-            const eventos = [];
-            (ted.aditivos || []).forEach((a, i) => {
-                if (a.snapshot) eventos.push({ tipo: 'aditivo', idx: i, data: a.data || '', obj: a });
-            });
-            (ted.apostilamentos || []).forEach((ap, i) => {
-                if (ap.snapshot) eventos.push({ tipo: 'apostilamento', idx: i, data: ap.data || '', obj: ap });
-            });
-            eventos.sort((a, b) => a.data.localeCompare(b.data));
-
-            if (eventos.length === 0) {
-                // Sem eventos com snapshot — verificar se o primeiro aditivo/apostilamento tinha snapshot
-                // Não há como restaurar, manter dados atuais
-                return;
-            }
-
-            // Restaurar estado do primeiro snapshot (estado antes de qualquer alteração)
-            const primeiroSnapshot = eventos[0].obj.snapshot;
-            if (primeiroSnapshot) {
-                // Restaurar campos simples
-                ADITIVO_CAMPOS_CLONE.forEach(c => {
-                    if (primeiroSnapshot[c.key] !== undefined) {
-                        ted[c.key] = primeiroSnapshot[c.key];
-                    }
-                });
-                // Restaurar tabelas
-                ADITIVO_TABELAS_CLONE.forEach(t => {
-                    if (primeiroSnapshot[t.key]) {
-                        ted[t.key] = JSON.parse(JSON.stringify(primeiroSnapshot[t.key]));
-                    }
-                });
-            }
-
-            // Reaplicar todas as alterações dos eventos restantes em ordem
-            eventos.forEach(ev => {
-                // Aplicar campos simples alterados
-                if (ev.obj.camposAlterados) {
-                    Object.keys(ev.obj.camposAlterados).forEach(key => {
-                        ted[key] = ev.obj.camposAlterados[key].para;
-                    });
-                }
-                // Aplicar alterações de tabelas: usar snapshot + alterações para reconstruir
-                if (ev.obj.tabelasAlteradas) {
-                    ADITIVO_TABELAS_CLONE.forEach(tabDef => {
-                        const diffs = ev.obj.tabelasAlteradas[tabDef.key];
-                        if (!diffs) return;
-                        // Se houve modificações, adições ou remoções, aplicar sobre os dados atuais
-                        const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
-                        let arr = ted[tabDef.key] || [];
-
-                        // Backward compat: detect add+remove with same matchKey (old M-based matchFields)
-                        // Treat as modifications instead
-                        const addMap = {};
-                        (diffs.adicionados || []).forEach(add => {
-                            const item = add.item || add;
-                            addMap[matchKey(item)] = item;
-                        });
-                        const remMap = {};
-                        (diffs.removidos || []).forEach(rem => {
-                            const item = rem.item || rem;
-                            remMap[matchKey(item)] = item;
-                        });
-                        const syntheticMods = [];
-                        const handledAddKeys = new Set();
-                        const handledRemKeys = new Set();
-                        Object.keys(addMap).forEach(k => {
-                            if (remMap[k]) {
-                                // Same key in both add+remove — synthetic modification
-                                syntheticMods.push({ original: remMap[k], atual: addMap[k] });
-                                handledAddKeys.add(k);
-                                handledRemKeys.add(k);
-                            }
-                        });
-
-                        // Remover itens removidos (excluding those handled as synthetic mods)
-                        if (diffs.removidos && diffs.removidos.length) {
-                            const remKeys = new Set(diffs.removidos.map(r => matchKey(r.item || r)).filter(k => !handledRemKeys.has(k)));
-                            if (remKeys.size) arr = arr.filter(item => !remKeys.has(matchKey(item)));
-                        }
-                        // Aplicar modificações
-                        if (diffs.modificados && diffs.modificados.length) {
-                            diffs.modificados.forEach(mod => {
-                                // Try matching by current key first, then by original key
-                                const targetKey = matchKey(mod.atual || {});
-                                const origKey = matchKey(mod.original || {});
-                                let idx = arr.findIndex(item => matchKey(item) === targetKey);
-                                if (idx < 0) idx = arr.findIndex(item => matchKey(item) === origKey);
-                                if (idx >= 0 && mod.camposAlterados) {
-                                    Object.keys(mod.camposAlterados).forEach(field => {
-                                        arr[idx][field] = mod.camposAlterados[field].para;
-                                    });
-                                }
-                            });
-                        }
-                        // Apply synthetic modifications (backward compat)
-                        syntheticMods.forEach(mod => {
-                            const origKey = matchKey(mod.original);
-                            const idx = arr.findIndex(item => matchKey(item) === origKey);
-                            if (idx >= 0) {
-                                // Apply all changed fields from the "added" item
-                                (tabDef.colunas || []).forEach(col => {
-                                    if (mod.atual[col.field] !== undefined) {
-                                        arr[idx][col.field] = mod.atual[col.field];
-                                    }
-                                });
-                                // Also update extra fields like mesDesc, anoDesc
-                                Object.keys(mod.atual).forEach(k => {
-                                    if (arr[idx][k] === undefined || !tabDef.colunas.some(c => c.field === k)) {
-                                        arr[idx][k] = mod.atual[k];
-                                    }
-                                });
-                            }
-                        });
-                        // Adicionar novos itens (excluding those handled as synthetic mods)
-                        if (diffs.adicionados && diffs.adicionados.length) {
-                            diffs.adicionados.forEach(add => {
-                                const item = add.item || add;
-                                const k = matchKey(item);
-                                if (handledAddKeys.has(k)) return; // already handled as synthetic mod
-                                if (!arr.some(a => matchKey(a) === k)) {
-                                    arr.push(JSON.parse(JSON.stringify(item)));
-                                }
-                            });
-                        }
-                        ted[tabDef.key] = arr;
-                    });
-                }
-            });
-        }
-
-        function removerAditivo(index) {
-            const ted = window.tedSelecionado;
-            if (!ted || !ted.aditivos) return;
-            if (!confirm(`Remover aditivo #${index + 1} (+${ted.aditivos[index].meses} meses)?`)) return;
-            // Capturar o aditivo removido
-            const removed = ted.aditivos.splice(index, 1)[0];
-
-            // Restaurar dados do TED baseado nos snapshots restantes
-            restaurarDadosAposRemocao(ted);
-
-            // Recalcular valorTed
-            recomputeValorTedFromAditivos(ted);
-
-            salvarDados();
-            exibirInformacoesTED();
-            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
-            renderGanttVigencia();
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
-        // ========== APOSTILAMENTOS ==========
-
-        function abrirModalApostilamento(editIndex) {
-            if (!window.tedSelecionado) return alert('Selecione um TED primeiro.');
-            // Remover modal anterior se existir (para recriar com dados atuais)
-            let overlay = document.getElementById('apostilamentoModalOverlay');
-            if (overlay) overlay.remove();
-
-            const ted = window.tedSelecionado;
-            const isEdit = typeof editIndex === 'number' && ted.apostilamentos && ted.apostilamentos[editIndex];
-            const apostExistente = isEdit ? ted.apostilamentos[editIndex] : null;
-
-            // Gerar campos clone dinamicamente
-            let camposCloneHtml = '';
-            ADITIVO_CAMPOS_CLONE.forEach(c => {
-                const fw = c.fullWidth ? ' full-width' : '';
-                const val = apostExistente && apostExistente.snapshot && typeof apostExistente.camposAlterados === 'object' && apostExistente.camposAlterados[c.key]
-                    ? apostExistente.camposAlterados[c.key].para
-                    : (ted[c.key] || '');
-                const escaped = String(val).replace(/\"/g, '&quot;');
-                const roAttr = c.readonly ? ' readonly disabled' : '';
-                const roStyle = c.readonly ? ' style="opacity:0.6;cursor:not-allowed;background:var(--bg-tertiary,#f3f4f6);"' : '';
-                if (c.type === 'textarea') {
-                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><textarea id="apost_clone_${c.key}" data-campo="${c.key}"${roAttr}${roStyle}>${val}</textarea></div>`;
-                } else {
-                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><input type="${c.type}" id="apost_clone_${c.key}" data-campo="${c.key}" value="${escaped}"${roAttr}${roStyle}></div>`;
-                }
-            });
-
-            // Gerar HTML das tabelas clonadas
-            const tabelasCloneHtml = gerarHtmlTabelasClone(ted, 'apost', apostExistente);
-
-            overlay = document.createElement('div');
-            overlay.id = 'apostilamentoModalOverlay';
-            overlay.className = 'aditivo-modal-overlay';
-            overlay.innerHTML = `
-                <div class="aditivo-modal aditivo-modal-expanded">
-                    <h3>📝 ${isEdit ? 'Editar' : 'Adicionar'} Apostilamento</h3>
-                    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Todas as informações do TED foram clonadas abaixo. Altere campos e tabelas conforme necessário — as mudanças serão rastreadas automaticamente.</p>
-
+                dadosEspecificosHtml = `
                     <div class="aditivo-section-title">📋 Dados do Apostilamento</div>
                     <div class="aditivo-clone-grid">
                         <div class="form-group">
                             <label>Data do Apostilamento *</label>
-                            <input type="date" id="apostilamentoDataInput">
+                            <input type="date" id="alteracaoDataInput">
                         </div>
                         <div class="form-group">
                             <label>Observação</label>
-                            <input type="text" id="apostilamentoObsInput" placeholder="Ex: Ajuste de texto/campo">
+                            <input type="text" id="alteracaoObsInput" placeholder="Ex: Ajuste de texto/campo">
                         </div>
-                    </div>
+                    </div>`;
+            }
 
-                    <div class="aditivo-section-title">📄 Informações Gerais do TED (edite se necessário)</div>
-                    <div class="aditivo-clone-grid">
-                        ${camposCloneHtml}
-                    </div>
+            const conteudo = overlay.querySelector('#alteracaoFormConteudo');
+            conteudo.innerHTML = `
+                ${dadosEspecificosHtml}
 
-                    ${tabelasCloneHtml}
-
-                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
-                        <button onclick="fecharModalApostilamento()" style="padding:8px 16px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer; color:var(--text);">Cancelar</button>
-                        <button onclick="confirmarApostilamento()" style="padding:8px 16px; border:none; border-radius:6px; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">${isEdit ? 'Salvar Alterações' : 'Salvar Apostilamento'}</button>
-                    </div>
+                <div class="aditivo-section-title">📄 Informações Gerais do TED (edite se necessário)</div>
+                <div class="aditivo-clone-grid">
+                    ${camposCloneHtml}
                 </div>
+
+                ${tabelasCloneHtml}
             `;
-            document.body.appendChild(overlay);
+            conteudo.style.display = 'block';
 
-            // Preencher campos do apostilamento
-            document.getElementById('apostilamentoDataInput').value = apostExistente ? (apostExistente.data || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
-            document.getElementById('apostilamentoObsInput').value = apostExistente ? (apostExistente.obs || '') : '';
+            // Aplicar máscaras nas células contenteditable
+            aplicarMascarasCelulasClone(overlay);
 
-            overlay.dataset.editIndex = isEdit ? String(editIndex) : '';
+            // Preencher valores
+            const dataInput = document.getElementById('alteracaoDataInput');
+            const obsInput = document.getElementById('alteracaoObsInput');
+            if (dataInput) dataInput.value = existente ? (existente.data || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+            if (obsInput) obsInput.value = existente ? (existente.obs || '') : '';
+
+            if (tipo === 'aditivo') {
+                const mesesInput = document.getElementById('alteracaoMesesInput');
+                if (mesesInput) mesesInput.value = existente ? (existente.meses || '') : '';
+                const valInput = document.getElementById('alteracaoValorTedInput');
+                if (valInput) {
+                    if (existente && typeof existente.valorTed !== 'undefined' && existente.valorTed !== null) {
+                        valInput.value = Number(existente.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2});
+                    } else {
+                        valInput.value = (ted.valorTed !== undefined && ted.valorTed !== null) ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '';
+                    }
+                    applyCurrencyMaskToInput(valInput);
+                }
+            }
+
+            // Atualizar snapshot
             overlay._snapshotOriginal = capturarSnapshotTed(ted);
 
             // Listener para destacar campos alterados em tempo real
@@ -6561,7 +6320,7 @@
                 const campo = el.dataset.campo;
                 const valorOriginal = String(ted[campo] || '');
                 const checkChange = () => {
-                    const valorAtual = el.value || '';
+                    const valorAtual = el.value || el.textContent || '';
                     if (valorAtual !== valorOriginal) {
                         el.closest('.form-group').classList.add('campo-modificado');
                     } else {
@@ -6572,25 +6331,29 @@
                 el.addEventListener('change', checkChange);
                 checkChange();
             });
-
-            overlay.classList.add('active');
         }
 
-        function fecharModalApostilamento() {
-            const overlay = document.getElementById('apostilamentoModalOverlay');
+        function fecharModalAlteracao() {
+            const overlay = document.getElementById('alteracaoModalOverlay');
             if (overlay) overlay.classList.remove('active');
         }
 
-        function confirmarApostilamento() {
+        function confirmarAlteracao() {
             const ted = window.tedSelecionado;
             if (!ted) return;
-            const data = document.getElementById('apostilamentoDataInput').value;
-            const obs = (document.getElementById('apostilamentoObsInput').value || '').trim();
-            if (!data) return alert('Informe a data do apostilamento.');
+            const overlay = document.getElementById('alteracaoModalOverlay');
+            if (!overlay) return;
 
-            if (!ted.apostilamentos) ted.apostilamentos = [];
-            const overlay = document.getElementById('apostilamentoModalOverlay');
-            const editIndex = overlay && overlay.dataset && overlay.dataset.editIndex ? parseInt(overlay.dataset.editIndex, 10) : null;
+            const tipoRadio = overlay.querySelector('input[name="alteracaoTipo"]:checked');
+            if (!tipoRadio) return alert('Selecione o tipo: Aditivo ou Apostilamento.');
+            const tipo = tipoRadio.value;
+
+            const data = (document.getElementById('alteracaoDataInput') || {}).value || '';
+            const obs = ((document.getElementById('alteracaoObsInput') || {}).value || '').trim();
+            if (!data) return alert('Informe a data.');
+
+            if (!ted.alteracoes) ted.alteracoes = [];
+            const editIndex = overlay.dataset.editIndex !== '' ? parseInt(overlay.dataset.editIndex, 10) : null;
 
             // Capturar snapshot original
             const snapshot = overlay._snapshotOriginal || capturarSnapshotTed(ted);
@@ -6598,15 +6361,27 @@
             // Capturar novos valores dos campos clonados
             const novosValores = {};
             ADITIVO_CAMPOS_CLONE.forEach(c => {
-                const el = document.getElementById('apost_clone_' + c.key);
+                const el = document.getElementById('alt_clone_' + c.key);
                 novosValores[c.key] = el ? el.value : (ted[c.key] || '');
             });
+
+            // Dados específicos do aditivo
+            let meses = 0;
+            let novoValor = null;
+            let currentTedValue = (typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) ? Number(ted.valorTed) : null;
+
+            if (tipo === 'aditivo') {
+                meses = parseInt((document.getElementById('alteracaoMesesInput') || {}).value, 10) || 0;
+                const rawVal = ((document.getElementById('alteracaoValorTedInput') || {}).value || '').trim();
+                novoValor = rawVal !== '' ? parseNumber(rawVal) : null;
+                novosValores.valorTed = novoValor !== null ? novoValor : (currentTedValue || 0);
+            }
 
             // Detectar alterações de campos simples
             const alteracoes = detectarAlteracoesAditivo(snapshot, novosValores);
 
             // Coletar dados das tabelas editadas no modal
-            const dadosTabelas = coletarDadosTabelasModal('apost');
+            const dadosTabelas = coletarDadosTabelasModal('alt');
 
             // Aplicar dados das tabelas ao TED
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
@@ -6618,15 +6393,37 @@
             // Comparar tabelas entre snapshot e estado atual
             const tabelasAlteradas = compararTabelasAditivo(snapshot, ted);
 
-            const apostObj = { data, obs };
-            apostObj.snapshot = snapshot;
-            apostObj.camposAlterados = alteracoes;
-            apostObj.tabelasAlteradas = tabelasAlteradas;
+            // Construir objeto da alteração
+            const altObj = { tipo, data, obs };
+            if (tipo === 'aditivo') {
+                altObj.meses = meses;
+                if (novoValor !== null) {
+                    altObj.valorTed = novoValor;
+                }
+            }
+            altObj.snapshot = snapshot;
+            altObj.camposAlterados = alteracoes;
+            altObj.tabelasAlteradas = tabelasAlteradas;
 
             if (typeof editIndex === 'number' && !isNaN(editIndex)) {
-                ted.apostilamentos[editIndex] = Object.assign({}, ted.apostilamentos[editIndex] || {}, apostObj);
+                const existing = ted.alteracoes[editIndex] || {};
+                if (tipo === 'aditivo' && novoValor !== null) {
+                    if (typeof existing.valorTed !== 'undefined' && existing.valorTed !== null) {
+                        if (novoValor !== existing.valorTed) {
+                            altObj.prevValorTed = (typeof existing.prevValorTed !== 'undefined' && existing.prevValorTed !== null) ? existing.prevValorTed : currentTedValue;
+                        }
+                    } else {
+                        if (currentTedValue === null || novoValor !== currentTedValue) {
+                            altObj.prevValorTed = currentTedValue;
+                        }
+                    }
+                }
+                ted.alteracoes[editIndex] = Object.assign({}, existing, altObj);
             } else {
-                ted.apostilamentos.push(apostObj);
+                if (tipo === 'aditivo' && novoValor !== null && (currentTedValue === null || novoValor !== currentTedValue)) {
+                    altObj.prevValorTed = currentTedValue;
+                }
+                ted.alteracoes.push(altObj);
             }
 
             // Aplicar alterações de campos simples ao TED
@@ -6638,22 +6435,135 @@
                 });
             }
 
+            // Sincronizar arrays legados
+            sincronizarAlteracoesParaArraysLegado(ted);
+
+            // recompute TED.valorTed
+            recomputeValorTedFromAditivos(ted);
+
             salvarDados();
-            fecharModalApostilamento();
+            fecharModalAlteracao();
             exibirInformacoesTED();
             try { atualizarTabelasEmCascata('ted'); } catch(e) {}
+            renderGanttVigencia();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        function removerApostilamento(index) {
+        // Função auxiliar: restaurar dados do TED a partir dos snapshots das alterações restantes
+        function restaurarDadosAposRemocao(ted) {
+            // Coletar todas as alterações com snapshot, em ordem
+            const eventos = [];
+            (ted.alteracoes || []).forEach((a, i) => {
+                if (a.snapshot) eventos.push({ tipo: a.tipo, idx: i, data: a.data || '', obj: a });
+            });
+
+            if (eventos.length === 0) return;
+
+            // Restaurar estado do primeiro snapshot (estado antes de qualquer alteração)
+            const primeiroSnapshot = eventos[0].obj.snapshot;
+            if (primeiroSnapshot) {
+                ADITIVO_CAMPOS_CLONE.forEach(c => {
+                    if (primeiroSnapshot[c.key] !== undefined) {
+                        ted[c.key] = primeiroSnapshot[c.key];
+                    }
+                });
+                ADITIVO_TABELAS_CLONE.forEach(t => {
+                    if (primeiroSnapshot[t.key]) {
+                        ted[t.key] = JSON.parse(JSON.stringify(primeiroSnapshot[t.key]));
+                    }
+                });
+            }
+
+            // Reaplicar todas as alterações em ordem
+            eventos.forEach(ev => {
+                if (ev.obj.camposAlterados) {
+                    Object.keys(ev.obj.camposAlterados).forEach(key => {
+                        ted[key] = ev.obj.camposAlterados[key].para;
+                    });
+                }
+                if (ev.obj.tabelasAlteradas) {
+                    ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                        const diffs = ev.obj.tabelasAlteradas[tabDef.key];
+                        if (!diffs) return;
+                        const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+                        let arr = ted[tabDef.key] || [];
+
+                        // Backward compat: detect add+remove with same matchKey
+                        const addMap = {};
+                        (diffs.adicionados || []).forEach(add => { const item = add.item || add; addMap[matchKey(item)] = item; });
+                        const remMap = {};
+                        (diffs.removidos || []).forEach(rem => { const item = rem.item || rem; remMap[matchKey(item)] = item; });
+                        const syntheticMods = [];
+                        const handledAddKeys = new Set();
+                        const handledRemKeys = new Set();
+                        Object.keys(addMap).forEach(k => {
+                            if (remMap[k]) {
+                                syntheticMods.push({ original: remMap[k], atual: addMap[k] });
+                                handledAddKeys.add(k);
+                                handledRemKeys.add(k);
+                            }
+                        });
+
+                        if (diffs.removidos && diffs.removidos.length) {
+                            const remKeys = new Set(diffs.removidos.map(r => matchKey(r.item || r)).filter(k => !handledRemKeys.has(k)));
+                            if (remKeys.size) arr = arr.filter(item => !remKeys.has(matchKey(item)));
+                        }
+                        if (diffs.modificados && diffs.modificados.length) {
+                            diffs.modificados.forEach(mod => {
+                                const targetKey = matchKey(mod.atual || {});
+                                const origKey = matchKey(mod.original || {});
+                                let idx = arr.findIndex(item => matchKey(item) === targetKey);
+                                if (idx < 0) idx = arr.findIndex(item => matchKey(item) === origKey);
+                                if (idx >= 0 && mod.camposAlterados) {
+                                    Object.keys(mod.camposAlterados).forEach(field => {
+                                        arr[idx][field] = mod.camposAlterados[field].para;
+                                    });
+                                }
+                            });
+                        }
+                        syntheticMods.forEach(mod => {
+                            const origKey = matchKey(mod.original);
+                            const idx = arr.findIndex(item => matchKey(item) === origKey);
+                            if (idx >= 0) {
+                                (tabDef.colunas || []).forEach(col => {
+                                    if (mod.atual[col.field] !== undefined) arr[idx][col.field] = mod.atual[col.field];
+                                });
+                                Object.keys(mod.atual).forEach(k => {
+                                    if (arr[idx][k] === undefined || !tabDef.colunas.some(c => c.field === k)) arr[idx][k] = mod.atual[k];
+                                });
+                            }
+                        });
+                        if (diffs.adicionados && diffs.adicionados.length) {
+                            diffs.adicionados.forEach(add => {
+                                const item = add.item || add;
+                                const k = matchKey(item);
+                                if (handledAddKeys.has(k)) return;
+                                if (!arr.some(a => matchKey(a) === k)) arr.push(JSON.parse(JSON.stringify(item)));
+                            });
+                        }
+                        ted[tabDef.key] = arr;
+                    });
+                }
+            });
+        }
+
+        function removerAlteracao(index) {
             const ted = window.tedSelecionado;
-            if (!ted || !ted.apostilamentos || !ted.apostilamentos[index]) return;
-            if (!confirm(`Remover apostilamento #${index + 1}?`)) return;
-            // Capturar o apostilamento removido
-            const removed = ted.apostilamentos.splice(index, 1)[0];
+            if (!ted || !ted.alteracoes || !ted.alteracoes[index]) return;
+            const item = ted.alteracoes[index];
+            const isAditivo = item.tipo === 'aditivo';
+            const ordinal = obterOrdinalAlteracao(ted, index);
+            const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
+            const extra = isAditivo ? ` (+${item.meses || 0} meses)` : '';
+            if (!confirm(`Remover ${tipoLabel}${extra}?`)) return;
+
+            ted.alteracoes.splice(index, 1);
 
             // Restaurar dados do TED baseado nos snapshots restantes
             restaurarDadosAposRemocao(ted);
+
+            // Sincronizar arrays legados
+            sincronizarAlteracoesParaArraysLegado(ted);
 
             // Recalcular valorTed
             recomputeValorTedFromAditivos(ted);
@@ -6661,13 +6571,22 @@
             salvarDados();
             exibirInformacoesTED();
             try { atualizarTabelasEmCascata('ted'); } catch(e) {}
+            renderGanttVigencia();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+
+        // Manter funções legadas como wrappers para compatibilidade
+        function abrirModalAditivo(editIndex) { abrirModalAlteracao(editIndex); }
+        function abrirModalApostilamento(editIndex) { abrirModalAlteracao(editIndex); }
+        function fecharModalAditivo() { fecharModalAlteracao(); }
+        function fecharModalApostilamento() { fecharModalAlteracao(); }
+        function removerAditivo(index) { removerAlteracao(index); }
+        function removerApostilamento(index) { removerAlteracao(index); }
 
         // Recompute TED.valorTed from the last aditivo that has valorTed, or fallback to calculated financeiro
         function recomputeValorTedFromAditivos(ted) {
             if (!ted) return;
-            const withVal = (ted.aditivos || []).filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
+            const withVal = (ted.alteracoes || ted.aditivos || []).filter(a => a.tipo === 'aditivo' && typeof a.valorTed !== 'undefined' && a.valorTed !== null);
             if (withVal.length) {
                 ted.valorTed = withVal[withVal.length - 1].valorTed;
             } else {
@@ -6701,13 +6620,88 @@
             input.dataset.maskCurrency = '1';
         }
 
+        // Máscara para número inteiro em input (1000 → 1.000)
+        function applyNumberMaskToInput(input) {
+            if (!input) return;
+            if (input.dataset.maskNumber === '1') return;
+            const onInput = function () {
+                const raw = input.value || '';
+                const digits = raw.replace(/\D/g, '');
+                if (!digits) { input.value = ''; return; }
+                const num = parseInt(digits, 10);
+                input.value = num.toLocaleString('pt-BR');
+            };
+            input.addEventListener('input', onInput);
+            input.addEventListener('paste', function() { setTimeout(onInput, 0); });
+            input.dataset.maskNumber = '1';
+        }
+
+        // Formatar conteúdo de célula contenteditable como moeda pt-BR (centavos)
+        function formatarCelulaContentEditableCurrency(td) {
+            const raw = td.textContent || '';
+            const digits = raw.replace(/\D/g, '');
+            if (!digits) { td.textContent = ''; return; }
+            const num = parseInt(digits, 10);
+            const cents = num % 100;
+            const units = Math.floor(num / 100);
+            const formattedUnits = units.toLocaleString('pt-BR');
+            const formatted = formattedUnits + ',' + String(cents).padStart(2, '0');
+            // Preservar cursor ao final
+            td.textContent = formatted;
+            // Mover cursor para o final
+            try {
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(td);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch(e) {}
+        }
+
+        // Formatar conteúdo de célula contenteditable como número inteiro pt-BR (1000 → 1.000)
+        function formatarCelulaContentEditableNumber(td) {
+            const raw = td.textContent || '';
+            const digits = raw.replace(/\D/g, '');
+            if (!digits) { td.textContent = ''; return; }
+            const num = parseInt(digits, 10);
+            const formatted = num.toLocaleString('pt-BR');
+            td.textContent = formatted;
+            try {
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(td);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch(e) {}
+        }
+
+        // Aplicar máscaras a todas as células contenteditable de uma tabela clone do aditivo
+        function aplicarMascarasCelulasClone(container) {
+            if (!container) return;
+            container.querySelectorAll('td[contenteditable="true"]').forEach(td => {
+                if (td.dataset.maskApplied === '1') return;
+                const tipo = td.dataset.type;
+                if (tipo === 'currency') {
+                    td.addEventListener('input', function() { formatarCelulaContentEditableCurrency(td); });
+                    td.addEventListener('paste', function() { setTimeout(function() { formatarCelulaContentEditableCurrency(td); }, 0); });
+                    td.dataset.maskApplied = '1';
+                } else if (tipo === 'number') {
+                    td.addEventListener('input', function() { formatarCelulaContentEditableNumber(td); });
+                    td.addEventListener('paste', function() { setTimeout(function() { formatarCelulaContentEditableNumber(td); }, 0); });
+                    td.dataset.maskApplied = '1';
+                }
+            });
+        }
+
         // Função auxiliar: calcular fim com aditivos
         function calcularFimComAditivos(ted) {
             if (!ted.inicioVigencia) return null;
             const inicio = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
             if (isNaN(inicio.getTime())) return null;
             const vigOriginal = parseInt(ted.vigencia) || 0;
-            const totalAditivo = (ted.aditivos || []).reduce((s, a) => s + (a.meses || 0), 0);
+            const totalAditivo = (ted.alteracoes || ted.aditivos || []).filter(a => a.tipo === 'aditivo' || a.meses).reduce((s, a) => s + (a.meses || 0), 0);
             const totalMeses = vigOriginal + totalAditivo;
             const fim = new Date(inicio);
             fim.setMonth(fim.getMonth() + totalMeses);
@@ -7196,7 +7190,7 @@
             
             document.getElementById('faseFisico').value = fisico.fase;
             document.getElementById('objetoFisico').value = fisico.objeto;
-            document.getElementById('qtdeFisico').value = fisico.qtde;
+            document.getElementById('qtdeFisico').value = Number(fisico.qtde).toLocaleString('pt-BR');
             document.getElementById('mInicioFisico').value = fisico.mInicio;
             document.getElementById('mFinalFisico').value = fisico.mFinal;
             
@@ -7935,7 +7929,12 @@
             // Recalcular e preencher o campo mesDescFinanceiro a partir de M
             try { calcularMesFinanceiro(); } catch(e) { document.getElementById('mesDescFinanceiro').value = financeiro.mesDesc || ''; }
             document.getElementById('upFinanceiro').value = financeiro.up || financeiro.ug;
-            document.getElementById('valorFinanceiro').value = financeiro.valor;
+            // Formatar valor como moeda pt-BR
+            const valFin = Number(financeiro.valor);
+            const valFinCents = Math.round(valFin * 100);
+            const valFinUnits = Math.floor(valFinCents / 100);
+            const valFinRemainder = valFinCents % 100;
+            document.getElementById('valorFinanceiro').value = valFinUnits.toLocaleString('pt-BR') + ',' + String(valFinRemainder).padStart(2, '0');
             
             // Remover o financeiro antigo para permitir edição
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
@@ -9294,7 +9293,7 @@
                 // Base de meses acumulados para posicionar aditivos
                 let acumulado = vigOriginal > 0 ? vigOriginal
                     : ((fimOriginal.getFullYear()-inicio.getFullYear())*12 + (fimOriginal.getMonth()-inicio.getMonth()));
-                const aditivos = t.aditivos || [];
+                const aditivos = (t.alteracoes || t.aditivos || []).filter(a => (a.tipo || 'aditivo') === 'aditivo');
                 aditivos.forEach((a, ai) => {
                     const mesesAdit = parseInt(a.meses) || 0;
                     if (mesesAdit <= 0) return;
@@ -9429,7 +9428,8 @@
 
                     // Rastrear aditivos usados para legenda
                     if (r.temAditivo) {
-                        (r.ted.aditivos || []).forEach((a, ai) => {
+                        const aditivosArr = (r.ted.alteracoes || r.ted.aditivos || []).filter(a => a.tipo === 'aditivo' || a.meses);
+                        aditivosArr.forEach((a, ai) => {
                             if ((parseInt(a.meses) || 0) > 0) aditivosUsados.add(ai);
                             if (ai + 1 > maxAditivoIdx) maxAditivoIdx = ai + 1;
                         });
@@ -12441,11 +12441,13 @@
                 // Info edit
                 '[onclick*="toggleEditarInfo"]',
                 '[onclick*="salvarEdicaoInfo"]',
-                // Aditivos
+                // Aditivos / Apostilamentos (unificado)
+                '[onclick*="abrirModalAlteracao"]',
+                '[onclick*="confirmarAlteracao"]',
+                '[onclick*="removerAlteracao"]',
                 '[onclick*="abrirModalAditivo"]',
                 '[onclick*="confirmarAditivo"]',
                 '[onclick*="removerAditivo"]',
-                // Apostilamentos
                 '[onclick*="abrirModalApostilamento"]',
                 '[onclick*="confirmarApostilamento"]',
                 '[onclick*="removerApostilamento"]',
@@ -12561,6 +12563,11 @@
             inicializar();
             checkTableScrolls();
             initLucideIcons();
+
+            // Aplicar máscaras de formatação nos inputs do formulário
+            document.querySelectorAll('input.mask-numero').forEach(applyNumberMaskToInput);
+            document.querySelectorAll('input.mask-moeda').forEach(applyCurrencyMaskToInput);
+
             window.addEventListener('resize', function() {
                 try { refreshFrozenColumnsAllTables(); } catch(e) {}
             });
