@@ -3708,6 +3708,13 @@
             // if contains comma as decimal, normalize: remove dots then replace comma with dot
             if (str.includes(',')) {
                 str = str.replace(/\./g, '').replace(',', '.');
+            } else if (str.includes('.')) {
+                // No comma: check if dots are thousand separators (e.g. "1.000" or "1.000.000")
+                // Pattern: digits followed by groups of .XXX (exactly 3 digits after each dot)
+                const ptBrThousandPattern = /^\d{1,3}(\.\d{3})+$/;
+                if (ptBrThousandPattern.test(str)) {
+                    str = str.replace(/\./g, '');
+                }
             }
             const n = parseFloat(str);
             return isNaN(n) ? 0 : n;
