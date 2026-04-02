@@ -4891,6 +4891,13 @@
             exibirCampoComAlteracao('info_planoTrabalho', ted.planoTrabalho, 'planoTrabalho');
             exibirCampoComAlteracao('info_numTed', ted.numTed, 'numTed');
             exibirCampoComAlteracao('info_objetivo', ted.objetivo, 'objetivo');
+
+            // Migrar dados legados para lista unificada (mover para cima para que aditivos fique disponível)
+            migrarParaAlteracoesUnificadas(ted);
+            const alteracoes = ted.alteracoes || [];
+            const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
+            const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
+
             // Se houver aditivo que alterou o valor do TED, mostrar original tachado + novo valor
             let valorDisplay = '-';
             const aditivosComValor = aditivos.filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
@@ -4918,12 +4925,7 @@
             exibirCampoComAlteracao('info_ugDesc', ted.ugDesc, 'ugDesc');
             
             document.getElementById('info_inicioVigencia').textContent = formatarData(ted.inicioVigencia);
-            // Migrar dados legados para lista unificada
-            migrarParaAlteracoesUnificadas(ted);
-            const alteracoes = ted.alteracoes || [];
             // Vigência e Fim com suporte a aditivos
-            const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
-            const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
             if (aditivos.length > 0) {
                 const vigOriginal = ted.vigencia || 0;
                 const vigNova = parseInt(vigOriginal) + totalAditivoMeses;
