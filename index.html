@@ -5657,7 +5657,7 @@
                     { field: 'm', label: 'M', type: 'number' },
                     { field: 'valor', label: 'Valor', type: 'currency' }
                 ],
-                idField: 'id', matchFields: ['numero', 'up', 'm']
+                idField: 'id', matchFields: ['numero', 'up']
             }
         ];
 
@@ -5693,12 +5693,43 @@
                 modMap[k] = mod.camposAlterados;
             });
             const addSet = new Set();
+            const addItems = {};
             (alteracoes.adicionados || []).forEach(add => {
-                addSet.add(matchKey(add.item || add));
+                const item = add.item || add;
+                const k = matchKey(item);
+                addSet.add(k);
+                addItems[k] = item;
             });
             const remSet = new Set();
+            const remItems = {};
             (alteracoes.removidos || []).forEach(rem => {
-                remSet.add(matchKey(rem.item || rem));
+                const item = rem.item || rem;
+                const k = matchKey(item);
+                remSet.add(k);
+                remItems[k] = item;
+            });
+            // Backward compatibility: if same key appears in both addSet and remSet,
+            // it means a field in the matchKey was changed (e.g., old M-based matchFields).
+            // Convert these to synthetic modifications.
+            addSet.forEach(k => {
+                if (remSet.has(k)) {
+                    // Both add and remove with same key — synthesize a modification
+                    const addItem = addItems[k];
+                    const remItem = remItems[k];
+                    const camposAlterados = {};
+                    (tabDef.colunas || []).forEach(col => {
+                        const vOrig = formatarValorTabela(remItem[col.field], col.type);
+                        const vNovo = formatarValorTabela(addItem[col.field], col.type);
+                        if (vOrig !== vNovo) {
+                            camposAlterados[col.field] = { de: remItem[col.field], para: addItem[col.field], label: col.label };
+                        }
+                    });
+                    if (Object.keys(camposAlterados).length > 0) {
+                        modMap[k] = camposAlterados;
+                    }
+                    addSet.delete(k);
+                    remSet.delete(k);
+                }
             });
             return { modMap, addSet, remSet };
         }
@@ -5852,23 +5883,31 @@
             const fallbackLabels = { execFisicas: '✅ Execução Física', execFinanceiras: '💳 Execução Financeira', recursosGerais: '📊 Recursos Gerais' };
             // Iterar todas as chaves presentes no objeto de alterações
             Object.keys(tabelasAlteradas).forEach(tabelaKey => {
-                const diffs = tabelasAlteradas[tabelaKey];
-                if (!diffs) return;
+                const rawDiffs = tabelasAlteradas[tabelaKey];
+                if (!rawDiffs) return;
                 const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
                 const labelTabela = tabDef ? tabDef.label : (fallbackLabels[tabelaKey] || tabelaKey);
+
+                // Backward compat: use criarMapaAlteracoes to reconcile add+remove pairs as modifications
+                const { modMap, addSet, remSet } = tabDef ? criarMapaAlteracoes(rawDiffs, tabDef) : { modMap: {}, addSet: new Set(), remSet: new Set() };
+                const effectiveAdded = addSet.size;
+                const effectiveRemoved = remSet.size;
+                const effectiveModified = Object.keys(modMap).length;
+
                 html += `<div style="margin-top:4px;"><span class="aditivo-change-field">${labelTabela}:</span>`;
-                if (diffs.adicionados && diffs.adicionados.length) {
-                    html += ` <span class="aditivo-change-badge aditivo-change-new">+${diffs.adicionados.length} novo${diffs.adicionados.length > 1 ? 's' : ''}</span>`;
+                if (effectiveAdded > 0) {
+                    html += ` <span class="aditivo-change-badge aditivo-change-new">+${effectiveAdded} novo${effectiveAdded > 1 ? 's' : ''}</span>`;
                 }
-                if (diffs.removidos && diffs.removidos.length) {
-                    html += ` <span class="aditivo-change-badge aditivo-change-old">-${diffs.removidos.length} removido${diffs.removidos.length > 1 ? 's' : ''}</span>`;
+                if (effectiveRemoved > 0) {
+                    html += ` <span class="aditivo-change-badge aditivo-change-old">-${effectiveRemoved} removido${effectiveRemoved > 1 ? 's' : ''}</span>`;
                 }
-                if (diffs.modificados && diffs.modificados.length) {
-                    html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">✎${diffs.modificados.length} alterado${diffs.modificados.length > 1 ? 's' : ''}</span>`;
+                if (effectiveModified > 0) {
+                    html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">✎${effectiveModified} alterado${effectiveModified > 1 ? 's' : ''}</span>`;
                     // Detalhes das modificações
-                    diffs.modificados.forEach(mod => {
-                        Object.keys(mod.camposAlterados).forEach(field => {
-                            const ch = mod.camposAlterados[field];
+                    Object.keys(modMap).forEach(mk => {
+                        const camposAlterados = modMap[mk];
+                        Object.keys(camposAlterados).forEach(field => {
+                            const ch = camposAlterados[field];
                             const colDef = tabDef ? tabDef.colunas.find(c => c.field === field) : null;
                             const tipo = colDef ? colDef.type : 'text';
                             html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.7rem;color:var(--text-muted);">${ch.label || field}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(ch.de, tipo)}</span> → <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(ch.para, tipo)}</span></div>`;
@@ -5962,6 +6001,24 @@
                         Object.keys(arrOrig[idx]).forEach(k => {
                             if (item[k] === undefined) item[k] = arrOrig[idx][k];
                         });
+                    }
+                    // Recalcular mesDesc/anoDesc para financeiros quando M muda
+                    if (tabDef.key === 'financeiros' && item.m !== undefined) {
+                        const origM = (!isNaN(idx) && arrOrig[idx]) ? arrOrig[idx].m : null;
+                        if (origM === null || Number(item.m) !== Number(origM)) {
+                            let startDateFin;
+                            if (window.tedSelecionado.primeiraDescentralizacao) {
+                                startDateFin = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                                startDateFin = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+                            }
+                            if (startDateFin) {
+                                const dCalc = new Date(startDateFin);
+                                dCalc.setMonth(dCalc.getMonth() + Number(item.m));
+                                item.mesDesc = dCalc.getMonth() + 1;
+                                item.anoDesc = dCalc.getFullYear();
+                            }
+                        }
                     }
                     arr.push(item);
                 });
@@ -6230,16 +6287,44 @@
                         // Se houve modificações, adições ou remoções, aplicar sobre os dados atuais
                         const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
                         let arr = ted[tabDef.key] || [];
-                        // Remover itens removidos
+
+                        // Backward compat: detect add+remove with same matchKey (old M-based matchFields)
+                        // Treat as modifications instead
+                        const addMap = {};
+                        (diffs.adicionados || []).forEach(add => {
+                            const item = add.item || add;
+                            addMap[matchKey(item)] = item;
+                        });
+                        const remMap = {};
+                        (diffs.removidos || []).forEach(rem => {
+                            const item = rem.item || rem;
+                            remMap[matchKey(item)] = item;
+                        });
+                        const syntheticMods = [];
+                        const handledAddKeys = new Set();
+                        const handledRemKeys = new Set();
+                        Object.keys(addMap).forEach(k => {
+                            if (remMap[k]) {
+                                // Same key in both add+remove — synthetic modification
+                                syntheticMods.push({ original: remMap[k], atual: addMap[k] });
+                                handledAddKeys.add(k);
+                                handledRemKeys.add(k);
+                            }
+                        });
+
+                        // Remover itens removidos (excluding those handled as synthetic mods)
                         if (diffs.removidos && diffs.removidos.length) {
-                            const remKeys = new Set(diffs.removidos.map(r => matchKey(r.item || r)));
-                            arr = arr.filter(item => !remKeys.has(matchKey(item)));
+                            const remKeys = new Set(diffs.removidos.map(r => matchKey(r.item || r)).filter(k => !handledRemKeys.has(k)));
+                            if (remKeys.size) arr = arr.filter(item => !remKeys.has(matchKey(item)));
                         }
                         // Aplicar modificações
                         if (diffs.modificados && diffs.modificados.length) {
                             diffs.modificados.forEach(mod => {
+                                // Try matching by current key first, then by original key
                                 const targetKey = matchKey(mod.atual || {});
-                                const idx = arr.findIndex(item => matchKey(item) === targetKey);
+                                const origKey = matchKey(mod.original || {});
+                                let idx = arr.findIndex(item => matchKey(item) === targetKey);
+                                if (idx < 0) idx = arr.findIndex(item => matchKey(item) === origKey);
                                 if (idx >= 0 && mod.camposAlterados) {
                                     Object.keys(mod.camposAlterados).forEach(field => {
                                         arr[idx][field] = mod.camposAlterados[field].para;
@@ -6247,11 +6332,32 @@
                                 }
                             });
                         }
-                        // Adicionar novos itens
+                        // Apply synthetic modifications (backward compat)
+                        syntheticMods.forEach(mod => {
+                            const origKey = matchKey(mod.original);
+                            const idx = arr.findIndex(item => matchKey(item) === origKey);
+                            if (idx >= 0) {
+                                // Apply all changed fields from the "added" item
+                                (tabDef.colunas || []).forEach(col => {
+                                    if (mod.atual[col.field] !== undefined) {
+                                        arr[idx][col.field] = mod.atual[col.field];
+                                    }
+                                });
+                                // Also update extra fields like mesDesc, anoDesc
+                                Object.keys(mod.atual).forEach(k => {
+                                    if (arr[idx][k] === undefined || !tabDef.colunas.some(c => c.field === k)) {
+                                        arr[idx][k] = mod.atual[k];
+                                    }
+                                });
+                            }
+                        });
+                        // Adicionar novos itens (excluding those handled as synthetic mods)
                         if (diffs.adicionados && diffs.adicionados.length) {
                             diffs.adicionados.forEach(add => {
                                 const item = add.item || add;
-                                if (!arr.some(a => matchKey(a) === matchKey(item))) {
+                                const k = matchKey(item);
+                                if (handledAddKeys.has(k)) return; // already handled as synthetic mod
+                                if (!arr.some(a => matchKey(a) === k)) {
                                     arr.push(JSON.parse(JSON.stringify(item)));
                                 }
                             });
@@ -7892,7 +7998,7 @@
                 const valorNum = parseNumber(f.valor) || 0;
                 totalValor += valorNum;
                 const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
-                const mesDescStr = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx]}/${f.anoDesc}` : '-';
+                let mesDescStr = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx]}/${f.anoDesc}` : '-';
                 const numeroDisplay = f.numero || f.nd || '-';
                 const mKey = matchKeyFin(f);
                 const mods = modMapFin[mKey];
@@ -7900,6 +8006,14 @@
                 const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
                 const tdValor = mods && mods.valor ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 const tdM = mods && mods.m ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
+                // If M changed, also show old Mês Desc with strikethrough
+                if (mods && mods.m && startDate) {
+                    const oldM = Number(mods.m.de) || 0;
+                    const dOldMes = new Date(startDate);
+                    dOldMes.setMonth(dOldMes.getMonth() + oldM);
+                    const oldMesDescStr = `${mesesNome[dOldMes.getMonth()]}/${dOldMes.getFullYear()}`;
+                    mesDescStr = `<span class="celula-alterada-aditivo"><span class="val-antigo">${oldMesDescStr}</span><span class="val-novo">${mesDescStr}</span></span>`;
+                }
                 let html = `<tr${trClass}>
                     <td class="col-nd">${numeroDisplay}</td>
                     <td class="col-up">${f.up || f.ug || ''}</td>
@@ -7912,11 +8026,34 @@
                     </td>`;
                 
                 // Adicionar células do Gantt - mostrar valor com fundo azul claro no mês correspondente
+                // Calcular posição antiga do M se houve alteração de M (para mostrar no Gantt)
+                let oldMesDesc = null, oldAnoDesc = null;
+                if (mods && mods.m && startDate) {
+                    const oldM = Number(mods.m.de) || 0;
+                    const dOld = new Date(startDate);
+                    dOld.setMonth(dOld.getMonth() + oldM);
+                    oldMesDesc = dOld.getMonth() + 1;
+                    oldAnoDesc = dOld.getFullYear();
+                }
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoMes = parseInt(f.mesDesc) === mesInfo.mes && parseInt(f.anoDesc) === mesInfo.fullYear;
-                    if (estaNoMes) {
+                    const estaNoMesAntigo = oldMesDesc !== null && oldMesDesc === mesInfo.mes && oldAnoDesc === mesInfo.fullYear;
+                    if (estaNoMes && estaNoMesAntigo) {
+                        // Same cell for old and new (shouldn't happen if M actually changed, but handle)
                         totaisPorMes[mesIdx] += valorNum;
                         html += `<td style="background: #e0f2fe; text-align: right; padding-right: 0.25rem; font-size: 0.7rem;">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    } else if (estaNoMes) {
+                        totaisPorMes[mesIdx] += valorNum;
+                        if (oldMesDesc !== null) {
+                            // New M position — highlight as changed (green border)
+                            html += `<td style="background: #dcfce7; text-align: right; padding-right: 0.25rem; font-size: 0.7rem; border: 2px solid #16a34a;" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                        } else {
+                            html += `<td style="background: #e0f2fe; text-align: right; padding-right: 0.25rem; font-size: 0.7rem;">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                        }
+                    } else if (estaNoMesAntigo) {
+                        // Old M position — show strikethrough faded value
+                        const oldValor = mods && mods.valor ? Number(mods.valor.de || 0) : valorNum;
+                        html += `<td style="background: #fee2e2; text-align: right; padding-right: 0.25rem; font-size: 0.7rem; opacity: 0.6;" title="M anterior: ${mods.m.de}"><s>${oldValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</s></td>`;
                     } else {
                         html += `<td></td>`;
                     }
