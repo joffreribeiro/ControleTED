@@ -5454,7 +5454,7 @@
             tbody.innerHTML = window.tedSelecionado.objetos.map(obj => {
                 const qt = parseNumber(obj.qtde);
                 const vu = parseNumber(obj.valorUnitario);
-                const vt = (!isNaN(parseNumber(obj.valorTotal)) && obj.valorTotal !== undefined && obj.valorTotal !== null) ? parseNumber(obj.valorTotal) : (qt * vu);
+                const vt = qt * vu;
                 obj.valorTotal = vt; // garantir persistência em memória/localStorage
                 totalValor += vt;
                 const mKey = matchKeyObj(obj);
@@ -6515,6 +6515,11 @@
                         const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
                         let arr = ted[tabDef.key] || [];
 
+                        const getId = (item) => {
+                            if (!item || item.id === undefined || item.id === null) return null;
+                            return String(item.id);
+                        };
+
                         // Backward compat: detect add+remove with same matchKey
                         const addMap = {};
                         (diffs.adicionados || []).forEach(add => { const item = add.item || add; addMap[matchKey(item)] = item; });
@@ -6532,14 +6537,27 @@
                         });
 
                         if (diffs.removidos && diffs.removidos.length) {
-                            const remKeys = new Set(diffs.removidos.map(r => matchKey(r.item || r)).filter(k => !handledRemKeys.has(k)));
-                            if (remKeys.size) arr = arr.filter(item => !remKeys.has(matchKey(item)));
+                            const remItems = diffs.removidos.map(r => r.item || r);
+                            const remIds = new Set(remItems.map(getId).filter(Boolean));
+                            const remKeys = new Set(remItems.map(matchKey).filter(k => !handledRemKeys.has(k)));
+                            if (remIds.size || remKeys.size) {
+                                arr = arr.filter(item => {
+                                    const itemId = getId(item);
+                                    if (itemId && remIds.has(itemId)) return false;
+                                    return !remKeys.has(matchKey(item));
+                                });
+                            }
                         }
                         if (diffs.modificados && diffs.modificados.length) {
                             diffs.modificados.forEach(mod => {
                                 const targetKey = matchKey(mod.atual || {});
                                 const origKey = matchKey(mod.original || {});
-                                let idx = arr.findIndex(item => matchKey(item) === targetKey);
+                                const targetId = getId(mod.atual || {});
+                                const origId = getId(mod.original || {});
+                                let idx = -1;
+                                if (targetId) idx = arr.findIndex(item => getId(item) === targetId);
+                                if (idx < 0 && origId) idx = arr.findIndex(item => getId(item) === origId);
+                                if (idx < 0) idx = arr.findIndex(item => matchKey(item) === targetKey);
                                 if (idx < 0) idx = arr.findIndex(item => matchKey(item) === origKey);
                                 if (idx >= 0 && mod.camposAlterados) {
                                     Object.keys(mod.camposAlterados).forEach(field => {
@@ -6550,7 +6568,10 @@
                         }
                         syntheticMods.forEach(mod => {
                             const origKey = matchKey(mod.original);
-                            const idx = arr.findIndex(item => matchKey(item) === origKey);
+                            const origId = getId(mod.original);
+                            let idx = -1;
+                            if (origId) idx = arr.findIndex(item => getId(item) === origId);
+                            if (idx < 0) idx = arr.findIndex(item => matchKey(item) === origKey);
                             if (idx >= 0) {
                                 (tabDef.colunas || []).forEach(col => {
                                     if (mod.atual[col.field] !== undefined) arr[idx][col.field] = mod.atual[col.field];
@@ -6564,8 +6585,21 @@
                             diffs.adicionados.forEach(add => {
                                 const item = add.item || add;
                                 const k = matchKey(item);
+                                const addId = getId(item);
                                 if (handledAddKeys.has(k)) return;
-                                if (!arr.some(a => matchKey(a) === k)) arr.push(JSON.parse(JSON.stringify(item)));
+                                if (addId) {
+                                    if (!arr.some(a => getId(a) === addId)) arr.push(JSON.parse(JSON.stringify(item)));
+                                } else {
+                                    if (!arr.some(a => matchKey(a) === k)) arr.push(JSON.parse(JSON.stringify(item)));
+                                }
+                            });
+                        }
+
+                        if (tabDef.key === 'objetos') {
+                            arr.forEach(item => {
+                                const qt = parseNumber(item.qtde) || 0;
+                                const vu = parseNumber(item.valorUnitario) || 0;
+                                item.valorTotal = qt * vu;
                             });
                         }
                         ted[tabDef.key] = arr;
@@ -6584,10 +6618,28 @@
             const extra = isAditivo ? ` (+${item.meses || 0} meses)` : '';
             if (!confirm(`Remover ${tipoLabel}${extra}?`)) return;
 
+            const removida = ted.alteracoes[index];
             ted.alteracoes.splice(index, 1);
 
             // Restaurar dados do TED baseado nos snapshots restantes
-            restaurarDadosAposRemocao(ted);
+            if ((ted.alteracoes || []).length === 0 && removida && removida.snapshot) {
+                const snap = removida.snapshot;
+                ADITIVO_CAMPOS_CLONE.forEach(c => {
+                    if (snap[c.key] !== undefined) ted[c.key] = snap[c.key];
+                });
+                ADITIVO_TABELAS_CLONE.forEach(t => {
+                    if (snap[t.key]) ted[t.key] = JSON.parse(JSON.stringify(snap[t.key]));
+                });
+            } else {
+                restaurarDadosAposRemocao(ted);
+            }
+
+            // Recalcular valor total dos objetos após restauração
+            (ted.objetos || []).forEach(obj => {
+                const qt = parseNumber(obj.qtde) || 0;
+                const vu = parseNumber(obj.valorUnitario) || 0;
+                obj.valorTotal = qt * vu;
+            });
 
             // Sincronizar arrays legados
             sincronizarAlteracoesParaArraysLegado(ted);
