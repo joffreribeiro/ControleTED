@@ -10021,7 +10021,7 @@
 
         // Atualizar tabelas em cascata após alteração de dados
         function atualizarTabelasEmCascata(origem) {
-            // origem pode ser: 'objetos', 'fisicos', 'metas', 'financeiros', 'execFisica', 'execFinanceira', 'ted'
+            // origem pode ser: 'objetos', 'fisicos', 'metas', 'financeiros', 'execFisica', 'execFinanceira', 'recursosGerais', 'ted'
             try {
                 if (origem === 'objetos' || origem === 'ted') {
                     atualizarTabelaObjetos();
@@ -10041,11 +10041,14 @@
                 if (origem === 'financeiros' || origem === 'ted') {
                     atualizarTabelaFinanceira();
                 }
-                if (origem === 'execFisica') {
+                if (origem === 'execFisica' || origem === 'ted') {
                     atualizarTabelaExecFisica();
                 }
-                if (origem === 'execFinanceira') {
+                if (origem === 'execFinanceira' || origem === 'ted') {
                     atualizarTabelaExecFinanceira();
+                }
+                if (origem === 'recursosGerais' || origem === 'ted') {
+                    atualizarTabelaRecursosGerais();
                 }
                 // Atualizar gráficos e dashboard
                 try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
