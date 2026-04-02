@@ -5792,9 +5792,11 @@
                     alteracoes[c.key] = { de: snapshot[c.key], para: novosValores[c.key] };
                 }
             });
-            // Comparar valorTed
-            if (String(snapshot.valorTed || '') !== String(novosValores.valorTed || '')) {
-                alteracoes.valorTed = { de: snapshot.valorTed, para: novosValores.valorTed };
+            // Comparar valorTed — somente se foi explicitamente definido (aditivo tem campo de valor; apostilamento não)
+            if (novosValores.hasOwnProperty('valorTed')) {
+                if (String(snapshot.valorTed || '') !== String(novosValores.valorTed || '')) {
+                    alteracoes.valorTed = { de: snapshot.valorTed, para: novosValores.valorTed };
+                }
             }
             return alteracoes;
         }
@@ -6610,9 +6612,8 @@
             const withVal = (ted.alteracoes || ted.aditivos || []).filter(a => a.tipo === 'aditivo' && typeof a.valorTed !== 'undefined' && a.valorTed !== null);
             if (withVal.length) {
                 ted.valorTed = withVal[withVal.length - 1].valorTed;
-            } else {
-                ted.valorTed = calcularTotalFinanceiro(ted) || 0;
             }
+            // Se não há aditivo com valorTed, manter o valor original do TED (não sobrescrever)
         }
 
         // Aplica máscara de moeda (pt-BR) em um input enquanto o usuário digita
