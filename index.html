@@ -2741,8 +2741,8 @@
                             <input type="text" id="objeto" placeholder="Objeto" required>
                         </div>
                         <div class="form-group">
-                            <label>Valor do TED (R$) *</label>
-                            <input type="text" id="valorTed" placeholder="0,00" inputmode="numeric" class="mask-moeda" required>
+                            <label>Valor do TED (R$)</label>
+                            <input type="text" id="valorTed" placeholder="0,00" inputmode="numeric" class="mask-moeda" value="0,00" readonly>
                         </div>
                         
                         
@@ -2888,8 +2888,8 @@
                                 </div>
                             </div>
 
-                            <!-- Linha 1: 4 campos -->
-                            <div class="ted-info-row row-4">
+                            <!-- Linha 1: 3 campos -->
+                            <div class="ted-info-row row-3">
                                 <div class="ted-info-card">
                                     <label class="ted-info-label">Plano de Trabalho</label>
                                     <div class="ted-info-value" id="info_planoTrabalho"></div>
@@ -2904,11 +2904,6 @@
                                     <label class="ted-info-label">Objeto</label>
                                     <div class="ted-info-value" id="info_objetivo"></div>
                                     <input type="text" class="ted-info-input" id="edit_objetivo" style="display: none;">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Valor do TED (R$)</label>
-                                    <div class="ted-info-value" id="info_valorTed"></div>
-                                    <input type="text" class="ted-info-input" id="edit_valorTed" style="display: none;">
                                 </div>
                             </div>
 
@@ -4001,23 +3996,38 @@
             }
         }
 
-        // Atualiza o campo valorTed do TED a partir dos financeiros (e atualiza UI/armazenamento)
-        function atualizarValorTedFromFinanceiros(ted) {
+        // Calcula valor total de objetos (qtde * valorUnitario)
+        function calcularTotalObjetosValor(ted) {
+            if (!ted || !ted.objetos || !ted.objetos.length) return 0;
+            return ted.objetos.reduce((s, o) => {
+                const qt = parseNumber(o.qtde) || 0;
+                const vu = parseNumber(o.valorUnitario) || 0;
+                return s + (qt * vu);
+            }, 0);
+        }
+
+        // Atualiza o campo valorTed do TED a partir do Cadastro de Objetos
+        function atualizarValorTedFromObjetos(ted) {
             if (!ted) return;
-            const total = calcularTotalFinanceiro(ted);
+            const total = calcularTotalObjetosValor(ted);
             ted.valorTed = total;
             try { salvarDados(); } catch(e) {}
-            // Atualizar exibição caso seja o TED selecionado
             if (window.tedSelecionado && window.tedSelecionado.id === ted.id) {
-                const el = document.getElementById('info_valorTed');
-                if (el) el.textContent = total ? parseFloat(total).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '-';
-                const editEl = document.getElementById('edit_valorTed');
-                if (editEl) editEl.value = total || '';
-                // também atualizar o campo do formulário de criação (se presente)
                 const createEl = document.getElementById('valorTed');
-                if (createEl) createEl.value = total || '';
+                if (createEl) {
+                    const cents = Math.round(total * 100);
+                    const units = Math.floor(cents / 100);
+                    const rem = cents % 100;
+                    createEl.value = formatarMilharesPtBR(units) + ',' + String(rem).padStart(2, '0');
+                }
+                try { exibirInformacoesTED(); } catch(e) {}
                 try { atualizarListaTEDs(); } catch(e) {}
             }
+        }
+
+        // Compatibilidade com chamadas antigas (antes era por financeiros)
+        function atualizarValorTedFromFinanceiros(ted) {
+            atualizarValorTedFromObjetos(ted);
         }
 
         // --- Execução Física: cálculos de progresso ---
@@ -4116,8 +4126,8 @@
                 dataCriacao: new Date().toLocaleDateString('pt-BR')
             };
 
-            // Garantir que valorTed seja derivado do cadastro financeiro (inicialmente 0)
-            ted.valorTed = calcularTotalFinanceiro(ted) || 0;
+            // Garantir que valorTed seja derivado do cadastro de objetos (inicialmente 0)
+            ted.valorTed = calcularTotalObjetosValor(ted) || 0;
 
             // Campos adicionais (não obrigatórios)
             ted.situacaoTED = document.getElementById('create_situacaoTED') ? document.getElementById('create_situacaoTED').value : '';
@@ -4920,7 +4930,8 @@
             } else {
                 valorDisplay = ted.valorTed ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
             }
-            document.getElementById('info_valorTed').innerHTML = valorDisplay;
+            const infoValorEl = document.getElementById('info_valorTed');
+            if (infoValorEl) infoValorEl.innerHTML = valorDisplay;
             
             exibirCampoComAlteracao('info_codigoPlano', ted.codigoPlano, 'codigoPlano');
             exibirCampoComAlteracao('info_numTedSiafi', ted.numTedSiafi, 'numTedSiafi');
@@ -5020,15 +5031,6 @@
             document.getElementById('edit_planoTrabalho').value = ted.planoTrabalho || '';
             document.getElementById('edit_numTed').value = ted.numTed || '';
             document.getElementById('edit_objetivo').value = ted.objetivo || '';
-            const editValEl = document.getElementById('edit_valorTed');
-            if (editValEl) {
-                if (typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) {
-                    const _ev = Number(ted.valorTed), _evC = Math.round(_ev * 100), _evU = Math.floor(_evC / 100), _evR = _evC % 100;
-                    editValEl.value = formatarMilharesPtBR(_evU) + ',' + String(_evR).padStart(2, '0');
-                } else {
-                    editValEl.value = '';
-                }
-            }
             
             document.getElementById('edit_codigoPlano').value = ted.codigoPlano || '';
             document.getElementById('edit_numTedSiafi').value = ted.numTedSiafi || '';
@@ -5102,7 +5104,7 @@
             tedBackup = JSON.parse(JSON.stringify(window.tedSelecionado));
             
             // Mostrar campos de edição e ocultar visualização
-            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'valorTed', 'codigoPlano', 'numTedSiafi', 
+            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'codigoPlano', 'numTedSiafi', 
                            'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc', 
                            'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao',
                            'situacaoTED', 'dataEntregaDenuncia', 'prazoRelatorio', 'dataEntregaRelatorio', 'statusTED'];
@@ -5119,8 +5121,6 @@
 
             // Recalcular Fim de Vigência ao abrir edição (considera aditivos)
             calcularFimVigenciaEdit();
-            // aplicar máscara de moeda no campo de edição de valor do TED
-            try { applyCurrencyMaskToInput(document.getElementById('edit_valorTed')); } catch(e) {}
         }
 
         // Salvar edição
@@ -5131,12 +5131,8 @@
             window.tedSelecionado.planoTrabalho = document.getElementById('edit_planoTrabalho').value;
             window.tedSelecionado.numTed = document.getElementById('edit_numTed').value;
             window.tedSelecionado.objetivo = document.getElementById('edit_objetivo').value;
-            // Se houver cadastro financeiro, usar o total calculado (prioridade).
-            if (window.tedSelecionado.financeiros && window.tedSelecionado.financeiros.length) {
-                window.tedSelecionado.valorTed = calcularTotalFinanceiro(window.tedSelecionado);
-            } else {
-                window.tedSelecionado.valorTed = parseNumber(document.getElementById('edit_valorTed').value) || 0;
-            }
+            // Valor do TED é sempre derivado do cadastro de objetos
+            window.tedSelecionado.valorTed = calcularTotalObjetosValor(window.tedSelecionado);
             
             window.tedSelecionado.codigoPlano = document.getElementById('edit_codigoPlano').value;
             window.tedSelecionado.numTedSiafi = document.getElementById('edit_numTedSiafi').value;
@@ -5207,7 +5203,7 @@
 
         // Sair do modo de edição
         function sairModoEdicao() {
-            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'valorTed', 'codigoPlano', 'numTedSiafi', 
+            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'codigoPlano', 'numTedSiafi', 
                            'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc', 
                            'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao',
                            'situacaoTED', 'dataEntregaDenuncia', 'prazoRelatorio', 'dataEntregaRelatorio', 'statusTED'];
@@ -5373,6 +5369,8 @@
                 valorTotal: valorUnitario * qtde
             });
 
+            atualizarValorTedFromObjetos(window.tedSelecionado);
+
             salvarDados();
             atualizarTabelasEmCascata('objetos');
             // Verificar consistência de quantidade com Cadastro Físico
@@ -5399,12 +5397,14 @@
 
             // Remover o objeto antigo para permitir gravação do editado
             window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
+            atualizarValorTedFromObjetos(window.tedSelecionado);
             atualizarTabelasEmCascata('objetos');
         }
 
         function removerObjeto(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
+            atualizarValorTedFromObjetos(window.tedSelecionado);
             salvarDados();
             atualizarTabelasEmCascata('objetos');
         }
@@ -6261,7 +6261,7 @@
             // Gerar tabelas clonadas
             const tabelasCloneHtml = gerarHtmlTabelasClone(ted, 'alt', existente);
 
-            // Campos específicos do aditivo (meses, valor TED)
+            // Campos específicos do aditivo
             let dadosEspecificosHtml = '';
             if (tipo === 'aditivo') {
                 dadosEspecificosHtml = `
@@ -6274,10 +6274,6 @@
                         <div class="form-group">
                             <label>Data do aditivo *</label>
                             <input type="date" id="alteracaoDataInput">
-                        </div>
-                        <div class="form-group">
-                            <label>Valor do TED</label>
-                            <input type="text" id="alteracaoValorTedInput" placeholder="Ex: 45.000.000,00">
                         </div>
                         <div class="form-group">
                             <label>Observação</label>
@@ -6324,21 +6320,6 @@
             if (tipo === 'aditivo') {
                 const mesesInput = document.getElementById('alteracaoMesesInput');
                 if (mesesInput) mesesInput.value = existente ? (existente.meses || '') : '';
-                const valInput = document.getElementById('alteracaoValorTedInput');
-                if (valInput) {
-                    if (existente && typeof existente.valorTed !== 'undefined' && existente.valorTed !== null) {
-                        const _vt = Number(existente.valorTed), _vtC = Math.round(_vt * 100), _vtU = Math.floor(_vtC / 100), _vtR = _vtC % 100;
-                        valInput.value = formatarMilharesPtBR(_vtU) + ',' + String(_vtR).padStart(2, '0');
-                    } else {
-                        if (ted.valorTed !== undefined && ted.valorTed !== null) {
-                            const _vt2 = Number(ted.valorTed), _vtC2 = Math.round(_vt2 * 100), _vtU2 = Math.floor(_vtC2 / 100), _vtR2 = _vtC2 % 100;
-                            valInput.value = formatarMilharesPtBR(_vtU2) + ',' + String(_vtR2).padStart(2, '0');
-                        } else {
-                            valInput.value = '';
-                        }
-                    }
-                    applyCurrencyMaskToInput(valInput);
-                }
             }
 
             // Atualizar snapshot
@@ -6396,14 +6377,9 @@
 
             // Dados específicos do aditivo
             let meses = 0;
-            let novoValor = null;
-            let currentTedValue = (typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) ? Number(ted.valorTed) : null;
 
             if (tipo === 'aditivo') {
                 meses = parseInt((document.getElementById('alteracaoMesesInput') || {}).value, 10) || 0;
-                const rawVal = ((document.getElementById('alteracaoValorTedInput') || {}).value || '').trim();
-                novoValor = rawVal !== '' ? parseNumber(rawVal) : null;
-                novosValores.valorTed = novoValor !== null ? novoValor : (currentTedValue || 0);
             }
 
             // Detectar alterações de campos simples
@@ -6426,9 +6402,6 @@
             const altObj = { tipo, data, obs };
             if (tipo === 'aditivo') {
                 altObj.meses = meses;
-                if (novoValor !== null) {
-                    altObj.valorTed = novoValor;
-                }
             }
             altObj.snapshot = snapshot;
             altObj.camposAlterados = alteracoes;
@@ -6436,22 +6409,8 @@
 
             if (typeof editIndex === 'number' && !isNaN(editIndex)) {
                 const existing = ted.alteracoes[editIndex] || {};
-                if (tipo === 'aditivo' && novoValor !== null) {
-                    if (typeof existing.valorTed !== 'undefined' && existing.valorTed !== null) {
-                        if (novoValor !== existing.valorTed) {
-                            altObj.prevValorTed = (typeof existing.prevValorTed !== 'undefined' && existing.prevValorTed !== null) ? existing.prevValorTed : currentTedValue;
-                        }
-                    } else {
-                        if (currentTedValue === null || novoValor !== currentTedValue) {
-                            altObj.prevValorTed = currentTedValue;
-                        }
-                    }
-                }
                 ted.alteracoes[editIndex] = Object.assign({}, existing, altObj);
             } else {
-                if (tipo === 'aditivo' && novoValor !== null && (currentTedValue === null || novoValor !== currentTedValue)) {
-                    altObj.prevValorTed = currentTedValue;
-                }
                 ted.alteracoes.push(altObj);
             }
 
@@ -6463,10 +6422,8 @@
                     }
                 });
             }
-
-
-            // recompute TED.valorTed
-            recomputeValorTedFromAditivos(ted);
+            // valor TED é derivado do cadastro de objetos
+            atualizarValorTedFromObjetos(ted);
 
             salvarDados();
             fecharModalAlteracao();
@@ -6644,8 +6601,8 @@
             // Sincronizar arrays legados
             sincronizarAlteracoesParaArraysLegado(ted);
 
-            // Recalcular valorTed
-            recomputeValorTedFromAditivos(ted);
+            // valor TED é derivado do cadastro de objetos
+            atualizarValorTedFromObjetos(ted);
 
             salvarDados();
             exibirInformacoesTED();
@@ -6662,14 +6619,9 @@
         function removerAditivo(index) { removerAlteracao(index); }
         function removerApostilamento(index) { removerAlteracao(index); }
 
-        // Recompute TED.valorTed from the last aditivo that has valorTed, or fallback to calculated financeiro
+        // Compatibilidade: valor TED agora é sempre derivado do cadastro de objetos
         function recomputeValorTedFromAditivos(ted) {
-            if (!ted) return;
-            const withVal = (ted.alteracoes || ted.aditivos || []).filter(a => a.tipo === 'aditivo' && typeof a.valorTed !== 'undefined' && a.valorTed !== null);
-            if (withVal.length) {
-                ted.valorTed = withVal[withVal.length - 1].valorTed;
-            }
-            // Se não há aditivo com valorTed, manter o valor original do TED (não sobrescrever)
+            atualizarValorTedFromObjetos(ted);
         }
 
         // Aplica máscara de moeda (pt-BR) em um input enquanto o usuário digita
@@ -8284,14 +8236,9 @@
                 </tr>
             `;
 
-            // Garantir que o valor do TED reflita o total dos financeiros
+            // Valor do TED deve refletir o total do cadastro de objetos
             if (window.tedSelecionado) {
-                window.tedSelecionado.valorTed = totalValor;
-                try { salvarDados(); } catch(e) {}
-                const infoEl = document.getElementById('info_valorTed');
-                if (infoEl) infoEl.textContent = totalValor ? totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '-';
-                const editEl = document.getElementById('edit_valorTed');
-                if (editEl) editEl.value = totalValor || '';
+                atualizarValorTedFromObjetos(window.tedSelecionado);
             }
 
             if (previstoAnualSpan) {
