@@ -6434,17 +6434,31 @@
         }
 
         // Função auxiliar: restaurar dados do TED a partir dos snapshots das alterações restantes
-        function restaurarDadosAposRemocao(ted) {
+        function restaurarDadosAposRemocao(ted, removedIndex, removedItem) {
             // Coletar todas as alterações com snapshot, em ordem
             const eventos = [];
             (ted.alteracoes || []).forEach((a, i) => {
                 if (a.snapshot) eventos.push({ tipo: a.tipo, idx: i, data: a.data || '', obj: a });
             });
 
-            if (eventos.length === 0) return;
+            if (eventos.length === 0) {
+                if (removedItem && removedItem.snapshot) {
+                    const snap = removedItem.snapshot;
+                    ADITIVO_CAMPOS_CLONE.forEach(c => {
+                        if (snap[c.key] !== undefined) ted[c.key] = snap[c.key];
+                    });
+                    ADITIVO_TABELAS_CLONE.forEach(t => {
+                        if (snap[t.key]) ted[t.key] = JSON.parse(JSON.stringify(snap[t.key]));
+                    });
+                }
+                return;
+            }
 
-            // Restaurar estado do primeiro snapshot (estado antes de qualquer alteração)
-            const primeiroSnapshot = eventos[0].obj.snapshot;
+            // Escolher snapshot-base correto:
+            // - se removeu o primeiro item (índice 0), usar snapshot do item removido (estado original real)
+            // - caso contrário, usar snapshot do primeiro evento remanescente
+            const usarSnapshotRemovido = (typeof removedIndex === 'number' && removedIndex === 0 && removedItem && removedItem.snapshot);
+            const primeiroSnapshot = usarSnapshotRemovido ? removedItem.snapshot : eventos[0].obj.snapshot;
             if (primeiroSnapshot) {
                 ADITIVO_CAMPOS_CLONE.forEach(c => {
                     if (primeiroSnapshot[c.key] !== undefined) {
@@ -6588,7 +6602,7 @@
                     if (snap[t.key]) ted[t.key] = JSON.parse(JSON.stringify(snap[t.key]));
                 });
             } else {
-                restaurarDadosAposRemocao(ted);
+                restaurarDadosAposRemocao(ted, index, removida);
             }
 
             // Recalcular valor total dos objetos após restauração
