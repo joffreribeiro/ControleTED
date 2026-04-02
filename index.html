@@ -2056,6 +2056,38 @@
         .aditivo-modal label { color: var(--text); font-weight:600; display:block; margin-bottom:6px; }
         .aditivo-modal input { color: var(--text); background: var(--bg-secondary); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; }
         .aditivo-modal input:focus { outline: 2px solid rgba(59,130,246,0.18); box-shadow: 0 4px 12px rgba(59,130,246,0.06); }
+        .aditivo-modal select { color: var(--text); background: var(--bg-secondary); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; }
+        .aditivo-modal textarea { color: var(--text); background: var(--bg-secondary); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; resize:vertical; min-height:60px; }
+        /* Expanded aditivo modal */
+        .aditivo-modal-expanded { min-width: 720px; max-width: 96vw; max-height: 90vh; overflow-y: auto; }
+        .aditivo-modal-expanded .aditivo-clone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+        .aditivo-modal-expanded .aditivo-clone-grid .form-group { margin-bottom: 0; }
+        .aditivo-modal-expanded .aditivo-clone-grid label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+        .aditivo-modal-expanded .aditivo-clone-grid .full-width { grid-column: 1 / -1; }
+        .aditivo-modal-expanded .aditivo-section-title { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin: 1rem 0 0.5rem 0; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border); }
+        .aditivo-modal-expanded .campo-modificado input,
+        .aditivo-modal-expanded .campo-modificado select,
+        .aditivo-modal-expanded .campo-modificado textarea { border-color: #f59e0b !important; background: rgba(245,158,11,0.06) !important; }
+        .aditivo-modal-expanded .campo-modificado label::after { content: ' ✎ alterado'; font-size: 0.7rem; color: #f59e0b; font-weight: 400; margin-left: 6px; }
+        /* Change display in history table */
+        .aditivo-change-badge { display: inline-block; font-size: 0.72rem; padding: 1px 6px; border-radius: 4px; margin: 1px 2px; line-height: 1.4; }
+        .aditivo-change-old { background: rgba(239,68,68,0.10); color: #dc2626; text-decoration: line-through; }
+        .aditivo-change-new { background: rgba(34,197,94,0.12); color: #16a34a; font-weight: 600; }
+        .aditivo-change-field { font-weight: 600; color: var(--text-secondary); font-size: 0.72rem; }
+        .aditivo-changes-list { display: flex; flex-direction: column; gap: 3px; max-width: 400px; }
+        .aditivo-change-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        /* Info view: valor com alteração via aditivo */
+        .valor-alterado-aditivo { display: inline-flex; align-items: center; gap: 6px; }
+        .valor-alterado-aditivo .valor-antigo { text-decoration: line-through; color: var(--text-muted); font-size: 0.85em; opacity: 0.7; }
+        .valor-alterado-aditivo .valor-novo { color: #16a34a; font-weight: 700; }
+        /* Tabela clone dentro do modal de aditivo */
+        .aditivo-clone-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .aditivo-clone-table th { background: rgba(59,130,246,0.06); color: var(--text); font-weight: 600; padding: 6px 8px; text-align: left; border-bottom: 2px solid var(--border); white-space: nowrap; }
+        .aditivo-clone-table td { padding: 5px 8px; border-bottom: 1px solid var(--border-light); color: var(--text); }
+        .aditivo-clone-table td[contenteditable="true"] { cursor: text; outline: none; }
+        .aditivo-clone-table td[contenteditable="true"]:focus { background: rgba(59,130,246,0.06); outline: 2px solid rgba(59,130,246,0.2); border-radius: 2px; }
+        .aditivo-clone-table tr:hover { background: rgba(59,130,246,0.03); }
+        .aditivo-clone-table tr[data-removido="1"] td { text-decoration: line-through; color: var(--text-muted); }
         /* Entregas chart styles */
         .entregas-controls { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; }
         .entregas-chart { display:flex; gap:2rem; align-items:flex-end; padding:1rem 0; }
@@ -4821,9 +4853,35 @@
             };
             
             // Preencher campos de visualização
-            document.getElementById('info_planoTrabalho').textContent = ted.planoTrabalho || '-';
-            document.getElementById('info_numTed').textContent = ted.numTed || '-';
-            document.getElementById('info_objetivo').textContent = ted.objetivo || '-';
+            // Coletar todas as alterações de aditivos e apostilamentos para destacar campos modificados
+            const todasAlteracoes = {};
+            [...aditivos, ...(ted.apostilamentos || [])].forEach(item => {
+                if (item.camposAlterados && typeof item.camposAlterados === 'object') {
+                    Object.keys(item.camposAlterados).forEach(key => {
+                        // Manter a última alteração (mais recente)
+                        if (!todasAlteracoes[key]) todasAlteracoes[key] = [];
+                        todasAlteracoes[key].push(item.camposAlterados[key]);
+                    });
+                }
+            });
+
+            // Função helper para exibir campo com destaque de alteração (strikethrough no original)
+            const exibirCampoComAlteracao = (elementId, valorAtual, campoKey) => {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                if (todasAlteracoes[campoKey] && todasAlteracoes[campoKey].length > 0) {
+                    const primeira = todasAlteracoes[campoKey][0];
+                    const valorOriginal = primeira.de || '(vazio)';
+                    const valorNovo = valorAtual || primeira.para || '-';
+                    el.innerHTML = `<span class="valor-alterado-aditivo"><span class="valor-antigo">${valorOriginal}</span><span class="valor-novo">${valorNovo}</span></span>`;
+                } else {
+                    el.textContent = valorAtual || '-';
+                }
+            };
+
+            exibirCampoComAlteracao('info_planoTrabalho', ted.planoTrabalho, 'planoTrabalho');
+            exibirCampoComAlteracao('info_numTed', ted.numTed, 'numTed');
+            exibirCampoComAlteracao('info_objetivo', ted.objetivo, 'objetivo');
             // Se houver aditivo que alterou o valor do TED, mostrar original tachado + novo valor
             let valorDisplay = '-';
             const aditivosComValor = aditivos.filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
@@ -4841,14 +4899,14 @@
             }
             document.getElementById('info_valorTed').innerHTML = valorDisplay;
             
-            document.getElementById('info_codigoPlano').textContent = ted.codigoPlano || '-';
-            document.getElementById('info_numTedSiafi').textContent = ted.numTedSiafi || '-';
-            document.getElementById('info_notaSistema').textContent = ted.notaSistema || '-';
+            exibirCampoComAlteracao('info_codigoPlano', ted.codigoPlano, 'codigoPlano');
+            exibirCampoComAlteracao('info_numTedSiafi', ted.numTedSiafi, 'numTedSiafi');
+            exibirCampoComAlteracao('info_notaSistema', ted.notaSistema, 'notaSistema');
             
-            document.getElementById('info_upResponsavel').textContent = ted.upResponsavel || '-';
-            document.getElementById('info_egExecutora').textContent = ted.ugExecutora || ted.egExecutora || '-';
-            document.getElementById('info_unidadeDesc').textContent = ted.unidadeDesc || '-';
-            document.getElementById('info_ugDesc').textContent = ted.ugDesc || '-';
+            exibirCampoComAlteracao('info_upResponsavel', ted.upResponsavel, 'upResponsavel');
+            exibirCampoComAlteracao('info_egExecutora', ted.ugExecutora || ted.egExecutora, 'ugExecutora');
+            exibirCampoComAlteracao('info_unidadeDesc', ted.unidadeDesc, 'unidadeDesc');
+            exibirCampoComAlteracao('info_ugDesc', ted.ugDesc, 'ugDesc');
             
             document.getElementById('info_inicioVigencia').textContent = formatarData(ted.inicioVigencia);
             // Vigência e Fim com suporte a aditivos
@@ -4875,12 +4933,36 @@
 
                 // Resumo e histórico de aditivos
                 document.getElementById('info_aditivoResumo').textContent = `Total de aditivos: +${totalAditivoMeses} meses (${aditivos.length} aditivo${aditivos.length > 1 ? 's' : ''})`;
-                // Incluir coluna para 'Valor do TED' após a data do aditivo
-                let histHtml = '<table><thead><tr><th>#</th><th>Meses</th><th>Data do Aditivo</th><th>Valor do TED</th><th>Observação</th><th></th></tr></thead><tbody>';
+                // Incluir coluna para 'Valor do TED' e 'Alterações' após a data do aditivo
+                let histHtml = '<table><thead><tr><th>#</th><th>Meses</th><th>Data do Aditivo</th><th>Valor do TED</th><th>Alterações</th><th>Observação</th><th></th></tr></thead><tbody>';
                 aditivos.forEach((a, ai) => {
                     const dataAdit = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
-                        const valAdit = (typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? parseFloat(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
-                        histHtml += `<tr><td>${ai+1}</td><td>+${a.meses}</td><td>${dataAdit}</td><td class="valor-aditivo"><span class="valor-text">${valAdit}</span></td><td>${a.obs || '-'}</td><td>
+                    const valAdit = (typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? parseFloat(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
+                    // Gerar HTML das alterações (campos + tabelas)
+                    let alteracoesHtml = '';
+                    const temCampos = a.camposAlterados && Object.keys(a.camposAlterados).length > 0;
+                    const temTabelas = a.tabelasAlteradas && Object.keys(a.tabelasAlteradas).length > 0;
+                    if (temCampos || temTabelas) {
+                        alteracoesHtml = '<div class="aditivo-changes-list">';
+                        if (temCampos) {
+                            const labelMap = {};
+                            ADITIVO_CAMPOS_CLONE.forEach(c => { labelMap[c.key] = c.label; });
+                            Object.keys(a.camposAlterados).forEach(key => {
+                                const change = a.camposAlterados[key];
+                                const label = labelMap[key] || key;
+                                const de = String(change.de || '').substring(0, 40) || '(vazio)';
+                                const para = String(change.para || '').substring(0, 40) || '(vazio)';
+                                alteracoesHtml += `<div class="aditivo-change-row"><span class="aditivo-change-field">${label}:</span> <span class="aditivo-change-badge aditivo-change-old">${de}</span> → <span class="aditivo-change-badge aditivo-change-new">${para}</span></div>`;
+                            });
+                        }
+                        if (temTabelas) {
+                            alteracoesHtml += gerarResumoTabelasAlteradas(a.tabelasAlteradas);
+                        }
+                        alteracoesHtml += '</div>';
+                    } else {
+                        alteracoesHtml = '-';
+                    }
+                    histHtml += `<tr><td>${ai+1}</td><td>+${a.meses || 0}</td><td>${dataAdit}</td><td class="valor-aditivo"><span class="valor-text">${valAdit}</span></td><td>${alteracoesHtml}</td><td>${a.obs || '-'}</td><td>
                         <button class="btn-icon edit" onclick="abrirModalAditivo(${ai})" title="Editar aditivo">✎</button>
                         <button class="btn-icon delete" onclick="removerAditivo(${ai})" title="Remover aditivo">✖</button>
                     </td></tr>`;
@@ -4899,10 +4981,34 @@
             const apostilamentos = ted.apostilamentos || [];
             if (apostilamentos.length > 0) {
                 document.getElementById('info_apostilamentoResumo').textContent = `Total de apostilamentos: ${apostilamentos.length}`;
-                let apostHtml = '<table><thead><tr><th>#</th><th>Data do Apostilamento</th><th>Observação</th><th></th></tr></thead><tbody>';
+                let apostHtml = '<table><thead><tr><th>#</th><th>Data do Apostilamento</th><th>Alterações</th><th>Observação</th><th></th></tr></thead><tbody>';
                 apostilamentos.forEach((ap, ai) => {
                     const dataApost = ap.data ? new Date(ap.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
-                    apostHtml += `<tr><td>${ai+1}</td><td>${dataApost}</td><td>${ap.obs || '-'}</td><td>
+                    // Gerar HTML das alterações do apostilamento (campos + tabelas)
+                    let apostAlteracoesHtml = '';
+                    const apTemCampos = ap.camposAlterados && Object.keys(ap.camposAlterados).length > 0;
+                    const apTemTabelas = ap.tabelasAlteradas && Object.keys(ap.tabelasAlteradas).length > 0;
+                    if (apTemCampos || apTemTabelas) {
+                        apostAlteracoesHtml = '<div class="aditivo-changes-list">';
+                        if (apTemCampos) {
+                            const labelMap = {};
+                            ADITIVO_CAMPOS_CLONE.forEach(c => { labelMap[c.key] = c.label; });
+                            Object.keys(ap.camposAlterados).forEach(key => {
+                                const change = ap.camposAlterados[key];
+                                const label = labelMap[key] || key;
+                                const de = String(change.de || '').substring(0, 40) || '(vazio)';
+                                const para = String(change.para || '').substring(0, 40) || '(vazio)';
+                                apostAlteracoesHtml += `<div class="aditivo-change-row"><span class="aditivo-change-field">${label}:</span> <span class="aditivo-change-badge aditivo-change-old">${de}</span> → <span class="aditivo-change-badge aditivo-change-new">${para}</span></div>`;
+                            });
+                        }
+                        if (apTemTabelas) {
+                            apostAlteracoesHtml += gerarResumoTabelasAlteradas(ap.tabelasAlteradas);
+                        }
+                        apostAlteracoesHtml += '</div>';
+                    } else {
+                        apostAlteracoesHtml = '-';
+                    }
+                    apostHtml += `<tr><td>${ai+1}</td><td>${dataApost}</td><td>${apostAlteracoesHtml}</td><td>${ap.obs || '-'}</td><td>
                         <button class="btn-icon edit" onclick="abrirModalApostilamento(${ai})" title="Editar apostilamento">✎</button>
                         <button class="btn-icon delete" onclick="removerApostilamento(${ai})" title="Remover apostilamento">✖</button>
                     </td></tr>`;
@@ -5426,63 +5532,445 @@
 
         // ========== ADITIVOS DE VIGÊNCIA ==========
 
-        // Abrir modal para adicionar ou editar aditivo
+        // Campos do TED que são clonados no aditivo
+        const ADITIVO_CAMPOS_CLONE = [
+            { key: 'planoTrabalho', label: 'Plano de Trabalho', type: 'text' },
+            { key: 'numTed', label: 'Nº do TED', type: 'text' },
+            { key: 'codigoPlano', label: 'Código do Plano', type: 'text' },
+            { key: 'numTedSiafi', label: 'Nº TED - SIAFI', type: 'text' },
+            { key: 'notaSistema', label: 'Nota do Sistema do TED', type: 'text' },
+            { key: 'upResponsavel', label: 'UP Responsável pela Execução', type: 'text' },
+            { key: 'ugExecutora', label: 'UG Executora', type: 'text' },
+            { key: 'unidadeDesc', label: 'Unidade Descentralizadora', type: 'text' },
+            { key: 'ugDesc', label: 'UG Descentralizadora', type: 'text' },
+            { key: 'objetivo', label: 'Objetivo', type: 'textarea', fullWidth: true },
+        ];
+
+        // Definição das tabelas do TED para clone/comparação
+        const ADITIVO_TABELAS_CLONE = [
+            {
+                key: 'objetos', label: '📦 Objetos',
+                colunas: [
+                    { field: 'objeto', label: 'Objeto' },
+                    { field: 'qtde', label: 'Qtde', type: 'number' },
+                    { field: 'valorUnitario', label: 'Valor Unit.', type: 'currency' },
+                    { field: 'valorTotal', label: 'Valor Total', type: 'currency' }
+                ],
+                idField: 'id', matchFields: ['objeto']
+            },
+            {
+                key: 'metas', label: '🎯 Metas',
+                colunas: [
+                    { field: 'meta', label: 'Meta' },
+                    { field: 'descricao', label: 'Descrição' },
+                    { field: 'mInicio', label: 'M Início', type: 'number' },
+                    { field: 'mFinal', label: 'M Final', type: 'number' }
+                ],
+                idField: 'id', matchFields: ['meta']
+            },
+            {
+                key: 'fisicos', label: '🔧 Físico',
+                colunas: [
+                    { field: 'fase', label: 'Fase' },
+                    { field: 'objeto', label: 'Objeto' },
+                    { field: 'qtde', label: 'Qtde', type: 'number' },
+                    { field: 'mInicio', label: 'M Início', type: 'number' },
+                    { field: 'mFinal', label: 'M Final', type: 'number' }
+                ],
+                idField: 'id', matchFields: ['fase', 'objeto']
+            },
+            {
+                key: 'execFisicas', label: '✅ Execução Física',
+                colunas: [
+                    { field: 'objeto', label: 'Objeto' },
+                    { field: 'qtde', label: 'Qtde', type: 'number' },
+                    { field: 'data', label: 'Data', type: 'date' },
+                    { field: 'nf', label: 'NF' }
+                ],
+                idField: 'id', matchFields: ['objeto', 'data']
+            },
+            {
+                key: 'financeiros', label: '💰 Financeiro',
+                colunas: [
+                    { field: 'numero', label: 'ND' },
+                    { field: 'up', label: 'UP' },
+                    { field: 'm', label: 'M', type: 'number' },
+                    { field: 'valor', label: 'Valor', type: 'currency' }
+                ],
+                idField: 'id', matchFields: ['numero', 'up', 'm']
+            },
+            {
+                key: 'execFinanceiras', label: '💳 Execução Financeira',
+                colunas: [
+                    { field: 'nd', label: 'ND' },
+                    { field: 'up', label: 'UP' },
+                    { field: 'valor', label: 'Valor', type: 'currency' },
+                    { field: 'data', label: 'Data', type: 'date' }
+                ],
+                idField: 'id', matchFields: ['nd', 'up', 'data']
+            },
+            {
+                key: 'recursosGerais', label: '📊 Recursos Gerais',
+                colunas: [
+                    { field: 'nd', label: 'ND' },
+                    { field: 'valor', label: 'Valor', type: 'currency' },
+                    { field: 'data', label: 'Data', type: 'date' }
+                ],
+                idField: 'id', matchFields: ['nd', 'data']
+            }
+        ];
+
+        // Snapshot: captura valores atuais do TED para comparação futura (incluindo tabelas)
+        function capturarSnapshotTed(ted) {
+            const snap = {};
+            ADITIVO_CAMPOS_CLONE.forEach(c => { snap[c.key] = ted[c.key] || ''; });
+            snap.valorTed = ted.valorTed || 0;
+            snap.vigencia = ted.vigencia || 0;
+            snap.inicioVigencia = ted.inicioVigencia || '';
+            snap.fimVigencia = ted.fimVigencia || '';
+            snap.primeiraDescentralizacao = ted.primeiraDescentralizacao || '';
+            // Deep clone de todas as tabelas
+            ADITIVO_TABELAS_CLONE.forEach(t => {
+                snap[t.key] = JSON.parse(JSON.stringify(ted[t.key] || []));
+            });
+            return snap;
+        }
+
+        // Detectar campos modificados entre snapshot e valores do modal (campos simples)
+        function detectarAlteracoesAditivo(snapshot, novosValores) {
+            const alteracoes = {};
+            // Comparar campos simples
+            ADITIVO_CAMPOS_CLONE.forEach(c => {
+                const orig = String(snapshot[c.key] || '');
+                const novo = String(novosValores[c.key] || '');
+                if (orig !== novo) {
+                    alteracoes[c.key] = { de: snapshot[c.key], para: novosValores[c.key] };
+                }
+            });
+            // Comparar valorTed
+            if (String(snapshot.valorTed || '') !== String(novosValores.valorTed || '')) {
+                alteracoes.valorTed = { de: snapshot.valorTed, para: novosValores.valorTed };
+            }
+            return alteracoes;
+        }
+
+        // Comparar arrays de tabela entre snapshot e estado atual do TED
+        function compararTabelasAditivo(snapshot, tedAtual) {
+            const tabelasAlteradas = {};
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                const arrOriginal = snapshot[tabDef.key] || [];
+                const arrAtual = tedAtual[tabDef.key] || [];
+                const diffs = compararArrayTabela(arrOriginal, arrAtual, tabDef);
+                if (diffs.adicionados.length || diffs.removidos.length || diffs.modificados.length) {
+                    tabelasAlteradas[tabDef.key] = diffs;
+                }
+            });
+            return tabelasAlteradas;
+        }
+
+        // Comparar dois arrays de itens de uma tabela e retornar diferenças
+        function compararArrayTabela(arrOrig, arrNovo, tabDef) {
+            const result = { adicionados: [], removidos: [], modificados: [] };
+            const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+
+            const origMap = {};
+            arrOrig.forEach((item, idx) => {
+                const k = matchKey(item);
+                if (!origMap[k]) origMap[k] = [];
+                origMap[k].push({ item, idx });
+            });
+
+            const novoMap = {};
+            arrNovo.forEach((item, idx) => {
+                const k = matchKey(item);
+                if (!novoMap[k]) novoMap[k] = [];
+                novoMap[k].push({ item, idx });
+            });
+
+            // Encontrar removidos e modificados
+            arrOrig.forEach((origItem, origIdx) => {
+                const k = matchKey(origItem);
+                const matches = novoMap[k];
+                if (!matches || matches.length === 0) {
+                    result.removidos.push({ item: origItem, index: origIdx });
+                } else {
+                    // Pegar o primeiro match não consumido
+                    const match = matches.shift();
+                    // Comparar campos
+                    const camposAlterados = {};
+                    tabDef.colunas.forEach(col => {
+                        const vOrig = formatarValorTabela(origItem[col.field], col.type);
+                        const vNovo = formatarValorTabela(match.item[col.field], col.type);
+                        if (vOrig !== vNovo) {
+                            camposAlterados[col.field] = { de: origItem[col.field], para: match.item[col.field], label: col.label };
+                        }
+                    });
+                    if (Object.keys(camposAlterados).length > 0) {
+                        result.modificados.push({ original: origItem, atual: match.item, camposAlterados, index: origIdx });
+                    }
+                }
+            });
+
+            // Encontrar adicionados
+            arrNovo.forEach((novoItem) => {
+                const k = matchKey(novoItem);
+                // Se ainda sobrou em origMap ou não existe
+                const matches = origMap[k];
+                if (matches && matches.length > 0) {
+                    matches.shift(); // consumir
+                } else {
+                    result.adicionados.push({ item: novoItem });
+                }
+            });
+
+            return result;
+        }
+
+        // Formatar valor de tabela para comparação
+        function formatarValorTabela(val, type) {
+            if (val === undefined || val === null) return '';
+            if (type === 'currency') return String(Number(val) || 0);
+            if (type === 'number') return String(Number(val) || 0);
+            return String(val);
+        }
+
+        // Formatar valor para exibição no resumo de alterações
+        function formatarValorExibicao(val, type) {
+            if (val === undefined || val === null || val === '') return '(vazio)';
+            if (type === 'currency') return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            if (type === 'date') {
+                try { return new Date(val + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) { return val; }
+            }
+            return String(val);
+        }
+
+        // Gerar HTML resumo das alterações em tabelas para o histórico
+        function gerarResumoTabelasAlteradas(tabelasAlteradas) {
+            if (!tabelasAlteradas || Object.keys(tabelasAlteradas).length === 0) return '';
+            let html = '';
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                const diffs = tabelasAlteradas[tabDef.key];
+                if (!diffs) return;
+                html += `<div style="margin-top:4px;"><span class="aditivo-change-field">${tabDef.label}:</span>`;
+                if (diffs.adicionados.length) {
+                    html += ` <span class="aditivo-change-badge aditivo-change-new">+${diffs.adicionados.length} novo${diffs.adicionados.length > 1 ? 's' : ''}</span>`;
+                }
+                if (diffs.removidos.length) {
+                    html += ` <span class="aditivo-change-badge aditivo-change-old">-${diffs.removidos.length} removido${diffs.removidos.length > 1 ? 's' : ''}</span>`;
+                }
+                if (diffs.modificados.length) {
+                    html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">✎${diffs.modificados.length} alterado${diffs.modificados.length > 1 ? 's' : ''}</span>`;
+                    // Detalhes das modificações
+                    diffs.modificados.forEach(mod => {
+                        Object.keys(mod.camposAlterados).forEach(field => {
+                            const ch = mod.camposAlterados[field];
+                            const colDef = tabDef.colunas.find(c => c.field === field);
+                            const tipo = colDef ? colDef.type : 'text';
+                            html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.7rem;color:var(--text-muted);">${ch.label}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(ch.de, tipo)}</span> → <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(ch.para, tipo)}</span></div>`;
+                        });
+                    });
+                }
+                html += '</div>';
+            });
+            return html;
+        }
+
+        // Gerar HTML das tabelas clonadas para o modal (somente leitura, editável inline)
+        function gerarHtmlTabelasClone(ted, prefix, existente) {
+            let html = '';
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                const arr = ted[tabDef.key] || [];
+                if (arr.length === 0) return; // não mostrar tabelas vazias
+
+                html += `<div class="aditivo-section-title">${tabDef.label} (${arr.length} ${arr.length === 1 ? 'item' : 'itens'})</div>`;
+                html += `<div style="overflow-x:auto; margin-bottom:0.5rem;"><table class="aditivo-clone-table" id="${prefix}_tabela_${tabDef.key}"><thead><tr>`;
+                tabDef.colunas.forEach(col => {
+                    html += `<th>${col.label}</th>`;
+                });
+                html += '<th style="width:32px;"></th></tr></thead><tbody>';
+                arr.forEach((item, idx) => {
+                    html += `<tr data-tabela="${tabDef.key}" data-idx="${idx}">`;
+                    tabDef.colunas.forEach(col => {
+                        let val = item[col.field];
+                        if (col.type === 'currency' && val !== undefined && val !== null) {
+                            val = Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                        } else if (col.type === 'date' && val) {
+                            try { val = new Date(val + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
+                        }
+                        html += `<td contenteditable="true" data-field="${col.field}" data-type="${col.type || 'text'}" data-orig="${String(item[col.field] || '').replace(/"/g, '&quot;')}">${val !== undefined && val !== null ? val : ''}</td>`;
+                    });
+                    html += `<td><button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;">✕</button></td>`;
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+            });
+            return html;
+        }
+
+        // Remover linha de tabela clonada no modal
+        function removerLinhaCloneAditivo(btn) {
+            const tr = btn.closest('tr');
+            if (tr) {
+                tr.style.textDecoration = 'line-through';
+                tr.style.opacity = '0.4';
+                tr.dataset.removido = '1';
+                btn.disabled = true;
+            }
+        }
+
+        // Coletar dados editados das tabelas do modal
+        function coletarDadosTabelasModal(prefix) {
+            const resultado = {};
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                const tabela = document.getElementById(`${prefix}_tabela_${tabDef.key}`);
+                if (!tabela) return;
+                const linhas = tabela.querySelectorAll('tbody tr');
+                const arr = [];
+                linhas.forEach(tr => {
+                    if (tr.dataset.removido === '1') return; // linha removida
+                    const item = {};
+                    tabDef.colunas.forEach(col => {
+                        const td = tr.querySelector(`td[data-field="${col.field}"]`);
+                        if (!td) return;
+                        let val = td.textContent.trim();
+                        if (col.type === 'currency') {
+                            val = parseNumber(val) || 0;
+                        } else if (col.type === 'number') {
+                            val = Number(val) || 0;
+                        } else if (col.type === 'date') {
+                            // tentar reconverter de DD/MM/YYYY para YYYY-MM-DD
+                            const parts = val.split('/');
+                            if (parts.length === 3) {
+                                val = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                            }
+                        }
+                        item[col.field] = val;
+                    });
+                    // Preservar id original se existir
+                    const idx = parseInt(tr.dataset.idx);
+                    const arrOrig = window.tedSelecionado[tabDef.key] || [];
+                    if (!isNaN(idx) && arrOrig[idx] && arrOrig[idx].id) {
+                        item.id = arrOrig[idx].id;
+                    }
+                    // Preservar campos extras não nas colunas
+                    if (!isNaN(idx) && arrOrig[idx]) {
+                        Object.keys(arrOrig[idx]).forEach(k => {
+                            if (item[k] === undefined) item[k] = arrOrig[idx][k];
+                        });
+                    }
+                    arr.push(item);
+                });
+                resultado[tabDef.key] = arr;
+            });
+            return resultado;
+        }
+
+        // Abrir modal para adicionar ou editar aditivo (versão expandida com clone)
         function abrirModalAditivo(editIndex) {
             if (!window.tedSelecionado) return alert('Selecione um TED primeiro.');
-            // Criar modal dinamicamente se não existir
+            // Remover modal anterior se existir (para recriar com dados atuais)
             let overlay = document.getElementById('aditivoModalOverlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'aditivoModalOverlay';
-                overlay.className = 'aditivo-modal-overlay';
-                overlay.innerHTML = `
-                    <div class="aditivo-modal">
-                        <h3>➕ Adicionar Aditivo de Vigência / Valor do TED</h3>
-                        <div class="form-group" style="margin-bottom:1rem;">
+            if (overlay) overlay.remove();
+
+            const ted = window.tedSelecionado;
+            const isEdit = typeof editIndex === 'number' && ted.aditivos && ted.aditivos[editIndex];
+            const aditivoExistente = isEdit ? ted.aditivos[editIndex] : null;
+
+            // Gerar campos clone dinamicamente
+            let camposCloneHtml = '';
+            ADITIVO_CAMPOS_CLONE.forEach(c => {
+                const fw = c.fullWidth ? ' full-width' : '';
+                const val = aditivoExistente && aditivoExistente.snapshot && typeof aditivoExistente.camposAlterados === 'object' && aditivoExistente.camposAlterados[c.key]
+                    ? aditivoExistente.camposAlterados[c.key].para
+                    : (ted[c.key] || '');
+                const escaped = String(val).replace(/"/g, '&quot;');
+                if (c.type === 'textarea') {
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}</label><textarea id="aditivo_clone_${c.key}" data-campo="${c.key}">${val}</textarea></div>`;
+                } else {
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}</label><input type="${c.type}" id="aditivo_clone_${c.key}" data-campo="${c.key}" value="${escaped}"></div>`;
+                }
+            });
+
+            // Gerar HTML das tabelas clonadas
+            const tabelasCloneHtml = gerarHtmlTabelasClone(ted, 'aditivo', aditivoExistente);
+
+            overlay = document.createElement('div');
+            overlay.id = 'aditivoModalOverlay';
+            overlay.className = 'aditivo-modal-overlay';
+            overlay.innerHTML = `
+                <div class="aditivo-modal aditivo-modal-expanded">
+                    <h3>➕ ${isEdit ? 'Editar' : 'Adicionar'} Aditivo de Vigência / Valor do TED</h3>
+                    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Todas as informações do TED foram clonadas abaixo. Altere campos e tabelas conforme necessário — as mudanças serão rastreadas automaticamente.</p>
+
+                    <div class="aditivo-section-title">📋 Dados do Aditivo</div>
+                    <div class="aditivo-clone-grid">
+                        <div class="form-group">
                             <label>Quantidade de meses a acrescentar *</label>
-                            <input type="number" id="aditivoMesesInput" min="1" placeholder="Ex: 12" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px;">
+                            <input type="number" id="aditivoMesesInput" min="0" placeholder="Ex: 12">
                         </div>
-                        <div class="form-group" style="margin-bottom:1rem;">
+                        <div class="form-group">
                             <label>Data do aditivo</label>
-                            <input type="date" id="aditivoDataInput" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px;">
+                            <input type="date" id="aditivoDataInput">
                         </div>
-                        <div class="form-group" style="margin-bottom:1rem;">
-                            <label>Valor do TED (preenchido com valor atual)</label>
-                            <input type="text" id="aditivoValorTedInput" placeholder="Ex: 45000000,00" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px;">
+                        <div class="form-group">
+                            <label>Valor do TED</label>
+                            <input type="text" id="aditivoValorTedInput" placeholder="Ex: 45.000.000,00">
                         </div>
-                        <div class="form-group" style="margin-bottom:1.5rem;">
+                        <div class="form-group">
                             <label>Observação</label>
-                            <input type="text" id="aditivoObsInput" placeholder="Ex: Aditivo de prazo" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px;">
-                        </div>
-                        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-                            <button onclick="fecharModalAditivo()" style="padding:8px 16px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer;">Cancelar</button>
-                            <button onclick="confirmarAditivo()" style="padding:8px 16px; border:none; border-radius:6px; background:#16a34a; color:#fff; cursor:pointer; font-weight:600;">Adicionar</button>
+                            <input type="text" id="aditivoObsInput" placeholder="Ex: Aditivo de prazo">
                         </div>
                     </div>
-                `;
-                document.body.appendChild(overlay);
-            }
-            // Limpar campos
-            const ted = window.tedSelecionado;
-            document.getElementById('aditivoMesesInput').value = '';
-            document.getElementById('aditivoDataInput').value = new Date().toISOString().split('T')[0];
-            document.getElementById('aditivoObsInput').value = '';
+
+                    <div class="aditivo-section-title">📄 Informações Gerais do TED (edite se necessário)</div>
+                    <div class="aditivo-clone-grid">
+                        ${camposCloneHtml}
+                    </div>
+
+                    ${tabelasCloneHtml}
+
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+                        <button onclick="fecharModalAditivo()" style="padding:8px 16px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer; color:var(--text);">Cancelar</button>
+                        <button onclick="confirmarAditivo()" style="padding:8px 16px; border:none; border-radius:6px; background:#16a34a; color:#fff; cursor:pointer; font-weight:600;">${isEdit ? 'Salvar Alterações' : 'Adicionar Aditivo'}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            // Preencher campos do aditivo
+            document.getElementById('aditivoMesesInput').value = aditivoExistente ? (aditivoExistente.meses || '') : '';
+            document.getElementById('aditivoDataInput').value = aditivoExistente ? (aditivoExistente.data || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+            document.getElementById('aditivoObsInput').value = aditivoExistente ? (aditivoExistente.obs || '') : '';
             const valInput = document.getElementById('aditivoValorTedInput');
-            // se editIndex fornecido, preencher com valores do aditivo existente
-            if (typeof editIndex === 'number' && ted.aditivos && ted.aditivos[editIndex]) {
-                const a = ted.aditivos[editIndex];
-                document.getElementById('aditivoMesesInput').value = a.meses || '';
-                document.getElementById('aditivoDataInput').value = a.data || new Date().toISOString().split('T')[0];
-                document.getElementById('aditivoObsInput').value = a.obs || '';
-                if (valInput) valInput.value = (typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? Number(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : ((typeof ted.valorTed !== 'undefined' && ted.valorTed !== null) ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '');
-                overlay.dataset.editIndex = String(editIndex);
+            if (aditivoExistente && typeof aditivoExistente.valorTed !== 'undefined' && aditivoExistente.valorTed !== null) {
+                valInput.value = Number(aditivoExistente.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2});
             } else {
-                overlay.dataset.editIndex = '';
-                const currentVal = (ted && typeof ted.valorTed !== 'undefined') ? ted.valorTed : '';
-                if (valInput) valInput.value = currentVal !== '' ? (Number(currentVal).toLocaleString('pt-BR', {minimumFractionDigits:2})) : '';
+                valInput.value = (ted.valorTed !== undefined && ted.valorTed !== null) ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '';
             }
-            // aplicar máscara de moeda no campo de valor
             if (valInput) applyCurrencyMaskToInput(valInput);
+
+            // Salvar snapshot original para comparação
+            overlay.dataset.editIndex = isEdit ? String(editIndex) : '';
+            overlay._snapshotOriginal = capturarSnapshotTed(ted);
+
+            // Listener para destacar campos alterados em tempo real
+            overlay.querySelectorAll('[data-campo]').forEach(el => {
+                const campo = el.dataset.campo;
+                const valorOriginal = String(ted[campo] || '');
+                const checkChange = () => {
+                    const valorAtual = el.value || '';
+                    if (valorAtual !== valorOriginal) {
+                        el.closest('.form-group').classList.add('campo-modificado');
+                    } else {
+                        el.closest('.form-group').classList.remove('campo-modificado');
+                    }
+                };
+                el.addEventListener('input', checkChange);
+                el.addEventListener('change', checkChange);
+                // Verificar no carregamento (para edição de aditivo existente)
+                checkChange();
+            });
+
             overlay.classList.add('active');
         }
 
@@ -5494,8 +5982,7 @@
         function confirmarAditivo() {
             const ted = window.tedSelecionado;
             if (!ted) return;
-            const meses = parseInt(document.getElementById('aditivoMesesInput').value, 10);
-            if (!meses || meses <= 0) return alert('Informe uma quantidade válida de meses.');
+            const meses = parseInt(document.getElementById('aditivoMesesInput').value, 10) || 0;
             const data = document.getElementById('aditivoDataInput').value || new Date().toISOString().split('T')[0];
             const obs = document.getElementById('aditivoObsInput').value || '';
             const rawVal = (document.getElementById('aditivoValorTedInput') ? document.getElementById('aditivoValorTedInput').value : '').trim();
@@ -5506,36 +5993,72 @@
             const overlay = document.getElementById('aditivoModalOverlay');
             const editIndex = overlay && overlay.dataset && overlay.dataset.editIndex ? parseInt(overlay.dataset.editIndex, 10) : null;
 
+            // Capturar snapshot original
+            const snapshot = overlay._snapshotOriginal || capturarSnapshotTed(ted);
+
+            // Capturar novos valores dos campos clonados
+            const novosValores = {};
+            ADITIVO_CAMPOS_CLONE.forEach(c => {
+                const el = document.getElementById('aditivo_clone_' + c.key);
+                novosValores[c.key] = el ? el.value : (ted[c.key] || '');
+            });
+            novosValores.valorTed = novoValor !== null ? novoValor : (currentTedValue || 0);
+
+            // Detectar alterações de campos simples
+            const alteracoes = detectarAlteracoesAditivo(snapshot, novosValores);
+
+            // Coletar dados das tabelas editadas no modal
+            const dadosTabelas = coletarDadosTabelasModal('aditivo');
+
+            // Aplicar dados das tabelas ao TED e detectar alterações
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                if (dadosTabelas[tabDef.key]) {
+                    ted[tabDef.key] = dadosTabelas[tabDef.key];
+                }
+            });
+
+            // Comparar tabelas entre snapshot e estado atual (após aplicar edições)
+            const tabelasAlteradas = compararTabelasAditivo(snapshot, ted);
+
             // build aditivo object
             const aditivoObj = { meses, data, obs };
             if (novoValor !== null) {
                 aditivoObj.valorTed = novoValor;
             }
 
+            // Salvar snapshot, alterações de campos e alterações de tabelas
+            aditivoObj.snapshot = snapshot;
+            aditivoObj.camposAlterados = alteracoes;
+            aditivoObj.tabelasAlteradas = tabelasAlteradas;
+
             if (typeof editIndex === 'number' && !isNaN(editIndex)) {
-                // editing existing aditivo
                 const existing = ted.aditivos[editIndex] || {};
                 if (novoValor !== null) {
                     if (typeof existing.valorTed !== 'undefined' && existing.valorTed !== null) {
-                        // existing had a value; set prevValorTed only if value actually changed
                         if (novoValor !== existing.valorTed) {
                             aditivoObj.prevValorTed = (typeof existing.prevValorTed !== 'undefined' && existing.prevValorTed !== null) ? existing.prevValorTed : currentTedValue;
                         }
                     } else {
-                        // existing had no valorTed; set prev only if novo differs from current TED value
                         if (currentTedValue === null || novoValor !== currentTedValue) {
                             aditivoObj.prevValorTed = currentTedValue;
                         }
                     }
                 }
-                // replace
                 ted.aditivos[editIndex] = Object.assign({}, existing, aditivoObj);
             } else {
-                // add new
                 if (novoValor !== null && (currentTedValue === null || novoValor !== currentTedValue)) {
                     aditivoObj.prevValorTed = currentTedValue;
                 }
                 ted.aditivos.push(aditivoObj);
+            }
+
+            // Aplicar alterações de campos simples ao TED
+            if (Object.keys(alteracoes).length > 0) {
+                ADITIVO_CAMPOS_CLONE.forEach(c => {
+                    if (alteracoes[c.key]) {
+                        ted[c.key] = alteracoes[c.key].para;
+                    }
+                });
             }
 
             // recompute TED.valorTed based on last aditivo with valor or fallback
@@ -5544,6 +6067,8 @@
             salvarDados();
             fecharModalAditivo();
             exibirInformacoesTED();
+            // Atualizar todas as tabelas após alterações
+            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
             renderGanttVigencia();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
@@ -5577,44 +6102,91 @@
 
         function abrirModalApostilamento(editIndex) {
             if (!window.tedSelecionado) return alert('Selecione um TED primeiro.');
+            // Remover modal anterior se existir (para recriar com dados atuais)
             let overlay = document.getElementById('apostilamentoModalOverlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'apostilamentoModalOverlay';
-                overlay.className = 'aditivo-modal-overlay';
-                overlay.innerHTML = `
-                    <div class="aditivo-modal">
-                        <h3>📝 Adicionar Apostilamento</h3>
-                        <div class="form-group" style="margin-bottom:1rem;">
-                            <label>Data do Apostilamento *</label>
-                            <input type="date" id="apostilamentoDataInput" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px;">
-                        </div>
-                        <div class="form-group" style="margin-bottom:1.5rem;">
-                            <label>Observação</label>
-                            <input type="text" id="apostilamentoObsInput" placeholder="Ex: Ajuste de texto/campo" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px;">
-                        </div>
-                        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-                            <button onclick="fecharModalApostilamento()" style="padding:8px 16px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer;">Cancelar</button>
-                            <button onclick="confirmarApostilamento()" style="padding:8px 16px; border:none; border-radius:6px; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">Salvar</button>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(overlay);
-            }
+            if (overlay) overlay.remove();
 
             const ted = window.tedSelecionado;
-            const dataInput = document.getElementById('apostilamentoDataInput');
-            const obsInput = document.getElementById('apostilamentoObsInput');
-            if (typeof editIndex === 'number' && ted.apostilamentos && ted.apostilamentos[editIndex]) {
-                const ap = ted.apostilamentos[editIndex];
-                dataInput.value = ap.data || new Date().toISOString().split('T')[0];
-                obsInput.value = ap.obs || '';
-                overlay.dataset.editIndex = String(editIndex);
-            } else {
-                dataInput.value = new Date().toISOString().split('T')[0];
-                obsInput.value = '';
-                overlay.dataset.editIndex = '';
-            }
+            const isEdit = typeof editIndex === 'number' && ted.apostilamentos && ted.apostilamentos[editIndex];
+            const apostExistente = isEdit ? ted.apostilamentos[editIndex] : null;
+
+            // Gerar campos clone dinamicamente
+            let camposCloneHtml = '';
+            ADITIVO_CAMPOS_CLONE.forEach(c => {
+                const fw = c.fullWidth ? ' full-width' : '';
+                const val = apostExistente && apostExistente.snapshot && typeof apostExistente.camposAlterados === 'object' && apostExistente.camposAlterados[c.key]
+                    ? apostExistente.camposAlterados[c.key].para
+                    : (ted[c.key] || '');
+                const escaped = String(val).replace(/\"/g, '&quot;');
+                if (c.type === 'textarea') {
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}</label><textarea id="apost_clone_${c.key}" data-campo="${c.key}">${val}</textarea></div>`;
+                } else {
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}</label><input type="${c.type}" id="apost_clone_${c.key}" data-campo="${c.key}" value="${escaped}"></div>`;
+                }
+            });
+
+            // Gerar HTML das tabelas clonadas
+            const tabelasCloneHtml = gerarHtmlTabelasClone(ted, 'apost', apostExistente);
+
+            overlay = document.createElement('div');
+            overlay.id = 'apostilamentoModalOverlay';
+            overlay.className = 'aditivo-modal-overlay';
+            overlay.innerHTML = `
+                <div class="aditivo-modal aditivo-modal-expanded">
+                    <h3>📝 ${isEdit ? 'Editar' : 'Adicionar'} Apostilamento</h3>
+                    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Todas as informações do TED foram clonadas abaixo. Altere campos e tabelas conforme necessário — as mudanças serão rastreadas automaticamente.</p>
+
+                    <div class="aditivo-section-title">📋 Dados do Apostilamento</div>
+                    <div class="aditivo-clone-grid">
+                        <div class="form-group">
+                            <label>Data do Apostilamento *</label>
+                            <input type="date" id="apostilamentoDataInput">
+                        </div>
+                        <div class="form-group">
+                            <label>Observação</label>
+                            <input type="text" id="apostilamentoObsInput" placeholder="Ex: Ajuste de texto/campo">
+                        </div>
+                    </div>
+
+                    <div class="aditivo-section-title">📄 Informações Gerais do TED (edite se necessário)</div>
+                    <div class="aditivo-clone-grid">
+                        ${camposCloneHtml}
+                    </div>
+
+                    ${tabelasCloneHtml}
+
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+                        <button onclick="fecharModalApostilamento()" style="padding:8px 16px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer; color:var(--text);">Cancelar</button>
+                        <button onclick="confirmarApostilamento()" style="padding:8px 16px; border:none; border-radius:6px; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">${isEdit ? 'Salvar Alterações' : 'Salvar Apostilamento'}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            // Preencher campos do apostilamento
+            document.getElementById('apostilamentoDataInput').value = apostExistente ? (apostExistente.data || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+            document.getElementById('apostilamentoObsInput').value = apostExistente ? (apostExistente.obs || '') : '';
+
+            overlay.dataset.editIndex = isEdit ? String(editIndex) : '';
+            overlay._snapshotOriginal = capturarSnapshotTed(ted);
+
+            // Listener para destacar campos alterados em tempo real
+            overlay.querySelectorAll('[data-campo]').forEach(el => {
+                const campo = el.dataset.campo;
+                const valorOriginal = String(ted[campo] || '');
+                const checkChange = () => {
+                    const valorAtual = el.value || '';
+                    if (valorAtual !== valorOriginal) {
+                        el.closest('.form-group').classList.add('campo-modificado');
+                    } else {
+                        el.closest('.form-group').classList.remove('campo-modificado');
+                    }
+                };
+                el.addEventListener('input', checkChange);
+                el.addEventListener('change', checkChange);
+                checkChange();
+            });
+
             overlay.classList.add('active');
         }
 
@@ -5633,7 +6205,37 @@
             if (!ted.apostilamentos) ted.apostilamentos = [];
             const overlay = document.getElementById('apostilamentoModalOverlay');
             const editIndex = overlay && overlay.dataset && overlay.dataset.editIndex ? parseInt(overlay.dataset.editIndex, 10) : null;
+
+            // Capturar snapshot original
+            const snapshot = overlay._snapshotOriginal || capturarSnapshotTed(ted);
+
+            // Capturar novos valores dos campos clonados
+            const novosValores = {};
+            ADITIVO_CAMPOS_CLONE.forEach(c => {
+                const el = document.getElementById('apost_clone_' + c.key);
+                novosValores[c.key] = el ? el.value : (ted[c.key] || '');
+            });
+
+            // Detectar alterações de campos simples
+            const alteracoes = detectarAlteracoesAditivo(snapshot, novosValores);
+
+            // Coletar dados das tabelas editadas no modal
+            const dadosTabelas = coletarDadosTabelasModal('apost');
+
+            // Aplicar dados das tabelas ao TED
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                if (dadosTabelas[tabDef.key]) {
+                    ted[tabDef.key] = dadosTabelas[tabDef.key];
+                }
+            });
+
+            // Comparar tabelas entre snapshot e estado atual
+            const tabelasAlteradas = compararTabelasAditivo(snapshot, ted);
+
             const apostObj = { data, obs };
+            apostObj.snapshot = snapshot;
+            apostObj.camposAlterados = alteracoes;
+            apostObj.tabelasAlteradas = tabelasAlteradas;
 
             if (typeof editIndex === 'number' && !isNaN(editIndex)) {
                 ted.apostilamentos[editIndex] = Object.assign({}, ted.apostilamentos[editIndex] || {}, apostObj);
@@ -5641,9 +6243,19 @@
                 ted.apostilamentos.push(apostObj);
             }
 
+            // Aplicar alterações de campos simples ao TED
+            if (Object.keys(alteracoes).length > 0) {
+                ADITIVO_CAMPOS_CLONE.forEach(c => {
+                    if (alteracoes[c.key]) {
+                        ted[c.key] = alteracoes[c.key].para;
+                    }
+                });
+            }
+
             salvarDados();
             fecharModalApostilamento();
             exibirInformacoesTED();
+            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
