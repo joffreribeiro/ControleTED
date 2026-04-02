@@ -5450,6 +5450,8 @@
 
             let totalValor = 0;
             tbody.innerHTML = window.tedSelecionado.objetos.map(obj => {
+                // DEBUG: rastrear valor qtde
+                console.log(`[atualizarTabelaObjetos] obj.qtde=${JSON.stringify(obj.qtde)} tipo=${typeof obj.qtde} parseNumber=${parseNumber(obj.qtde)} formatNumber=${formatNumber(parseNumber(obj.qtde))}`);
                 const qt = parseNumber(obj.qtde);
                 const vu = parseNumber(obj.valorUnitario);
                 const vt = (!isNaN(parseNumber(obj.valorTotal)) && obj.valorTotal !== undefined && obj.valorTotal !== null) ? parseNumber(obj.valorTotal) : (qt * vu);
@@ -6062,6 +6064,10 @@
                         const td = tr.querySelector(`td[data-field="${col.field}"]`);
                         if (!td) return;
                         let val = td.textContent.trim();
+                        // DEBUG: rastrear valores lidos das células
+                        if (col.type === 'number' || col.type === 'currency') {
+                            console.log(`[coletarDados] ${tabDef.key}.${col.field}: textContent="${val}" charCodes=[${[...val].map(c=>c.charCodeAt(0))}] → parseNumber=${parseNumber(val)}`);
+                        }
                         if (col.type === 'currency') {
                             val = parseNumber(val) || 0;
                         } else if (col.type === 'number') {
@@ -6406,10 +6412,15 @@
             // Coletar dados das tabelas editadas no modal
             const dadosTabelas = coletarDadosTabelasModal('alt');
 
+            // DEBUG: ver dados coletados antes de aplicar
+            console.log('[confirmarAlteracao] dadosTabelas:', JSON.stringify(dadosTabelas, null, 2));
+
             // Aplicar dados das tabelas ao TED
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
                 if (dadosTabelas[tabDef.key]) {
                     ted[tabDef.key] = dadosTabelas[tabDef.key];
+                    // DEBUG: verificar valores aplicados
+                    console.log(`[confirmarAlteracao] ted.${tabDef.key} aplicado:`, JSON.stringify(ted[tabDef.key]));
                 }
             });
 
