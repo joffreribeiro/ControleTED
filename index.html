@@ -2088,6 +2088,14 @@
         .aditivo-clone-table td[contenteditable="true"]:focus { background: rgba(59,130,246,0.06); outline: 2px solid rgba(59,130,246,0.2); border-radius: 2px; }
         .aditivo-clone-table tr:hover { background: rgba(59,130,246,0.03); }
         .aditivo-clone-table tr[data-removido="1"] td { text-decoration: line-through; color: var(--text-muted); }
+        /* Destaque de células alteradas via aditivo/apostilamento nas tabelas principais */
+        .celula-alterada-aditivo { position: relative; }
+        .celula-alterada-aditivo .val-antigo { text-decoration: line-through; color: var(--text-muted); font-size: 0.82em; opacity: 0.65; display: block; line-height: 1.1; }
+        .celula-alterada-aditivo .val-novo { color: #16a34a; font-weight: 700; display: block; line-height: 1.2; }
+        tr.linha-adicionada-aditivo { background: rgba(34,197,94,0.08) !important; }
+        tr.linha-adicionada-aditivo td:first-child::before { content: '＋'; color: #16a34a; font-weight: 700; margin-right: 4px; }
+        tr.linha-removida-aditivo { background: rgba(239,68,68,0.06) !important; }
+        tr.linha-removida-aditivo td { text-decoration: line-through; color: var(--text-muted) !important; opacity: 0.6; }
         /* Entregas chart styles */
         .entregas-controls { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; }
         .entregas-chart { display:flex; gap:2rem; align-items:flex-end; padding:1rem 0; }
@@ -5410,6 +5418,12 @@
                 return;
             }
 
+            // Obter alterações de aditivos/apostilamentos para destacar
+            const altObjetos = obterAlteracoesTabelaAditivos('objetos');
+            const tabDefObj = ADITIVO_TABELAS_CLONE.find(t => t.key === 'objetos');
+            const { modMap: modMapObj, addSet: addSetObj } = criarMapaAlteracoes(altObjetos, tabDefObj);
+            const matchKeyObj = (item) => tabDefObj ? tabDefObj.matchFields.map(f => String(item[f] || '')).join('||') : '';
+
             let totalValor = 0;
             tbody.innerHTML = window.tedSelecionado.objetos.map(obj => {
                 const qt = parseNumber(obj.qtde);
@@ -5417,12 +5431,21 @@
                 const vt = (!isNaN(parseNumber(obj.valorTotal)) && obj.valorTotal !== undefined && obj.valorTotal !== null) ? parseNumber(obj.valorTotal) : (qt * vu);
                 obj.valorTotal = vt; // garantir persistência em memória/localStorage
                 totalValor += vt;
+                const mKey = matchKeyObj(obj);
+                const mods = modMapObj[mKey];
+                const isAdded = addSetObj.has(mKey);
+                const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
+                // Formatar células com destaque de alteração
+                const tdObjeto = obj.objeto;
+                const tdQtde = mods && mods.qtde ? formatarCelulaAlterada(formatNumber(qt), mods.qtde.de, 'number') : formatNumber(qt);
+                const tdVU = mods && mods.valorUnitario ? formatarCelulaAlterada(vu.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valorUnitario.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : vu.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                const tdVT = mods && mods.valorTotal ? formatarCelulaAlterada(vt.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valorTotal.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : vt.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 return `
-                    <tr>
-                        <td class="col-objeto">${obj.objeto}</td>
-                        <td class="col-qtde">${formatNumber(qt)}</td>
-                        <td class="col-valor">${vu.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td class="col-valor">${vt.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <tr${trClass}>
+                        <td class="col-objeto">${tdObjeto}</td>
+                        <td class="col-qtde">${tdQtde}</td>
+                        <td class="col-valor">${tdVU}</td>
+                        <td class="col-valor">${tdVT}</td>
                         <td class="col-acao">
                             <button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar">✎</button>
                             <button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover">✕</button>
@@ -5598,27 +5621,67 @@
                     { field: 'valor', label: 'Valor', type: 'currency' }
                 ],
                 idField: 'id', matchFields: ['numero', 'up', 'm']
-            },
-            {
-                key: 'execFinanceiras', label: '💳 Execução Financeira',
-                colunas: [
-                    { field: 'nd', label: 'ND' },
-                    { field: 'up', label: 'UP' },
-                    { field: 'valor', label: 'Valor', type: 'currency' },
-                    { field: 'data', label: 'Data', type: 'date' }
-                ],
-                idField: 'id', matchFields: ['nd', 'up', 'data']
-            },
-            {
-                key: 'recursosGerais', label: '📊 Recursos Gerais',
-                colunas: [
-                    { field: 'nd', label: 'ND' },
-                    { field: 'valor', label: 'Valor', type: 'currency' },
-                    { field: 'data', label: 'Data', type: 'date' }
-                ],
-                idField: 'id', matchFields: ['nd', 'data']
             }
         ];
+
+        // Obter alterações de uma tabela específica a partir do último aditivo ou apostilamento que modificou essa tabela
+        // Retorna { modificados: [{matchKey, camposAlterados:{field:{de,para,label}}}], adicionados: [{item}], removidos: [{item}] } ou null
+        function obterAlteracoesTabelaAditivos(tabelaKey) {
+            const ted = window.tedSelecionado;
+            if (!ted) return null;
+            // Percorrer aditivos e apostilamentos de trás para frente para achar o último que alterou esta tabela
+            const fontes = [];
+            (ted.aditivos || []).forEach((a, i) => {
+                if (a.tabelasAlteradas && a.tabelasAlteradas[tabelaKey]) {
+                    fontes.push(a.tabelasAlteradas[tabelaKey]);
+                }
+            });
+            (ted.apostilamentos || []).forEach((ap, i) => {
+                if (ap.tabelasAlteradas && ap.tabelasAlteradas[tabelaKey]) {
+                    fontes.push(ap.tabelasAlteradas[tabelaKey]);
+                }
+            });
+            if (!fontes.length) return null;
+            // Retornar o último (mais recente)
+            return fontes[fontes.length - 1];
+        }
+
+        // Gerar mapa de matchKey -> camposAlterados para busca rápida por linha
+        function criarMapaAlteracoes(alteracoes, tabDef) {
+            if (!alteracoes || !tabDef) return { modMap: {}, addSet: new Set(), remSet: new Set() };
+            const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+            const modMap = {};
+            (alteracoes.modificados || []).forEach(mod => {
+                const k = matchKey(mod.atual || mod.original || {});
+                modMap[k] = mod.camposAlterados;
+            });
+            const addSet = new Set();
+            (alteracoes.adicionados || []).forEach(add => {
+                addSet.add(matchKey(add.item || add));
+            });
+            const remSet = new Set();
+            (alteracoes.removidos || []).forEach(rem => {
+                remSet.add(matchKey(rem.item || rem));
+            });
+            return { modMap, addSet, remSet };
+        }
+
+        // Formatar valor de célula alterada: mostra valor antigo riscado + valor novo em verde
+        function formatarCelulaAlterada(valorAtual, valorAntigo, tipo) {
+            let antigoFormatado = valorAntigo;
+            let novoFormatado = valorAtual;
+            if (tipo === 'currency') {
+                antigoFormatado = Number(valorAntigo || 0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+                novoFormatado = Number(valorAtual || 0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+            } else if (tipo === 'number') {
+                antigoFormatado = formatNumber(valorAntigo);
+                novoFormatado = formatNumber(valorAtual);
+            } else if (tipo === 'date' && valorAntigo) {
+                try { antigoFormatado = new Date(valorAntigo + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
+                try { novoFormatado = new Date(valorAtual + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
+            }
+            return `<span class="celula-alterada-aditivo"><span class="val-antigo">${antigoFormatado}</span><span class="val-novo">${novoFormatado}</span></span>`;
+        }
 
         // Snapshot: captura valores atuais do TED para comparação futura (incluindo tabelas)
         function capturarSnapshotTed(ted) {
@@ -5748,25 +5811,30 @@
         function gerarResumoTabelasAlteradas(tabelasAlteradas) {
             if (!tabelasAlteradas || Object.keys(tabelasAlteradas).length === 0) return '';
             let html = '';
-            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
-                const diffs = tabelasAlteradas[tabDef.key];
+            // Labels de fallback para tabelas que foram removidas do ADITIVO_TABELAS_CLONE
+            const fallbackLabels = { execFisicas: '✅ Execução Física', execFinanceiras: '💳 Execução Financeira', recursosGerais: '📊 Recursos Gerais' };
+            // Iterar todas as chaves presentes no objeto de alterações
+            Object.keys(tabelasAlteradas).forEach(tabelaKey => {
+                const diffs = tabelasAlteradas[tabelaKey];
                 if (!diffs) return;
-                html += `<div style="margin-top:4px;"><span class="aditivo-change-field">${tabDef.label}:</span>`;
-                if (diffs.adicionados.length) {
+                const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+                const labelTabela = tabDef ? tabDef.label : (fallbackLabels[tabelaKey] || tabelaKey);
+                html += `<div style="margin-top:4px;"><span class="aditivo-change-field">${labelTabela}:</span>`;
+                if (diffs.adicionados && diffs.adicionados.length) {
                     html += ` <span class="aditivo-change-badge aditivo-change-new">+${diffs.adicionados.length} novo${diffs.adicionados.length > 1 ? 's' : ''}</span>`;
                 }
-                if (diffs.removidos.length) {
+                if (diffs.removidos && diffs.removidos.length) {
                     html += ` <span class="aditivo-change-badge aditivo-change-old">-${diffs.removidos.length} removido${diffs.removidos.length > 1 ? 's' : ''}</span>`;
                 }
-                if (diffs.modificados.length) {
+                if (diffs.modificados && diffs.modificados.length) {
                     html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">✎${diffs.modificados.length} alterado${diffs.modificados.length > 1 ? 's' : ''}</span>`;
                     // Detalhes das modificações
                     diffs.modificados.forEach(mod => {
                         Object.keys(mod.camposAlterados).forEach(field => {
                             const ch = mod.camposAlterados[field];
-                            const colDef = tabDef.colunas.find(c => c.field === field);
+                            const colDef = tabDef ? tabDef.colunas.find(c => c.field === field) : null;
                             const tipo = colDef ? colDef.type : 'text';
-                            html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.7rem;color:var(--text-muted);">${ch.label}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(ch.de, tipo)}</span> → <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(ch.para, tipo)}</span></div>`;
+                            html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.7rem;color:var(--text-muted);">${ch.label || field}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(ch.de, tipo)}</span> → <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(ch.para, tipo)}</span></div>`;
                         });
                     });
                 }
@@ -6613,6 +6681,12 @@
                 baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             }
 
+            // Obter alterações de aditivos/apostilamentos para destacar
+            const altMetas = obterAlteracoesTabelaAditivos('metas');
+            const tabDefMeta = ADITIVO_TABELAS_CLONE.find(t => t.key === 'metas');
+            const { modMap: modMapMeta, addSet: addSetMeta } = criarMapaAlteracoes(altMetas, tabDefMeta);
+            const matchKeyMeta = (item) => tabDefMeta ? tabDefMeta.matchFields.map(f => String(item[f] || '')).join('||') : '';
+
             tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => {
                 let inicioStr = '';
                 let finalStr = '';
@@ -6634,11 +6708,19 @@
                     finalStr = '-';
                 }
 
-                let html = `<tr>
+                const mKey = matchKeyMeta(meta);
+                const mods = modMapMeta[mKey];
+                const isAdded = addSetMeta.has(mKey);
+                const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
+                const tdDescricao = mods && mods.descricao ? formatarCelulaAlterada(meta.descricao || '', mods.descricao.de, '') : (meta.descricao || '');
+                const tdMInicio = mods && mods.mInicio ? formatarCelulaAlterada(meta.mInicio, mods.mInicio.de, 'number') : meta.mInicio;
+                const tdMFinal = mods && mods.mFinal ? formatarCelulaAlterada(meta.mFinal, mods.mFinal.de, 'number') : meta.mFinal;
+
+                let html = `<tr${trClass}>
                     <td class="col-meta">${meta.meta}</td>
-                    <td class="col-descricao">${meta.descricao || ''}</td>
-                    <td class="col-m">${meta.mInicio}</td>
-                    <td class="col-m">${meta.mFinal}</td>
+                    <td class="col-descricao">${tdDescricao}</td>
+                    <td class="col-m">${tdMInicio}</td>
+                    <td class="col-m">${tdMFinal}</td>
                     <td class="col-mes">${inicioStr}</td>
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
@@ -6891,6 +6973,12 @@
                 return String(aVal).localeCompare(String(bVal), 'pt', { numeric: true });
             });
 
+            // Obter alterações de aditivos/apostilamentos para destacar
+            const altFisicos = obterAlteracoesTabelaAditivos('fisicos');
+            const tabDefFis = ADITIVO_TABELAS_CLONE.find(t => t.key === 'fisicos');
+            const { modMap: modMapFis, addSet: addSetFis } = criarMapaAlteracoes(altFisicos, tabDefFis);
+            const matchKeyFis = (item) => tabDefFis ? tabDefFis.matchFields.map(f => String(item[f] || '')).join('||') : '';
+
             tbody.innerHTML = fisicosSorted.map((f, i) => {
                 let inicioStr = '';
                 let finalStr = '';
@@ -6914,13 +7002,21 @@
                     realizadoBadge = `<span class="badge done" title="Realizada em ${f.dataRealizada || ''}${antesTxt}">✔</span>`;
                 }
 
-                let html = `<tr>
+                const mKey = matchKeyFis(f);
+                const mods = modMapFis[mKey];
+                const isAdded = addSetFis.has(mKey);
+                const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
+                const tdQtde = mods && mods.qtde ? formatarCelulaAlterada(formatNumber(f.qtde ?? ''), mods.qtde.de, 'number') : formatNumber(f.qtde ?? '');
+                const tdMInicio = mods && mods.mInicio ? formatarCelulaAlterada(f.mInicio, mods.mInicio.de, 'number') : f.mInicio;
+                const tdMFinal = mods && mods.mFinal ? formatarCelulaAlterada(f.mFinal, mods.mFinal.de, 'number') : f.mFinal;
+
+                let html = `<tr${trClass}>
                     <td class="col-fase">${f.fase}</td>
                     <td class="col-objeto">${f.objeto}</td>
-                        <td class="col-qtde">${formatNumber(f.qtde ?? '')}</td>
+                        <td class="col-qtde">${tdQtde}</td>
                         <td class="col-qtde">${formatNumber(f.qtdeRealizada ?? '')}</td>
-                    <td class="col-m">${f.mInicio}</td>
-                    <td class="col-m">${f.mFinal}</td>
+                    <td class="col-m">${tdMInicio}</td>
+                    <td class="col-m">${tdMFinal}</td>
                     <td class="col-mes">${inicioStr}</td>
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
@@ -7647,6 +7743,12 @@
             // Array para acumular totais por coluna (mês)
             const totaisPorMes = new Array(meses.length).fill(0);
             
+            // Obter alterações de aditivos/apostilamentos para destacar
+            const altFinanc = obterAlteracoesTabelaAditivos('financeiros');
+            const tabDefFin = ADITIVO_TABELAS_CLONE.find(t => t.key === 'financeiros');
+            const { modMap: modMapFin, addSet: addSetFin } = criarMapaAlteracoes(altFinanc, tabDefFin);
+            const matchKeyFin = (item) => tabDefFin ? tabDefFin.matchFields.map(f => String(item[f] || '')).join('||') : '';
+
             // Usar dados filtrados para exibição
             tbody.innerHTML = dadosFiltrados.map((f, i) => {
                 const valorNum = parseNumber(f.valor) || 0;
@@ -7654,12 +7756,18 @@
                 const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
                 const mesDescStr = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx]}/${f.anoDesc}` : '-';
                 const numeroDisplay = f.numero || f.nd || '-';
-                let html = `<tr>
+                const mKey = matchKeyFin(f);
+                const mods = modMapFin[mKey];
+                const isAdded = addSetFin.has(mKey);
+                const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
+                const tdValor = mods && mods.valor ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                const tdM = mods && mods.m ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
+                let html = `<tr${trClass}>
                     <td class="col-nd">${numeroDisplay}</td>
                     <td class="col-up">${f.up || f.ug || ''}</td>
-                    <td class="col-m">${f.m ?? ''}</td>
+                    <td class="col-m">${tdM}</td>
                     <td class="col-mes">${mesDescStr}</td>
-                    <td class="col-valor">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="col-valor">${tdValor}</td>
                     <td class="col-acao">
                         <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar">✎</button>
                         <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover">✕</button>
