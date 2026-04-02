@@ -17,33 +17,107 @@ body {
 }
 
 .card {
-  @apply bg-white rounded-lg shadow-md p-6 border border-gray-100;
+  @apply bg-white rounded-xl shadow-md p-6 border border-gray-100 transition-shadow duration-200;
+}
+
+.card-hover {
+  @apply card hover:shadow-xl;
 }
 
 .btn {
-  @apply px-4 py-2 rounded-md font-medium transition-colors;
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed;
 }
 
 .btn-primary {
-  @apply btn bg-blue-600 text-white hover:bg-blue-700;
+  @apply btn bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md;
 }
 
 .btn-secondary {
-  @apply btn bg-gray-200 text-gray-800 hover:bg-gray-300;
+  @apply btn bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200;
 }
 
 .btn-danger {
-  @apply btn bg-red-600 text-white hover:bg-red-700;
+  @apply btn bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md;
+}
+
+.btn-success {
+  @apply btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-md;
 }
 
 .form-input {
-  @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-white;
 }
 
 .form-group {
-  @apply mb-4;
+  @apply mb-5;
 }
 
 .form-label {
-  @apply block text-sm font-medium text-gray-700 mb-2;
+  @apply block text-sm font-semibold text-gray-700 mb-1.5;
+}
+
+.badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase;
+}
+
+.badge-yellow {
+  @apply badge bg-amber-100 text-amber-800;
+}
+
+.badge-blue {
+  @apply badge bg-blue-100 text-blue-800;
+}
+
+.badge-green {
+  @apply badge bg-emerald-100 text-emerald-800;
+}
+
+.badge-red {
+  @apply badge bg-red-100 text-red-800;
+}
+
+.badge-gray {
+  @apply badge bg-gray-100 text-gray-700;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full overflow-hidden;
+}
+
+.progress-fill {
+  @apply h-full rounded-full transition-all duration-500;
+}
+
+.stat-card {
+  @apply rounded-xl p-4 text-center;
+}
+
+.nav-brand {
+  @apply flex items-center gap-2 text-2xl font-bold text-blue-600;
+}
+
+.page-header {
+  @apply flex justify-between items-center mb-8;
+}
+
+.section-title {
+  @apply text-3xl font-bold text-gray-800;
+}
+
+.empty-state {
+  @apply text-center py-16 text-gray-500;
 }
