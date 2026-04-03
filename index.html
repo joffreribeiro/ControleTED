@@ -3040,16 +3040,11 @@
                             <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
-                <!-- Resumo adicional removido conforme solicitado --><div id="resumoGeralContainer" style="margin-top:1rem; display:flex; gap:1rem; flex-wrap:wrap;">
-  <div style="flex:1; min-width:280px;">
-    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados (meses)</h4>
-    <div id="resumoGeralMeses"></div>
-  </div>
-  <div style="flex:1; min-width:280px;">
-    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados (UP)</h4>
-    <div id="resumoGeralUPs"></div>
-  </div>
-</div>
+                <!-- Resumo Assinados / Encerrados unificado -->
+                <div id="resumoGeralContainer" style="margin-top:1rem;">
+                    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados por Mês e UP</h4>
+                    <div id="resumoGeralUnificado"></div>
+                </div>
             </div>
 
                     
@@ -4629,27 +4624,21 @@
             initLucideIcons();
         }
 
-        // Renderizar resumo de TEDs assinados e encerrados por mês e por UP
+        // Renderizar resumo de TEDs assinados e encerrados por mês e por UP (unificado)
         function renderResumoGeralAssinadosEncerrados() {
-            // Garantir que os containers existam para evitar erros com .innerHTML
+            // Garantir que o container exista
             (function(){
-                function ensureElement(id) {
-                    if (!document.getElementById(id)) {
-                        const wrapper = document.createElement("div");
-                        const parent = document.getElementById("dashboard") || document.body;
-                        wrapper.id = id;
-                        wrapper.className = "empty-state";
-                        parent.appendChild(wrapper);
-                    }
+                if (!document.getElementById("resumoGeralUnificado")) {
+                    const wrapper = document.createElement("div");
+                    const parent = document.getElementById("dashboard") || document.body;
+                    wrapper.id = "resumoGeralUnificado";
+                    wrapper.className = "empty-state";
+                    parent.appendChild(wrapper);
                 }
-                ensureElement("resumoGeralMeses");
-                ensureElement("resumoGeralUPs");
             })();
             const teds = dados.teds || [];
-            const signedByMonth = {}; // chave YYYY-MM
-            const closedByMonth = {};
-            const signedByUp = {};
-            const closedByUp = {};
+            // Estrutura: { 'YYYY-MM': { signed: { 'UP': count }, closed: { 'UP': count } } }
+            const byMonth = {};
             const hoje = new Date();
 
             function monthKeyFromDate(d) {
@@ -4658,77 +4647,82 @@
                 return `${y}-${m}`;
             }
 
+            function ensureMonth(k) {
+                if (!byMonth[k]) byMonth[k] = { signed: {}, closed: {}, totalSigned: 0, totalClosed: 0 };
+            }
+
             teds.forEach(t => {
-                // Assinatura do TED -> usar inicioVigencia (data de assinatura)
+                const up = (t.upResponsavel || t.up || 'Sem UP');
+
+                // Assinatura -> usar inicioVigencia
                 const inicioNorm = normalizarData(t.inicioVigencia);
                 if (inicioNorm) {
                     const dt = new Date(inicioNorm + 'T00:00:00');
                     if (!isNaN(dt.getTime())) {
                         const k = monthKeyFromDate(dt);
-                        signedByMonth[k] = (signedByMonth[k] || 0) + 1;
-                        const up = (t.upResponsavel || t.up || 'Sem UP');
-                        signedByUp[up] = (signedByUp[up] || 0) + 1;
+                        ensureMonth(k);
+                        byMonth[k].signed[up] = (byMonth[k].signed[up] || 0) + 1;
+                        byMonth[k].totalSigned++;
                     }
                 }
 
-                // Encerrados -> considerar 'dataEntregaDenuncia' como data de encerramento principal; fallback para fimVigencia
+                // Encerrados -> dataEntregaDenuncia / dataEntrega; fallback fimVigencia
                 const entregaNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
                 let encerramentoNorm = entregaNorm;
                 if (!encerramentoNorm) {
                     encerramentoNorm = normalizarData(t.fimVigencia || '');
                 }
-
                 if (encerramentoNorm) {
                     const fimDt = new Date(encerramentoNorm + 'T00:00:00');
                     if (!isNaN(fimDt.getTime()) && fimDt <= hoje) {
                         const k2 = monthKeyFromDate(fimDt);
-                        closedByMonth[k2] = (closedByMonth[k2] || 0) + 1;
-                        const up2 = (t.upResponsavel || t.up || 'Sem UP');
-                        closedByUp[up2] = (closedByUp[up2] || 0) + 1;
+                        ensureMonth(k2);
+                        byMonth[k2].closed[up] = (byMonth[k2].closed[up] || 0) + 1;
+                        byMonth[k2].totalClosed++;
                     }
                 }
             });
 
-            // Montar tabela por meses (união de chaves)
-            const months = Array.from(new Set([...Object.keys(signedByMonth), ...Object.keys(closedByMonth)]));
-            months.sort((a,b) => b.localeCompare(a)); // desc
-            const mesesHtml = [];
-            const mesesEl = document.getElementById('resumoGeralMeses');
+            const months = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
+            const el = document.getElementById('resumoGeralUnificado');
+
             if (months.length === 0) {
-                if (mesesEl) mesesEl.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
-            } else {
-                mesesHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
-                mesesHtml.push('<thead><tr><th style="text-align:left; padding:6px;">Mês</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
-                mesesHtml.push('<tbody>');
-                months.forEach(k => {
-                    const partes = k.split('-');
-                    const label = `${partes[1]}/${partes[0]}`;
-                    const a = signedByMonth[k] || 0;
-                    const c = closedByMonth[k] || 0;
-                    mesesHtml.push(`<tr><td style="padding:6px;">${label}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
-                });
-                mesesHtml.push('</tbody></table>');
-                if (mesesEl) mesesEl.innerHTML = mesesHtml.join('');
+                if (el) el.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+                return;
             }
 
-            // Montar tabela por UP
-            const ups = Array.from(new Set([...Object.keys(signedByUp), ...Object.keys(closedByUp)])).sort();
-            const upsEl = document.getElementById('resumoGeralUPs');
-            if (ups.length === 0) {
-                if (upsEl) upsEl.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
-            } else {
-                const upHtml = [];
-                upHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
-                upHtml.push('<thead><tr><th style="text-align:left; padding:6px;">UP</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
-                upHtml.push('<tbody>');
-                ups.forEach(u => {
-                    const a = signedByUp[u] || 0;
-                    const c = closedByUp[u] || 0;
-                    upHtml.push(`<tr><td style="padding:6px;">${u}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
-                });
-                upHtml.push('</tbody></table>');
-                if (upsEl) upsEl.innerHTML = upHtml.join('');
+            function formatUps(upObj) {
+                const entries = Object.entries(upObj).sort((a, b) => a[0].localeCompare(b[0]));
+                if (entries.length === 0) return '—';
+                return entries.map(([up, n]) => `<span style="white-space:nowrap;">${up}${n > 1 ? ' (' + n + ')' : ''}</span>`).join(', ');
             }
+
+            const html = [];
+            html.push('<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">');
+            html.push('<thead><tr>');
+            html.push('<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border);">Mês</th>');
+            html.push('<th style="text-align:center; padding:6px 8px; border-bottom:2px solid var(--border); min-width:60px;">Assinados</th>');
+            html.push('<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border);">UPs (Assinados)</th>');
+            html.push('<th style="text-align:center; padding:6px 8px; border-bottom:2px solid var(--border); min-width:60px;">Encerrados</th>');
+            html.push('<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border);">UPs (Encerrados)</th>');
+            html.push('</tr></thead><tbody>');
+
+            months.forEach(k => {
+                const partes = k.split('-');
+                const label = `${partes[1]}/${partes[0]}`;
+                const info = byMonth[k];
+                const rowBg = info.totalSigned === 0 && info.totalClosed === 0 ? '' : '';
+                html.push(`<tr style="${rowBg}">`);
+                html.push(`<td style="padding:6px 8px; border-bottom:1px solid var(--border-light); font-weight:500;">${label}</td>`);
+                html.push(`<td style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border-light); color:var(--success-dark); font-weight:600;">${info.totalSigned || '—'}</td>`);
+                html.push(`<td style="padding:6px 8px; border-bottom:1px solid var(--border-light); color:var(--text-secondary); font-size:0.8rem;">${info.totalSigned ? formatUps(info.signed) : '—'}</td>`);
+                html.push(`<td style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border-light); color:var(--danger-dark); font-weight:600;">${info.totalClosed || '—'}</td>`);
+                html.push(`<td style="padding:6px 8px; border-bottom:1px solid var(--border-light); color:var(--text-secondary); font-size:0.8rem;">${info.totalClosed ? formatUps(info.closed) : '—'}</td>`);
+                html.push('</tr>');
+            });
+
+            html.push('</tbody></table>');
+            if (el) el.innerHTML = html.join('');
         }
 
         // Render upcoming deliveries (execFisicas) within next 30 days
