@@ -1055,7 +1055,6 @@
             z-index: 1;
         }
 
-        .ted-info-title {
             color: #ffffff !important;
             font-size: 1.45rem;
             font-weight: 700;
@@ -4740,21 +4739,26 @@
             months.forEach(mk => monthsSet.add(mk));
             processed.forEach(p => {
                 if (!p.inicio || isNaN(p.inicio.getTime())) return;
+                const encKeyOfP = (p.encDate && !isNaN(p.encDate.getTime())) ? monthKey(p.encDate) : null;
                 months.forEach(mk => {
                     const parts = mk.split('-');
                     const y = parseInt(parts[0], 10); const m = parseInt(parts[1], 10);
                     const ultimoDia = new Date(y, m, 0);
                     // vigência ao FECHAMENTO do mês
                     if (p.inicio <= ultimoDia && p.fimReal >= ultimoDia) {
-                        vigentes[mk].push({ id: p.id, num: p.num });
+                        // Se o TED foi encerrado neste mesmo mês, considerá-lo como encerrado (não listar como vigente)
+                        if (encKeyOfP === mk) {
+                            // skip
+                        } else {
+                            vigentes[mk].push({ id: p.id, num: p.num });
+                        }
                     }
                 });
 
                 // encerrados: somente pela data de entrega/denúncia
-                if (p.encDate && !isNaN(p.encDate.getTime())) {
-                    const encKey = monthKey(p.encDate);
-                    if (monthsSet.has(encKey)) {
-                        encerrados[encKey].push({ id: p.id, num: p.num });
+                if (encKeyOfP) {
+                    if (monthsSet.has(encKeyOfP)) {
+                        encerrados[encKeyOfP].push({ id: p.id, num: p.num });
                     }
                 }
             });
@@ -4787,8 +4791,22 @@
             const data = buildRelatorioData();
             window._lastRelatorioData = data;
             const el = document.getElementById('relatorioMensalContainer');
-            if (el) el.innerHTML = generateRelatorioHTML(data);
-            setTimeout(() => { const node = document.getElementById('relatorioMensalContainer'); if (node) node.scrollIntoView({ behavior: 'smooth' }); }, 50);
+            if (el) {
+                el.innerHTML = generateRelatorioHTML(data);
+                // Inserir botão Exportar XLSX ao lado do Exportar CSV, se ainda não existir
+                setTimeout(() => {
+                    const csvBtn = el.querySelector('button[onclick="downloadRelatorioCSV()"]');
+                    if (csvBtn && !el.querySelector('button[onclick="downloadRelatorioXLSX()"]')) {
+                        const xlsxBtn = document.createElement('button');
+                        xlsxBtn.className = 'btn';
+                        xlsxBtn.textContent = 'Exportar XLSX';
+                        xlsxBtn.onclick = downloadRelatorioXLSX;
+                        csvBtn.parentNode.insertBefore(document.createTextNode(' '), csvBtn.nextSibling);
+                        csvBtn.parentNode.insertBefore(xlsxBtn, csvBtn.nextSibling);
+                    }
+                }, 50);
+            }
+            setTimeout(() => { const node = document.getElementById('relatorioMensalContainer'); if (node) node.scrollIntoView({ behavior: 'smooth' }); }, 120);
         }
 
         function downloadRelatorioCSV() {
@@ -4813,6 +4831,50 @@
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
+        }
+
+        // Fecha o card do relatório
+        function closeRelatorio() {
+            const el = document.getElementById('relatorioMensalContainer');
+            if (el) el.innerHTML = '';
+        }
+
+        // Carrega SheetJS dinamicamente (retorna Promise que resolve com XLSX)
+        function loadSheetJS() {
+            return new Promise((resolve, reject) => {
+                if (window.XLSX) return resolve(window.XLSX);
+                const s = document.createElement('script');
+                s.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+                s.onload = () => {
+                    if (window.XLSX) resolve(window.XLSX);
+                    else reject(new Error('SheetJS carregado, porém objeto XLSX não encontrado'));
+                };
+                s.onerror = () => reject(new Error('Falha ao carregar SheetJS'));
+                document.head.appendChild(s);
+            });
+        }
+
+        function downloadRelatorioXLSX() {
+            const data = window._lastRelatorioData || buildRelatorioData();
+            if (!data || !data.months) return alert('Nenhum dado para exportar');
+            loadSheetJS().then(XLSX => {
+                const rows = [];
+                rows.push(['Mês','Vigentes','Encerrados']);
+                data.months.forEach(mk => {
+                    const p = mk.split('-');
+                    const mesLabel = data.nomeMeses[parseInt(p[1],10)-1] + '/' + p[0];
+                    const vig = (data.vigentes[mk] || []).map(x => `TED ${x.num}`).join(' | ');
+                    const enc = (data.encerrados[mk] || []).map(x => `TED ${x.num}`).join(' | ');
+                    rows.push([mesLabel, vig, enc]);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Relatório Mensal');
+                XLSX.writeFile(wb, 'relatorio_mensal_teds.xlsx');
+            }).catch(e => {
+                console.warn('downloadRelatorioXLSX error', e);
+                alert('Erro ao gerar XLSX: ' + (e && e.message ? e.message : e));
+            });
         }
 
         // Render upcoming deliveries (execFisicas) within next 30 days
