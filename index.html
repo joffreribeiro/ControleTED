@@ -10388,17 +10388,23 @@
             }).join('');
 
             const rowPrevistoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Previsto Anual</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0))}</tr>`;
-            const rowReceberAnterior = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">A Receber Ano Anterior</td>${cellsByAno((ano)=> {
-                const saldoAnoAnterior = (recebidoByAno[ano-1] || 0) + (devolvidoByAno[ano-1] || 0);
-                return (previstoByAno[ano-1] || 0) - saldoAnoAnterior;
-            })}</tr>`;
+            const anosOrdem = anos.map(a => a.ano);
+            const saldoAtualByAno = {};
+            const aReceberAnteriorByAno = {};
+            anosOrdem.forEach((ano, idx) => {
+                saldoAtualByAno[ano] = (recebidoByAno[ano] || 0) + (devolvidoByAno[ano] || 0);
+                if (idx === 0) {
+                    aReceberAnteriorByAno[ano] = 0;
+                } else {
+                    const anoPrev = anosOrdem[idx - 1];
+                    aReceberAnteriorByAno[ano] = (previstoByAno[anoPrev] || 0) + (aReceberAnteriorByAno[anoPrev] || 0) - (saldoAtualByAno[anoPrev] || 0);
+                }
+            });
+
+            const rowReceberAnterior = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">A Receber (ano anterior)</td>${cellsByAno((ano)=> (aReceberAnteriorByAno[ano] || 0))}</tr>`;
             const rowRecebidoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
             const rowDevolvido = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Devolvido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> {
-                const saldoAnoAnterior = (recebidoByAno[ano-1] || 0) + (devolvidoByAno[ano-1] || 0);
-                const aReceberAnoAnterior = (previstoByAno[ano-1] || 0) - saldoAnoAnterior;
-                return (previstoByAno[ano] || 0) + aReceberAnoAnterior + (devolvidoByAno[ano] || 0);
-            })}</tr>`;
+            const rowSaldoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Saldo Atual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowRecebidoAnual + rowDevolvido + rowSaldoAnual;
 
@@ -10436,6 +10442,8 @@
                 })
                 .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
 
+            const devolvidoNeg = -devolvido;
+
             // A Receber ano anterior: calcular saldo do ano anterior respeitando filtros
             const anoAnterior = anoAtual - 1;
             const previstoAnoAnterior = (cad || [])
@@ -10468,10 +10476,12 @@
                 })
                 .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
 
-            const aReceberAnterior = previstoAnoAnterior - recebidoAnoAnterior - devolvidoAnoAnterior;
-            
-            // Saldo Anual: previsto + a receber anterior - recebido - devolvido
-            const saldoAnual = previstoAnual + aReceberAnterior - recebidoAnual - devolvido;
+            // A Receber ano anterior para o ano atual (encadeado, primeiro ano da série = 0)
+            const idxAnoAtual = anosOrdem.indexOf(anoAtual);
+            const aReceberAnterior = idxAnoAtual >= 0 ? (aReceberAnteriorByAno[anoAtual] || 0) : (previstoAnoAnterior - recebidoAnoAnterior - devolvidoAnoAnterior);
+
+            // Saldo Atual: Recebido Anual + Devolvido (devolvido com sinal negativo)
+            const saldoAnual = recebidoAnual + devolvidoNeg;
             
             // Liquidação percentual
             const liquidacaoPerc = previstoAnual > 0 ? ((recebidoAnual / previstoAnual) * 100) : 0;
@@ -11126,17 +11136,23 @@
             }).join('');
 
             const rowPrevistoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Previsto Anual</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0))}</tr>`;
-            const rowReceberAnterior = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">A Receber Ano Anterior</td>${cellsByAno((ano)=> {
-                const saldoAnoAnterior = (recebidoByAno[ano-1] || 0) + (devolvidoByAno[ano-1] || 0);
-                return (previstoByAno[ano-1] || 0) - saldoAnoAnterior;
-            })}</tr>`;
+            const anosOrdem = anos.map(a => a.ano);
+            const saldoAtualByAno = {};
+            const aReceberAnteriorByAno = {};
+            anosOrdem.forEach((ano, idx) => {
+                saldoAtualByAno[ano] = (recebidoByAno[ano] || 0) + (devolvidoByAno[ano] || 0);
+                if (idx === 0) {
+                    aReceberAnteriorByAno[ano] = 0;
+                } else {
+                    const anoPrev = anosOrdem[idx - 1];
+                    aReceberAnteriorByAno[ano] = (previstoByAno[anoPrev] || 0) + (aReceberAnteriorByAno[anoPrev] || 0) - (saldoAtualByAno[anoPrev] || 0);
+                }
+            });
+
+            const rowReceberAnterior = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">A Receber (ano anterior)</td>${cellsByAno((ano)=> (aReceberAnteriorByAno[ano] || 0))}</tr>`;
             const rowRecebidoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
             const rowDevolvido = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Devolvido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> {
-                const saldoAnoAnterior = (recebidoByAno[ano-1] || 0) + (devolvidoByAno[ano-1] || 0);
-                const aReceberAnoAnterior = (previstoByAno[ano-1] || 0) - saldoAnoAnterior;
-                return (previstoByAno[ano] || 0) + aReceberAnoAnterior + (devolvidoByAno[ano] || 0);
-            })}</tr>`;
+            const rowSaldoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Atual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowRecebidoAnual + rowDevolvido + rowSaldoAnual;
         }
