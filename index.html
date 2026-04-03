@@ -4340,16 +4340,23 @@
                 if (!inicioNorm) return false;
                 const inicio = new Date(inicioNorm + 'T00:00:00');
                 if (isNaN(inicio.getTime())) return false;
-                // Usar fim com aditivos quando disponível
-                const fimEfetivo = calcularFimComAditivos(t);
-                if (!fimEfetivo) {
-                    const fimNorm = normalizarData(t.fimVigencia);
-                    if (!fimNorm) return false;
-                    const fim = new Date(fimNorm + 'T00:00:00');
-                    if (isNaN(fim.getTime())) return false;
-                    return hoje >= inicio && hoje <= fim;
+
+                // calcular fim efetivo (aditivos ou fimVigencia)
+                const fimAditivo = calcularFimComAditivos(t);
+                const fimNorm = normalizarData(t.fimVigencia || '');
+                const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                const fimEfetivo = (fimAditivo && !isNaN(fimAditivo.getTime())) ? fimAditivo : (fimOrig && !isNaN(fimOrig.getTime()) ? fimOrig : null);
+
+                // considerar dataEntregaDenuncia/dataEntrega como fim real (prevalece)
+                const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
+                const encDt = encNorm ? new Date(encNorm + 'T00:00:00') : null;
+                const fimReal = (encDt && !isNaN(encDt.getTime())) ? encDt : fimEfetivo;
+
+                if (!fimReal) {
+                    // sem data de fim definida: considerar em execução se já iniciou
+                    return hoje >= inicio;
                 }
-                return hoje >= inicio && hoje <= fimEfetivo;
+                return hoje >= inicio && hoje <= fimReal;
             }).length;
             document.getElementById('tedsExecucao').textContent = tedsEmExecucao;
 
