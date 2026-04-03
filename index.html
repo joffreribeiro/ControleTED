@@ -236,11 +236,14 @@
             background-clip: text;
         }
         .nav-brand-sub {
-            font-size: 0.7rem;
+            font-size: 0.84rem;
             font-weight: 500;
-            color: var(--text-muted);
-            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
             text-transform: uppercase;
+            width: 100%;
+            text-align: justify;
+            text-align-last: justify;
         }
 
         /* Dark mode brand */
@@ -1024,6 +1027,11 @@
 
             .nav-brand-name {
                 font-size: 1.4rem;
+            }
+
+            .nav-brand-sub {
+                text-align: left;
+                text-align-last: auto;
             }
 
             .tabs {
