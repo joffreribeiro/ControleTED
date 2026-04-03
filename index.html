@@ -879,7 +879,7 @@
         /* Próximas Ações - Layout 4 colunas (adiciona coluna extra em telas grandes) */
         .proximas-acoes-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 1rem;
         }
         .proxima-col {
@@ -895,6 +895,9 @@
         .proxima-col > div {
             flex: 1 1 auto; /* garantir que o conteúdo principal ocupe o espaço e nivele alturas */
         }
+        /* garantir que tabelas internas não expandam a coluna e causem quebra */
+        .proxima-col .table-wrapper { min-width: 0; max-width: 100%; }
+        .proxima-col table { min-width: 0; width: 100%; }
         .proxima-col h4 {
             font-size: 0.95rem;
             border-bottom: 1px solid var(--border);
@@ -1857,7 +1860,7 @@
 
         #dashboard .proximas-acoes-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 1rem;
         }
         @media (max-width: 900px) {
