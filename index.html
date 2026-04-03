@@ -8960,63 +8960,85 @@
             const anosOrdenados = Array.from(anosSet).map(Number).sort((a,b)=>a-b);
             if (anosOrdenados.length === 0) { resumoContainer.innerHTML = ''; return; }
 
-            // Construir cabeçalho da tabela
-            let html = '<table class="tabela-padrao" style="margin-top: 1rem; width: auto;">';
-            html += '<thead><tr>';
-            html += '<th class="col-ano">Ano</th>';
-            html += '<th class="col-valor">Previsto Anual</th>';
-            html += '<th class="col-valor">A Receber ano anterior</th>';
-            html += '<th class="col-valor">Recebido Anual</th>';
-            html += '<th class="col-valor">Devolvido</th>';
-            html += '<th class="col-valor">Saldo Anual</th>';
-            html += '<th class="col-percent">Liquidação (%)</th>';
-            html += '</tr></thead><tbody>';
+            // Construir mapas por ano (previsto, recebido, devolvido) e calcular saldos acumulados
+            const previstoByAno = {};
+            const recebidoByAno = {};
+            const devolvidoByAno = {};
+            const saldoByAno = {};
+            const aReceberAnteriorByAno = {};
 
-            // Agregadores por ano
-            let saldoAcumulado = 0;
-
-            anosOrdenados.forEach(ano => {
-                // Previsto do ano (soma do cadastro financeiro por ano)
-                const previsto = (cad || [])
+            // Preencher previsto por ano (do cadastro financeiro)
+            (anosOrdenados || []).forEach(ano => {
+                previstoByAno[ano] = (cad || [])
                     .filter(f => Number(f.anoDesc) === Number(ano))
                     .reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
-
-                // Recebido: soma de recursos gerais com data no ano e valor > 0
-                const recebido = (recs || [])
-                    .filter(r => r.data)
-                    .filter(r => {
-                        const anoRec = new Date(r.data + 'T00:00:00').getFullYear();
-                        const valor = parseNumber(r.valor) || 0;
-                        return anoRec === Number(ano) && valor > 0;
-                    })
-                    .reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
-
-                // Devolvido: soma absoluta dos recursos com valor negativo no ano
-                const devolvido = Math.abs((recs || [])
-                    .filter(r => r.data)
-                    .filter(r => {
-                        const anoRec = new Date(r.data + 'T00:00:00').getFullYear();
-                        const valor = parseNumber(r.valor) || 0;
-                        return anoRec === Number(ano) && valor < 0;
-                    })
-                    .reduce((s, r) => s + (parseNumber(r.valor) || 0), 0));
-
-                const aReceberAnterior = saldoAcumulado;
-                const saldo = previsto + aReceberAnterior - recebido - devolvido;
-                saldoAcumulado = saldo;
-
-                const liquidacao = previsto > 0 ? ((recebido / previsto) * 100) : 0;
-
-                html += `<tr>`;
-                html += `<td class="col-ano" style="font-weight: bold;">${ano}</td>`;
-                html += `<td class="col-valor">${previsto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                html += `<td class="col-valor">${aReceberAnterior.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                html += `<td class="col-valor">${recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                html += `<td class="col-valor" style="color: ${devolvido > 0 ? '#ef4444' : 'inherit'};">-${devolvido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                html += `<td class="col-valor" style="font-weight: bold;">${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                html += `<td class="col-percent">${liquidacao.toFixed(2)}%</td>`;
-                html += '</tr>';
             });
+
+            // Preencher recebido/devolvido por ano (dos recursos gerais)
+            (anosOrdenados || []).forEach(ano => {
+                const recsNoAno = (recs || []).filter(r => r.data && new Date(r.data + 'T00:00:00').getFullYear() === Number(ano));
+                recebidoByAno[ano] = recsNoAno.filter(r => (parseNumber(r.valor) || 0) > 0).reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
+                devolvidoByAno[ano] = Math.abs(recsNoAno.filter(r => (parseNumber(r.valor) || 0) < 0).reduce((s, r) => s + (parseNumber(r.valor) || 0), 0));
+            });
+
+            // Calcular saldos acumulados (a receber anterior -> saldo do ano anterior)
+            let saldoAcumulado = 0;
+            anosOrdenados.forEach(ano => {
+                const previsto = previstoByAno[ano] || 0;
+                const recebido = recebidoByAno[ano] || 0;
+                const devolvido = devolvidoByAno[ano] || 0;
+                aReceberAnteriorByAno[ano] = saldoAcumulado;
+                const saldo = previsto + aReceberAnteriorByAno[ano] - recebido - devolvido;
+                saldoByAno[ano] = saldo;
+                saldoAcumulado = saldo;
+            });
+
+            // Helper de formatação
+            const fmt = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const fmtPct = (v) => (isFinite(v) ? Number(v).toFixed(2) + '%' : '0.00%');
+
+            // Cabeçalho transposto: coluna inicial com rótulo das métricas e colunas por ano
+            let html = '<table class="tabela-padrao" style="margin-top: 1rem; width: auto;">';
+            html += '<thead><tr>';
+            html += '<th style="text-align:left;">Métrica</th>';
+            anosOrdenados.forEach(ano => { html += `<th style="text-align:center;">${ano}</th>`; });
+            html += '</tr></thead><tbody>';
+
+            // Linha: Previsto Anual
+            html += `<tr><td class="col-valor" style="font-weight:700;">Previsto Anual</td>`;
+            anosOrdenados.forEach(ano => { html += `<td style="text-align:right;">${fmt(previstoByAno[ano] || 0)}</td>`; });
+            html += `</tr>`;
+
+            // Linha: A Receber ano anterior
+            html += `<tr><td class="col-valor" style="font-weight:700;">A Receber (ano anterior)</td>`;
+            anosOrdenados.forEach(ano => { html += `<td style="text-align:right;">${fmt(aReceberAnteriorByAno[ano] || 0)}</td>`; });
+            html += `</tr>`;
+
+            // Linha: Recebido Anual (Recursos Gerais)
+            html += `<tr><td class="col-valor" style="font-weight:700;">Recebido Anual</td>`;
+            anosOrdenados.forEach(ano => { html += `<td style="text-align:right;">${fmt(recebidoByAno[ano] || 0)}</td>`; });
+            html += `</tr>`;
+
+            // Linha: Devolvido (valores negativos)
+            html += `<tr><td class="col-valor" style="font-weight:700;">Devolvido</td>`;
+            anosOrdenados.forEach(ano => { html += `<td style="text-align:right; color:${(devolvidoByAno[ano]||0) > 0 ? '#ef4444' : 'inherit'}">-${fmt(devolvidoByAno[ano] || 0)}</td>`; });
+            html += `</tr>`;
+
+            // Linha: Saldo Anual
+            html += `<tr><td class="col-valor" style="font-weight:700;">Saldo Anual</td>`;
+            anosOrdenados.forEach(ano => { html += `<td style="text-align:right; font-weight:700;">${fmt(saldoByAno[ano] || 0)}</td>`; });
+            html += `</tr>`;
+
+            // Linha: Liquidação (%)
+            html += `<tr><td class="col-percent" style="font-weight:700;">Liquidação (%)</td>`;
+            anosOrdenados.forEach(ano => {
+                const previsto = previstoByAno[ano] || 0;
+                const recebido = recebidoByAno[ano] || 0;
+                const pct = previsto > 0 ? (received := recebido, (received / previsto) * 100) : 0; // eslint-disable-line no-unused-vars
+                const pctVal = previsto > 0 ? (recebido / previsto) * 100 : 0;
+                html += `<td style="text-align:right;">${fmtPct(pctVal)}</td>`;
+            });
+            html += `</tr>`;
 
             html += '</tbody></table>';
             resumoContainer.innerHTML = html;
