@@ -2966,6 +2966,13 @@
             </div>
             
             <div class="card">
+                <h2>Vigência Vencida</h2>
+                <div id="vigenciasVencidasContainer">
+                    <p class="empty-state" style="padding:0.75rem; color:var(--text);">Carregando...</p>
+                </div>
+            </div>
+
+            <div class="card">
                 <h2>Vigência dos TED</h2>
                 <div class="filter-bar" style="margin-bottom:0.5rem;">
                     <span class="filter-bar-label">UP:</span>
@@ -4381,6 +4388,7 @@
             try { renderUpcomingEntregas(); } catch(e) { console.warn('renderUpcomingEntregas error', e); }
             try { renderUpcomingRecebimentos(); } catch(e) { console.warn('renderUpcomingRecebimentos error', e); }
             try { renderUpcomingVigencias(); } catch(e) { console.warn('renderUpcomingVigencias error', e); }
+            try { renderVigenciasVencidas(); } catch(e) { console.warn('renderVigenciasVencidas error', e); }
             // Atualizar Gantt de vigência também
             try { renderGanttVigencia(); } catch(e) { console.warn('renderGanttVigencia error', e); }
             // Atualizar resumo geral (assinados/encerrados por mês e por UP)
@@ -4968,8 +4976,7 @@
             container.innerHTML = html;
         }
 
-        // Render TEDs with expiring validity (fimVigencia) within next 30 days
-        // Also show TEDs with vigência vencida que não foram encerrados
+        // Render TEDs with expiring validity (fimVigencia) within next 30 days (apenas próximos)
         function renderUpcomingVigencias() {
             const container = document.getElementById('proximasVigencias');
             if (!container) return;
@@ -4979,12 +4986,64 @@
             maxDate.setDate(today.getDate() + 30);
             maxDate.setHours(23, 59, 59, 999);
 
-            const upcoming = [];
-            const expiredNotClosed = [];
+            const items = [];
+            (dados.teds || []).forEach(t => {
+                if (!t.fimVigencia && !t.inicioVigencia) return;
+                const fimEfetivo = calcularFimComAditivos(t);
+                let d;
+                if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
+                    d = fimEfetivo;
+                } else {
+                    const fimNorm = normalizarData(t.fimVigencia);
+                    if (!fimNorm) return;
+                    d = new Date(fimNorm + 'T00:00:00');
+                    if (isNaN(d.getTime())) return;
+                }
+
+                // Excluir já vencidos (eles são exibidos em card separado)
+                if (d < today) return;
+
+                if (d >= today && d <= maxDate) {
+                    const diasRestantes = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+                    items.push({ date: d, ted: t, diasRestantes: diasRestantes, up: t.upResponsavel || t.up || '', status: t.statusTED || 'Em Execução' });
+                }
+            });
+
+            if (!items.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem TEDs com vigência terminando nos próximos 30 dias.</p>';
+                return;
+            }
+
+            items.sort((a,b) => a.date - b.date);
+
+            let html = '<div style="max-height:300px; overflow-y:auto;">';
+            html += '<table class="tabela-padrao" style="width:100%; font-size:0.85rem;">';
+            html += '<thead><tr><th>Fim Vigência</th><th>TED</th><th>UP</th><th style="text-align:center;">Dias</th></tr></thead><tbody>';
+            items.forEach(it => {
+                let corDias = '#059669';
+                if (it.diasRestantes <= 7) corDias = '#dc2626';
+                else if (it.diasRestantes <= 15) corDias = '#d97706';
+                html += `<tr>`;
+                html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
+                html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td>${it.up}</td>`;
+                html += `<td style="text-align:center; font-weight:600; color:${corDias};">${it.diasRestantes}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Render TEDs com vigência vencida que não foram encerrados
+        function renderVigenciasVencidas() {
+            const container = document.getElementById('vigenciasVencidasContainer');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expired = [];
 
             (dados.teds || []).forEach(t => {
                 if (!t.fimVigencia && !t.inicioVigencia) return;
-                // Usar fim com aditivos quando disponível
                 const fimEfetivo = calcularFimComAditivos(t);
                 let d;
                 if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
@@ -4999,75 +5058,32 @@
                 const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
                 const encDate = encNorm ? new Date(encNorm + 'T00:00:00') : null;
 
-                // Expired and not closed: fim efetivo < today AND no entrega/denúncia (ou entrega futura)
                 if (d < today) {
                     if (!encDate || encDate > today) {
                         const diasAtraso = Math.ceil((today - d) / (1000 * 60 * 60 * 24));
-                        expiredNotClosed.push({ date: d, ted: t, diasAtraso: diasAtraso, up: t.upResponsavel || t.up || '' });
+                        expired.push({ date: d, ted: t, diasAtraso: diasAtraso, up: t.upResponsavel || t.up || '' });
                     }
-                    return;
-                }
-
-                // Upcoming within next 30 days
-                if (d >= today && d <= maxDate) {
-                    const diasRestantes = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
-                    upcoming.push({ 
-                        date: d, 
-                        ted: t, 
-                        diasRestantes: diasRestantes,
-                        up: t.upResponsavel || t.up || '',
-                        status: t.statusTED || 'Em Execução'
-                    });
                 }
             });
 
-            if (!expiredNotClosed.length && !upcoming.length) {
-                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem TEDs com vigência terminando nos próximos 30 dias.</p>';
+            if (!expired.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Nenhum TED com vigência vencida e não encerrado.</p>';
                 return;
             }
 
+            expired.sort((a,b) => a.date - b.date);
             let html = '<div style="max-height:300px; overflow-y:auto;">';
-
-            if (expiredNotClosed.length) {
-                expiredNotClosed.sort((a,b) => a.date - b.date);
-                html += '<div style="margin-bottom:0.5rem;">';
-                html += '<h4 style="margin:0 0 0.25rem 0; color:#dc2626; font-size:0.95rem;">⚠ Vigência Vencida (não encerrados)</h4>';
-                html += '<table class="tabela-padrao" style="width:100%; font-size:0.85rem; margin-bottom:6px;">';
-                html += '<thead><tr><th>Fim Vigência</th><th>TED</th><th>UP</th><th style="text-align:center;">Atraso (dias)</th></tr></thead><tbody>';
-                expiredNotClosed.forEach(it => {
-                    html += `<tr>`;
-                    html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
-                    html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
-                    html += `<td>${it.up}</td>`;
-                    html += `<td style="text-align:center; font-weight:600; color:#dc2626;">${it.diasAtraso}</td>`;
-                    html += `</tr>`;
-                });
-                html += '</tbody></table></div>';
-            }
-
-            if (upcoming.length) {
-                upcoming.sort((a,b) => a.date - b.date);
-                html += '<table class="tabela-padrao" style="width:100%; font-size:0.85rem;">';
-                html += '<thead><tr><th>Fim Vigência</th><th>TED</th><th>UP</th><th style="text-align:center;">Dias</th></tr></thead><tbody>';
-                upcoming.forEach(it => {
-                    // Cor baseada nos dias restantes
-                    let corDias = '#059669'; // verde
-                    if (it.diasRestantes <= 7) {
-                        corDias = '#dc2626'; // vermelho
-                    } else if (it.diasRestantes <= 15) {
-                        corDias = '#d97706'; // laranja
-                    }
-                    html += `<tr>`;
-                    html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
-                    html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
-                    html += `<td>${it.up}</td>`;
-                    html += `<td style="text-align:center; font-weight:600; color:${corDias};">${it.diasRestantes}</td>`;
-                    html += `</tr>`;
-                });
-                html += '</tbody></table>';
-            }
-
-            html += '</div>';
+            html += '<table class="tabela-padrao" style="width:100%; font-size:0.85rem;">';
+            html += '<thead><tr><th>Fim Vigência</th><th>TED</th><th>UP</th><th style="text-align:center;">Atraso (dias)</th></tr></thead><tbody>';
+            expired.forEach(it => {
+                html += `<tr>`;
+                html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
+                html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td>${it.up}</td>`;
+                html += `<td style="text-align:center; font-weight:600; color:#dc2626;">${it.diasAtraso}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></div>';
             container.innerHTML = html;
         }
 
