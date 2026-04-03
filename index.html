@@ -2261,6 +2261,19 @@
         .modal-realizada .actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.5rem; }
         .modal-realizada .error { color:#b91c1c; background:#fff1f2; border:1px solid #fecaca; padding:0.4rem; border-radius:0.35rem; font-size:0.9rem; margin-bottom:0.5rem; display:none; }
         .modal-realizada .error.open { display:block; }
+
+        /* Modal Cadastro de Objetos */
+        .modal-objeto-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); align-items:center; justify-content:center; z-index:10000; }
+        .modal-objeto-backdrop.open { display:flex; }
+        .modal-objeto { background:var(--bg-primary); border-radius:0.625rem; padding:1.5rem; width:460px; max-width:95vw; box-shadow:var(--shadow-lg); }
+        .modal-objeto h3 { margin:0 0 1rem; font-size:1.1rem; display:flex; align-items:center; gap:0.5rem; }
+        .modal-objeto .form-group { margin-bottom:0.85rem; }
+        .modal-objeto label { display:block; font-size:0.85rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.25rem; }
+        .modal-objeto input { width:100%; padding:0.5rem 0.6rem; border:1px solid var(--border); border-radius:0.375rem; font-size:0.95rem; background:var(--bg-primary); color:var(--text); }
+        .modal-objeto input:focus { outline:2px solid var(--primary); box-shadow:0 0 0 3px rgba(59,130,246,0.08); }
+        .modal-objeto .modal-objeto-actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem; }
+        .modal-objeto .modal-objeto-error { color:#b91c1c; background:#fff1f2; border:1px solid #fecaca; padding:0.4rem 0.6rem; border-radius:0.35rem; font-size:0.9rem; margin-bottom:0.75rem; display:none; }
+        .modal-objeto .modal-objeto-error.open { display:block; }
     </style>
     </head>
     <body>
@@ -2568,6 +2581,30 @@
                     <button class="btn" onclick="fecharModalMarcarRealizada()">Cancelar</button>
                     <button class="btn" onclick="desmarcarModalRealizada()" style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626">Desmarcar</button>
                     <button class="btn btn-primary" onclick="salvarModalMarcarRealizada()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Cadastro de Objeto -->
+        <div id="modalObjetoBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalObjeto()">
+            <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+                <h3 id="modalObjetoTitulo">📦 Novo Objeto</h3>
+                <div id="modalObjetoError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
+                <div class="form-group">
+                    <label>Objeto *</label>
+                    <input type="text" id="modalObjetoNome" placeholder="Ex: Computador">
+                </div>
+                <div class="form-group">
+                    <label>Qtde *</label>
+                    <input type="text" id="modalObjetoQtde" placeholder="0" inputmode="numeric" class="mask-numero">
+                </div>
+                <div class="form-group">
+                    <label>Valor Unitário (R$) *</label>
+                    <input type="text" id="modalObjetoValor" placeholder="0,00" inputmode="numeric" class="mask-moeda">
+                </div>
+                <div class="modal-objeto-actions">
+                    <button class="btn" onclick="fecharModalObjeto()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarModalObjeto()">Salvar</button>
                 </div>
             </div>
         </div>
@@ -3029,20 +3066,8 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo">📦 Cadastro de Objetos</h3>
                         <div class="detalhe-secao-body">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem; max-width: 900px;">
-                            <div class="form-group">
-                                <label>Objeto *</label>
-                                <input type="text" id="objetoCadastro" placeholder="Ex: Computador" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Qtde *</label>
-                                <input type="text" id="qtdeObjetoCadastro" placeholder="0" inputmode="numeric" class="mask-numero" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Valor Unitário (R$) *</label>
-                                <input type="text" id="valorUnitarioCadastro" placeholder="0,00" inputmode="numeric" class="mask-moeda" required>
-                            </div>
-                            <button type="button" class="btn btn-primary" onclick="adicionarObjeto()" style="align-self: flex-end; min-width: 120px;">Adicionar</button>
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" class="btn btn-primary" onclick="abrirModalObjeto()" style="min-width: 160px;">➕ Adicionar Objeto</button>
                         </div>
 
                         <div style="max-width: 900px; overflow-x: auto;">
@@ -5353,41 +5378,68 @@
         }
 
         // OBJETOS
-        function adicionarObjeto() {
-            if (!window.tedSelecionado) {
-                alert('⚠️ Selecione um TED primeiro!');
-                return;
+        // ── Modal Cadastro de Objetos ──
+        window._editandoObjetoId = null;
+
+        function abrirModalObjeto(editId) {
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalObjetoBackdrop');
+            const titulo = document.getElementById('modalObjetoTitulo');
+            const errEl = document.getElementById('modalObjetoError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            document.getElementById('modalObjetoNome').value = '';
+            document.getElementById('modalObjetoQtde').value = '';
+            document.getElementById('modalObjetoValor').value = '';
+            window._editandoObjetoId = null;
+
+            if (editId) {
+                const obj = (window.tedSelecionado.objetos || []).find(o => o.id === editId);
+                if (obj) {
+                    window._editandoObjetoId = editId;
+                    titulo.textContent = '✏️ Editar Objeto';
+                    document.getElementById('modalObjetoNome').value = obj.objeto;
+                    document.getElementById('modalObjetoQtde').value = formatarMilharesPtBR(Number(obj.qtde));
+                    const valUnit = Number(obj.valorUnitario);
+                    const valUnitCents = Math.round(valUnit * 100);
+                    const valUnitUnits = Math.floor(valUnitCents / 100);
+                    const valUnitRemainder = valUnitCents % 100;
+                    document.getElementById('modalObjetoValor').value = formatarMilharesPtBR(valUnitUnits) + ',' + String(valUnitRemainder).padStart(2, '0');
+                }
+            } else {
+                titulo.textContent = '📦 Novo Objeto';
             }
 
-            const objetoInput = document.getElementById('objetoCadastro');
-            const qtdeInput = document.getElementById('qtdeObjetoCadastro');
-            const valorInput = document.getElementById('valorUnitarioCadastro');
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalObjetoNome').focus(), 80);
+        }
 
-            const objeto = objetoInput.value.trim();
-            const qtde = parseNumber(qtdeInput.value);
-            const valorUnitario = parseNumber(valorInput.value);
+        function fecharModalObjeto() {
+            const backdrop = document.getElementById('modalObjetoBackdrop');
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
+            window._editandoObjetoId = null;
+        }
 
-            if (!objeto) {
-                alert('⚠️ Preencha o nome do objeto!');
-                return;
-            }
+        function salvarModalObjeto() {
+            const errEl = document.getElementById('modalObjetoError');
+            const objeto = document.getElementById('modalObjetoNome').value.trim();
+            const qtde = parseNumber(document.getElementById('modalObjetoQtde').value);
+            const valorUnitario = parseNumber(document.getElementById('modalObjetoValor').value);
 
-            if (isNaN(qtde) || qtde <= 0) {
-                alert('⚠️ Quantidade deve ser maior que zero!');
-                return;
-            }
+            if (!objeto) { errEl.textContent = '⚠️ Preencha o nome do objeto!'; errEl.classList.add('open'); return; }
+            if (isNaN(qtde) || qtde <= 0) { errEl.textContent = '⚠️ Quantidade deve ser maior que zero!'; errEl.classList.add('open'); return; }
+            if (isNaN(valorUnitario) || valorUnitario <= 0) { errEl.textContent = '⚠️ Valor unitário deve ser maior que zero!'; errEl.classList.add('open'); return; }
 
-            if (isNaN(valorUnitario) || valorUnitario <= 0) {
-                alert('⚠️ Valor unitário deve ser maior que zero!');
-                return;
-            }
+            if (!window.tedSelecionado.objetos) window.tedSelecionado.objetos = [];
 
-            if (!window.tedSelecionado.objetos) {
-                window.tedSelecionado.objetos = [];
+            if (window._editandoObjetoId) {
+                window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== window._editandoObjetoId);
             }
 
             window.tedSelecionado.objetos.push({
-                id: Date.now(),
+                id: window._editandoObjetoId || Date.now(),
                 objeto: objeto,
                 qtde: qtde,
                 valorUnitario: valorUnitario,
@@ -5395,36 +5447,15 @@
             });
 
             atualizarValorTedFromObjetos(window.tedSelecionado);
-
             salvarDados();
             atualizarTabelasEmCascata('objetos');
-            // Verificar consistência de quantidade com Cadastro Físico
             verificarConsistenciaQtdObjetoFisico(objeto, qtde);
-            document.getElementById('objetoCadastro').value = '';
-            document.getElementById('qtdeObjetoCadastro').value = '';
-            document.getElementById('valorUnitarioCadastro').value = '';
+            fecharModalObjeto();
         }
 
-        function editarObjeto(id) {
-            if (!window.tedSelecionado) return;
-            const obj = window.tedSelecionado.objetos.find(o => o.id === id);
-            if (!obj) return;
-
-            // Preencher campos de cadastro (mesma seção) para editar e regravar
-            document.getElementById('objetoCadastro').value = obj.objeto;
-            document.getElementById('qtdeObjetoCadastro').value = formatarMilharesPtBR(Number(obj.qtde));
-            // Formatar valor unitário como moeda (centavos)
-            const valUnit = Number(obj.valorUnitario);
-            const valUnitCents = Math.round(valUnit * 100);
-            const valUnitUnits = Math.floor(valUnitCents / 100);
-            const valUnitRemainder = valUnitCents % 100;
-            document.getElementById('valorUnitarioCadastro').value = formatarMilharesPtBR(valUnitUnits) + ',' + String(valUnitRemainder).padStart(2, '0');
-
-            // Remover o objeto antigo para permitir gravação do editado
-            window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
-            atualizarValorTedFromObjetos(window.tedSelecionado);
-            atualizarTabelasEmCascata('objetos');
-        }
+        // Manter compatibilidade: adicionarObjeto abre o modal
+        function adicionarObjeto() { abrirModalObjeto(); }
+        function editarObjeto(id) { abrirModalObjeto(id); }
 
         function removerObjeto(id) {
             if (!window.tedSelecionado) return;
