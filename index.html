@@ -4601,17 +4601,16 @@
                     const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
                     const fimEfet = calcularFimComAditivos(t) || fimOrig;
                     if (!fimEfet || isNaN(fimEfet.getTime())) return;
-                    // Verificar se foi encerrado antecipadamente
+                    // Se tem data de entrega/denúncia, essa é a data real de encerramento
                     const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
                     let fimReal = fimEfet;
                     if (encNorm) {
                         const encDt = new Date(encNorm + 'T00:00:00');
-                        if (!isNaN(encDt.getTime()) && encDt < fimEfet) {
-                            fimReal = encDt; // encerrado antes do fim da vigência
+                        if (!isNaN(encDt.getTime())) {
+                            fimReal = encDt; // data de entrega/denúncia sempre prevalece
                         }
                     }
-                    // Vigente se início <= último dia do mês E fim real >= ÚLTIMO dia do mês
-                    // (contagem considera TEDs ativos no FECHAMENTO do mês)
+                    // Vigente no fechamento do mês: início <= último dia E fim real >= último dia
                     if (ini <= ultimoDia && fimReal >= ultimoDia) count++;
                 });
                 return count;
