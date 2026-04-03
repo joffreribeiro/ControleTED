@@ -2942,7 +2942,7 @@
                     
 
             <div class="card">
-                <h2>Próximas Ações (30 dias)</h2>
+                <h2>Próximas Ações</h2>
                 <div class="proximas-acoes-grid">
                     <div class="proxima-col">
                         <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">📦 Entregas</h4>
@@ -4334,7 +4334,10 @@
                 const rel = buildRelatorioData();
                 if (rel && Array.isArray(rel.months) && rel.months.length > 0) {
                     const mostRecent = rel.months[0]; // meses já vêm em ordem decrescente
-                    if (rel.vigentes && typeof rel.vigentes[mostRecent] !== 'undefined') {
+                    // Preferir valor numérico acumulado (saldo) se disponível
+                    if (rel.vigentesNumeric && typeof rel.vigentesNumeric[mostRecent] === 'number') {
+                        tedsEmExecucao = rel.vigentesNumeric[mostRecent];
+                    } else if (rel.vigentes && typeof rel.vigentes[mostRecent] !== 'undefined') {
                         const v = rel.vigentes[mostRecent];
                         if (Array.isArray(v)) tedsEmExecucao = v.length;
                         else if (typeof v === 'number') tedsEmExecucao = v;
@@ -4669,15 +4672,14 @@
         // === Relatório Mensal: vigentes e encerrados por mês ===
         function buildRelatorioData() {
             const tedsList = dados.teds || [];
-            if (!tedsList || tedsList.length === 0) return { months: [], vigentes: {}, encerrados: {} };
+            if (!tedsList || tedsList.length === 0) return { months: [], vigentes: {}, encerrados: {}, nomeMeses: [] };
             const monthsSet = new Set();
             const nomeMeses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
             const monthKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 
-            // coletar intervalo mínimo e máximo
-            let minDate = null;
-            let maxDate = null;
+            const today = new Date();
 
+            // Pré-processar TEDs
             const processed = tedsList.map(t => {
                 const id = t.id;
                 const num = t.numTed || t.numero || ('ID ' + id);
@@ -4700,51 +4702,53 @@
                 } else if (fimEfet && !isNaN(fimEfet.getTime())) {
                     fimReal = fimEfet;
                 } else {
-                    // sem fim definido: considerar até hoje para efeitos de relatório
                     fimReal = new Date();
-                }
-
-                if (inicio && !isNaN(inicio.getTime())) {
-                    if (!minDate || inicio < minDate) minDate = inicio;
-                }
-                if (fimReal && !isNaN(fimReal.getTime())) {
-                    if (!maxDate || fimReal > maxDate) maxDate = fimReal;
                 }
 
                 return { id, num, inicio, fimReal, encDate };
             });
 
-            if (!minDate) return { months: [], vigentes: {}, encerrados: {} };
-            const today = new Date();
-            if (!maxDate || maxDate < today) maxDate = today;
+            // Construir conjunto de meses presentes (meses com assinados ou encerrados até hoje)
+            processed.forEach(p => {
+                if (p.inicio && !isNaN(p.inicio.getTime())) monthsSet.add(monthKey(p.inicio));
+                if (p.encDate && !isNaN(p.encDate.getTime()) && p.encDate <= today) monthsSet.add(monthKey(p.encDate));
+            });
 
-            // gerar lista de meses do maxDate até minDate (desc)
-            const start = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
-            const end = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-            const months = [];
-            const cur = new Date(start);
-            while (cur >= end) {
-                months.push(monthKey(cur));
-                cur.setMonth(cur.getMonth() - 1);
-            }
+            const months = Array.from(monthsSet).sort((a,b) => b.localeCompare(a)); // desc
 
             // inicializar containers
-            const vigentes = {};
-            const encerrados = {};
-            months.forEach(mk => { vigentes[mk] = []; encerrados[mk] = []; });
+            const vigentes = {}; // lista de TEDs vigentes por mês (para relatório detalhado)
+            const encerrados = {}; // lista de TEDs encerrados por mês
+            const signedTotals = {}; // total de assinados por mês
+            const closedTotals = {}; // total de encerrados por mês
+            months.forEach(mk => { vigentes[mk] = []; encerrados[mk] = []; signedTotals[mk] = 0; closedTotals[mk] = 0; });
 
-            // preencher
-            months.forEach(mk => monthsSet.add(mk));
+            // preencher assinados/encerrados
             processed.forEach(p => {
                 if (!p.inicio || isNaN(p.inicio.getTime())) return;
-                const encKeyOfP = (p.encDate && !isNaN(p.encDate.getTime())) ? monthKey(p.encDate) : null;
+                const encKeyOfP = (p.encDate && !isNaN(p.encDate.getTime()) && p.encDate <= today) ? monthKey(p.encDate) : null;
+
+                // Assinado: contar no mês de início
+                const mkStart = monthKey(p.inicio);
+                if (monthsSet.has(mkStart)) {
+                    signedTotals[mkStart] = (signedTotals[mkStart] || 0) + 1;
+                }
+
+                // Encerrado: somente pela data de entrega/denúncia e somente se já ocorreu (<= hoje)
+                if (encKeyOfP) {
+                    if (monthsSet.has(encKeyOfP)) {
+                        closedTotals[encKeyOfP] = (closedTotals[encKeyOfP] || 0) + 1;
+                        encerrados[encKeyOfP].push({ id: p.id, num: p.num });
+                    }
+                }
+
+                // Construir lista de vigentes no fechamento de cada mês (usar fimReal)
                 months.forEach(mk => {
                     const parts = mk.split('-');
                     const y = parseInt(parts[0], 10); const m = parseInt(parts[1], 10);
                     const ultimoDia = new Date(y, m, 0);
-                    // vigência ao FECHAMENTO do mês
                     if (p.inicio <= ultimoDia && p.fimReal >= ultimoDia) {
-                        // Se o TED foi encerrado neste mesmo mês, considerá-lo como encerrado (não listar como vigente)
+                        // Se foi encerrado exatamente neste mês, considerá-lo como encerrado (não listar como vigente)
                         if (encKeyOfP === mk) {
                             // skip
                         } else {
@@ -4752,16 +4756,20 @@
                         }
                     }
                 });
-
-                // encerrados: somente pela data de entrega/denúncia
-                if (encKeyOfP) {
-                    if (monthsSet.has(encKeyOfP)) {
-                        encerrados[encKeyOfP].push({ id: p.id, num: p.num });
-                    }
-                }
             });
 
-            return { months, vigentes, encerrados, nomeMeses };
+            // calcular vigentes numéricos por saldo acumulado (asc)
+            const monthsAsc = months.slice().sort((a,b) => a.localeCompare(b));
+            const vigentesNumeric = {};
+            let saldo = 0;
+            monthsAsc.forEach(mk => {
+                const s = signedTotals[mk] || 0;
+                const c = closedTotals[mk] || 0;
+                saldo += s - c;
+                vigentesNumeric[mk] = saldo;
+            });
+
+            return { months, vigentes, encerrados, nomeMeses, signedTotals, closedTotals, vigentesNumeric };
         }
 
         function generateRelatorioHTML(data) {
