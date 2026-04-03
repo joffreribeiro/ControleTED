@@ -3639,22 +3639,22 @@
 
     <script>
         // ===== Detectar abertura via file:// =====
+        // Em vez de um overlay bloqueante, exibir um banner informativo não-bloqueante.
         if (window.location.protocol === 'file:') {
             document.addEventListener('DOMContentLoaded', function() {
-                var warn = document.createElement('div');
-                warn.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;justify-content:center;align-items:center;flex-direction:column;color:white;font-family:sans-serif;text-align:center;padding:2rem;';
-                warn.innerHTML = '<div style="background:#1e293b;border-radius:1rem;padding:2.5rem;max-width:500px;width:90%;box-shadow:0 25px 50px rgba(0,0,0,0.5);">'
-                    + '<div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>'
-                    + '<h2 style="margin:0 0 0.5rem;color:#f59e0b;">Abra pelo servidor!</h2>'
-                    + '<p style="color:#94a3b8;margin:0 0 1rem;font-size:0.95rem;">O Firebase não funciona quando o arquivo é aberto diretamente do disco (<code>file:///</code>).</p>'
-                    + '<p style="color:#e2e8f0;margin:0 0 1.5rem;font-size:0.95rem;">Inicie o servidor e acesse pelo navegador:</p>'
-                    + '<div style="background:#0f172a;border-radius:0.5rem;padding:0.75rem 1rem;margin-bottom:1rem;">'
-                    + '<code style="color:#38bdf8;font-size:1.1rem;">node servidor.js</code></div>'
-                    + '<div style="background:#0f172a;border-radius:0.5rem;padding:0.75rem 1rem;margin-bottom:1.5rem;">'
-                    + '<a href="http://localhost:5000" style="color:#38bdf8;font-size:1.1rem;text-decoration:none;">http://localhost:5000</a></div>'
-                    + '<button onclick="this.parentElement.parentElement.remove()" style="padding:0.5rem 1.5rem;background:#3b82f6;color:white;border:none;border-radius:0.5rem;cursor:pointer;font-size:0.9rem;">Entendi (continuar mesmo assim)</button>'
-                    + '</div>';
-                document.body.appendChild(warn);
+                try {
+                    var banner = document.createElement('div');
+                    banner.id = 'fileProtocolBanner';
+                    banner.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:#f59e0b;color:#07203a;padding:0.6rem 1rem;z-index:9999;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-family:sans-serif;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.12);';
+                    banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.05rem;">⚠️</span><div>Você abriu o arquivo localmente. O Firebase pode não funcionar sem servidor.</div></div>' +
+                        '<div style="display:flex;align-items:center;gap:8px;">' +
+                        '<a href="http://localhost:5000" style="color:#07203a;font-weight:700;text-decoration:underline;">Abrir no servidor</a>' +
+                        '<button id="closeFileBanner" style="background:transparent;border:1px solid rgba(0,0,0,0.08);padding:6px 10px;border-radius:6px;cursor:pointer;">Fechar</button>' +
+                        '</div>';
+                    document.body.appendChild(banner);
+                    var btn = document.getElementById('closeFileBanner');
+                    if (btn) btn.addEventListener('click', function() { try { banner.remove(); } catch(e) {} });
+                } catch(e) { console.warn('Could not create file-protocol banner', e); }
             });
         }
 
