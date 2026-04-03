@@ -876,10 +876,10 @@
             background: #fecaca;
         }
 
-        /* Próximas Ações - Layout 3 colunas */
+        /* Próximas Ações - Layout 4 colunas (adiciona coluna extra em telas grandes) */
         .proximas-acoes-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
         }
         .proxima-col {
@@ -894,15 +894,14 @@
             border-bottom: 1px solid var(--border);
             padding-bottom: 0.5rem;
         }
+        @media (max-width: 1200px) {
+            .proximas-acoes-grid { grid-template-columns: repeat(3, 1fr); }
+        }
         @media (max-width: 1000px) {
-            .proximas-acoes-grid {
-                grid-template-columns: 1fr 1fr;
-            }
+            .proximas-acoes-grid { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 640px) {
-            .proximas-acoes-grid {
-                grid-template-columns: 1fr;
-            }
+            .proximas-acoes-grid { grid-template-columns: 1fr; }
         }
 
         /* Modal */
@@ -2962,6 +2961,12 @@
                             <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem TEDs com vigência terminando nos próximos 30 dias.</p>
                         </div>
                     </div>
+                        <div class="proxima-col">
+                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="alert-triangle" class="inline-icon-sm"></i> Vigência Vencida</h4>
+                            <div id="proximasVigenciasVencidas">
+                                <p class="empty-state" style="padding:0.75rem; color:var(--text);">Nenhum TED com vigência vencida e não encerrado.</p>
+                            </div>
+                        </div>
                 </div>
             </div>
             
@@ -4389,6 +4394,7 @@
             try { renderUpcomingRecebimentos(); } catch(e) { console.warn('renderUpcomingRecebimentos error', e); }
             try { renderUpcomingVigencias(); } catch(e) { console.warn('renderUpcomingVigencias error', e); }
             try { renderVigenciasVencidas(); } catch(e) { console.warn('renderVigenciasVencidas error', e); }
+            try { renderProximasVigenciasVencidas(); } catch(e) { console.warn('renderProximasVigenciasVencidas error', e); }
             // Atualizar Gantt de vigência também
             try { renderGanttVigencia(); } catch(e) { console.warn('renderGanttVigencia error', e); }
             // Atualizar resumo geral (assinados/encerrados por mês e por UP)
@@ -5084,6 +5090,53 @@
                 html += `</tr>`;
             });
             html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Render compacto para a coluna em 'Próximas Ações' (mostra contagem e top itens)
+        function renderProximasVigenciasVencidas() {
+            const container = document.getElementById('proximasVigenciasVencidas');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const expired = [];
+
+            (dados.teds || []).forEach(t => {
+                if (!t.fimVigencia && !t.inicioVigencia) return;
+                const fimEfetivo = calcularFimComAditivos(t);
+                let d;
+                if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
+                    d = fimEfetivo;
+                } else {
+                    const fimNorm = normalizarData(t.fimVigencia);
+                    if (!fimNorm) return;
+                    d = new Date(fimNorm + 'T00:00:00');
+                    if (isNaN(d.getTime())) return;
+                }
+                const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
+                const encDate = encNorm ? new Date(encNorm + 'T00:00:00') : null;
+                if (d < today) {
+                    if (!encDate || encDate > today) {
+                        const diasAtraso = Math.ceil((today - d) / (1000 * 60 * 60 * 24));
+                        expired.push({ date: d, ted: t, diasAtraso: diasAtraso, up: t.upResponsavel || t.up || '' });
+                    }
+                }
+            });
+
+            if (!expired.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Nenhum TED com vigência vencida e não encerrado.</p>';
+                return;
+            }
+
+            expired.sort((a,b) => a.date - b.date);
+            const maxShow = 4;
+            let html = `<div style="font-weight:600; color:#dc2626; margin-bottom:6px;">${expired.length} TED(s) vencido(s)</div>`;
+            html += '<ul style="margin:0; padding-left:1rem; font-size:0.85rem;">';
+            expired.slice(0, maxShow).forEach(it => {
+                html += `<li style="margin-bottom:0.35rem; display:flex; justify-content:space-between; gap:8px;"><div><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a> <span style="color:var(--text-muted);">${it.up}</span></div><div style="color:#dc2626; font-weight:600;">${it.diasAtraso}d</div></li>`;
+            });
+            if (expired.length > maxShow) html += `<li style="color:var(--text-muted); margin-top:4px;">+${expired.length - maxShow} outros...</li>`;
+            html += '</ul>';
             container.innerHTML = html;
         }
 
