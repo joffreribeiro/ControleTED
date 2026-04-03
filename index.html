@@ -222,9 +222,10 @@
 
         /* Texto do título */
         .nav-brand-text {
-            display: flex;
+            display: inline-flex;
             flex-direction: column;
             line-height: 1.15;
+            align-items: flex-start;
         }
         .nav-brand-name {
             font-size: 1.75rem;
@@ -234,15 +235,19 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            display: inline-block;
         }
         .nav-brand-sub {
             font-size: 0.68rem;
             font-weight: 600;
             color: var(--text-secondary);
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
+            display: block;
             width: 100%;
-            text-align: right;
+            text-align: justify;
+            text-align-last: justify;
+            white-space: normal;
         }
 
         /* Dark mode brand */
@@ -1029,7 +1034,9 @@
             }
 
             .nav-brand-sub {
-                text-align: right;
+                text-align: justify;
+                text-align-last: justify;
+                letter-spacing: 0.06em;
             }
 
             .tabs {
@@ -1077,7 +1084,8 @@
             z-index: 1;
         }
 
-        .ted-info-title {
+        .ted-info-section .ted-info-title,
+        .card .ted-info-title {
             margin: 0;
             color: #ffffff;
             display: inline-flex;
