@@ -4583,7 +4583,7 @@
                 return;
             }
 
-            // TEDs vigentes por mês
+            // TEDs vigentes por mês (considera encerramento antecipado)
             function countVigentes(mk) {
                 const p = mk.split('-');
                 const y = parseInt(p[0]); const m = parseInt(p[1]);
@@ -4599,7 +4599,17 @@
                     const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
                     const fimEfet = calcularFimComAditivos(t) || fimOrig;
                     if (!fimEfet || isNaN(fimEfet.getTime())) return;
-                    if (ini <= ultimoDia && fimEfet >= primeiroDia) count++;
+                    // Verificar se foi encerrado antecipadamente
+                    const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
+                    let fimReal = fimEfet;
+                    if (encNorm) {
+                        const encDt = new Date(encNorm + 'T00:00:00');
+                        if (!isNaN(encDt.getTime()) && encDt < fimEfet) {
+                            fimReal = encDt; // encerrado antes do fim da vigência
+                        }
+                    }
+                    // Vigente se início <= último dia do mês E fim real >= primeiro dia do mês
+                    if (ini <= ultimoDia && fimReal >= primeiroDia) count++;
                 });
                 return count;
             }
