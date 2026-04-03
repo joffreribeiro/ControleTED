@@ -4560,11 +4560,10 @@
                     }
                 }
 
-                // Encerrados -> dataEntregaDenuncia / dataEntrega; fallback fimVigencia
+                // Encerrados -> considerar apenas dataEntregaDenuncia / dataEntrega (sem fallback para fimVigencia)
                 const entregaNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
-                let encNorm = entregaNorm || normalizarData(t.fimVigencia || '');
-                if (encNorm) {
-                    const fDt = new Date(encNorm + 'T00:00:00');
+                if (entregaNorm) {
+                    const fDt = new Date(entregaNorm + 'T00:00:00');
                     if (!isNaN(fDt.getTime()) && fDt <= hoje) {
                         const mk2 = monthKey(fDt);
                         ensure(mk2, up);
