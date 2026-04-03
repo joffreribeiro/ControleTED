@@ -888,6 +888,12 @@
             border-radius: 0.5rem;
             padding: 0.5rem;
             min-height: 90px;
+            min-width: 0; /* permitir que a coluna encolha dentro do grid */
+            display: flex;
+            flex-direction: column;
+        }
+        .proxima-col > div {
+            flex: 1 1 auto; /* garantir que o conteúdo principal ocupe o espaço e nivele alturas */
         }
         .proxima-col h4 {
             font-size: 0.95rem;
@@ -4918,7 +4924,7 @@
 
             items.sort((a,b) => a.date - b.date);
 
-            let html = '<div class="table-wrapper"><table class="tabela-padrao" style="min-width:600px;">';
+            let html = '<div class="table-wrapper"><table class="tabela-padrao" style="width:100%;">';
             html += '<thead><tr><th>Data</th><th>TED</th><th>UP</th><th>Objeto</th><th class="col-qtde">Qtde</th></tr></thead><tbody>';
             items.forEach(it => {
                 html += `<tr>`;
@@ -4960,7 +4966,7 @@
 
             items.sort((a,b) => a.date - b.date);
 
-            let html = '<div class="table-wrapper"><table class="tabela-padrao" style="min-width:600px;">';
+            let html = '<div class="table-wrapper"><table class="tabela-padrao" style="width:100%;">';
             html += '<thead><tr><th>Data</th><th>TED</th><th>ND</th><th>UP</th><th class="col-valor">Valor (R$)</th></tr></thead><tbody>';
             items.forEach(it => {
                 html += `<tr>`;
