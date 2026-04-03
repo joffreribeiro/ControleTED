@@ -9405,7 +9405,9 @@
             teds.forEach(t => {
                 (t.execFisicas || []).forEach(e => {
                     const anoReg = e.data ? new Date(e.data + 'T00:00:00').getFullYear() : null;
-                    if (anoNum && anoReg !== anoNum) return;
+                    if (selectedAnos && selectedAnos.length > 0) {
+                        if (!anoReg || !selectedAnos.includes(anoReg)) return;
+                    }
                     rowsExecFis.push(`<tr>
                         <td>${t.numTed || ''}</td>
                         <td>${e.objeto || ''}</td>
@@ -9422,8 +9424,11 @@
             teds.forEach(t => {
                 (t.financeiros || []).forEach(f => {
                     const upRow = (f.up || f.ug || '').toLowerCase();
-                    if (upSel && upRow !== upSel) return;
-                    if (anoNum && Number(f.anoDesc) !== anoNum) return;
+                    if (selectedUps && selectedUps.length > 0 && !selectedUps.includes(upRow)) return;
+                    const anoDescNum = f.anoDesc ? Number(f.anoDesc) : null;
+                    if (selectedAnos && selectedAnos.length > 0) {
+                        if (anoDescNum === null || !selectedAnos.includes(anoDescNum)) return;
+                    }
                     const mesDescStr = (f.mesDesc && f.anoDesc) ? `${mesesNomesRel[(parseInt(f.mesDesc)||1)-1]}/${f.anoDesc}` : (f.mesDesc || '');
                     rowsCadFin.push(`<tr>
                         <td>${t.numTed || ''}</td>
@@ -9442,9 +9447,11 @@
             teds.forEach(t => {
                 (t.execFinanceiras || []).forEach(e => {
                     const upRow = (e.up || e.ug || '').toLowerCase();
-                    if (upSel && upRow !== upSel) return;
+                    if (selectedUps && selectedUps.length > 0 && !selectedUps.includes(upRow)) return;
                     const anoReg = e.data ? new Date(e.data + 'T00:00:00').getFullYear() : null;
-                    if (anoNum && anoReg !== anoNum) return;
+                    if (selectedAnos && selectedAnos.length > 0) {
+                        if (!anoReg || !selectedAnos.includes(anoReg)) return;
+                    }
                     rowsExecFin.push(`<tr>
                         <td>${t.numTed || ''}</td>
                         <td>${e.nd || ''}</td>
