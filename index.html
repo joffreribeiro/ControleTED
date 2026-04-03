@@ -2933,16 +2933,12 @@
                             <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
-                <!-- Resumo adicional removido conforme solicitado --><div id="resumoGeralContainer" style="margin-top:1rem; display:flex; gap:1rem; flex-wrap:wrap;">
-  <div style="flex:1; min-width:280px;">
-    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados (meses)</h4>
-    <div id="resumoGeralMeses"></div>
-  </div>
-  <div style="flex:1; min-width:280px;">
-    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados (UP)</h4>
-    <div id="resumoGeralUPs"></div>
-  </div>
-</div>
+                <!-- Resumo Assinados / Encerrados (Mês x UP) -->
+                <div id="resumoGeralContainer" style="margin-top:1rem;">
+                    <h4 style="margin:0 0 0.25rem 0;color:var(--primary);">Assinados / Encerrados (Mês × UP)</h4>
+                    <p style="font-size:0.75rem; color:var(--text-light); margin:0 0 0.5rem 0;"><span style="color:var(--success-dark); font-weight:600;">Assinados</span> / <span style="color:var(--danger-dark); font-weight:600;">Encerrados</span></p>
+                    <div id="resumoGeralGrid" style="overflow-x:auto;"></div>
+                </div>
             </div>
 
                     
@@ -4522,106 +4518,94 @@
             initLucideIcons();
         }
 
-        // Renderizar resumo de TEDs assinados e encerrados por mês e por UP
+        // Renderizar resumo de TEDs assinados/encerrados — tabela Mês × UP
         function renderResumoGeralAssinadosEncerrados() {
-            // Garantir que os containers existam para evitar erros com .innerHTML
-            (function(){
-                function ensureElement(id) {
-                    if (!document.getElementById(id)) {
-                        const wrapper = document.createElement("div");
-                        const parent = document.getElementById("dashboard") || document.body;
-                        wrapper.id = id;
-                        wrapper.className = "empty-state";
-                        parent.appendChild(wrapper);
-                    }
-                }
-                ensureElement("resumoGeralMeses");
-                ensureElement("resumoGeralUPs");
-            })();
+            // Garantir que o container exista
+            if (!document.getElementById('resumoGeralGrid')) {
+                const w = document.createElement('div');
+                w.id = 'resumoGeralGrid';
+                (document.getElementById('dashboard') || document.body).appendChild(w);
+            }
             const teds = dados.teds || [];
-            const signedByMonth = {}; // chave YYYY-MM
-            const closedByMonth = {};
-            const signedByUp = {};
-            const closedByUp = {};
             const hoje = new Date();
+            // Estrutura: grid[monthKey][up] = { signed: N, closed: N }
+            const grid = {};
+            const allUps = new Set();
 
-            function monthKeyFromDate(d) {
-                const y = d.getFullYear();
-                const m = String(d.getMonth() + 1).padStart(2, '0');
-                return `${y}-${m}`;
+            function monthKey(d) {
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            }
+            function ensure(mk, up) {
+                if (!grid[mk]) grid[mk] = {};
+                if (!grid[mk][up]) grid[mk][up] = { signed: 0, closed: 0 };
             }
 
             teds.forEach(t => {
-                // Assinatura do TED -> usar inicioVigencia (data de assinatura)
+                const up = (t.upResponsavel || t.up || 'Sem UP');
+                allUps.add(up);
+
+                // Assinados -> inicioVigencia
                 const inicioNorm = normalizarData(t.inicioVigencia);
                 if (inicioNorm) {
                     const dt = new Date(inicioNorm + 'T00:00:00');
                     if (!isNaN(dt.getTime())) {
-                        const k = monthKeyFromDate(dt);
-                        signedByMonth[k] = (signedByMonth[k] || 0) + 1;
-                        const up = (t.upResponsavel || t.up || 'Sem UP');
-                        signedByUp[up] = (signedByUp[up] || 0) + 1;
+                        const mk = monthKey(dt);
+                        ensure(mk, up);
+                        grid[mk][up].signed++;
                     }
                 }
 
-                // Encerrados -> considerar 'dataEntregaDenuncia' como data de encerramento principal; fallback para fimVigencia
+                // Encerrados -> dataEntregaDenuncia / dataEntrega; fallback fimVigencia
                 const entregaNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
-                let encerramentoNorm = entregaNorm;
-                if (!encerramentoNorm) {
-                    encerramentoNorm = normalizarData(t.fimVigencia || '');
-                }
-
-                if (encerramentoNorm) {
-                    const fimDt = new Date(encerramentoNorm + 'T00:00:00');
-                    if (!isNaN(fimDt.getTime()) && fimDt <= hoje) {
-                        const k2 = monthKeyFromDate(fimDt);
-                        closedByMonth[k2] = (closedByMonth[k2] || 0) + 1;
-                        const up2 = (t.upResponsavel || t.up || 'Sem UP');
-                        closedByUp[up2] = (closedByUp[up2] || 0) + 1;
+                let encNorm = entregaNorm || normalizarData(t.fimVigencia || '');
+                if (encNorm) {
+                    const fDt = new Date(encNorm + 'T00:00:00');
+                    if (!isNaN(fDt.getTime()) && fDt <= hoje) {
+                        const mk2 = monthKey(fDt);
+                        ensure(mk2, up);
+                        grid[mk2][up].closed++;
                     }
                 }
             });
 
-            // Montar tabela por meses (união de chaves)
-            const months = Array.from(new Set([...Object.keys(signedByMonth), ...Object.keys(closedByMonth)]));
-            months.sort((a,b) => b.localeCompare(a)); // desc
-            const mesesHtml = [];
-            const mesesEl = document.getElementById('resumoGeralMeses');
-            if (months.length === 0) {
-                if (mesesEl) mesesEl.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
-            } else {
-                mesesHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
-                mesesHtml.push('<thead><tr><th style="text-align:left; padding:6px;">Mês</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
-                mesesHtml.push('<tbody>');
-                months.forEach(k => {
-                    const partes = k.split('-');
-                    const label = `${partes[1]}/${partes[0]}`;
-                    const a = signedByMonth[k] || 0;
-                    const c = closedByMonth[k] || 0;
-                    mesesHtml.push(`<tr><td style="padding:6px;">${label}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
-                });
-                mesesHtml.push('</tbody></table>');
-                if (mesesEl) mesesEl.innerHTML = mesesHtml.join('');
+            const months = Object.keys(grid).sort((a, b) => b.localeCompare(a));
+            const ups = Array.from(allUps).sort();
+            const el = document.getElementById('resumoGeralGrid');
+
+            if (months.length === 0 || ups.length === 0) {
+                if (el) el.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+                return;
             }
 
-            // Montar tabela por UP
-            const ups = Array.from(new Set([...Object.keys(signedByUp), ...Object.keys(closedByUp)])).sort();
-            const upsEl = document.getElementById('resumoGeralUPs');
-            if (ups.length === 0) {
-                if (upsEl) upsEl.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
-            } else {
-                const upHtml = [];
-                upHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
-                upHtml.push('<thead><tr><th style="text-align:left; padding:6px;">UP</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
-                upHtml.push('<tbody>');
+            const h = [];
+            h.push('<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">');
+            // Cabeçalho
+            h.push('<thead><tr><th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border);">MÊS</th>');
+            ups.forEach(u => h.push(`<th style="text-align:center; padding:6px 8px; border-bottom:2px solid var(--border);">${u}</th>`));
+            h.push('</tr></thead><tbody>');
+
+            months.forEach(mk => {
+                const p = mk.split('-');
+                const label = p[1] + '/' + p[0].slice(2); // ex: 12/25
+                h.push('<tr>');
+                h.push(`<td style="padding:6px 8px; border-bottom:1px solid var(--border-light); font-weight:500;">${label}</td>`);
                 ups.forEach(u => {
-                    const a = signedByUp[u] || 0;
-                    const c = closedByUp[u] || 0;
-                    upHtml.push(`<tr><td style="padding:6px;">${u}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
+                    const cell = (grid[mk] && grid[mk][u]) ? grid[mk][u] : { signed: 0, closed: 0 };
+                    let content = '';
+                    if (cell.signed === 0 && cell.closed === 0) {
+                        content = '';
+                    } else {
+                        const sPart = `<span style="color:var(--success-dark); font-weight:600;">${cell.signed}</span>`;
+                        const cPart = `<span style="color:var(--danger-dark); font-weight:600;">${cell.closed}</span>`;
+                        content = sPart + ' <span style="color:var(--text-muted);">/</span> ' + cPart;
+                    }
+                    h.push(`<td style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border-light);">${content}</td>`);
                 });
-                upHtml.push('</tbody></table>');
-                if (upsEl) upsEl.innerHTML = upHtml.join('');
-            }
+                h.push('</tr>');
+            });
+
+            h.push('</tbody></table>');
+            if (el) el.innerHTML = h.join('');
         }
 
         // Render upcoming deliveries (execFisicas) within next 30 days
