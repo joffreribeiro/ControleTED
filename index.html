@@ -8964,7 +8964,7 @@
             const previstoByAno = {};
             const recebidoByAno = {};
             const devolvidoByAno = {};
-            const saldoByAno = {};
+            const saldoAtualByAno = {};
             const aReceberAnteriorByAno = {};
 
             // Preencher previsto por ano (do cadastro financeiro)
@@ -8981,22 +8981,29 @@
                 devolvidoByAno[ano] = Math.abs(recsNoAno.filter(r => (parseNumber(r.valor) || 0) < 0).reduce((s, r) => s + (parseNumber(r.valor) || 0), 0));
             });
 
-            // Calcular saldos acumulados (a receber anterior -> saldo do ano anterior)
-            let saldoAcumulado = 0;
-            anosOrdenados.forEach(ano => {
-                const previsto = previstoByAno[ano] || 0;
+            // Fórmulas da tabela:
+            // Saldo Atual = Recebido Anual + Devolvido (devolvido é negativo na apresentação, então internamente: recebido - devolvidoAbs)
+            // A Receber (ano anterior) do ano N = Previsto + A Receber - Saldo Atual do ano N-1
+            // Para o primeiro ano, A Receber (ano anterior) = 0,00
+            anosOrdenados.forEach((ano, idx) => {
                 const recebido = recebidoByAno[ano] || 0;
-                const devolvido = devolvidoByAno[ano] || 0;
-                // A receber de ano anterior não deve carregar valor negativo.
-                aReceberAnteriorByAno[ano] = Math.max(0, saldoAcumulado);
-                const saldo = previsto + aReceberAnteriorByAno[ano] - recebido - devolvido;
-                saldoByAno[ano] = saldo;
-                saldoAcumulado = saldo;
+                const devolvidoAbs = devolvidoByAno[ano] || 0;
+                saldoAtualByAno[ano] = recebido - devolvidoAbs;
+
+                if (idx === 0) {
+                    aReceberAnteriorByAno[ano] = 0;
+                    return;
+                }
+
+                const anoAnterior = anosOrdenados[idx - 1];
+                const previstoAnoAnterior = previstoByAno[anoAnterior] || 0;
+                const aReceberAnoAnterior = aReceberAnteriorByAno[anoAnterior] || 0;
+                const saldoAtualAnoAnterior = saldoAtualByAno[anoAnterior] || 0;
+                aReceberAnteriorByAno[ano] = Math.max(0, previstoAnoAnterior + aReceberAnoAnterior - saldoAtualAnoAnterior);
             });
 
             // Helper de formatação
             const fmt = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            const fmtPct = (v) => (isFinite(v) ? Number(v).toFixed(2) + '%' : '0.00%');
 
             // Cabeçalho transposto: coluna inicial com rótulo das métricas e colunas por ano
             let html = '<table class="tabela-padrao" style="margin-top: 1rem; width: auto;">';
@@ -9025,19 +9032,9 @@
             anosOrdenados.forEach(ano => { html += `<td style="text-align:right; color:${(devolvidoByAno[ano]||0) > 0 ? '#ef4444' : 'inherit'}">-${fmt(devolvidoByAno[ano] || 0)}</td>`; });
             html += `</tr>`;
 
-            // Linha: Saldo Anual
-            html += `<tr><td class="col-valor" style="font-weight:700; white-space:nowrap; min-width:240px;">Saldo Anual</td>`;
-            anosOrdenados.forEach(ano => { html += `<td style="text-align:right; font-weight:700;">${fmt(saldoByAno[ano] || 0)}</td>`; });
-            html += `</tr>`;
-
-            // Linha: Liquidação (%)
-            html += `<tr><td class="col-percent" style="font-weight:700; white-space:nowrap; min-width:240px;">Liquidação (%)</td>`;
-            anosOrdenados.forEach(ano => {
-                const previsto = previstoByAno[ano] || 0;
-                const recebido = recebidoByAno[ano] || 0;
-                const pctVal = previsto > 0 ? (recebido / previsto) * 100 : 0;
-                html += `<td style="text-align:right;">${fmtPct(pctVal)}</td>`;
-            });
+            // Linha: Saldo Atual
+            html += `<tr><td class="col-valor" style="font-weight:700; white-space:nowrap; min-width:240px;">Saldo Atual</td>`;
+            anosOrdenados.forEach(ano => { html += `<td style="text-align:right; font-weight:700;">${fmt(saldoAtualByAno[ano] || 0)}</td>`; });
             html += `</tr>`;
 
             html += '</tbody></table>';
