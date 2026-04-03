@@ -8987,7 +8987,8 @@
                 const previsto = previstoByAno[ano] || 0;
                 const recebido = recebidoByAno[ano] || 0;
                 const devolvido = devolvidoByAno[ano] || 0;
-                aReceberAnteriorByAno[ano] = saldoAcumulado;
+                // A receber de ano anterior não deve carregar valor negativo.
+                aReceberAnteriorByAno[ano] = Math.max(0, saldoAcumulado);
                 const saldo = previsto + aReceberAnteriorByAno[ano] - recebido - devolvido;
                 saldoByAno[ano] = saldo;
                 saldoAcumulado = saldo;
@@ -9000,37 +9001,37 @@
             // Cabeçalho transposto: coluna inicial com rótulo das métricas e colunas por ano
             let html = '<table class="tabela-padrao" style="margin-top: 1rem; width: auto;">';
             html += '<thead><tr>';
-            html += '<th style="text-align:left;">Métrica</th>';
+            html += '<th style="text-align:left; white-space:nowrap; min-width:240px;">Métrica</th>';
             anosOrdenados.forEach(ano => { html += `<th style="text-align:center;">${ano}</th>`; });
             html += '</tr></thead><tbody>';
 
             // Linha: Previsto Anual
-            html += `<tr><td class="col-valor" style="font-weight:700;">Previsto Anual</td>`;
+            html += `<tr><td class="col-valor" style="font-weight:700; white-space:nowrap; min-width:240px;">Previsto Anual</td>`;
             anosOrdenados.forEach(ano => { html += `<td style="text-align:right;">${fmt(previstoByAno[ano] || 0)}</td>`; });
             html += `</tr>`;
 
             // Linha: A Receber ano anterior
-            html += `<tr><td class="col-valor" style="font-weight:700;">A Receber (ano anterior)</td>`;
+            html += `<tr><td class="col-valor" style="font-weight:700; white-space:nowrap; min-width:240px;">A Receber (ano anterior)</td>`;
             anosOrdenados.forEach(ano => { html += `<td style="text-align:right;">${fmt(aReceberAnteriorByAno[ano] || 0)}</td>`; });
             html += `</tr>`;
 
             // Linha: Recebido Anual (Recursos Gerais)
-            html += `<tr><td class="col-valor" style="font-weight:700;">Recebido Anual</td>`;
+            html += `<tr><td class="col-valor" style="font-weight:700; white-space:nowrap; min-width:240px;">Recebido Anual</td>`;
             anosOrdenados.forEach(ano => { html += `<td style="text-align:right;">${fmt(recebidoByAno[ano] || 0)}</td>`; });
             html += `</tr>`;
 
             // Linha: Devolvido (valores negativos)
-            html += `<tr><td class="col-valor" style="font-weight:700;">Devolvido</td>`;
+            html += `<tr><td class="col-valor" style="font-weight:700; white-space:nowrap; min-width:240px;">Devolvido</td>`;
             anosOrdenados.forEach(ano => { html += `<td style="text-align:right; color:${(devolvidoByAno[ano]||0) > 0 ? '#ef4444' : 'inherit'}">-${fmt(devolvidoByAno[ano] || 0)}</td>`; });
             html += `</tr>`;
 
             // Linha: Saldo Anual
-            html += `<tr><td class="col-valor" style="font-weight:700;">Saldo Anual</td>`;
+            html += `<tr><td class="col-valor" style="font-weight:700; white-space:nowrap; min-width:240px;">Saldo Anual</td>`;
             anosOrdenados.forEach(ano => { html += `<td style="text-align:right; font-weight:700;">${fmt(saldoByAno[ano] || 0)}</td>`; });
             html += `</tr>`;
 
             // Linha: Liquidação (%)
-            html += `<tr><td class="col-percent" style="font-weight:700;">Liquidação (%)</td>`;
+            html += `<tr><td class="col-percent" style="font-weight:700; white-space:nowrap; min-width:240px;">Liquidação (%)</td>`;
             anosOrdenados.forEach(ano => {
                 const previsto = previstoByAno[ano] || 0;
                 const recebido = recebidoByAno[ano] || 0;
