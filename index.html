@@ -4531,6 +4531,7 @@
             // Estrutura: grid[monthKey][up] = { signed: N, closed: N }
             const grid = {};
             const allUps = new Set();
+            const nomeMeses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
             function monthKey(d) {
                 return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
@@ -4577,18 +4578,48 @@
                 return;
             }
 
+            // Pré-calcular TEDs vigentes por mês (início vigência <= último dia do mês E fim efetivo >= primeiro dia do mês)
+            function countVigentes(mk) {
+                const p = mk.split('-');
+                const y = parseInt(p[0]); const m = parseInt(p[1]);
+                const primeiroDia = new Date(y, m - 1, 1);
+                const ultimoDia = new Date(y, m, 0); // último dia do mês
+                let count = 0;
+                teds.forEach(t => {
+                    const iniNorm = normalizarData(t.inicioVigencia);
+                    if (!iniNorm) return;
+                    const ini = new Date(iniNorm + 'T00:00:00');
+                    if (isNaN(ini.getTime())) return;
+                    const fimNorm = normalizarData(t.fimVigencia);
+                    const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                    const fimEfet = calcularFimComAditivos(t) || fimOrig;
+                    if (!fimEfet || isNaN(fimEfet.getTime())) return;
+                    // Vigente se há sobreposição com o mês
+                    if (ini <= ultimoDia && fimEfet >= primeiroDia) count++;
+                });
+                return count;
+            }
+
+            const thStyle = 'text-align:center; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text); font-size:0.8rem; white-space:nowrap;';
+            const thLeftStyle = 'text-align:left; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text); font-size:0.8rem; white-space:nowrap;';
+            const tdStyle = 'padding:4px 6px; text-align:center; border-bottom:1px solid var(--border-light); font-size:0.8rem;';
+            const tdLeftStyle = 'padding:4px 6px; border-bottom:1px solid var(--border-light); font-weight:500; font-size:0.8rem; white-space:nowrap;';
+
             const h = [];
-            h.push('<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">');
+            h.push('<table style="border-collapse:collapse; font-size:0.8rem;">');
             // Cabeçalho
-            h.push('<thead><tr><th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border);">MÊS</th>');
-            ups.forEach(u => h.push(`<th style="text-align:center; padding:6px 8px; border-bottom:2px solid var(--border);">${u}</th>`));
+            h.push(`<thead><tr><th style="${thLeftStyle}">MÊS</th>`);
+            ups.forEach(u => h.push(`<th style="${thStyle}">${u}</th>`));
+            h.push(`<th style="${thStyle}">Vigentes</th>`);
             h.push('</tr></thead><tbody>');
 
             months.forEach(mk => {
                 const p = mk.split('-');
-                const label = p[1] + '/' + p[0].slice(2); // ex: 12/25
+                const mesIdx = parseInt(p[1]) - 1;
+                const label = nomeMeses[mesIdx] + '/' + p[0]; // ex: dez/2025
+                const vigentes = countVigentes(mk);
                 h.push('<tr>');
-                h.push(`<td style="padding:6px 8px; border-bottom:1px solid var(--border-light); font-weight:500;">${label}</td>`);
+                h.push(`<td style="${tdLeftStyle}">${label}</td>`);
                 ups.forEach(u => {
                     const cell = (grid[mk] && grid[mk][u]) ? grid[mk][u] : { signed: 0, closed: 0 };
                     let content = '';
@@ -4597,10 +4628,11 @@
                     } else {
                         const sPart = `<span style="color:var(--success-dark); font-weight:600;">${cell.signed}</span>`;
                         const cPart = `<span style="color:var(--danger-dark); font-weight:600;">${cell.closed}</span>`;
-                        content = sPart + ' <span style="color:var(--text-muted);">/</span> ' + cPart;
+                        content = sPart + '<span style="color:var(--text-muted);"> / </span>' + cPart;
                     }
-                    h.push(`<td style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border-light);">${content}</td>`);
+                    h.push(`<td style="${tdStyle}">${content}</td>`);
                 });
+                h.push(`<td style="${tdStyle} font-weight:600; color:var(--primary);">${vigentes}</td>`);
                 h.push('</tr>');
             });
 
