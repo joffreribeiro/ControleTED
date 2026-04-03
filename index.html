@@ -2609,6 +2609,206 @@
             </div>
         </div>
 
+        <!-- Modal: Cadastro de Metas -->
+        <div id="modalMetaBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalMeta()">
+            <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:520px;">
+                <h3 id="modalMetaTitulo">🎯 Nova Meta</h3>
+                <div id="modalMetaError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
+                <div class="form-group">
+                    <label>Meta *</label>
+                    <input type="text" id="modalMetaNome" placeholder="Ex: Entrega">
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" id="modalMetaDescricao" placeholder="Descrição da meta">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <div class="form-group">
+                        <label>M Início *</label>
+                        <input type="number" id="modalMetaMInicio" placeholder="0" min="0" oninput="calcularMesesMetaModal()">
+                    </div>
+                    <div class="form-group">
+                        <label>M Final *</label>
+                        <input type="number" id="modalMetaMFinal" placeholder="0" min="0" oninput="calcularMesesMetaModal()">
+                    </div>
+                    <div class="form-group">
+                        <label>Mês Início (auto)</label>
+                        <input type="text" id="modalMetaMesInicio" placeholder="calculado" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Mês Final (auto)</label>
+                        <input type="text" id="modalMetaMesFinal" placeholder="calculado" readonly>
+                    </div>
+                </div>
+                <div class="modal-objeto-actions">
+                    <button class="btn" onclick="fecharModalMeta()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarModalMeta()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Cadastro Físico -->
+        <div id="modalFisicoBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalFisicoCad()">
+            <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:520px;">
+                <h3 id="modalFisicoCadTitulo">🏗️ Novo Cadastro Físico</h3>
+                <div id="modalFisicoCadError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <div class="form-group">
+                        <label>Fase *</label>
+                        <input type="text" id="modalFisicoCadFase" placeholder="Ex: Fase 1">
+                    </div>
+                    <div class="form-group">
+                        <label>Objeto *</label>
+                        <select id="modalFisicoCadObjeto"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Qtde *</label>
+                        <input type="text" id="modalFisicoCadQtde" placeholder="0" inputmode="numeric" class="mask-numero">
+                    </div>
+                    <div class="form-group">
+                        <label>M Início *</label>
+                        <input type="number" id="modalFisicoCadMInicio" min="0" placeholder="0" oninput="calcularMesesFisicoModal()">
+                    </div>
+                    <div class="form-group">
+                        <label>M Final *</label>
+                        <input type="number" id="modalFisicoCadMFinal" min="0" placeholder="0" oninput="calcularMesesFisicoModal()">
+                    </div>
+                    <div class="form-group">
+                        <label>Mês Início (auto)</label>
+                        <input type="text" id="modalFisicoCadMesInicio" placeholder="calculado" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Mês Final (auto)</label>
+                        <input type="text" id="modalFisicoCadMesFinal" placeholder="calculado" readonly>
+                    </div>
+                </div>
+                <div class="modal-objeto-actions">
+                    <button class="btn" onclick="fecharModalFisicoCad()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarModalFisicoCad()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Execução Física -->
+        <div id="modalExecFisicaBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalExecFisica()">
+            <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+                <h3 id="modalExecFisicaTitulo">📈 Nova Execução Física</h3>
+                <div id="modalExecFisicaError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
+                <div class="form-group">
+                    <label>Objeto *</label>
+                    <select id="modalExecFisicaObjeto"></select>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <div class="form-group">
+                        <label>Qtde *</label>
+                        <input type="text" id="modalExecFisicaQtde" placeholder="0" inputmode="numeric" class="mask-numero">
+                    </div>
+                    <div class="form-group">
+                        <label>Data *</label>
+                        <input type="date" id="modalExecFisicaData">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Nº NF</label>
+                    <input type="text" id="modalExecFisicaNf" placeholder="Opcional">
+                </div>
+                <div class="modal-objeto-actions">
+                    <button class="btn" onclick="fecharModalExecFisica()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarModalExecFisica()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Cadastro Financeiro -->
+        <div id="modalFinanceiroBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalFinanceiro()">
+            <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:500px;">
+                <h3 id="modalFinanceiroTitulo">💰 Novo Cadastro Financeiro</h3>
+                <div id="modalFinanceiroError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <div class="form-group">
+                        <label>ND *</label>
+                        <input type="text" id="modalFinanceiroND" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label>UP *</label>
+                        <input type="text" id="modalFinanceiroUP" placeholder="UP">
+                    </div>
+                    <div class="form-group">
+                        <label>M *</label>
+                        <input type="number" id="modalFinanceiroM" min="0" placeholder="0" oninput="calcularMesFinanceiroModal()">
+                    </div>
+                    <div class="form-group">
+                        <label>Mês Desc. (auto)</label>
+                        <input type="text" id="modalFinanceiroMesDesc" placeholder="MMM/AAAA" readonly>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Valor (R$) *</label>
+                    <input type="text" id="modalFinanceiroValor" placeholder="0,00" inputmode="numeric" class="mask-moeda">
+                </div>
+                <div class="modal-objeto-actions">
+                    <button class="btn" onclick="fecharModalFinanceiro()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarModalFinanceiro()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Execução Financeira -->
+        <div id="modalExecFinBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalExecFin()">
+            <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:500px;">
+                <h3>📊 Nova Execução Financeira</h3>
+                <div id="modalExecFinError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <div class="form-group">
+                        <label>ND *</label>
+                        <select id="modalExecFinND"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>UP *</label>
+                        <select id="modalExecFinUP"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor (R$) *</label>
+                        <input type="text" id="modalExecFinValor" placeholder="0,00" inputmode="numeric" class="mask-moeda">
+                    </div>
+                    <div class="form-group">
+                        <label>Data *</label>
+                        <input type="date" id="modalExecFinData">
+                    </div>
+                </div>
+                <div class="modal-objeto-actions">
+                    <button class="btn" onclick="fecharModalExecFin()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarModalExecFin()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Recursos Gerais IMBEL -->
+        <div id="modalRecGeralBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalRecGeral()">
+            <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+                <h3>🏛️ Novo Recurso Geral IMBEL</h3>
+                <div id="modalRecGeralError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
+                <div class="form-group">
+                    <label>ND *</label>
+                    <select id="modalRecGeralND"></select>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <div class="form-group">
+                        <label>Valor (R$) *</label>
+                        <input type="text" id="modalRecGeralValor" placeholder="0,00" inputmode="numeric" class="mask-moeda">
+                    </div>
+                    <div class="form-group">
+                        <label>Data *</label>
+                        <input type="date" id="modalRecGeralData">
+                    </div>
+                </div>
+                <div class="modal-objeto-actions">
+                    <button class="btn" onclick="fecharModalRecGeral()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarModalRecGeral()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
     <!-- Container Principal -->
     <div class="container">
         <!-- Abas -->
@@ -3094,35 +3294,8 @@
                         <h3 class="detalhe-secao-titulo">🎯 Cadastro de Metas</h3>
                         <div class="detalhe-secao-body">
                         
-                        <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
-                            <div class="form-group">
-                                <label>Meta *</label>
-                                <input type="text" id="meta" placeholder="Ex: Entrega" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Descrição</label>
-                                <input type="text" id="descricaoMeta" placeholder="Descrição da meta">
-                            </div>
-                            <div class="form-group">
-                                <label>M Início *</label>
-                                <input type="number" id="mInicio" placeholder="0" min="0" required oninput="calcularMesesMeta()">
-                            </div>
-                            <div class="form-group">
-                                <label>M Final *</label>
-                                <input type="number" id="mFinal" placeholder="0" min="0" required oninput="calcularMesesMeta()">
-                            </div>
-                            <div class="form-group">
-                                <label>Mês Início (auto) *</label>
-                                <input type="text" id="mesInicio" placeholder="calculado" readonly required>
-                            </div>
-                            <div class="form-group">
-                                <label>Mês Final (auto) *</label>
-                                <input type="text" id="mesFinal" placeholder="calculado" readonly required>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="visibility: hidden;">.</label>
-                                <button type="button" class="btn btn-primary" onclick="adicionarMeta()" style="width: 100%; height: 37px;">Adicionar</button>
-                            </div>
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" class="btn btn-primary" onclick="abrirModalMeta()" style="min-width: 160px;">➕ Adicionar Meta</button>
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem;">
@@ -3150,39 +3323,8 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo">🏗️ Cadastro Físico</h3>
                         <div class="detalhe-secao-body">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
-                            <div class="form-group">
-                                <label>Fase *</label>
-                                <input type="text" id="faseFisico" placeholder="Ex: Fase 1" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Objeto *</label>
-                                <select id="objetoFisico" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label>Qtde *</label>
-                                <input type="text" id="qtdeFisico" inputmode="numeric" class="mask-numero" placeholder="0" required>
-                            </div>
-                            <div class="form-group">
-                                <label>M Início *</label>
-                                <input type="number" id="mInicioFisico" min="0" placeholder="0" required oninput="calcularMesesFisico()">
-                            </div>
-                            <div class="form-group">
-                                <label>M Final *</label>
-                                <input type="number" id="mFinalFisico" min="0" placeholder="0" required oninput="calcularMesesFisico()">
-                            </div>
-                            <div class="form-group">
-                                <label>Mês Início (auto) *</label>
-                                <input type="text" id="mesInicioFisico" placeholder="calculado" readonly required>
-                            </div>
-                            <div class="form-group">
-                                <label>Mês Final (auto) *</label>
-                                <input type="text" id="mesFinalFisico" placeholder="calculado" readonly required>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="visibility: hidden;">.</label>
-                                <button type="button" class="btn btn-primary" onclick="adicionarFisico()" style="width: 100%; height: 37px;">Adicionar</button>
-                            </div>
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" class="btn btn-primary" onclick="abrirModalFisicoCad()" style="min-width: 160px;">➕ Adicionar Físico</button>
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
@@ -3211,27 +3353,8 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física</h3>
                         <div class="detalhe-secao-body">
-                        <div style="display: grid; grid-template-columns: 1fr 0.9fr 0.9fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
-                            <div class="form-group">
-                                <label>Objeto *</label>
-                                <select id="objetoExecFisica" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label>Qtde *</label>
-                                <input type="text" id="qtdeExec" inputmode="numeric" class="mask-numero" placeholder="0" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Data *</label>
-                                <input type="date" id="dataExec" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Nº NF</label>
-                                <input type="text" id="nfExec" placeholder="Opcional">
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="visibility: hidden;">.</label>
-                                <button type="button" class="btn btn-primary" onclick="adicionarExecFisica()" style="width: 100%; height: 37px;">Adicionar</button>
-                            </div>
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" class="btn btn-primary" onclick="abrirModalExecFisica()" style="min-width: 160px;">➕ Adicionar Execução</button>
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem;">
@@ -3257,31 +3380,8 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro</h3>
                         <div class="detalhe-secao-body">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
-                            <div class="form-group">
-                                <label>ND *</label>
-                                <input type="text" id="numFinanceiro" placeholder="1" required>
-                            </div>
-                            <div class="form-group">
-                                <label>UP *</label>
-                                <input type="text" id="upFinanceiro" placeholder="UP" required>
-                            </div>
-                            <div class="form-group">
-                                <label>M *</label>
-                                <input type="number" id="mFinanceiro" min="0" placeholder="0" required oninput="calcularMesFinanceiro()">
-                            </div>
-                            <div class="form-group">
-                                <label>Mês Desc. (auto) *</label>
-                                <input type="text" id="mesDescFinanceiro" placeholder="MMM/AAAA" readonly required>
-                            </div>
-                            <div class="form-group">
-                                <label>Valor (R$) *</label>
-                                <input type="text" id="valorFinanceiro" inputmode="numeric" class="mask-moeda" placeholder="0,00" required>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="visibility: hidden;">.</label>
-                                <button type="button" class="btn btn-primary" onclick="adicionarFinanceiro()" style="width: 100%; height: 37px;">Adicionar</button>
-                            </div>
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" class="btn btn-primary" onclick="abrirModalFinanceiro()" style="min-width: 160px;">➕ Adicionar Financeiro</button>
                         </div>
 
                         <div class="table-wrapper" style="overflow-x: auto; position: relative;">
@@ -3324,34 +3424,8 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira</h3>
                         <div class="detalhe-secao-body">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
-                                <div class="form-group">
-                                    <label>ND *</label>
-                                    <div style="display:flex; gap:0.5rem; align-items:center;">
-                                        <select id="numExecFin" required onchange="aplicarFiltroNdExecFin(this.value)">
-                                            <option value="">-- Selecione --</option>
-                                        </select>
-                                        <button type="button" class="btn btn-sm" onclick="aplicarFiltroNdExecFin('')" title="Limpar filtro ND">Limpar</button>
-                                    </div>
-                                </div>
-                            <div class="form-group">
-                                <label>UP *</label>
-                                <select id="upExecFin" required>
-                                    <option value="">-- Selecione --</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Valor (R$) *</label>
-                                <input type="text" id="valorExecFin" inputmode="numeric" class="mask-moeda" placeholder="0,00" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Data *</label>
-                                <input type="date" id="dataExecFin" required>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="visibility: hidden;">.</label>
-                                <button type="button" class="btn btn-primary" onclick="adicionarExecFinanceira()" style="width: 100%; height: 37px;">Adicionar</button>
-                            </div>
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" class="btn btn-primary" onclick="abrirModalExecFin()" style="min-width: 160px;">➕ Adicionar Execução</button>
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
@@ -3390,28 +3464,8 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL</h3>
                         <div class="detalhe-secao-body">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
-                            <div class="form-group">
-                                <label>ND *</label>
-                                <div style="display:flex; gap:0.5rem; align-items:center;">
-                                    <select id="ndRecGeral" required onchange="aplicarFiltroNdRecGeral(this.value)">
-                                        <option value="">-- Selecione --</option>
-                                    </select>
-                                    <button type="button" class="btn btn-sm" onclick="aplicarFiltroNdRecGeral('')" title="Limpar filtro ND">Limpar</button>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Valor (R$) *</label>
-                                <input type="text" id="valorRecGeral" inputmode="numeric" class="mask-moeda" placeholder="0,00" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Data *</label>
-                                <input type="date" id="dataRecGeral" required>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="visibility: hidden;">.</label>
-                                <button type="button" class="btn btn-primary" onclick="adicionarRecursoGeral()" style="width: 100%; height: 37px;">Adicionar</button>
-                            </div>
+                        <div style="margin-bottom: 1rem;">
+                            <button type="button" class="btn btn-primary" onclick="abrirModalRecGeral()" style="min-width: 160px;">➕ Adicionar Recurso</button>
                         </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
@@ -5557,39 +5611,26 @@
 
         // METAS
         // Calcular meses automaticamente para Metas
-        function calcularMesesMeta() {
+        function calcularMesesMeta() { calcularMesesMetaModal(); }
+        function calcularMesesMetaModal() {
             if (!window.tedSelecionado) return;
-            
-            const mInicio = parseInt(document.getElementById('mInicio').value);
-            const mFinal = parseInt(document.getElementById('mFinal').value);
-            
+            const mInicio = parseInt(document.getElementById('modalMetaMInicio').value);
+            const mFinal = parseInt(document.getElementById('modalMetaMFinal').value);
             if (isNaN(mInicio) && isNaN(mFinal)) return;
-            
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
                 startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else {
-                return;
-            }
-            
+            } else { return; }
+            const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
             if (!isNaN(mInicio)) {
-                const dInicio = new Date(startDate);
-                dInicio.setMonth(dInicio.getMonth() + mInicio);
-                const mesInicio = dInicio.getMonth() + 1;
-                const anoInicio = dInicio.getFullYear();
-                const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-                document.getElementById('mesInicio').value = `${meses[mesInicio - 1]}/${anoInicio}`;
+                const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+                document.getElementById('modalMetaMesInicio').value = `${nomesMeses[dI.getMonth()]}/${dI.getFullYear()}`;
             }
-            
             if (!isNaN(mFinal)) {
-                const dFinal = new Date(startDate);
-                dFinal.setMonth(dFinal.getMonth() + mFinal);
-                const mesFinal = dFinal.getMonth() + 1;
-                const anoFinal = dFinal.getFullYear();
-                const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-                document.getElementById('mesFinal').value = `${meses[mesFinal - 1]}/${anoFinal}`;
+                const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+                document.getElementById('modalMetaMesFinal').value = `${nomesMeses[dF.getMonth()]}/${dF.getFullYear()}`;
             }
         }
 
@@ -6821,122 +6862,103 @@
         }
 
         // Calcular meses automaticamente para Físico
-        function calcularMesesFisico() {
+        function calcularMesesFisico() { calcularMesesFisicoModal(); }
+        function calcularMesesFisicoModal() {
             if (!window.tedSelecionado) return;
-            
-            const mInicio = parseInt(document.getElementById('mInicioFisico').value);
-            const mFinal = parseInt(document.getElementById('mFinalFisico').value);
-            
+            const mInicio = parseInt(document.getElementById('modalFisicoCadMInicio').value);
+            const mFinal = parseInt(document.getElementById('modalFisicoCadMFinal').value);
             if (isNaN(mInicio) && isNaN(mFinal)) return;
-            
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
                 startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else {
-                return;
-            }
-            
+            } else { return; }
+            const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
             if (!isNaN(mInicio)) {
-                const dInicio = new Date(startDate);
-                dInicio.setMonth(dInicio.getMonth() + mInicio);
-                const mesInicio = dInicio.getMonth() + 1;
-                const anoInicio = dInicio.getFullYear();
-                const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-                document.getElementById('mesInicioFisico').value = `${meses[mesInicio - 1]}/${anoInicio}`;
+                const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+                document.getElementById('modalFisicoCadMesInicio').value = `${nomesMeses[dI.getMonth()]}/${dI.getFullYear()}`;
             }
-            
             if (!isNaN(mFinal)) {
-                const dFinal = new Date(startDate);
-                dFinal.setMonth(dFinal.getMonth() + mFinal);
-                const mesFinal = dFinal.getMonth() + 1;
-                const anoFinal = dFinal.getFullYear();
-                const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-                document.getElementById('mesFinalFisico').value = `${meses[mesFinal - 1]}/${anoFinal}`;
+                const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+                document.getElementById('modalFisicoCadMesFinal').value = `${nomesMeses[dF.getMonth()]}/${dF.getFullYear()}`;
             }
         }
 
-        function adicionarMeta() {
-            if (!window.tedSelecionado) {
-                alert('⚠️ Selecione um TED primeiro!');
-                return;
-            }
+        // ── Modal Cadastro de Metas ──
+        window._editandoMetaId = null;
 
-            const meta = document.getElementById('meta').value.trim();
-            const descricao = document.getElementById('descricaoMeta').value.trim();
-            const mInicio = parseInt(document.getElementById('mInicio').value);
-            const mFinal = parseInt(document.getElementById('mFinal').value);
-            
-            if (!meta || isNaN(mInicio) || isNaN(mFinal)) {
-                alert('⚠️ Preencha todos os campos corretamente!');
-                return;
-            }
+        function abrirModalMeta(editId) {
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalMetaBackdrop');
+            const titulo = document.getElementById('modalMetaTitulo');
+            const errEl = document.getElementById('modalMetaError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            document.getElementById('modalMetaNome').value = '';
+            document.getElementById('modalMetaDescricao').value = '';
+            document.getElementById('modalMetaMInicio').value = '';
+            document.getElementById('modalMetaMFinal').value = '';
+            document.getElementById('modalMetaMesInicio').value = '';
+            document.getElementById('modalMetaMesFinal').value = '';
+            window._editandoMetaId = null;
 
-            // Calcular mês/ano a partir da 1ª descentralização + M (offset em meses)
+            if (editId) {
+                const m = (window.tedSelecionado.metas || []).find(x => x.id === editId);
+                if (m) {
+                    window._editandoMetaId = editId;
+                    titulo.textContent = '✏️ Editar Meta';
+                    document.getElementById('modalMetaNome').value = m.meta;
+                    document.getElementById('modalMetaDescricao').value = m.descricao || '';
+                    document.getElementById('modalMetaMInicio').value = m.mInicio;
+                    document.getElementById('modalMetaMFinal').value = m.mFinal;
+                    calcularMesesMetaModal();
+                }
+            } else {
+                titulo.textContent = '🎯 Nova Meta';
+            }
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalMetaNome').focus(), 80);
+        }
+
+        function fecharModalMeta() {
+            const b = document.getElementById('modalMetaBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+            window._editandoMetaId = null;
+        }
+
+        function salvarModalMeta() {
+            const errEl = document.getElementById('modalMetaError');
+            const meta = document.getElementById('modalMetaNome').value.trim();
+            const descricao = document.getElementById('modalMetaDescricao').value.trim();
+            const mInicio = parseInt(document.getElementById('modalMetaMInicio').value);
+            const mFinal = parseInt(document.getElementById('modalMetaMFinal').value);
+
+            if (!meta || isNaN(mInicio) || isNaN(mFinal)) { errEl.textContent = '⚠️ Preencha todos os campos corretamente!'; errEl.classList.add('open'); return; }
+
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
                 startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else {
-                alert('⚠️ Defina a 1ª descentralização no TED para usar M como referência.');
-                return;
-            }
-            
-            const dInicio = new Date(startDate);
-            dInicio.setMonth(dInicio.getMonth() + mInicio);
-            const mesInicio = dInicio.getMonth() + 1;
-            const anoInicio = dInicio.getFullYear();
-            
-            const dFinal = new Date(startDate);
-            dFinal.setMonth(dFinal.getMonth() + mFinal);
-            const mesFinal = dFinal.getMonth() + 1;
-            const anoFinal = dFinal.getFullYear();
+            } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
 
-            if (!window.tedSelecionado.metas) {
-                window.tedSelecionado.metas = [];
-            }
+            const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+            const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+
+            if (!window.tedSelecionado.metas) window.tedSelecionado.metas = [];
+            if (window._editandoMetaId) window.tedSelecionado.metas = window.tedSelecionado.metas.filter(x => x.id !== window._editandoMetaId);
 
             window.tedSelecionado.metas.push({
-                id: Date.now(),
-                meta: meta,
-                descricao: descricao,
-                mInicio: mInicio,
-                mFinal: mFinal,
-                mesInicio: mesInicio,
-                anoInicio: anoInicio,
-                mesFinal: mesFinal,
-                anoFinal: anoFinal
+                id: window._editandoMetaId || Date.now(), meta, descricao, mInicio, mFinal,
+                mesInicio: dI.getMonth() + 1, anoInicio: dI.getFullYear(),
+                mesFinal: dF.getMonth() + 1, anoFinal: dF.getFullYear()
             });
-
-            salvarDados();
-            atualizarTabelasEmCascata('metas');
-            document.getElementById('meta').value = '';
-            document.getElementById('descricaoMeta').value = '';
-            document.getElementById('mInicio').value = '';
-            document.getElementById('mFinal').value = '';
-            document.getElementById('mesInicio').value = '';
-            document.getElementById('mesFinal').value = '';
+            salvarDados(); atualizarTabelasEmCascata('metas'); fecharModalMeta();
         }
 
-        function editarMeta(id) {
-            if (!window.tedSelecionado) return;
-            const meta = window.tedSelecionado.metas.find(m => m.id === id);
-            if (!meta) return;
-            
-            document.getElementById('meta').value = meta.meta;
-            document.getElementById('descricaoMeta').value = meta.descricao || '';
-            document.getElementById('mInicio').value = meta.mInicio;
-            document.getElementById('mFinal').value = meta.mFinal;
-            
-            // Recalcular os meses automaticamente
-            calcularMesesMeta();
-            
-            // Remover a meta antiga para permitir edição
-            window.tedSelecionado.metas = window.tedSelecionado.metas.filter(m => m.id !== id);
-            atualizarTabelasEmCascata('metas');
-        }
+        function adicionarMeta() { abrirModalMeta(); }
+        function editarMeta(id) { abrirModalMeta(id); }
 
         function removerMeta(id) {
             if (!window.tedSelecionado) return;
@@ -7225,94 +7247,106 @@
         }
 
         // CADASTRO FÍSICO
-        function adicionarFisico() {
-            if (!window.tedSelecionado) {
-                alert('⚠️ Selecione um TED primeiro!');
-                return;
-            }
+        // ── Modal Cadastro Físico ──
+        window._editandoFisicoId = null;
 
-            const fase = document.getElementById('faseFisico').value.trim();
-            const objeto = document.getElementById('objetoFisico').value;
-            const qtde = parseNumber(document.getElementById('qtdeFisico').value);
-            const mInicio = parseInt(document.getElementById('mInicioFisico').value);
-            const mFinal = parseInt(document.getElementById('mFinalFisico').value);
+        function _popularSelectObjetosModal(selectId) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            const objs = (window.tedSelecionado && window.tedSelecionado.objetos) || [];
+            sel.innerHTML = '<option value="">-- Selecione --</option>' + objs.map(o => `<option value="${o.objeto}">${o.objeto}</option>`).join('');
+        }
+
+        function abrirModalFisicoCad(editId) {
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalFisicoBackdrop');
+            const titulo = document.getElementById('modalFisicoCadTitulo');
+            const errEl = document.getElementById('modalFisicoCadError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            _popularSelectObjetosModal('modalFisicoCadObjeto');
+            document.getElementById('modalFisicoCadFase').value = '';
+            document.getElementById('modalFisicoCadObjeto').value = '';
+            document.getElementById('modalFisicoCadQtde').value = '';
+            document.getElementById('modalFisicoCadMInicio').value = '';
+            document.getElementById('modalFisicoCadMFinal').value = '';
+            document.getElementById('modalFisicoCadMesInicio').value = '';
+            document.getElementById('modalFisicoCadMesFinal').value = '';
+            window._editandoFisicoId = null;
+
+            if (editId) {
+                const f = (window.tedSelecionado.fisicos || []).find(x => x.id === editId);
+                if (f) {
+                    window._editandoFisicoId = editId;
+                    titulo.textContent = '✏️ Editar Cadastro Físico';
+                    document.getElementById('modalFisicoCadFase').value = f.fase;
+                    document.getElementById('modalFisicoCadObjeto').value = f.objeto;
+                    document.getElementById('modalFisicoCadQtde').value = formatarMilharesPtBR(Number(f.qtde));
+                    document.getElementById('modalFisicoCadMInicio').value = f.mInicio;
+                    document.getElementById('modalFisicoCadMFinal').value = f.mFinal;
+                    calcularMesesFisicoModal();
+                }
+            } else {
+                titulo.textContent = '🏗️ Novo Cadastro Físico';
+            }
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalFisicoCadFase').focus(), 80);
+        }
+
+        function fecharModalFisicoCad() {
+            const b = document.getElementById('modalFisicoBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+            window._editandoFisicoId = null;
+        }
+
+        function salvarModalFisicoCad() {
+            const errEl = document.getElementById('modalFisicoCadError');
+            const fase = document.getElementById('modalFisicoCadFase').value.trim();
+            const objeto = document.getElementById('modalFisicoCadObjeto').value;
+            const qtde = parseNumber(document.getElementById('modalFisicoCadQtde').value);
+            const mInicio = parseInt(document.getElementById('modalFisicoCadMInicio').value);
+            const mFinal = parseInt(document.getElementById('modalFisicoCadMFinal').value);
 
             if (!fase || !objeto || isNaN(qtde) || qtde < 0 || isNaN(mInicio) || isNaN(mFinal)) {
-                alert('⚠️ Preencha todos os campos do cadastro físico');
-                return;
+                errEl.textContent = '⚠️ Preencha todos os campos do cadastro físico'; errEl.classList.add('open'); return;
             }
-
             if (!window.tedSelecionado.objetos || !window.tedSelecionado.objetos.length) {
-                alert('⚠️ Cadastre um objeto primeiro para selecionar.');
-                return;
+                errEl.textContent = '⚠️ Cadastre um objeto primeiro.'; errEl.classList.add('open'); return;
             }
 
-            // Calcular mês/ano a partir da 1ª descentralização + M (offset em meses)
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
                 startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else {
-                alert('⚠️ Defina a 1ª descentralização no TED para usar M como referência.');
-                return;
-            }
-            
-            const dInicio = new Date(startDate);
-            dInicio.setMonth(dInicio.getMonth() + mInicio);
-            const mesInicio = dInicio.getMonth() + 1;
-            const anoInicio = dInicio.getFullYear();
-            
-            const dFinal = new Date(startDate);
-            dFinal.setMonth(dFinal.getMonth() + mFinal);
-            const mesFinal = dFinal.getMonth() + 1;
-            const anoFinal = dFinal.getFullYear();
+            } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
+
+            const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+            const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+
+            if (window._editandoFisicoId) window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(x => x.id !== window._editandoFisicoId);
 
             window.tedSelecionado.fisicos.push({
-                id: Date.now(), fase, objeto, qtde, mInicio, mFinal, mesInicio, anoInicio, mesFinal, anoFinal
+                id: window._editandoFisicoId || Date.now(), fase, objeto, qtde, mInicio, mFinal,
+                mesInicio: dI.getMonth() + 1, anoInicio: dI.getFullYear(),
+                mesFinal: dF.getMonth() + 1, anoFinal: dF.getFullYear()
             });
 
-            // Verificar consistência: soma de qtde no Físico não pode exceder qtde do Objeto
+            // Verificar consistência
             const objRef = (window.tedSelecionado.objetos || []).find(o => o.objeto === objeto);
             if (objRef) {
-                const somaFisico = window.tedSelecionado.fisicos
-                    .filter(f => f.objeto === objeto)
-                    .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+                const somaFisico = window.tedSelecionado.fisicos.filter(f => f.objeto === objeto).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
                 const qtdeObjeto = parseNumber(objRef.qtde) || 0;
                 if (somaFisico > qtdeObjeto) {
                     alert(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${objeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades para manter a consistência.`);
                 }
             }
 
-            salvarDados();
-            atualizarTabelasEmCascata('fisicos');
-            document.getElementById('faseFisico').value = '';
-            document.getElementById('objetoFisico').value = '';
-            document.getElementById('qtdeFisico').value = '';
-            document.getElementById('mInicioFisico').value = '';
-            document.getElementById('mFinalFisico').value = '';
-            document.getElementById('mesInicioFisico').value = '';
-            document.getElementById('mesFinalFisico').value = '';
+            salvarDados(); atualizarTabelasEmCascata('fisicos'); fecharModalFisicoCad();
         }
 
-        function editarFisico(id) {
-            if (!window.tedSelecionado) return;
-            const fisico = window.tedSelecionado.fisicos.find(f => f.id === id);
-            if (!fisico) return;
-            
-            document.getElementById('faseFisico').value = fisico.fase;
-            document.getElementById('objetoFisico').value = fisico.objeto;
-            document.getElementById('qtdeFisico').value = formatarMilharesPtBR(Number(fisico.qtde));
-            document.getElementById('mInicioFisico').value = fisico.mInicio;
-            document.getElementById('mFinalFisico').value = fisico.mFinal;
-            
-            // Recalcular os meses automaticamente
-            calcularMesesFisico();
-            
-            // Remover o físico antigo para permitir edição
-            window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(f => f.id !== id);
-            atualizarTabelasEmCascata('fisicos');
-        }
+        function adicionarFisico() { abrirModalFisicoCad(); }
+        function editarFisico(id) { abrirModalFisicoCad(id); }
 
         function removerFisico(id) {
             if (!window.tedSelecionado) return;
@@ -7514,32 +7548,46 @@
         }
 
         // EXECUÇÃO FÍSICA
-        function adicionarExecFisica() {
-            if (!window.tedSelecionado) {
-                alert('⚠️ Selecione um TED primeiro!');
-                return;
-            }
+        // ── Modal Execução Física ──
+        function abrirModalExecFisica() {
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalExecFisicaBackdrop');
+            const errEl = document.getElementById('modalExecFisicaError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            _popularSelectObjetosModal('modalExecFisicaObjeto');
+            document.getElementById('modalExecFisicaObjeto').value = '';
+            document.getElementById('modalExecFisicaQtde').value = '';
+            document.getElementById('modalExecFisicaData').value = '';
+            document.getElementById('modalExecFisicaNf').value = '';
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalExecFisicaObjeto').focus(), 80);
+        }
 
-            const objeto = document.getElementById('objetoExecFisica').value;
-            const qtde = parseNumber(document.getElementById('qtdeExec').value);
-            const data = document.getElementById('dataExec').value;
-            const nf = (document.getElementById('nfExec') || {}).value || '';
+        function fecharModalExecFisica() {
+            const b = document.getElementById('modalExecFisicaBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+        }
+
+        function salvarModalExecFisica() {
+            const errEl = document.getElementById('modalExecFisicaError');
+            const objeto = document.getElementById('modalExecFisicaObjeto').value;
+            const qtde = parseNumber(document.getElementById('modalExecFisicaQtde').value);
+            const data = document.getElementById('modalExecFisicaData').value;
+            const nf = document.getElementById('modalExecFisicaNf').value || '';
 
             if (!objeto || isNaN(qtde) || qtde < 0 || !data) {
-                alert('⚠️ Preencha todos os campos da execução física');
-                return;
+                errEl.textContent = '⚠️ Preencha todos os campos da execução física'; errEl.classList.add('open'); return;
             }
 
             window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto, qtde, data, nf });
-            // Atualizar progresso físico e persistir
             atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado);
             atualizarTabelaExecFisica();
-            document.getElementById('objetoExecFisica').value = '';
-            document.getElementById('qtdeExec').value = '';
-            document.getElementById('dataExec').value = '';
-            try { if (document.getElementById('nfExec')) document.getElementById('nfExec').value = ''; } catch(e) {}
             try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
+            fecharModalExecFisica();
         }
+
+        function adicionarExecFisica() { abrirModalExecFisica(); }
 
         function removerExecFisica(id) {
             if (!window.tedSelecionado) return;
@@ -7957,65 +8005,92 @@
         }
 
         // CADASTRO FINANCEIRO
-        // Calcular mês automaticamente para Financeiro
-        function calcularMesFinanceiro() {
+        function calcularMesFinanceiro() { calcularMesFinanceiroModal(); }
+        function calcularMesFinanceiroModal() {
             if (!window.tedSelecionado) return;
-            
-            const m = parseInt(document.getElementById('mFinanceiro').value);
-            
+            const m = parseInt(document.getElementById('modalFinanceiroM').value);
             if (isNaN(m)) return;
-            
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
                 startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else {
-                return;
-            }
-            
-            const d = new Date(startDate);
-            d.setMonth(d.getMonth() + m);
-            const mesDesc = d.getMonth() + 1;
-            const anoDesc = d.getFullYear();
-            const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-            document.getElementById('mesDescFinanceiro').value = `${meses[mesDesc - 1]}/${anoDesc}`;
+            } else { return; }
+            const d = new Date(startDate); d.setMonth(d.getMonth() + m);
+            const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+            document.getElementById('modalFinanceiroMesDesc').value = `${nomesMeses[d.getMonth()]}/${d.getFullYear()}`;
         }
 
-        function adicionarFinanceiro() {
-            if (!window.tedSelecionado) {
-                alert('⚠️ Selecione um TED primeiro!');
-                return;
-            }
+        // ── Modal Cadastro Financeiro ──
+        window._editandoFinanceiroId = null;
 
-            const numero = document.getElementById('numFinanceiro').value.trim();
-            const m = parseInt(document.getElementById('mFinanceiro').value);
-            const up = document.getElementById('upFinanceiro').value.trim();
-            const valor = parseNumber(document.getElementById('valorFinanceiro').value);
+        function abrirModalFinanceiro(editId) {
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalFinanceiroBackdrop');
+            const titulo = document.getElementById('modalFinanceiroTitulo');
+            const errEl = document.getElementById('modalFinanceiroError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            document.getElementById('modalFinanceiroND').value = '';
+            document.getElementById('modalFinanceiroUP').value = '';
+            document.getElementById('modalFinanceiroM').value = '';
+            document.getElementById('modalFinanceiroMesDesc').value = '';
+            document.getElementById('modalFinanceiroValor').value = '';
+            window._editandoFinanceiroId = null;
+
+            if (editId) {
+                const f = (window.tedSelecionado.financeiros || []).find(x => x.id === editId);
+                if (f) {
+                    window._editandoFinanceiroId = editId;
+                    titulo.textContent = '✏️ Editar Cadastro Financeiro';
+                    document.getElementById('modalFinanceiroND').value = f.numero;
+                    document.getElementById('modalFinanceiroUP').value = f.up || f.ug;
+                    document.getElementById('modalFinanceiroM').value = f.m;
+                    const valFin = Number(f.valor);
+                    const valFinCents = Math.round(valFin * 100);
+                    const valFinUnits = Math.floor(valFinCents / 100);
+                    const valFinRemainder = valFinCents % 100;
+                    document.getElementById('modalFinanceiroValor').value = formatarMilharesPtBR(valFinUnits) + ',' + String(valFinRemainder).padStart(2, '0');
+                    calcularMesFinanceiroModal();
+                }
+            } else {
+                titulo.textContent = '💰 Novo Cadastro Financeiro';
+            }
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalFinanceiroND').focus(), 80);
+        }
+
+        function fecharModalFinanceiro() {
+            const b = document.getElementById('modalFinanceiroBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+            window._editandoFinanceiroId = null;
+        }
+
+        function salvarModalFinanceiro() {
+            const errEl = document.getElementById('modalFinanceiroError');
+            const numero = document.getElementById('modalFinanceiroND').value.trim();
+            const m = parseInt(document.getElementById('modalFinanceiroM').value);
+            const up = document.getElementById('modalFinanceiroUP').value.trim();
+            const valor = parseNumber(document.getElementById('modalFinanceiroValor').value);
 
             if (!numero || isNaN(m) || !up || isNaN(valor)) {
-                alert('⚠️ Preencha todos os campos do cadastro financeiro');
-                return;
+                errEl.textContent = '⚠️ Preencha todos os campos do cadastro financeiro'; errEl.classList.add('open'); return;
             }
 
-            // Calcular Mês/Ano automaticamente a partir da 1ª descentralização + M
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
                 startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else {
-                alert('⚠️ Defina a 1ª descentralização para calcular Mês/Ano.');
-                return;
-            }
-            
-            const d = new Date(startDate);
-            d.setMonth(d.getMonth() + m);
+            } else { errEl.textContent = '⚠️ Defina a 1ª descentralização.'; errEl.classList.add('open'); return; }
+
+            const d = new Date(startDate); d.setMonth(d.getMonth() + m);
             const mesDesc = d.getMonth() + 1;
             const anoDesc = d.getFullYear();
 
-            window.tedSelecionado.financeiros.push({ id: Date.now(), numero, m, mesDesc, anoDesc, up, valor });
-            // Atualizar valor do TED automaticamente
+            if (window._editandoFinanceiroId) window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(x => x.id !== window._editandoFinanceiroId);
+
+            window.tedSelecionado.financeiros.push({ id: window._editandoFinanceiroId || Date.now(), numero, m, mesDesc, anoDesc, up, valor });
             atualizarValorTedFromFinanceiros(window.tedSelecionado);
             salvarDados();
             atualizarTabelasEmCascata('financeiros');
@@ -8023,38 +8098,11 @@
             atualizarOpcoesRecGeral();
             atualizarGantt();
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
-            document.getElementById('numFinanceiro').value = '';
-            document.getElementById('mFinanceiro').value = '';
-            document.getElementById('mesDescFinanceiro').value = '';
-            document.getElementById('upFinanceiro').value = '';
-            document.getElementById('valorFinanceiro').value = '';
+            fecharModalFinanceiro();
         }
 
-        function editarFinanceiro(id) {
-            if (!window.tedSelecionado) return;
-            const financeiro = window.tedSelecionado.financeiros.find(f => f.id === id);
-            if (!financeiro) return;
-            
-            // Preencher os campos do formulário de cadastro (usar os mesmos IDs do formulário de adicionar)
-            document.getElementById('numFinanceiro').value = financeiro.numero;
-            document.getElementById('mFinanceiro').value = financeiro.m;
-            // Recalcular e preencher o campo mesDescFinanceiro a partir de M
-            try { calcularMesFinanceiro(); } catch(e) { document.getElementById('mesDescFinanceiro').value = financeiro.mesDesc || ''; }
-            document.getElementById('upFinanceiro').value = financeiro.up || financeiro.ug;
-            // Formatar valor como moeda pt-BR
-            const valFin = Number(financeiro.valor);
-            const valFinCents = Math.round(valFin * 100);
-            const valFinUnits = Math.floor(valFinCents / 100);
-            const valFinRemainder = valFinCents % 100;
-            document.getElementById('valorFinanceiro').value = formatarMilharesPtBR(valFinUnits) + ',' + String(valFinRemainder).padStart(2, '0');
-            
-            // Remover o financeiro antigo para permitir edição
-            window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
-            atualizarTabelasEmCascata('financeiros');
-            atualizarOpcoesExecFinanceira();
-            atualizarOpcoesRecGeral();
-            atualizarGantt();
-        }
+        function adicionarFinanceiro() { abrirModalFinanceiro(); }
+        function editarFinanceiro(id) { abrirModalFinanceiro(id); }
 
         function removerFinanceiro(id) {
             if (!window.tedSelecionado) return;
@@ -8356,71 +8404,72 @@
 
         // EXECUÇÃO FINANCEIRA
         function atualizarOpcoesExecFinanceira() {
-            const selectND = document.getElementById('numExecFin');
-            const selectUP = document.getElementById('upExecFin');
-            
+            // Popula selects do modal de execução financeira
+            const selectND = document.getElementById('modalExecFinND');
+            const selectUP = document.getElementById('modalExecFinUP');
             if (!selectND || !selectUP) return;
-            
             if (!window.tedSelecionado) {
                 selectND.innerHTML = '<option value="">-- Selecione um TED --</option>';
                 selectUP.innerHTML = '<option value="">-- Selecione um TED --</option>';
                 return;
             }
-            
             const cad = window.tedSelecionado.financeiros || [];
             if (!cad.length) {
                 selectND.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
                 selectUP.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
                 return;
             }
-            
-            // ND únicos
             const ndsUnicos = Array.from(new Set(cad.map(f => f.numero)));
-            selectND.innerHTML = '<option value="">-- Selecione ND --</option>' +
-                ndsUnicos.map(nd => `<option value="${nd}">${nd}</option>`).join('');
-            
-            // UP únicos
+            selectND.innerHTML = '<option value="">-- Selecione ND --</option>' + ndsUnicos.map(nd => `<option value="${nd}">${nd}</option>`).join('');
             const upsUnicos = Array.from(new Set(cad.map(f => f.up || f.ug)));
-            selectUP.innerHTML = '<option value="">-- Selecione UP --</option>' +
-                upsUnicos.map(up => `<option value="${up}">${up}</option>`).join('');
+            selectUP.innerHTML = '<option value="">-- Selecione UP --</option>' + upsUnicos.map(up => `<option value="${up}">${up}</option>`).join('');
         }
         
-        function adicionarExecFinanceira() {
-            if (!window.tedSelecionado) {
-                alert('⚠️ Selecione um TED primeiro!');
-                return;
-            }
+        // ── Modal Execução Financeira ──
+        function abrirModalExecFin() {
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalExecFinBackdrop');
+            const errEl = document.getElementById('modalExecFinError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            atualizarOpcoesExecFinanceira();
+            document.getElementById('modalExecFinND').value = '';
+            document.getElementById('modalExecFinUP').value = '';
+            document.getElementById('modalExecFinValor').value = '';
+            document.getElementById('modalExecFinData').value = '';
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalExecFinND').focus(), 80);
+        }
 
-            const nd = document.getElementById('numExecFin').value.trim();
-            const up = document.getElementById('upExecFin').value.trim();
-            const valor = parseNumber(document.getElementById('valorExecFin').value);
-            const data = document.getElementById('dataExecFin').value;
+        function fecharModalExecFin() {
+            const b = document.getElementById('modalExecFinBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+        }
+
+        function salvarModalExecFin() {
+            const errEl = document.getElementById('modalExecFinError');
+            const nd = document.getElementById('modalExecFinND').value.trim();
+            const up = document.getElementById('modalExecFinUP').value.trim();
+            const valor = parseNumber(document.getElementById('modalExecFinValor').value);
+            const data = document.getElementById('modalExecFinData').value;
 
             if (!nd || !up || isNaN(valor) || !data) {
-                alert('⚠️ Preencha todos os campos da execução financeira');
-                return;
+                errEl.textContent = '⚠️ Preencha todos os campos da execução financeira'; errEl.classList.add('open'); return;
             }
-            
-            // Verificar se ND+UP existe no cadastro
             const cad = window.tedSelecionado.financeiros || [];
             const existe = cad.some(f => String(f.numero) === nd && String(f.up || f.ug) === up);
-            if (!existe) {
-                alert('⚠️ A combinação ND+UP informada não existe no cadastro financeiro!');
-                return;
-            }
+            if (!existe) { errEl.textContent = '⚠️ A combinação ND+UP informada não existe no cadastro financeiro!'; errEl.classList.add('open'); return; }
 
             window.tedSelecionado.execFinanceiras.push({ id: Date.now(), nd, up, valor, data });
-            // Atualizar gasto (valor realizado) automaticamente
             atualizarGastoFromExecFinanceiras(window.tedSelecionado);
             atualizarTabelaExecFinanceira();
             atualizarGantt();
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
-            document.getElementById('numExecFin').value = '';
-            document.getElementById('upExecFin').value = '';
-            document.getElementById('valorExecFin').value = '';
-            document.getElementById('dataExecFin').value = '';
             try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
+            fecharModalExecFin();
         }
+
+        function adicionarExecFinanceira() { abrirModalExecFin(); }
 
         function removerExecFinanceira(nd, up, data) {
             if (!window.tedSelecionado) return;
@@ -10199,7 +10248,7 @@
         window.filtrosRecGeral = { nd: [] };
 
         function atualizarOpcoesRecGeral() {
-            const selectND = document.getElementById('ndRecGeral');
+            const selectND = document.getElementById('modalRecGeralND');
             if (!selectND) return;
             if (!window.tedSelecionado) {
                 selectND.innerHTML = '<option value="">-- Selecione um TED --</option>';
@@ -10220,33 +10269,45 @@
                 ndsUnicos.map(nd => `<option value="${nd}">${nd}</option>`).join('');
         }
 
-        function adicionarRecursoGeral() {
-            if (!window.tedSelecionado) {
-                alert('⚠️ Selecione um TED primeiro!');
-                return;
-            }
+        // ── Modal Recursos Gerais IMBEL ──
+        function abrirModalRecGeral() {
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalRecGeralBackdrop');
+            const errEl = document.getElementById('modalRecGeralError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            atualizarOpcoesRecGeral();
+            document.getElementById('modalRecGeralND').value = '';
+            document.getElementById('modalRecGeralValor').value = '';
+            document.getElementById('modalRecGeralData').value = '';
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalRecGeralND').focus(), 80);
+        }
 
-            const nd = document.getElementById('ndRecGeral').value.trim();
-            const valor = parseNumber(document.getElementById('valorRecGeral').value);
-            const data = document.getElementById('dataRecGeral').value;
+        function fecharModalRecGeral() {
+            const b = document.getElementById('modalRecGeralBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+        }
+
+        function salvarModalRecGeral() {
+            const errEl = document.getElementById('modalRecGeralError');
+            const nd = document.getElementById('modalRecGeralND').value.trim();
+            const valor = parseNumber(document.getElementById('modalRecGeralValor').value);
+            const data = document.getElementById('modalRecGeralData').value;
 
             if (!nd || isNaN(valor) || !data) {
-                alert('⚠️ Preencha todos os campos (ND, Valor e Data)');
-                return;
+                errEl.textContent = '⚠️ Preencha todos os campos (ND, Valor e Data)'; errEl.classList.add('open'); return;
             }
 
             window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
             window.tedSelecionado.recursosGerais.push({ id: Date.now(), nd, valor, data });
-
             salvarDados();
             atualizarTabelaRecursosGerais();
-
-            document.getElementById('ndRecGeral').value = '';
-            document.getElementById('valorRecGeral').value = '';
-            document.getElementById('dataRecGeral').value = '';
-
             showToast('Recurso Geral adicionado com sucesso!', 'success');
+            fecharModalRecGeral();
         }
+
+        function adicionarRecursoGeral() { abrirModalRecGeral(); }
 
         function removerRecursoGeral(nd, data) {
             if (!window.tedSelecionado) return;
