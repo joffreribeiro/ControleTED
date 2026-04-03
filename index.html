@@ -2284,8 +2284,12 @@
         /* Regras mais específicas para a aba 'Detalhes' (sobrescreve seletores com IDs + !important) */
         #detalhes #tedsDetalheContainer .tabela-padrao thead th,
         #detalhes #tedsDetalheContainer .tabela-padrao thead th *,
+        #detalhes #tedsDetalheContainer .tabela-padrao thead th[style],
+        #detalhes #tedsDetalheContainer .tabela-padrao thead th[style] *,
         #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze,
-        #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze * {
+        #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze *,
+        #detalhes #tedsDetalheContainer .tabela-padrao thead .year-divider-group,
+        #detalhes #tedsDetalheContainer .tabela-padrao thead .year-divider-group * {
             color: #ffffff !important;
         }
     </style>
