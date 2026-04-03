@@ -4608,8 +4608,9 @@
                             fimReal = encDt; // encerrado antes do fim da vigência
                         }
                     }
-                    // Vigente se início <= último dia do mês E fim real >= primeiro dia do mês
-                    if (ini <= ultimoDia && fimReal >= primeiroDia) count++;
+                    // Vigente se início <= último dia do mês E fim real >= ÚLTIMO dia do mês
+                    // (contagem considera TEDs ativos no FECHAMENTO do mês)
+                    if (ini <= ultimoDia && fimReal >= ultimoDia) count++;
                 });
                 return count;
             }
