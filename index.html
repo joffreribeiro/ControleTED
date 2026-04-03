@@ -3627,25 +3627,23 @@
                 <h2><i data-lucide="file-bar-chart" class="inline-icon"></i> Relatórios</h2>
                 <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:1rem;">
                     <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                        <label style="font-weight:600;">TED</label>
-                        <select id="relatorioTed" style="min-width:220px;" onchange="renderRelatorios()">
-                            <option value="">-- Todos --</option>
+                        <label style="font-weight:600;">TED (multi)</label>
+                        <select id="relatorioTed" multiple size="6" style="min-width:220px;">
                         </select>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                        <label style="font-weight:600;">UP</label>
-                        <select id="relatorioUp" style="min-width:160px;" onchange="renderRelatorios()">
-                            <option value="">-- Todas --</option>
+                        <label style="font-weight:600;">UP (multi)</label>
+                        <select id="relatorioUp" multiple size="6" style="min-width:160px;">
                         </select>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                        <label style="font-weight:600;">Ano</label>
-                        <select id="relatorioAno" style="min-width:140px;" onchange="renderRelatorios()">
-                            <option value="">-- Todos --</option>
+                        <label style="font-weight:600;">Ano (multi)</label>
+                        <select id="relatorioAno" multiple size="6" style="min-width:140px;">
                         </select>
                     </div>
                     <div style="display:flex; gap:0.5rem; align-items:center;">
-                        <button class="btn btn-primary" style="height:38px;" onclick="(function(){ popularFiltrosRelatorios(); renderRelatorios(); })()">Atualizar filtros</button>
+                        <button class="btn btn-primary" style="height:38px;" onclick="(function(){ popularFiltrosRelatorios(); })()">Atualizar filtros</button>
+                        <button class="btn btn-primary" style="height:38px;" onclick="renderRelatorios()">Gerar Relatório</button>
                         <button class="btn btn-secondary" style="height:38px;" onclick="exportarRelatoriosPDF()">Exportar PDF</button>
                     </div>
                 </div>
@@ -4017,7 +4015,6 @@
                     try { renderEntregasFromFilter(); } catch(e) {}
                     try { renderResumoFinanceiroFromFilter(); } catch(e) {}
                     try { popularFiltrosRelatorios(); } catch(e) {}
-                    try { renderRelatorios(); } catch(e) {}
 
                     // Attach real-time listener to the collection
                     try {
@@ -4043,7 +4040,6 @@
                                 try { renderEntregasFromFilter(); } catch(e) {}
                                 try { renderResumoFinanceiroFromFilter(); } catch(e) {}
                                 try { popularFiltrosRelatorios(); } catch(e) {}
-                                try { renderRelatorios(); } catch(e) {}
                             } catch(err) { console.warn('erro snapshot teds', err); }
                         });
                         window._firestoreTedsUnsub = unsub;
@@ -4062,7 +4058,6 @@
             try { renderEntregasFromFilter(); } catch(e) {}
             try { renderResumoFinanceiroFromFilter(); } catch(e) {}
             try { popularFiltrosRelatorios(); } catch(e) {}
-            try { renderRelatorios(); } catch(e) {}
             // Inicializar seletor/gráfico full (após Resumo Anual)
             try {
                 const selFull = document.getElementById('filterTedEntregasFull');
@@ -4149,7 +4144,7 @@
                 if (wrap) wrap.style.display = (tabName === 'detalhes') ? 'none' : 'flex';
             } catch(e) {}
             try {
-                if (tabName === 'relatorios') renderRelatorios();
+                if (tabName === 'relatorios') popularFiltrosRelatorios();
             } catch(e) {}
         }
 
@@ -9157,35 +9152,40 @@
             const containerCadFin = document.getElementById('relatorioCadastroFinanceiro');
             const containerExecFin = document.getElementById('relatorioExecFinanceira');
 
-            const tedId = (document.getElementById('relatorioTed') || {}).value || '';
-            const upSel = ((document.getElementById('relatorioUp') || {}).value || '').toLowerCase();
-            const anoSel = (document.getElementById('relatorioAno') || {}).value;
-            const anoNum = anoSel ? Number(anoSel) : null;
+            // Ler seleções múltiplas dos filtros
+            const selTedEl = document.getElementById('relatorioTed');
+            const selectedTedIds = selTedEl ? Array.from(selTedEl.selectedOptions).map(o => o.value).filter(v => v) : [];
+            const selUpEl = document.getElementById('relatorioUp');
+            const selectedUps = selUpEl ? Array.from(selUpEl.selectedOptions).map(o => ((o.value || '').toString().toLowerCase())).filter(v => v) : [];
+            const selAnoEl = document.getElementById('relatorioAno');
+            const selectedAnos = selAnoEl ? Array.from(selAnoEl.selectedOptions).map(o => o.value).filter(v => v).map(v => Number(v)) : [];
 
             const tedsAll = dados.teds || [];
 
             const matchUp = (t) => {
-                if (!upSel) return true;
+                if (!selectedUps || selectedUps.length === 0) return true;
                 const campos = [t.upResponsavel, t.unidadeDesc, t.ugDesc, (t.ugExecutora || t.egExecutora)];
-                if (campos.some(v => (v || '').toLowerCase() === upSel)) return true;
-                if ((t.financeiros || []).some(f => ((f.up || f.ug || '') + '').toLowerCase() === upSel)) return true;
-                if ((t.execFinanceiras || []).some(e => ((e.up || e.ug || '') + '').toLowerCase() === upSel)) return true;
+                for (const up of selectedUps) {
+                    if (campos.some(v => (v || '').toLowerCase() === up)) return true;
+                    if ((t.financeiros || []).some(f => ((f.up || f.ug || '') + '').toLowerCase() === up)) return true;
+                    if ((t.execFinanceiras || []).some(e => ((e.up || e.ug || '') + '').toLowerCase() === up)) return true;
+                }
                 return false;
             };
 
             const matchAno = (t) => {
-                if (!anoNum) return true;
+                if (!selectedAnos || selectedAnos.length === 0) return true;
                 const anos = [];
                 if (t.inicioVigencia) anos.push(new Date(t.inicioVigencia + 'T00:00:00').getFullYear());
                 if (t.fimVigencia) anos.push(new Date(t.fimVigencia + 'T00:00:00').getFullYear());
                 if (t.primeiraDescentralizacao) anos.push(new Date(t.primeiraDescentralizacao + 'T00:00:00').getFullYear());
                 (t.financeiros || []).forEach(f => { if (f.anoDesc) anos.push(Number(f.anoDesc)); });
                 (t.execFinanceiras || []).forEach(e => { if (e.data) { const y = new Date(e.data + 'T00:00:00').getFullYear(); if (!isNaN(y)) anos.push(y); }});
-                return anos.some(a => a === anoNum);
+                return anos.some(a => selectedAnos.includes(a));
             };
 
             const teds = tedsAll.filter(t => {
-                if (tedId && String(t.id) !== String(tedId)) return false;
+                if (selectedTedIds && selectedTedIds.length > 0 && !selectedTedIds.includes(String(t.id))) return false;
                 if (!matchUp(t)) return false;
                 if (!matchAno(t)) return false;
                 return true;
@@ -9481,9 +9481,12 @@
             const selTed = document.getElementById('relatorioTed');
             const selUp = document.getElementById('relatorioUp');
             const selAno = document.getElementById('relatorioAno');
-            const tedText = (selTed && selTed.value) ? (selTed.options[selTed.selectedIndex] && selTed.options[selTed.selectedIndex].text) : '-- Todos --';
-            const upText = (selUp && selUp.value) ? selUp.value : '-- Todos --';
-            const anoText = (selAno && selAno.value) ? selAno.value : '-- Todos --';
+            const tedText = (selTed && selTed.selectedOptions && selTed.selectedOptions.length)
+                ? Array.from(selTed.selectedOptions).map(o => o.text).join(', ') : '-- Todos --';
+            const upText = (selUp && selUp.selectedOptions && selUp.selectedOptions.length)
+                ? Array.from(selUp.selectedOptions).map(o => o.value).join(', ') : '-- Todas --';
+            const anoText = (selAno && selAno.selectedOptions && selAno.selectedOptions.length)
+                ? Array.from(selAno.selectedOptions).map(o => o.value).join(', ') : '-- Todos --';
 
             const headerHtml = `<div style="margin-bottom:12px;"><h1 style="margin:0 0 6px 0;">Relatórios TED</h1><div style="font-size:13px;color:#333">Filtros — TED: ${tedText} | UP: ${upText} | Ano: ${anoText}</div><hr/></div>`;
 
