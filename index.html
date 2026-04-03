@@ -8934,39 +8934,33 @@
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
         }
 
-        // GANTT 60 MESES
+        // GANTT 60 MESES - resumo anual agora baseado em Recursos Gerais (IMBEL)
         function atualizarGantt() {
             const resumoContainer = document.getElementById('resumoAnualPorAno');
-            
             if (!resumoContainer) return;
 
-            if (!window.tedSelecionado || !window.tedSelecionado.financeiros || window.tedSelecionado.financeiros.length === 0) {
-                resumoContainer.innerHTML = '<p style="color: var(--text); text-align: center; padding: 1rem;">Cadastre ao menos uma descentralização para gerar o resumo.</p>';
+            const cad = (window.tedSelecionado && window.tedSelecionado.financeiros) ? window.tedSelecionado.financeiros : [];
+            const recs = (window.tedSelecionado && window.tedSelecionado.recursosGerais) ? window.tedSelecionado.recursosGerais : [];
+
+            if (!window.tedSelecionado || (cad.length === 0 && recs.length === 0)) {
+                resumoContainer.innerHTML = '<p style="color: var(--text); text-align: center; padding: 1rem;">Cadastre valores previstos (Cadastro Financeiro) ou Recursos Gerais para gerar o resumo.</p>';
                 return;
             }
-            
-            // Gerar resumo anual por ano
-            const cad = window.tedSelecionado.financeiros || [];
-            const execs = window.tedSelecionado.execFinanceiras || [];
-            
-            // Obter todos os anos únicos (do cadastro e execuções)
+
+            // Obter todos os anos únicos (do cadastro e de recursos gerais)
             const anosSet = new Set();
-            cad.forEach(f => anosSet.add(f.anoDesc));
-            execs.forEach(e => {
-                if (e.data) {
-                    const ano = new Date(e.data + 'T00:00:00').getFullYear();
-                    anosSet.add(ano);
+            cad.forEach(f => { if (f.anoDesc) anosSet.add(Number(f.anoDesc)); });
+            recs.forEach(r => {
+                if (r.data) {
+                    const ano = new Date(r.data + 'T00:00:00').getFullYear();
+                    if (!isNaN(ano)) anosSet.add(ano);
                 }
             });
-            
-            const anosOrdenados = Array.from(anosSet).sort();
-            
-            if (anosOrdenados.length === 0) {
-                resumoContainer.innerHTML = '';
-                return;
-            }
-            
-            // Criar tabela com resumo anual
+
+            const anosOrdenados = Array.from(anosSet).map(Number).sort((a,b)=>a-b);
+            if (anosOrdenados.length === 0) { resumoContainer.innerHTML = ''; return; }
+
+            // Construir cabeçalho da tabela
             let html = '<table class="tabela-padrao" style="margin-top: 1rem; width: auto;">';
             html += '<thead><tr>';
             html += '<th class="col-ano">Ano</th>';
@@ -8977,45 +8971,42 @@
             html += '<th class="col-valor">Saldo Anual</th>';
             html += '<th class="col-percent">Liquidação (%)</th>';
             html += '</tr></thead><tbody>';
-            
+
+            // Agregadores por ano
             let saldoAcumulado = 0;
-            
-            anosOrdenados.forEach((ano, idx) => {
-                // Previsto do ano
-                const previsto = cad
-                    .filter(f => f.anoDesc === ano)
-                    .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
-                
-                // Recebido (valores positivos) do ano
-                const recebido = execs
-                    .filter(e => {
-                        if (!e.data) return false;
-                        const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
-                        const valor = parseFloat(e.valor || e.valorRealizado) || 0;
-                        return anoExec === ano && valor > 0;
+
+            anosOrdenados.forEach(ano => {
+                // Previsto do ano (soma do cadastro financeiro por ano)
+                const previsto = (cad || [])
+                    .filter(f => Number(f.anoDesc) === Number(ano))
+                    .reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
+
+                // Recebido: soma de recursos gerais com data no ano e valor > 0
+                const recebido = (recs || [])
+                    .filter(r => r.data)
+                    .filter(r => {
+                        const anoRec = new Date(r.data + 'T00:00:00').getFullYear();
+                        const valor = parseNumber(r.valor) || 0;
+                        return anoRec === Number(ano) && valor > 0;
                     })
-                    .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
-                
-                // Devolvido (valores negativos) do ano
-                const devolvido = Math.abs(execs
-                    .filter(e => {
-                        if (!e.data) return false;
-                        const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
-                        const valor = parseFloat(e.valor || e.valorRealizado) || 0;
-                        return anoExec === ano && valor < 0;
+                    .reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
+
+                // Devolvido: soma absoluta dos recursos com valor negativo no ano
+                const devolvido = Math.abs((recs || [])
+                    .filter(r => r.data)
+                    .filter(r => {
+                        const anoRec = new Date(r.data + 'T00:00:00').getFullYear();
+                        const valor = parseNumber(r.valor) || 0;
+                        return anoRec === Number(ano) && valor < 0;
                     })
-                    .reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
-                
-                // A receber do ano anterior é o saldo acumulado do ano anterior
+                    .reduce((s, r) => s + (parseNumber(r.valor) || 0), 0));
+
                 const aReceberAnterior = saldoAcumulado;
-                
-                // Saldo = previsto + a receber anterior - recebido - devolvido
                 const saldo = previsto + aReceberAnterior - recebido - devolvido;
-                saldoAcumulado = saldo; // atualizar para próximo ano
-                
-                // Liquidação
+                saldoAcumulado = saldo;
+
                 const liquidacao = previsto > 0 ? ((recebido / previsto) * 100) : 0;
-                
+
                 html += `<tr>`;
                 html += `<td class="col-ano" style="font-weight: bold;">${ano}</td>`;
                 html += `<td class="col-valor">${previsto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
@@ -9026,7 +9017,7 @@
                 html += `<td class="col-percent">${liquidacao.toFixed(2)}%</td>`;
                 html += '</tr>';
             });
-            
+
             html += '</tbody></table>';
             resumoContainer.innerHTML = html;
         }
