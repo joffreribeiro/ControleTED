@@ -2606,16 +2606,7 @@
                             <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
-                <!-- Resumo adicional removido conforme solicitado --><div id="resumoGeralContainer" style="margin-top:1rem; display:flex; gap:1rem; flex-wrap:wrap;">
-  <div style="flex:1; min-width:280px;">
-    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados (meses)</h4>
-    <div id="resumoGeralMeses"></div>
-  </div>
-  <div style="flex:1; min-width:280px;">
-    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados (UP)</h4>
-    <div id="resumoGeralUPs"></div>
-  </div>
-</div>
+                <!-- Resumo adicional removido conforme solicitado -->
             </div>
 
                     
@@ -4355,20 +4346,6 @@
 
         // Renderizar resumo de TEDs assinados e encerrados por mês e por UP
         function renderResumoGeralAssinadosEncerrados() {
-            // Garantir que os containers existam para evitar erros com .innerHTML
-            (function(){
-                function ensureElement(id) {
-                    if (!document.getElementById(id)) {
-                        const wrapper = document.createElement("div");
-                        const parent = document.getElementById("dashboard") || document.body;
-                        wrapper.id = id;
-                        wrapper.className = "empty-state";
-                        parent.appendChild(wrapper);
-                    }
-                }
-                ensureElement("resumoGeralMeses");
-                ensureElement("resumoGeralUPs");
-            })();
             const teds = dados.teds || [];
             const signedByMonth = {}; // chave YYYY-MM
             const closedByMonth = {};
@@ -4418,12 +4395,7 @@
             months.sort((a,b) => b.localeCompare(a)); // desc
             const mesesHtml = [];
             if (months.length === 0) {
-                const mesesEl = document.getElementById(''resumoGeralMeses'');
-if (mesesEl) {
-    mesesEl.innerHTML = '<p class="empty-state" style="padding:0.5rem;
-} else {
-    console.warn(''Elemento resumoGeralMeses n�o encontrado no DOM.'');
-} color:var(--text);">Sem dados para exibir.</p>';
+                document.getElementById('resumoGeralMeses').innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
             } else {
                 mesesHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
                 mesesHtml.push('<thead><tr><th style="text-align:left; padding:6px;">Mês</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
@@ -4436,23 +4408,13 @@ if (mesesEl) {
                     mesesHtml.push(`<tr><td style="padding:6px;">${label}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
                 });
                 mesesHtml.push('</tbody></table>');
-                const mesesEl = document.getElementById(''resumoGeralMeses'');
-if (mesesEl) {
-    mesesEl.innerHTML = mesesHtml.join('');
-} else {
-    console.warn(''Elemento resumoGeralMeses n�o encontrado no DOM.'');
-}
+                document.getElementById('resumoGeralMeses').innerHTML = mesesHtml.join('');
             }
 
             // Montar tabela por UP
             const ups = Array.from(new Set([...Object.keys(signedByUp), ...Object.keys(closedByUp)])).sort();
             if (ups.length === 0) {
-                const upsEl = document.getElementById(''resumoGeralUPs'');
-if (upsEl) {
-    upsEl.innerHTML = '<p class="empty-state" style="padding:0.5rem;
-} else {
-    console.warn(''Elemento resumoGeralUPs n�o encontrado no DOM.'');
-} color:var(--text);">Sem dados para exibir.</p>';
+                document.getElementById('resumoGeralUPs').innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
             } else {
                 const upHtml = [];
                 upHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
@@ -4464,12 +4426,7 @@ if (upsEl) {
                     upHtml.push(`<tr><td style="padding:6px;">${u}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
                 });
                 upHtml.push('</tbody></table>');
-                const upsEl = document.getElementById(''resumoGeralUPs'');
-if (upsEl) {
-    upsEl.innerHTML = upHtml.join('');
-} else {
-    console.warn(''Elemento resumoGeralUPs n�o encontrado no DOM.'');
-}
+                document.getElementById('resumoGeralUPs').innerHTML = upHtml.join('');
             }
         }
 
