@@ -4417,13 +4417,9 @@
             const months = Array.from(new Set([...Object.keys(signedByMonth), ...Object.keys(closedByMonth)]));
             months.sort((a,b) => b.localeCompare(a)); // desc
             const mesesHtml = [];
+            const mesesEl = document.getElementById('resumoGeralMeses');
             if (months.length === 0) {
-                const mesesEl = document.getElementById(''resumoGeralMeses'');
-if (mesesEl) {
-    mesesEl.innerHTML = '<p class="empty-state" style="padding:0.5rem;
-} else {
-    console.warn(''Elemento resumoGeralMeses n�o encontrado no DOM.'');
-} color:var(--text);">Sem dados para exibir.</p>';
+                if (mesesEl) mesesEl.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
             } else {
                 mesesHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
                 mesesHtml.push('<thead><tr><th style="text-align:left; padding:6px;">Mês</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
@@ -4436,23 +4432,14 @@ if (mesesEl) {
                     mesesHtml.push(`<tr><td style="padding:6px;">${label}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
                 });
                 mesesHtml.push('</tbody></table>');
-                const mesesEl = document.getElementById(''resumoGeralMeses'');
-if (mesesEl) {
-    mesesEl.innerHTML = mesesHtml.join('');
-} else {
-    console.warn(''Elemento resumoGeralMeses n�o encontrado no DOM.'');
-}
+                if (mesesEl) mesesEl.innerHTML = mesesHtml.join('');
             }
 
             // Montar tabela por UP
             const ups = Array.from(new Set([...Object.keys(signedByUp), ...Object.keys(closedByUp)])).sort();
+            const upsEl = document.getElementById('resumoGeralUPs');
             if (ups.length === 0) {
-                const upsEl = document.getElementById(''resumoGeralUPs'');
-if (upsEl) {
-    upsEl.innerHTML = '<p class="empty-state" style="padding:0.5rem;
-} else {
-    console.warn(''Elemento resumoGeralUPs n�o encontrado no DOM.'');
-} color:var(--text);">Sem dados para exibir.</p>';
+                if (upsEl) upsEl.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
             } else {
                 const upHtml = [];
                 upHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
@@ -4464,12 +4451,7 @@ if (upsEl) {
                     upHtml.push(`<tr><td style="padding:6px;">${u}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
                 });
                 upHtml.push('</tbody></table>');
-                const upsEl = document.getElementById(''resumoGeralUPs'');
-if (upsEl) {
-    upsEl.innerHTML = upHtml.join('');
-} else {
-    console.warn(''Elemento resumoGeralUPs n�o encontrado no DOM.'');
-}
+                if (upsEl) upsEl.innerHTML = upHtml.join('');
             }
         }
 
