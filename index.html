@@ -2334,6 +2334,8 @@
         .tabela-padrao thead th,
         .table-freeze-wrapper thead th,
         .table-wrapper thead th { color: #ffffff !important; }
+        /* Exceção: tabela de resumo assinados/encerrados -> fonte escura */
+        #resumoGeralGrid table thead th { color: var(--text) !important; background: transparent !important; }
         /* Também garantir contraste em cabeçalhos fixos/meses do Gantt */
         .gantt-header th, .gantt-head th { color: #ffffff !important; }
         /* Regras mais específicas para a aba 'Detalhes' (sobrescreve seletores com IDs + !important) */
