@@ -166,34 +166,20 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.35); border-radius: 999px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.45); }
-        [data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.35); }
-        [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(167,139,250,0.45); }
-
-        /* Navbar — glassmorphism moderno */
+        /* Navbar — modernizado: badge do ícone, fundo levemente translúcido e espaçamento reduzido */ 
         nav {
-            background: rgba(255,255,255,0.82);
-            backdrop-filter: saturate(180%) blur(16px);
-            -webkit-backdrop-filter: saturate(180%) blur(16px);
-            box-shadow: 0 1px 0 rgba(0,0,0,0.06), 0 4px 20px rgba(15,23,42,0.04);
-            padding: 0.65rem 1.25rem;
+            background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+            backdrop-filter: blur(6px);
+            box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+            padding: 0.75rem 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 110;
-            border-bottom: 1px solid rgba(0,0,0,0.04);
+            border-bottom: 1px solid rgba(16,24,40,0.04);
             transition: var(--transition);
-        }
-        [data-theme="dark"] nav {
-            background: rgba(15,23,42,0.82);
-            border-bottom-color: rgba(255,255,255,0.06);
-            box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 4px 20px rgba(0,0,0,0.3);
         }
 
         nav h1 {
@@ -295,36 +281,25 @@
 
         /* Theme Toggle Button */
         .theme-toggle {
-            background: rgba(37,99,235,0.08) !important;
-            color: #2563eb !important;
+            background: var(--bg-alt) !important;
+            color: var(--text) !important;
             padding: var(--space-2) !important;
             border-radius: var(--radius-full) !important;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 38px;
-            height: 38px;
-            transition: all 0.3s cubic-bezier(.4,0,.2,1) !important;
+            width: 40px;
+            height: 40px;
         }
 
         .theme-toggle:hover {
-            background: rgba(124,58,237,0.12) !important;
-            color: #7c3aed !important;
-            transform: rotate(20deg) scale(1.08) !important;
+            background: var(--border) !important;
+            transform: rotate(15deg) !important;
         }
 
         .theme-toggle i {
             width: 20px;
             height: 20px;
-        }
-
-        [data-theme="dark"] .theme-toggle {
-            background: rgba(124,58,237,0.12) !important;
-            color: #a78bfa !important;
-        }
-        [data-theme="dark"] .theme-toggle:hover {
-            background: rgba(124,58,237,0.22) !important;
-            color: #c4b5fd !important;
         }
 
         .theme-icon-dark {
@@ -349,18 +324,12 @@
         /* Abas */
         .tabs {
             display: flex;
-            gap: 0.35rem;
-            margin-bottom: 1.5rem;
-            padding: 0.3rem;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            padding: 0.35rem;
             overflow-x: auto;
             scrollbar-width: thin;
             border-bottom: none;
-            background: var(--bg-alt);
-            border-radius: 999px;
-            width: fit-content;
-        }
-        [data-theme="dark"] .tabs {
-            background: rgba(30,41,59,0.6);
         }
 
         .tab-btn i {
@@ -451,22 +420,15 @@
         }
 
         .tab-btn.active {
-            background: var(--bg-primary);
+            background: linear-gradient(90deg, rgba(59,130,246,0.12), rgba(59,130,246,0.06));
             color: var(--primary);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
-            transform: none;
-        }
-        [data-theme="dark"] .tab-btn.active {
-            background: rgba(59,130,246,0.15);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 18px rgba(59,130,246,0.06);
+            transform: translateY(-2px);
         }
 
-        .tab-btn:hover:not(.active) {
-            background: rgba(0,0,0,0.04);
+        .tab-btn:hover {
+            background: var(--light);
             color: var(--primary-dark);
-        }
-        [data-theme="dark"] .tab-btn:hover:not(.active) {
-            background: rgba(255,255,255,0.06);
         }
 
         .tab-content {
@@ -483,40 +445,28 @@
             display: block;
         }
 
-        /* Cards — moderno com borda sutil e sombra em camadas */
+        /* Cards */
         .card {
             background: var(--bg-primary);
-            border-radius: 1rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.03);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
             padding: var(--space-6);
             margin-bottom: var(--space-6);
-            border: 1px solid var(--border-light);
-            transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+            border: 1px solid var(--border);
+            transition: var(--transition);
         }
 
         .card:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.06);
-            border-color: var(--border);
+            box-shadow: var(--shadow);
+            border-color: var(--border-dark);
         }
 
         .card h2 {
             color: var(--text);
             margin-bottom: var(--space-4);
-            font-size: 1.35rem;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .card h2::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 1.2em;
-            border-radius: 4px;
-            background: linear-gradient(180deg, #2563eb, #7c3aed);
-            flex-shrink: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
         }
 
         .card h3 {
@@ -609,41 +559,37 @@
         .exec-row.animate { animation: rowEnter 360ms cubic-bezier(.2,.9,.2,1) forwards; }
 
         .btn-primary {
-            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            background: var(--primary-gradient);
             color: white;
-            box-shadow: 0 2px 8px rgba(37,99,235,0.25);
-            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+            background: var(--primary-dark);
             transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(37,99,235,0.35);
+            box-shadow: var(--shadow);
         }
 
         .btn-secondary {
-            background: var(--bg-alt);
-            color: var(--text);
-            border: 1.5px solid var(--border);
-            border-radius: 0.5rem;
+            background: var(--light);
+            color: var(--secondary);
+            border: 1px solid var(--border);
         }
 
         .btn-secondary:hover {
             background: var(--border);
-            border-color: var(--border-dark);
             transform: translateY(-1px);
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: var(--danger);
             color: white;
-            border-radius: 0.5rem;
         }
 
         .btn-danger:hover {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            background: #dc2626;
             transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(239,68,68,0.3);
+            box-shadow: var(--shadow);
         }
 
         .btn-small {
@@ -668,22 +614,21 @@
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 0.6rem 0.85rem;
-            border: 1.5px solid var(--border);
-            border-radius: 0.5rem;
-            font-size: 0.9rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.95rem;
             font-family: inherit;
-            background: var(--bg-primary);
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-            color: var(--text);
+            background: white;
+            transition: var(--transition);
         }
 
         .form-group input:focus,
         .form-group textarea:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #7c3aed;
-            box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
 
         .form-group input:hover,
@@ -730,72 +675,51 @@
             margin-bottom: 0.5rem;
         }
 
-        /* Cartões compactos do Resumo Geral — estilo moderno com borda gradiente */
+        /* Cartões compactos do Resumo Geral */
         .stat-card {
-            background: var(--bg-primary);
-            padding: 0.85rem 0.75rem;
-            border-radius: 0.85rem;
+            background: white;
+            padding: 0.6rem;
+            border-radius: var(--radius-md);
             border: 1px solid var(--border-light);
             text-align: center;
-            transition: all 0.22s ease;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-            min-height: 64px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-        /* Barra superior colorida */
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #3b82f6, #7c3aed);
-            border-radius: 3px 3px 0 0;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+            min-height: 56px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
         }
 
         .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 16px rgba(59,130,246,0.1);
-            border-color: rgba(59,130,246,0.2);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .stat-card .label {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-bottom: 0.3rem;
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            font-weight: 700;
+            letter-spacing: 0.04em;
+            font-weight: 600;
         }
 
         .stat-card .value {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #1e40af, #7c3aed);
+            font-size: 1.45rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        [data-theme="dark"] .stat-card .value {
-            background: linear-gradient(135deg, #60a5fa, #c4b5fd);
-            -webkit-background-clip: text;
-            background-clip: text;
-        }
 
-        /* Badge — moderno com bordas suaves */
+        /* Badge */
         .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            padding: 0.2rem 0.7rem;
-            border-radius: 999px;
-            font-size: 0.78rem;
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
             font-weight: 600;
-            letter-spacing: 0.01em;
-            white-space: nowrap;
         }
 
         .badge-planejamento {
@@ -959,23 +883,16 @@
             gap: 1rem;
         }
         .proxima-col {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-light);
-            border-radius: 0.85rem;
-            padding: 0.85rem;
+            background: #f9fafb;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
             min-height: 90px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-            transition: all 0.2s ease;
-        }
-        .proxima-col:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-            border-color: var(--border);
         }
         .proxima-col h4 {
-            font-size: 0.9rem;
-            border-bottom: 1px solid var(--border-light);
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--border);
             padding-bottom: 0.5rem;
-            font-weight: 700;
         }
         @media (max-width: 1000px) {
             .proximas-acoes-grid {
@@ -1014,35 +931,25 @@
         }
 
         .modal-content {
-            background: rgba(255,255,255,0.96);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 1.1rem;
+            background: white;
+            border-radius: var(--radius-xl);
             padding: 2rem;
             max-width: 500px;
             width: 90%;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.06);
-            animation: modalSlideIn 0.35s cubic-bezier(.4,0,.2,1);
-            border: 1px solid rgba(0,0,0,0.04);
+            box-shadow: var(--shadow-lg);
+            animation: modalSlideIn 0.3s ease;
         }
 
         @keyframes modalSlideIn {
-            from { transform: translateY(-16px) scale(0.97); opacity: 0; }
-            to { transform: translateY(0) scale(1); opacity: 1; }
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-header {
-            font-size: 1.35rem;
-            font-weight: 800;
+            font-size: 1.5rem;
+            font-weight: 700;
             margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        [data-theme="dark"] .modal-content {
-            background: rgba(15,23,42,0.96);
-            border-color: rgba(255,255,255,0.06);
+            color: var(--secondary);
         }
 
         .modal-footer {
@@ -1064,12 +971,8 @@
             overflow-x: auto;
             position: relative;
             border: 1px solid var(--border-light);
-            border-radius: 0.85rem;
+            border-radius: var(--radius);
             background: white;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        [data-theme="dark"] .table-wrapper {
-            background: var(--bg-primary);
         }
 
         /* Indicador de scroll horizontal */
@@ -2288,15 +2191,14 @@
             height: 32px;
             padding: 0;
             border: none;
-            border-radius: 0.5rem;
+            border-radius: var(--radius);
             cursor: pointer;
             font-size: 0.9rem;
-            transition: all 0.2s cubic-bezier(.4,0,.2,1);
+            transition: var(--transition);
             background: transparent;
         }
         .btn-icon:hover {
-            transform: scale(1.12);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transform: scale(1.1);
         }
         .btn-icon.edit {
             background: var(--warning-light);
@@ -2326,20 +2228,16 @@
             gap: 10px;
         }
         .toast {
-            padding: 0.75rem 1.15rem;
-            border-radius: 0.85rem;
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 4px rgba(0,0,0,0.06);
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            background: white;
+            box-shadow: var(--shadow-lg);
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            animation: toastSlideIn 0.35s cubic-bezier(.4,0,.2,1);
-            max-width: 380px;
-            font-size: 0.88rem;
-            font-weight: 500;
-            border: 1px solid rgba(0,0,0,0.04);
+            gap: 10px;
+            animation: toastSlideIn 0.3s ease;
+            max-width: 350px;
+            font-size: 0.9rem;
         }
         .toast.success {
             border-left: 4px solid var(--success);
@@ -2351,12 +2249,7 @@
             border-left: 4px solid var(--warning);
         }
         .toast.info {
-            border-left: 4px solid #7c3aed;
-        }
-        [data-theme="dark"] .toast {
-            background: rgba(30,41,59,0.92);
-            border-color: rgba(255,255,255,0.06);
-            color: #e2e8f0;
+            border-left: 4px solid var(--primary);
         }
         @keyframes toastSlideIn {
             from { transform: translateX(100%); opacity: 0; }
@@ -3040,11 +2933,16 @@
                             <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
-                <!-- Resumo Assinados / Encerrados unificado -->
-                <div id="resumoGeralContainer" style="margin-top:1rem;">
-                    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados por Mês e UP</h4>
-                    <div id="resumoGeralUnificado"></div>
-                </div>
+                <!-- Resumo adicional removido conforme solicitado --><div id="resumoGeralContainer" style="margin-top:1rem; display:flex; gap:1rem; flex-wrap:wrap;">
+  <div style="flex:1; min-width:280px;">
+    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados (meses)</h4>
+    <div id="resumoGeralMeses"></div>
+  </div>
+  <div style="flex:1; min-width:280px;">
+    <h4 style="margin:0 0 0.5rem 0;color:var(--primary);">Assinados / Encerrados (UP)</h4>
+    <div id="resumoGeralUPs"></div>
+  </div>
+</div>
             </div>
 
                     
@@ -4624,21 +4522,27 @@
             initLucideIcons();
         }
 
-        // Renderizar resumo de TEDs assinados e encerrados por mês e por UP (unificado)
+        // Renderizar resumo de TEDs assinados e encerrados por mês e por UP
         function renderResumoGeralAssinadosEncerrados() {
-            // Garantir que o container exista
+            // Garantir que os containers existam para evitar erros com .innerHTML
             (function(){
-                if (!document.getElementById("resumoGeralUnificado")) {
-                    const wrapper = document.createElement("div");
-                    const parent = document.getElementById("dashboard") || document.body;
-                    wrapper.id = "resumoGeralUnificado";
-                    wrapper.className = "empty-state";
-                    parent.appendChild(wrapper);
+                function ensureElement(id) {
+                    if (!document.getElementById(id)) {
+                        const wrapper = document.createElement("div");
+                        const parent = document.getElementById("dashboard") || document.body;
+                        wrapper.id = id;
+                        wrapper.className = "empty-state";
+                        parent.appendChild(wrapper);
+                    }
                 }
+                ensureElement("resumoGeralMeses");
+                ensureElement("resumoGeralUPs");
             })();
             const teds = dados.teds || [];
-            // Estrutura: { 'YYYY-MM': { signed: { 'UP': count }, closed: { 'UP': count } } }
-            const byMonth = {};
+            const signedByMonth = {}; // chave YYYY-MM
+            const closedByMonth = {};
+            const signedByUp = {};
+            const closedByUp = {};
             const hoje = new Date();
 
             function monthKeyFromDate(d) {
@@ -4647,82 +4551,77 @@
                 return `${y}-${m}`;
             }
 
-            function ensureMonth(k) {
-                if (!byMonth[k]) byMonth[k] = { signed: {}, closed: {}, totalSigned: 0, totalClosed: 0 };
-            }
-
             teds.forEach(t => {
-                const up = (t.upResponsavel || t.up || 'Sem UP');
-
-                // Assinatura -> usar inicioVigencia
+                // Assinatura do TED -> usar inicioVigencia (data de assinatura)
                 const inicioNorm = normalizarData(t.inicioVigencia);
                 if (inicioNorm) {
                     const dt = new Date(inicioNorm + 'T00:00:00');
                     if (!isNaN(dt.getTime())) {
                         const k = monthKeyFromDate(dt);
-                        ensureMonth(k);
-                        byMonth[k].signed[up] = (byMonth[k].signed[up] || 0) + 1;
-                        byMonth[k].totalSigned++;
+                        signedByMonth[k] = (signedByMonth[k] || 0) + 1;
+                        const up = (t.upResponsavel || t.up || 'Sem UP');
+                        signedByUp[up] = (signedByUp[up] || 0) + 1;
                     }
                 }
 
-                // Encerrados -> dataEntregaDenuncia / dataEntrega; fallback fimVigencia
+                // Encerrados -> considerar 'dataEntregaDenuncia' como data de encerramento principal; fallback para fimVigencia
                 const entregaNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
                 let encerramentoNorm = entregaNorm;
                 if (!encerramentoNorm) {
                     encerramentoNorm = normalizarData(t.fimVigencia || '');
                 }
+
                 if (encerramentoNorm) {
                     const fimDt = new Date(encerramentoNorm + 'T00:00:00');
                     if (!isNaN(fimDt.getTime()) && fimDt <= hoje) {
                         const k2 = monthKeyFromDate(fimDt);
-                        ensureMonth(k2);
-                        byMonth[k2].closed[up] = (byMonth[k2].closed[up] || 0) + 1;
-                        byMonth[k2].totalClosed++;
+                        closedByMonth[k2] = (closedByMonth[k2] || 0) + 1;
+                        const up2 = (t.upResponsavel || t.up || 'Sem UP');
+                        closedByUp[up2] = (closedByUp[up2] || 0) + 1;
                     }
                 }
             });
 
-            const months = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
-            const el = document.getElementById('resumoGeralUnificado');
-
+            // Montar tabela por meses (união de chaves)
+            const months = Array.from(new Set([...Object.keys(signedByMonth), ...Object.keys(closedByMonth)]));
+            months.sort((a,b) => b.localeCompare(a)); // desc
+            const mesesHtml = [];
+            const mesesEl = document.getElementById('resumoGeralMeses');
             if (months.length === 0) {
-                if (el) el.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
-                return;
+                if (mesesEl) mesesEl.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+            } else {
+                mesesHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
+                mesesHtml.push('<thead><tr><th style="text-align:left; padding:6px;">Mês</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
+                mesesHtml.push('<tbody>');
+                months.forEach(k => {
+                    const partes = k.split('-');
+                    const label = `${partes[1]}/${partes[0]}`;
+                    const a = signedByMonth[k] || 0;
+                    const c = closedByMonth[k] || 0;
+                    mesesHtml.push(`<tr><td style="padding:6px;">${label}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
+                });
+                mesesHtml.push('</tbody></table>');
+                if (mesesEl) mesesEl.innerHTML = mesesHtml.join('');
             }
 
-            function formatUps(upObj) {
-                const entries = Object.entries(upObj).sort((a, b) => a[0].localeCompare(b[0]));
-                if (entries.length === 0) return '—';
-                return entries.map(([up, n]) => `<span style="white-space:nowrap;">${up}${n > 1 ? ' (' + n + ')' : ''}</span>`).join(', ');
+            // Montar tabela por UP
+            const ups = Array.from(new Set([...Object.keys(signedByUp), ...Object.keys(closedByUp)])).sort();
+            const upsEl = document.getElementById('resumoGeralUPs');
+            if (ups.length === 0) {
+                if (upsEl) upsEl.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+            } else {
+                const upHtml = [];
+                upHtml.push('<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">');
+                upHtml.push('<thead><tr><th style="text-align:left; padding:6px;">UP</th><th style="text-align:right; padding:6px;">Assinados</th><th style="text-align:right; padding:6px;">Encerrados</th></tr></thead>');
+                upHtml.push('<tbody>');
+                ups.forEach(u => {
+                    const a = signedByUp[u] || 0;
+                    const c = closedByUp[u] || 0;
+                    upHtml.push(`<tr><td style="padding:6px;">${u}</td><td style="padding:6px; text-align:right;">${a}</td><td style="padding:6px; text-align:right;">${c}</td></tr>`);
+                });
+                upHtml.push('</tbody></table>');
+                if (upsEl) upsEl.innerHTML = upHtml.join('');
             }
-
-            const html = [];
-            html.push('<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">');
-            html.push('<thead><tr>');
-            html.push('<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border);">Mês</th>');
-            html.push('<th style="text-align:center; padding:6px 8px; border-bottom:2px solid var(--border); min-width:60px;">Assinados</th>');
-            html.push('<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border);">UPs (Assinados)</th>');
-            html.push('<th style="text-align:center; padding:6px 8px; border-bottom:2px solid var(--border); min-width:60px;">Encerrados</th>');
-            html.push('<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border);">UPs (Encerrados)</th>');
-            html.push('</tr></thead><tbody>');
-
-            months.forEach(k => {
-                const partes = k.split('-');
-                const label = `${partes[1]}/${partes[0]}`;
-                const info = byMonth[k];
-                const rowBg = info.totalSigned === 0 && info.totalClosed === 0 ? '' : '';
-                html.push(`<tr style="${rowBg}">`);
-                html.push(`<td style="padding:6px 8px; border-bottom:1px solid var(--border-light); font-weight:500;">${label}</td>`);
-                html.push(`<td style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border-light); color:var(--success-dark); font-weight:600;">${info.totalSigned || '—'}</td>`);
-                html.push(`<td style="padding:6px 8px; border-bottom:1px solid var(--border-light); color:var(--text-secondary); font-size:0.8rem;">${info.totalSigned ? formatUps(info.signed) : '—'}</td>`);
-                html.push(`<td style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border-light); color:var(--danger-dark); font-weight:600;">${info.totalClosed || '—'}</td>`);
-                html.push(`<td style="padding:6px 8px; border-bottom:1px solid var(--border-light); color:var(--text-secondary); font-size:0.8rem;">${info.totalClosed ? formatUps(info.closed) : '—'}</td>`);
-                html.push('</tr>');
-            });
-
-            html.push('</tbody></table>');
-            if (el) el.innerHTML = html.join('');
         }
 
         // Render upcoming deliveries (execFisicas) within next 30 days
