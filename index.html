@@ -2935,10 +2935,14 @@
                             <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
-                <!-- Resumo Assinados / Encerrados (Mês x UP) -->
+                <!-- Resumo Assinados / Encerrados (Mês × UP) -->
                 <div id="resumoGeralContainer" style="margin-top:1rem;">
                     <h4 style="margin:0 0 0.25rem 0;color:var(--primary);">Assinados / Encerrados (Mês × UP)</h4>
                     <p style="font-size:0.75rem; color:var(--text-light); margin:0 0 0.5rem 0;"><span style="color:var(--success-dark); font-weight:600;">Assinados</span> / <span style="color:var(--danger-dark); font-weight:600;">Encerrados</span></p>
+                    <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
+                        <button class="btn" onclick="showRelatorioMensal()">Relatório Mensal</button>
+                    </div>
+                    <div id="relatorioMensalContainer" style="margin-top:0.5rem;"></div>
                     <div id="resumoGeralGrid" style="overflow-x:auto;"></div>
                 </div>
             </div>
@@ -4663,6 +4667,152 @@
 
             h.push('</tbody></table>');
             if (el) el.innerHTML = h.join('');
+        }
+
+        // === Relatório Mensal: vigentes e encerrados por mês ===
+        function buildRelatorioData() {
+            const tedsList = dados.teds || [];
+            if (!tedsList || tedsList.length === 0) return { months: [], vigentes: {}, encerrados: {} };
+            const monthsSet = new Set();
+            const nomeMeses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            const monthKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+
+            // coletar intervalo mínimo e máximo
+            let minDate = null;
+            let maxDate = null;
+
+            const processed = tedsList.map(t => {
+                const id = t.id;
+                const num = t.numTed || t.numero || ('ID ' + id);
+                const iniNorm = normalizarData(t.inicioVigencia);
+                const inicio = iniNorm ? new Date(iniNorm + 'T00:00:00') : null;
+                const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
+                const encDate = encNorm ? new Date(encNorm + 'T00:00:00') : null;
+                const fimNorm = normalizarData(t.fimVigencia || '');
+                const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                const fimEfet = calcularFimComAditivos(t) || fimOrig || null;
+
+                // determinar fim real: encerramento antecipado tem prioridade; se não houver fim, tratar como até hoje (ativo)
+                let fimReal = null;
+                if (encDate && !isNaN(encDate.getTime())) {
+                    if (fimEfet && !isNaN(fimEfet.getTime())) {
+                        fimReal = encDate < fimEfet ? encDate : fimEfet;
+                    } else {
+                        fimReal = encDate;
+                    }
+                } else if (fimEfet && !isNaN(fimEfet.getTime())) {
+                    fimReal = fimEfet;
+                } else {
+                    // sem fim definido: considerar até hoje para efeitos de relatório
+                    fimReal = new Date();
+                }
+
+                if (inicio && !isNaN(inicio.getTime())) {
+                    if (!minDate || inicio < minDate) minDate = inicio;
+                }
+                if (fimReal && !isNaN(fimReal.getTime())) {
+                    if (!maxDate || fimReal > maxDate) maxDate = fimReal;
+                }
+
+                return { id, num, inicio, fimReal, encDate };
+            });
+
+            if (!minDate) return { months: [], vigentes: {}, encerrados: {} };
+            const today = new Date();
+            if (!maxDate || maxDate < today) maxDate = today;
+
+            // gerar lista de meses do maxDate até minDate (desc)
+            const start = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+            const end = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+            const months = [];
+            const cur = new Date(start);
+            while (cur >= end) {
+                months.push(monthKey(cur));
+                cur.setMonth(cur.getMonth() - 1);
+            }
+
+            // inicializar containers
+            const vigentes = {};
+            const encerrados = {};
+            months.forEach(mk => { vigentes[mk] = []; encerrados[mk] = []; });
+
+            // preencher
+            months.forEach(mk => monthsSet.add(mk));
+            processed.forEach(p => {
+                if (!p.inicio || isNaN(p.inicio.getTime())) return;
+                months.forEach(mk => {
+                    const parts = mk.split('-');
+                    const y = parseInt(parts[0], 10); const m = parseInt(parts[1], 10);
+                    const ultimoDia = new Date(y, m, 0);
+                    // vigência ao FECHAMENTO do mês
+                    if (p.inicio <= ultimoDia && p.fimReal >= ultimoDia) {
+                        vigentes[mk].push({ id: p.id, num: p.num });
+                    }
+                });
+
+                // encerrados: somente pela data de entrega/denúncia
+                if (p.encDate && !isNaN(p.encDate.getTime())) {
+                    const encKey = monthKey(p.encDate);
+                    if (monthsSet.has(encKey)) {
+                        encerrados[encKey].push({ id: p.id, num: p.num });
+                    }
+                }
+            });
+
+            return { months, vigentes, encerrados, nomeMeses };
+        }
+
+        function generateRelatorioHTML(data) {
+            if (!data || !data.months || data.months.length === 0) return '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para gerar relatório.</p>';
+            const h = [];
+            h.push('<div class="card">');
+            h.push('<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;"><h3 style="margin:0; font-size:1rem">Relatório Mensal</h3><div><button class="btn" onclick="downloadRelatorioCSV()">Exportar CSV</button> <button class="btn" onclick="document.getElementById(\'relatorioMensalContainer\').innerHTML = \'' + '' + '\'">Fechar</button></div></div>');
+            h.push('<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">');
+            h.push('<thead><tr><th style="text-align:left; padding:6px; border-bottom:2px solid var(--border);">Mês</th><th style="text-align:left; padding:6px; border-bottom:2px solid var(--border);">Vigentes</th><th style="text-align:left; padding:6px; border-bottom:2px solid var(--border);">Encerrados</th></tr></thead>');
+            h.push('<tbody>');
+
+            data.months.forEach(mk => {
+                const p = mk.split('-');
+                const mesLabel = data.nomeMeses[parseInt(p[1], 10) - 1] + '/' + p[0];
+                const vig = (data.vigentes[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;">TED ${x.num}</a>`).join(', ');
+                const enc = (data.encerrados[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;">TED ${x.num}</a>`).join(', ');
+                h.push(`<tr><td style="padding:6px; vertical-align:top; font-weight:600;">${mesLabel}</td><td style="padding:6px;">${vig || '<span style=\"color:var(--text-muted);\">—</span>'}</td><td style="padding:6px;">${enc || '<span style=\"color:var(--text-muted);\">—</span>'}</td></tr>`);
+            });
+
+            h.push('</tbody></table></div>');
+            return h.join('');
+        }
+
+        function showRelatorioMensal() {
+            const data = buildRelatorioData();
+            window._lastRelatorioData = data;
+            const el = document.getElementById('relatorioMensalContainer');
+            if (el) el.innerHTML = generateRelatorioHTML(data);
+            setTimeout(() => { const node = document.getElementById('relatorioMensalContainer'); if (node) node.scrollIntoView({ behavior: 'smooth' }); }, 50);
+        }
+
+        function downloadRelatorioCSV() {
+            const data = window._lastRelatorioData || buildRelatorioData();
+            if (!data || !data.months) return alert('Nenhum dado para exportar');
+            const rows = [];
+            rows.push(['Mês','Vigentes','Encerrados']);
+            data.months.forEach(mk => {
+                const p = mk.split('-');
+                const mesLabel = data.nomeMeses[parseInt(p[1],10)-1] + '/' + p[0];
+                const vig = (data.vigentes[mk] || []).map(x => `TED ${x.num}`).join(' | ');
+                const enc = (data.encerrados[mk] || []).map(x => `TED ${x.num}`).join(' | ');
+                rows.push([mesLabel, vig, enc]);
+            });
+            const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'relatorio_mensal_teds.csv';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
         }
 
         // Render upcoming deliveries (execFisicas) within next 30 days
