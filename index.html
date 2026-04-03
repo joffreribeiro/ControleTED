@@ -2281,6 +2281,13 @@
         .table-wrapper thead th { color: #ffffff !important; }
         /* Também garantir contraste em cabeçalhos fixos/meses do Gantt */
         .gantt-header th, .gantt-head th { color: #ffffff !important; }
+        /* Regras mais específicas para a aba 'Detalhes' (sobrescreve seletores com IDs + !important) */
+        #detalhes #tedsDetalheContainer .tabela-padrao thead th,
+        #detalhes #tedsDetalheContainer .tabela-padrao thead th *,
+        #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze,
+        #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze * {
+            color: #ffffff !important;
+        }
     </style>
     </head>
     <body>
