@@ -1055,13 +1055,6 @@
             z-index: 1;
         }
 
-            color: #ffffff !important;
-            font-size: 1.45rem;
-            font-weight: 700;
-            margin: 0;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
-            letter-spacing: 0.2px;
-        }
 
         .ted-info-title-code {
             color: rgba(219, 234, 254, 0.95);
@@ -4342,7 +4335,10 @@
                 if (rel && Array.isArray(rel.months) && rel.months.length > 0) {
                     const mostRecent = rel.months[0]; // meses já vêm em ordem decrescente
                     if (rel.vigentes && typeof rel.vigentes[mostRecent] !== 'undefined') {
-                        tedsEmExecucao = rel.vigentes[mostRecent];
+                        const v = rel.vigentes[mostRecent];
+                        if (Array.isArray(v)) tedsEmExecucao = v.length;
+                        else if (typeof v === 'number') tedsEmExecucao = v;
+                        else if (v && typeof v === 'object' && typeof v.length === 'number') tedsEmExecucao = v.length;
                     }
                 }
             } catch (e) {
