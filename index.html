@@ -4334,30 +4334,42 @@
         // Atualizar Dashboard
         function atualizarDashboard() {
             document.getElementById('totalTeds').textContent = dados.teds.length;
-            const tedsEmExecucao = dados.teds.filter(t => {
-                const hoje = new Date();
-                const inicioNorm = normalizarData(t.inicioVigencia);
-                if (!inicioNorm) return false;
-                const inicio = new Date(inicioNorm + 'T00:00:00');
-                if (isNaN(inicio.getTime())) return false;
-
-                // calcular fim efetivo (aditivos ou fimVigencia)
-                const fimAditivo = calcularFimComAditivos(t);
-                const fimNorm = normalizarData(t.fimVigencia || '');
-                const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
-                const fimEfetivo = (fimAditivo && !isNaN(fimAditivo.getTime())) ? fimAditivo : (fimOrig && !isNaN(fimOrig.getTime()) ? fimOrig : null);
-
-                // considerar dataEntregaDenuncia/dataEntrega como fim real (prevalece)
-                const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
-                const encDt = encNorm ? new Date(encNorm + 'T00:00:00') : null;
-                const fimReal = (encDt && !isNaN(encDt.getTime())) ? encDt : fimEfetivo;
-
-                if (!fimReal) {
-                    // sem data de fim definida: considerar em execução se já iniciou
-                    return hoje >= inicio;
+            // Tentar alinhar o cartão "Em Execução" com a linha "Vigentes" da tabela.
+            // Obter os dados do relatório (meses desc + mapa de vigentes por mês)
+            let tedsEmExecucao = 0;
+            try {
+                const rel = buildRelatorioData();
+                if (rel && Array.isArray(rel.months) && rel.months.length > 0) {
+                    const mostRecent = rel.months[0]; // meses já vêm em ordem decrescente
+                    if (rel.vigentes && typeof rel.vigentes[mostRecent] !== 'undefined') {
+                        tedsEmExecucao = rel.vigentes[mostRecent];
+                    }
                 }
-                return hoje >= inicio && hoje <= fimReal;
-            }).length;
+            } catch (e) {
+                console.warn('buildRelatorioData error', e);
+            }
+
+            // Fallback: se não conseguiu determinar pelo relatório, calcular pelo critério temporal atual
+            if (!tedsEmExecucao) {
+                tedsEmExecucao = dados.teds.filter(t => {
+                    const hoje = new Date();
+                    const inicioNorm = normalizarData(t.inicioVigencia);
+                    if (!inicioNorm) return false;
+                    const inicio = new Date(inicioNorm + 'T00:00:00');
+                    if (isNaN(inicio.getTime())) return false;
+
+                    const fimAditivo = calcularFimComAditivos(t);
+                    const fimNorm = normalizarData(t.fimVigencia || '');
+                    const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                    const fimEfetivo = (fimAditivo && !isNaN(fimAditivo.getTime())) ? fimAditivo : (fimOrig && !isNaN(fimOrig.getTime()) ? fimOrig : null);
+                    const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
+                    const encDt = encNorm ? new Date(encNorm + 'T00:00:00') : null;
+                    const fimReal = (encDt && !isNaN(encDt.getTime())) ? encDt : fimEfetivo;
+
+                    if (!fimReal) return hoje >= inicio;
+                    return hoje >= inicio && hoje <= fimReal;
+                }).length;
+            }
             document.getElementById('tedsExecucao').textContent = tedsEmExecucao;
 
             const valorTotal = dados.teds.reduce((sum, t) => sum + t.valorTed, 0);
