@@ -4585,37 +4585,6 @@
                 return;
             }
 
-            // TEDs vigentes por mês (considera encerramento antecipado)
-            function countVigentes(mk) {
-                const p = mk.split('-');
-                const y = parseInt(p[0]); const m = parseInt(p[1]);
-                const primeiroDia = new Date(y, m - 1, 1);
-                const ultimoDia = new Date(y, m, 0);
-                let count = 0;
-                teds.forEach(t => {
-                    const iniNorm = normalizarData(t.inicioVigencia);
-                    if (!iniNorm) return;
-                    const ini = new Date(iniNorm + 'T00:00:00');
-                    if (isNaN(ini.getTime())) return;
-                    const fimNorm = normalizarData(t.fimVigencia);
-                    const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
-                    const fimEfet = calcularFimComAditivos(t) || fimOrig;
-                    if (!fimEfet || isNaN(fimEfet.getTime())) return;
-                    // Se tem data de entrega/denúncia, essa é a data real de encerramento
-                    const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
-                    let fimReal = fimEfet;
-                    if (encNorm) {
-                        const encDt = new Date(encNorm + 'T00:00:00');
-                        if (!isNaN(encDt.getTime())) {
-                            fimReal = encDt; // data de entrega/denúncia sempre prevalece
-                        }
-                    }
-                    // Vigente no fechamento do mês: início <= último dia E fim real >= último dia
-                    if (ini <= ultimoDia && fimReal >= ultimoDia) count++;
-                });
-                return count;
-            }
-
             function monthLabel(mk) {
                 const p = mk.split('-');
                 return nomeMeses[parseInt(p[1]) - 1] + '/' + p[0];
@@ -4654,12 +4623,27 @@
                 h.push('</tr>');
             });
 
-            // Linha de Vigentes
+            // Linha de Vigentes (saldo acumulado: anterior + assinados - encerrados)
+            // Ordenar meses cronologicamente (asc) para calcular o saldo
+            const monthsAsc = months.slice().sort((a, b) => a.localeCompare(b));
+            const vigentesMap = {};
+            let saldo = 0;
+            monthsAsc.forEach(mk => {
+                let totalSigned = 0;
+                let totalClosed = 0;
+                ups.forEach(u => {
+                    const cell = (grid[mk] && grid[mk][u]) ? grid[mk][u] : { signed: 0, closed: 0 };
+                    totalSigned += cell.signed;
+                    totalClosed += cell.closed;
+                });
+                saldo += totalSigned - totalClosed;
+                vigentesMap[mk] = saldo;
+            });
+
             h.push('<tr style="border-top:2px solid var(--border);">');
             h.push(`<td style="${tdL} font-weight:600; color:var(--primary);">Vigentes</td>`);
             months.forEach(mk => {
-                const v = countVigentes(mk);
-                h.push(`<td style="${tdC} font-weight:600; color:var(--primary);">${v}</td>`);
+                h.push(`<td style="${tdC} font-weight:600; color:var(--primary);">${vigentesMap[mk]}</td>`);
             });
             h.push('</tr>');
 
