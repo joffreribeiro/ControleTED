@@ -9034,7 +9034,6 @@
             anosOrdenados.forEach(ano => {
                 const previsto = previstoByAno[ano] || 0;
                 const recebido = recebidoByAno[ano] || 0;
-                const pct = previsto > 0 ? (received := recebido, (received / previsto) * 100) : 0; // eslint-disable-line no-unused-vars
                 const pctVal = previsto > 0 ? (recebido / previsto) * 100 : 0;
                 html += `<td style="text-align:right;">${fmtPct(pctVal)}</td>`;
             });

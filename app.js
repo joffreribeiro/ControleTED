@@ -11,6 +11,15 @@ async function waitForHelper(name, timeout = 5000) {
   return false;
 }
 
+// app.js roda como módulo; use window.showToast quando disponível.
+const showToast = (...args) => {
+  if (typeof window.showToast === 'function') {
+    return window.showToast(...args);
+  }
+  const [message, type = 'info'] = args;
+  console[type === 'error' ? 'error' : 'log']('[Toast fallback][' + type + ']', message);
+};
+
 window.salvarNoCloud = async function() {
   try {
     const ok = await waitForHelper('firestoreBatchSet', 5000);
@@ -202,6 +211,16 @@ window.testFirestoreConnection = async function() {
     // initial UI
     setCloudStatus(navigator.onLine);
     setLastSync(null);
+
+    // Auto-carregar dados da nuvem no startup quando a base local estiver vazia.
+    try {
+      const semDadosLocais = !window.dados || !Array.isArray(window.dados.teds) || window.dados.teds.length === 0;
+      if (semDadosLocais && typeof window.carregarDoCloud === 'function') {
+        await window.carregarDoCloud();
+      }
+    } catch (e) {
+      console.warn('auto carregarDoCloud falhou', e);
+    }
 
   })();
 
