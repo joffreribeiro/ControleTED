@@ -4520,7 +4520,7 @@
             initLucideIcons();
         }
 
-        // Renderizar resumo de TEDs assinados/encerrados — tabela Mês × UP
+        // Renderizar resumo de TEDs assinados/encerrados — tabela transposta (UPs nas linhas, Meses nas colunas)
         function renderResumoGeralAssinadosEncerrados() {
             // Garantir que o container exista
             if (!document.getElementById('resumoGeralGrid')) {
@@ -4530,21 +4530,22 @@
             }
             const teds = dados.teds || [];
             const hoje = new Date();
-            // Estrutura: grid[monthKey][up] = { signed: N, closed: N }
+            // grid[monthKey][up] = { signed: N, closed: N, signedTeds: [], closedTeds: [] }
             const grid = {};
             const allUps = new Set();
-            const nomeMeses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+            const nomeMeses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 
             function monthKey(d) {
                 return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
             }
             function ensure(mk, up) {
                 if (!grid[mk]) grid[mk] = {};
-                if (!grid[mk][up]) grid[mk][up] = { signed: 0, closed: 0 };
+                if (!grid[mk][up]) grid[mk][up] = { signed: 0, closed: 0, signedTeds: [], closedTeds: [] };
             }
 
             teds.forEach(t => {
                 const up = (t.upResponsavel || t.up || 'Sem UP');
+                const numTed = t.numTed || t.numero || ('ID ' + t.id);
                 allUps.add(up);
 
                 // Assinados -> inicioVigencia
@@ -4555,6 +4556,7 @@
                         const mk = monthKey(dt);
                         ensure(mk, up);
                         grid[mk][up].signed++;
+                        grid[mk][up].signedTeds.push(numTed);
                     }
                 }
 
@@ -4567,6 +4569,7 @@
                         const mk2 = monthKey(fDt);
                         ensure(mk2, up);
                         grid[mk2][up].closed++;
+                        grid[mk2][up].closedTeds.push(numTed);
                     }
                 }
             });
@@ -4580,12 +4583,12 @@
                 return;
             }
 
-            // Pré-calcular TEDs vigentes por mês (início vigência <= último dia do mês E fim efetivo >= primeiro dia do mês)
+            // TEDs vigentes por mês
             function countVigentes(mk) {
                 const p = mk.split('-');
                 const y = parseInt(p[0]); const m = parseInt(p[1]);
                 const primeiroDia = new Date(y, m - 1, 1);
-                const ultimoDia = new Date(y, m, 0); // último dia do mês
+                const ultimoDia = new Date(y, m, 0);
                 let count = 0;
                 teds.forEach(t => {
                     const iniNorm = normalizarData(t.inicioVigencia);
@@ -4596,47 +4599,57 @@
                     const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
                     const fimEfet = calcularFimComAditivos(t) || fimOrig;
                     if (!fimEfet || isNaN(fimEfet.getTime())) return;
-                    // Vigente se há sobreposição com o mês
                     if (ini <= ultimoDia && fimEfet >= primeiroDia) count++;
                 });
                 return count;
             }
 
-            const thStyle = 'text-align:center; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text); font-size:0.8rem; white-space:nowrap;';
-            const thLeftStyle = 'text-align:left; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text); font-size:0.8rem; white-space:nowrap;';
-            const tdStyle = 'padding:4px 6px; text-align:center; border-bottom:1px solid var(--border-light); font-size:0.8rem;';
-            const tdLeftStyle = 'padding:4px 6px; border-bottom:1px solid var(--border-light); font-weight:500; font-size:0.8rem; white-space:nowrap;';
+            function monthLabel(mk) {
+                const p = mk.split('-');
+                return nomeMeses[parseInt(p[1]) - 1] + '/' + p[0];
+            }
+
+            const thS = 'text-align:center; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text); font-size:0.78rem; white-space:nowrap;';
+            const thL = 'text-align:left; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text); font-size:0.78rem; white-space:nowrap;';
+            const tdC = 'padding:3px 5px; text-align:center; border-bottom:1px solid var(--border-light); font-size:0.78rem;';
+            const tdL = 'padding:3px 5px; border-bottom:1px solid var(--border-light); font-weight:500; font-size:0.78rem; white-space:nowrap;';
 
             const h = [];
-            h.push('<table style="border-collapse:collapse; font-size:0.8rem;">');
-            // Cabeçalho
-            h.push(`<thead><tr><th style="${thLeftStyle}">MÊS</th>`);
-            ups.forEach(u => h.push(`<th style="${thStyle}">${u}</th>`));
-            h.push(`<th style="${thStyle}">Vigentes</th>`);
+            h.push('<table style="border-collapse:collapse; font-size:0.78rem;">');
+            // Cabeçalho: vazio + meses como colunas
+            h.push(`<thead><tr><th style="${thL}"></th>`);
+            months.forEach(mk => h.push(`<th style="${thS}">${monthLabel(mk)}</th>`));
             h.push('</tr></thead><tbody>');
 
-            months.forEach(mk => {
-                const p = mk.split('-');
-                const mesIdx = parseInt(p[1]) - 1;
-                const label = nomeMeses[mesIdx] + '/' + p[0]; // ex: dez/2025
-                const vigentes = countVigentes(mk);
+            // Linhas: uma por UP
+            ups.forEach(u => {
                 h.push('<tr>');
-                h.push(`<td style="${tdLeftStyle}">${label}</td>`);
-                ups.forEach(u => {
-                    const cell = (grid[mk] && grid[mk][u]) ? grid[mk][u] : { signed: 0, closed: 0 };
+                h.push(`<td style="${tdL}">${u}</td>`);
+                months.forEach(mk => {
+                    const cell = (grid[mk] && grid[mk][u]) ? grid[mk][u] : { signed: 0, closed: 0, signedTeds: [], closedTeds: [] };
                     let content = '';
                     if (cell.signed === 0 && cell.closed === 0) {
                         content = '';
                     } else {
-                        const sPart = `<span style="color:var(--success-dark); font-weight:600;">${cell.signed}</span>`;
-                        const cPart = `<span style="color:var(--danger-dark); font-weight:600;">${cell.closed}</span>`;
+                        const sTip = cell.signedTeds.length ? 'Assinados: TED ' + cell.signedTeds.join(', TED ') : '';
+                        const cTip = cell.closedTeds.length ? 'Encerrados: TED ' + cell.closedTeds.join(', TED ') : '';
+                        const sPart = `<span style="color:var(--success-dark); font-weight:600; cursor:default;" title="${sTip}">${cell.signed}</span>`;
+                        const cPart = `<span style="color:var(--danger-dark); font-weight:600; cursor:default;" title="${cTip}">${cell.closed}</span>`;
                         content = sPart + '<span style="color:var(--text-muted);"> / </span>' + cPart;
                     }
-                    h.push(`<td style="${tdStyle}">${content}</td>`);
+                    h.push(`<td style="${tdC}">${content}</td>`);
                 });
-                h.push(`<td style="${tdStyle} font-weight:600; color:var(--primary);">${vigentes}</td>`);
                 h.push('</tr>');
             });
+
+            // Linha de Vigentes
+            h.push('<tr style="border-top:2px solid var(--border);">');
+            h.push(`<td style="${tdL} font-weight:600; color:var(--primary);">Vigentes</td>`);
+            months.forEach(mk => {
+                const v = countVigentes(mk);
+                h.push(`<td style="${tdC} font-weight:600; color:var(--primary);">${v}</td>`);
+            });
+            h.push('</tr>');
 
             h.push('</tbody></table>');
             if (el) el.innerHTML = h.join('');
