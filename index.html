@@ -2200,6 +2200,30 @@
         .entregas-percent { font-weight:700; margin-bottom:6px; }
         .entregas-label { font-size:0.8rem; text-align:center; margin-top:0.6rem; color:var(--text); }
 
+        /* Título pequeno azul para cards (consistente com detalhe-secao-titulo) */
+        .card .card-title-blue {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin: 0 0 0.5rem 0;
+            padding: 0.45rem 0.9rem;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2f57be 0%, #1e40af 100%);
+            border-radius: 0.5rem;
+            letter-spacing: 0.02em;
+        }
+        .card .card-title-blue .inline-icon-sm,
+        .card .card-title-blue svg {
+            width: 18px;
+            height: 18px;
+            color: #ffffff;
+            stroke: currentColor;
+            fill: none;
+            opacity: 0.92;
+        }
+
         /* Override: when aditivo/ted-historico is inside detalhe-secao ensure light theme wins
            Use !important to ensure this block overrides earlier dark-oriented rules. */
         #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico,
@@ -2971,7 +2995,7 @@
                 </div>
                 <!-- Resumo Assinados / Encerrados (Mês × UP) -->
                 <div id="resumoGeralContainer" style="margin-top:1rem;">
-                    <h4 style="margin:0 0 0.25rem 0;color:var(--primary);">Assinados / Encerrados (Mês × UP)</h4>
+                    <h4 class="card-title-blue"><i data-lucide="file-bar-chart" class="inline-icon-sm"></i> Assinados / Encerrados (Mês × UP)</h4>
                     <p style="font-size:0.75rem; color:var(--text-light); margin:0 0 0.5rem 0;"><span style="color:var(--success-dark); font-weight:600;">Assinados</span> / <span style="color:var(--danger-dark); font-weight:600;">Encerrados</span></p>
                     <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
                         <button class="btn" onclick="showRelatorioMensal()">Relatório Mensal</button>
@@ -2987,25 +3011,25 @@
                 <h2>Próximas Ações</h2>
                 <div class="proximas-acoes-grid">
                     <div class="proxima-col">
-                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">📦 Entregas</h4>
+                        <h4 class="card-title-blue"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h4>
                         <div id="proximasEntregas">
                             <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem entregas programadas nos próximos 30 dias.</p>
                         </div>
                     </div>
                     <div class="proxima-col">
-                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="wallet" class="inline-icon-sm"></i> Recebimentos</h4>
+                        <h4 class="card-title-blue"><i data-lucide="wallet" class="inline-icon-sm"></i> Recebimentos</h4>
                         <div id="proximosRecebimentos">
                             <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>
                         </div>
                     </div>
                     <div class="proxima-col">
-                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="calendar-clock" class="inline-icon-sm"></i> Fim de Vigência</h4>
+                        <h4 class="card-title-blue"><i data-lucide="calendar-clock" class="inline-icon-sm"></i> Fim de Vigência</h4>
                         <div id="proximasVigencias">
                             <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem TEDs com vigência terminando nos próximos 30 dias.</p>
                         </div>
                     </div>
                         <div class="proxima-col">
-                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="alert-triangle" class="inline-icon-sm"></i> Alerta</h4>
+                            <h4 class="card-title-blue"><i data-lucide="alert-triangle" class="inline-icon-sm"></i> Alerta</h4>
                             <div id="proximasVigenciasVencidas">
                                 <p class="empty-state" style="padding:0.75rem; color:var(--text);">Nenhum TED com vigência vencida e não encerrado.</p>
                             </div>
@@ -3058,7 +3082,7 @@
                     <div class="entregas-row" style="display:flex; gap:0.5rem; align-items:flex-start; flex-wrap:wrap;">
                         <div class="resumo-panel" style="width:760px; min-width:520px; order:0;">
                             <div class="card" style="padding:0.6rem; margin-bottom:0.5rem;">
-                                <h4 style="margin:0 0 0.5rem 0;color:var(--primary);"><i data-lucide="pie-chart" class="inline-icon-sm"></i> Resumo Financeiro</h4>
+                                <h4 class="card-title-blue"><i data-lucide="pie-chart" class="inline-icon-sm"></i> Resumo Financeiro</h4>
                                 <div id="resumoFinanceiroChart" style="min-height:160px; padding:0.5rem; background: linear-gradient(#fff, #f7f7f7); border-radius:0.5rem;">
                                     <p style="color:var(--text);">Selecione um TED para ver o resumo financeiro (ou deixe vazio para consolidado).</p>
                                 </div>
@@ -3066,7 +3090,7 @@
                         </div>
                         <div class="entregas-panel" style="flex:1; min-width:320px; order:1;">
                             <div class="card" style="padding:0.6rem; margin-bottom:0.5rem; width:360px; height:320px; box-sizing:border-box; display:flex; flex-direction:column;">
-                                <h4 style="margin:0.6rem 0 0.5rem 0;color:var(--primary);">📦 Entregas</h4>
+                                <h4 class="card-title-blue"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h4>
                                 <div id="entregasChartContainer" style="flex:1; display:flex; align-items:flex-end; overflow:auto;">
                                     <p style="color:var(--text); margin:0;">Selecione um TED para ver o gráfico de entregas (por objeto).</p>
                                 </div>
