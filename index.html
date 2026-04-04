@@ -986,11 +986,15 @@
 
         /* Table wrapper with scroll */
         .table-wrapper {
+            display: inline-block;
+            vertical-align: top;
             overflow-x: auto;
             position: relative;
             border: 1px solid var(--border-light);
             border-radius: var(--radius);
             background: white;
+            width: auto;
+            max-width: 100%;
         }
 
         /* Indicador de scroll horizontal */
@@ -3426,8 +3430,8 @@
                             <button type="button" class="btn btn-primary" onclick="abrirModalObjeto()" style="min-width: 160px;">+ Adicionar</button>
                         </div>
 
-                        <div style="max-width: 900px; overflow-x: auto;">
-                            <table class="tabela-padrao" style="width: auto;">
+                        <div class="table-wrapper" style="max-width: 900px; overflow-x: auto;">
+                            <table class="tabela-padrao" style="width: 100%;">
                                 <thead>
                                     <tr>
                                         <th class="col-objeto">Objeto</th>
@@ -3655,7 +3659,7 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart" class="inline-icon-sm"></i> Resumo Anual por Ano</h3>
                         <div class="detalhe-secao-body">
-                        <div id="resumoAnualPorAno" style="overflow-x: auto; max-width: 1000px;">
+                        <div id="resumoAnualPorAno" class="table-wrapper" style="max-width: 1000px; overflow-x: auto;">
                             <!-- Será preenchido dinamicamente -->
                         </div>
                         </div>
@@ -6551,7 +6555,7 @@
                 const arr = ted[tabDef.key] || [];
 
                 html += `<div class="aditivo-section-title">${tabDef.label} (<span id="${prefix}_count_${tabDef.key}">${arr.length}</span> ${arr.length === 1 ? 'item' : 'itens'})</div>`;
-                html += `<div style="overflow-x:auto; margin-bottom:0.5rem;"><table class="aditivo-clone-table" id="${prefix}_tabela_${tabDef.key}"><thead><tr>`;
+                html += `<div class="table-wrapper" style="max-width:100%; overflow-x:auto; margin-bottom:0.5rem;"><table class="aditivo-clone-table" id="${prefix}_tabela_${tabDef.key}"><thead><tr>`;
                 tabDef.colunas.forEach(col => {
                     html += `<th>${col.label}</th>`;
                 });
@@ -9064,7 +9068,7 @@
             const fmt = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
             // Cabeçalho transposto: coluna inicial com rótulo das métricas e colunas por ano
-            let html = '<table class="tabela-padrao" style="margin-top: 1rem; width: auto;">';
+            let html = '<div class="table-wrapper" style="max-width:100%; overflow-x:auto;"><table class="tabela-padrao" style="margin-top: 1rem; width: auto;">';
             html += '<thead><tr>';
             html += '<th style="text-align:left; white-space:nowrap; min-width:240px;">Métrica</th>';
             anosOrdenados.forEach(ano => { html += `<th style="text-align:center;">${ano}</th>`; });
@@ -9095,7 +9099,7 @@
             anosOrdenados.forEach(ano => { html += `<td style="text-align:right; font-weight:700;">${fmt(saldoAtualByAno[ano] || 0)}</td>`; });
             html += `</tr>`;
 
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
             resumoContainer.innerHTML = html;
         }
 
@@ -9324,7 +9328,7 @@
                 const tbody = `<tbody>${rows.join('')}</tbody>`;
                 // Fazer a tabela preencher a largura do card (width:100%) e manter overflow-x para rolagem horizontal quando necessário
                 // Aplicar estilos locais para evitar quebra de dados nas células (white-space: nowrap) e centralizar dados
-                container.innerHTML = `<div style="overflow-x:auto; width:100%;">
+                container.innerHTML = `<div class="table-wrapper" style="width:100%; overflow-x:auto;">
                     <style>
                         .tabela-padrao td, .tabela-padrao th { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
                         .tabela-padrao { table-layout: auto; }
@@ -9725,7 +9729,7 @@
 
             // Build table with columns: Ano | P Trab | Saldo a receber | Recebido | Empenhado | A Receber
             let saldoAcumulado = 0;
-            let html = '<div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:740px; margin-top:0.5rem;">';
+            let html = '<div class="table-wrapper" style="max-width:100%; overflow-x:auto;"><table class="tabela-padrao" style="min-width:740px; margin-top:0.5rem;">';
             html += '<thead><tr>' +
                 '<th class="col-ano">Ano</th>' +
                 '<th class="col-valor">P Trab</th>' +
