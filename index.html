@@ -1304,39 +1304,29 @@
         }
 
         .ted-kpi-card {
-            background: var(--color-bg-surface);
-            border: 1px solid var(--color-border);
+            background: var(--color-bg-card);
+            border: 0.5px solid var(--color-border);
             border-radius: var(--radius-card);
-            padding: 1rem 1rem 0.9rem;
+            padding: 1rem 1.125rem;
             min-height: 92px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.04);
             position: relative;
-            overflow: hidden;
-        }
-
-        .ted-kpi-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: var(--kpi-accent, var(--color-primary-light));
+            overflow: visible;
         }
 
         .ted-kpi-label {
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
+            font-size: 11px;
             color: var(--color-text-secondary);
-            margin-bottom: 0.45rem;
-            font-weight: 700;
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0.02em;
         }
 
         .ted-kpi-value {
-            font-size: 1.28rem;
-            line-height: 1.2;
-            font-weight: 800;
+            font-size: 20px;
+            line-height: 1.1;
+            font-weight: 500;
             color: var(--color-text-primary);
             word-break: break-word;
         }
@@ -1347,10 +1337,12 @@
             color: var(--color-text-secondary);
         }
 
-        .ted-kpi-card.kpi-valor { --kpi-accent: var(--color-primary-light); }
-        .ted-kpi-card.kpi-recebido { --kpi-accent: var(--color-success); }
-        .ted-kpi-card.kpi-saldo { --kpi-accent: var(--color-warning); }
-        .ted-kpi-card.kpi-status { --kpi-accent: var(--color-danger); }
+        .ted-kpi-card.kpi-valor { }
+        .ted-kpi-card.kpi-recebido { border-left: 3px solid #639922; }
+        .ted-kpi-card.kpi-saldo { border-left: 3px solid #E24B4A; }
+        .ted-kpi-card.kpi-status { }
+
+        .valor-negativo { color: #A32D2D !important; }
 
         .ted-info-row {
             display: grid;
@@ -1391,21 +1383,52 @@
         .ted-info-label {
             font-weight: 600;
             color: var(--color-text-secondary);
-            font-size: 0.78rem;
+            font-size: 11px;
             display: block;
-            margin-bottom: 0.55rem;
-            text-transform: uppercase;
-            letter-spacing: 0.75px;
+            margin-bottom: 6px;
+            text-transform: none;
+            letter-spacing: 0.02em;
         }
 
         .ted-info-value {
             color: var(--color-text-primary);
-            font-size: 1rem;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 500;
             min-height: 1.5rem;
             line-height: 1.35;
             word-break: break-word;
         }
+
+        /* Dados cadastrais + layout de duas colunas */
+        .dados-aditivos-row { display: flex; gap: 1rem; align-items: flex-start; }
+        .dados-col { flex: 1 1 auto; }
+        .aditivos-col { flex: 0 0 340px; max-width: 340px; }
+
+        .dados-cadastrais-card { background: var(--color-bg-card); border: 0.5px solid var(--color-border); border-radius: var(--radius-card); padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .dados-cadastrais-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:0.6rem; }
+        .dados-cadastrais-header h4 { margin:0; font-size:1rem; color:var(--color-text-primary); }
+        .dados-cadastrais-actions button { margin-left:0.5rem; }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.9rem; margin-bottom: 0.6rem; }
+
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace; }
+
+        .badge-prorrogado { background: #EAF3DE; color: #3B6D11; padding: 4px 8px; border-radius: 999px; font-weight:700; font-size:0.8rem; margin-left:8px; }
+        .fim-vigencia-current { display:flex; align-items:center; gap:0.5rem; font-weight:600; }
+        .fim-vigencia-meta { font-size:12px; color:var(--color-text-secondary); margin-top:4px; }
+
+        .aditivos-card { background: var(--color-bg-card); border: 0.5px solid var(--color-border); border-radius: var(--radius-card); padding: 0.6rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .aditivos-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem; }
+        .aditivos-title { font-weight:700; color:var(--color-text-primary); }
+        .aditivos-counter { font-size:0.9rem; color:var(--color-text-secondary); }
+
+        .tabela-aditivos { width:100%; border-collapse:collapse; font-size:0.92rem; }
+        .tabela-aditivos thead th { text-align:left; padding:0.45rem 0.5rem; color:var(--color-text-secondary); border-bottom:1px solid var(--color-border); }
+        .tabela-aditivos tbody td { padding:0.45rem 0.5rem; border-bottom:1px dashed rgba(0,0,0,0.04); }
+        .ad-action-cell .btn-icon.delete { width:20px; height:20px; padding:0; border-radius:50%; border:1px solid var(--color-border); display:inline-flex; align-items:center; justify-content:center; background:transparent; }
+
+        .aditivos-footer { margin-top:0.5rem; }
+        .btn-add-aditivo { width:100%; padding:8px 10px; border:1px dashed var(--color-primary-border); background:transparent; color:var(--color-primary); border-radius:8px; font-weight:600; }
 
         .ted-info-toolbar {
             display: flex;
@@ -3335,11 +3358,6 @@
                     <div class="ted-info-section" id="infoTEDSection">
                         <div class="ted-info-header">
                             <h3 class="ted-info-title"><i data-lucide="clipboard-list" class="inline-icon"></i> Informações do TED <span id="info_tituloTedCodigo" class="ted-info-title-code"></span></h3>
-                            <div class="ted-info-actions">
-                                <button class="btn-edit" id="btnEditarInfo" onclick="toggleEditarInfo()" style="display: block;"><i data-lucide="edit-2" class="btn-icon-sm"></i> Editar</button>
-                                <button class="btn-save" id="btnSalvarInfo" onclick="salvarEdicaoInfo()" style="display: none;"><i data-lucide="save" class="btn-icon-sm"></i> Salvar</button>
-                                <button class="btn-cancel" id="btnCancelarInfo" onclick="cancelarEdicaoInfo()" style="display: none;"><i data-lucide="x" class="btn-icon-sm"></i> Cancelar</button>
-                            </div>
                         </div>
                         
                         <div class="ted-info-grid">
@@ -3363,98 +3381,166 @@
                                 </div>
                             </div>
 
-                            <!-- Linha 1: 3 campos -->
-                            <div class="ted-info-row row-3">
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Plano de Trabalho</label>
-                                    <div class="ted-info-value" id="info_planoTrabalho"></div>
-                                    <input type="text" class="ted-info-input" id="edit_planoTrabalho" style="display: none;">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">TED</label>
-                                    <div class="ted-info-value" id="info_numTed"></div>
-                                    <input type="text" class="ted-info-input" id="edit_numTed" style="display: none;">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Objeto</label>
-                                    <div class="ted-info-value" id="info_objetivo"></div>
-                                    <input type="text" class="ted-info-input" id="edit_objetivo" style="display: none;">
-                                </div>
-                            </div>
+                            <div class="dados-aditivos-row">
+                                <div class="dados-col">
+                                    <div class="dados-cadastrais-card">
+                                        <div class="dados-cadastrais-header">
+                                            <h4>Dados Cadastrais</h4>
+                                            <div class="dados-cadastrais-actions">
+                                                <button class="btn-edit" id="btnEditarInfo" onclick="toggleEditarInfo()" style="display: block;"><i data-lucide="edit-2" class="btn-icon-sm"></i> Editar</button>
+                                                <button class="btn-save" id="btnSalvarInfo" onclick="salvarEdicaoInfo()" style="display: none;"><i data-lucide="save" class="btn-icon-sm"></i> Salvar</button>
+                                                <button class="btn-cancel" id="btnCancelarInfo" onclick="cancelarEdicaoInfo()" style="display: none;"><i data-lucide="x" class="btn-icon-sm"></i> Cancelar</button>
+                                            </div>
+                                        </div>
+                                        <div class="dados-cadastrais-body">
+                                            <div class="grupo-identificacao">
+                                                <div class="grid-2">
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">Plano de Trabalho</label>
+                                                        <div class="ted-info-value" id="info_planoTrabalho"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_planoTrabalho" style="display: none;">
+                                                    </div>
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">TED</label>
+                                                        <div class="ted-info-value" id="info_numTed"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_numTed" style="display: none;">
+                                                    </div>
+                                                </div>
+                                                <div class="grid-2">
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">Objeto</label>
+                                                        <div class="ted-info-value" id="info_objetivo"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_objetivo" style="display: none;">
+                                                    </div>
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">Nº TED - SIAFI</label>
+                                                        <div class="ted-info-value mono" id="info_numTedSiafi"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_numTedSiafi" style="display: none;">
+                                                    </div>
+                                                </div>
+                                                <div class="grid-2">
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">Código do Plano de Ação</label>
+                                                        <div class="ted-info-value mono" id="info_codigoPlano"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_codigoPlano" style="display: none;">
+                                                    </div>
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">Nota do Sistema do TED</label>
+                                                        <div class="ted-info-value" id="info_notaSistema"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_notaSistema" style="display: none;">
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                            <!-- Linha 2: 3 campos -->
-                            <div class="ted-info-row row-3">
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Código do Plano de Ação</label>
-                                    <div class="ted-info-value" id="info_codigoPlano"></div>
-                                    <input type="text" class="ted-info-input" id="edit_codigoPlano" style="display: none;">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Nº TED - SIAFI</label>
-                                    <div class="ted-info-value" id="info_numTedSiafi"></div>
-                                    <input type="text" class="ted-info-input" id="edit_numTedSiafi" style="display: none;">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Nota do Sistema do TED</label>
-                                    <div class="ted-info-value" id="info_notaSistema"></div>
-                                    <input type="text" class="ted-info-input" id="edit_notaSistema" style="display: none;">
-                                </div>
-                            </div>
+                                            <div class="grupo-unidades">
+                                                <div class="grid-2">
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">UP Responsável pela Execução</label>
+                                                        <div class="ted-info-value" id="info_upResponsavel"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_upResponsavel" style="display: none;">
+                                                    </div>
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">UG Executora</label>
+                                                        <div class="ted-info-value" id="info_egExecutora"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_egExecutora" style="display: none;">
+                                                    </div>
+                                                </div>
+                                                <div class="grid-2">
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">Unidade Descentralizadora</label>
+                                                        <div class="ted-info-value" id="info_unidadeDesc"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_unidadeDesc" style="display: none;">
+                                                    </div>
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">UG Descentralizadora</label>
+                                                        <div class="ted-info-value" id="info_ugDesc"></div>
+                                                        <input type="text" class="ted-info-input" id="edit_ugDesc" style="display: none;">
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                            <!-- Linha 3: 4 campos -->
-                            <div class="ted-info-row row-4">
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">UP Responsável pela Execução</label>
-                                    <div class="ted-info-value" id="info_upResponsavel"></div>
-                                    <input type="text" class="ted-info-input" id="edit_upResponsavel" style="display: none;">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">UG Executora</label>
-                                    <div class="ted-info-value" id="info_egExecutora"></div>
-                                    <input type="text" class="ted-info-input" id="edit_egExecutora" style="display: none;">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Unidade Descentralizadora</label>
-                                    <div class="ted-info-value" id="info_unidadeDesc"></div>
-                                    <input type="text" class="ted-info-input" id="edit_unidadeDesc" style="display: none;">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">UG Descentralizadora</label>
-                                    <div class="ted-info-value" id="info_ugDesc"></div>
-                                    <input type="text" class="ted-info-input" id="edit_ugDesc" style="display: none;">
-                                </div>
-                            </div>
+                                            <div class="grupo-vigencia">
+                                                <div class="grid-2">
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">Início de Vigência</label>
+                                                        <div class="ted-info-value" id="info_inicioVigencia"></div>
+                                                        <input type="date" class="ted-info-input" id="edit_inicioVigencia" style="display: none;" onchange="calcularFimVigenciaEdit()">
+                                                    </div>
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">Vigência em Meses</label>
+                                                        <div class="ted-info-value" id="info_vigencia"></div>
+                                                        <input type="number" class="ted-info-input" id="edit_vigencia" min="0" style="display: none;" oninput="calcularFimVigenciaEdit()">
+                                                    </div>
+                                                </div>
+                                                <div class="grid-2">
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">Fim de Vigência</label>
+                                                        <div class="ted-info-value" id="info_fimVigencia"></div>
+                                                        <input type="date" class="ted-info-input" id="edit_fimVigencia" style="display: none;" readonly>
+                                                    </div>
+                                                    <div class="ted-info-card">
+                                                        <label class="ted-info-label">1ª Descentralização</label>
+                                                        <div class="ted-info-value" id="info_primeiraDescentralizacao"></div>
+                                                        <input type="date" class="ted-info-input" id="edit_primeiraDescentralizacao" style="display: none;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            <!-- Linha 4: 4 campos + botão aditivo -->
-                            <div class="ted-info-row row-4">
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Início de Vigência</label>
-                                    <div class="ted-info-value" id="info_inicioVigencia"></div>
-                                    <input type="date" class="ted-info-input" id="edit_inicioVigencia" style="display: none;" onchange="calcularFimVigenciaEdit()">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Vigência em Meses</label>
-                                    <div class="ted-info-value" id="info_vigencia"></div>
-                                    <input type="number" class="ted-info-input" id="edit_vigencia" min="0" style="display: none;" oninput="calcularFimVigenciaEdit()">
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">Fim de Vigência</label>
-                                    <div class="ted-info-value" id="info_fimVigencia"></div>
-                                    <input type="date" class="ted-info-input" id="edit_fimVigencia" style="display: none;" readonly>
-                                </div>
-                                <div class="ted-info-card">
-                                    <label class="ted-info-label">1ª Descentralização</label>
-                                    <div class="ted-info-value" id="info_primeiraDescentralizacao"></div>
-                                    <input type="date" class="ted-info-input" id="edit_primeiraDescentralizacao" style="display: none;">
-                                </div>
-                            </div>
+                                    <!-- Linha aditivo/apostilamento: botão unificado + resumo -->
+                                    <div class="ted-info-toolbar">
+                                        <button class="btn-edit" onclick="abrirModalAlteracao()" style="font-size:0.85rem; padding:4px 12px;"><i data-lucide="plus-circle" class="btn-icon-sm"></i> Aditivo / Apostilamento</button>
+                                        <span id="info_alteracoesResumo" class="ted-info-resumo"></span>
+                                    </div>
 
-                            <!-- Linha aditivo/apostilamento: botão unificado + histórico -->
-                            <div class="ted-info-toolbar">
-                                <button class="btn-edit" onclick="abrirModalAlteracao()" style="font-size:0.85rem; padding:4px 12px;"><i data-lucide="plus-circle" class="btn-icon-sm"></i> Aditivo / Apostilamento</button>
-                                <span id="info_alteracoesResumo" class="ted-info-resumo"></span>
+                                    <!-- Linha 5: novos campos (situação, data entrega/denúncia, prazo, data entrega relatório, status) -->
+                                    <div class="ted-info-row row-5">
+                                        <div class="ted-info-card">
+                                            <label class="ted-info-label">Situação TED</label>
+                                            <div class="ted-info-value" id="info_situacaoTED"></div>
+                                            <select class="ted-info-input" id="edit_situacaoTED" style="display:none;" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
+                                                <option value="">--</option>
+                                                <option value="finalizado">TED Finalizado</option>
+                                                <option value="denunciado">TED Denunciado</option>
+                                            </select>
+                                        </div>
+                                        <div class="ted-info-card">
+                                            <label class="ted-info-label">Data entrega/denúncia</label>
+                                            <div class="ted-info-value" id="info_dataEntregaDenuncia"></div>
+                                            <input type="date" class="ted-info-input" id="edit_dataEntregaDenuncia" style="display:none;" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
+                                        </div>
+                                        <div class="ted-info-card">
+                                            <label class="ted-info-label">Prazo do Relatório Final</label>
+                                            <div class="ted-info-value" id="info_prazoRelatorio"></div>
+                                            <input type="date" class="ted-info-input" id="edit_prazoRelatorio" readonly style="display:none;">
+                                        </div>
+                                        <div class="ted-info-card">
+                                            <label class="ted-info-label">Data da Entrega do Relatório</label>
+                                            <div class="ted-info-value" id="info_dataEntregaRelatorio"></div>
+                                            <input type="date" class="ted-info-input" id="edit_dataEntregaRelatorio" style="display:none;" onchange="atualizarStatusPorEntregaRelatorio();">
+                                        </div>
+                                        <div class="ted-info-card">
+                                            <label class="ted-info-label">Status</label>
+                                            <div class="ted-info-value" id="info_statusTED"></div>
+                                            <input type="text" class="ted-info-input" id="edit_statusTED" readonly style="display:none;">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="aditivos-col">
+                                    <div class="aditivos-card">
+                                        <div class="aditivos-header">
+                                            <div class="aditivos-title">Aditivos</div>
+                                            <div class="aditivos-counter" id="aditivosCounter"></div>
+                                        </div>
+                                        <div id="info_alteracoesHistorico" class="aditivo-historico ted-info-historico" style="display:none;"></div>
+                                        <div class="aditivos-footer">
+                                            <button class="btn-add-aditivo" onclick="abrirModalAlteracao()">+ Adicionar aditivo</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div id="info_alteracoesHistorico" class="aditivo-historico ted-info-historico" style="display:none;"></div>
 
                             <!-- Linha 5: novos campos (situação, data entrega/denúncia, prazo, data entrega relatório, status) -->
                             <div class="ted-info-row row-5">
@@ -5543,7 +5629,15 @@
 
             if (elKpiValor) elKpiValor.textContent = formatarMoeda(valorTedAtual);
             if (elKpiRecebido) elKpiRecebido.textContent = formatarMoeda(totalRecebido);
-            if (elKpiSaldo) elKpiSaldo.textContent = formatarMoeda(saldoTed);
+            if (elKpiSaldo) {
+                if (saldoTed < 0) {
+                    elKpiSaldo.textContent = `−${formatarMoeda(Math.abs(saldoTed))}`;
+                    elKpiSaldo.classList.add('valor-negativo');
+                } else {
+                    elKpiSaldo.textContent = formatarMoeda(saldoTed);
+                    elKpiSaldo.classList.remove('valor-negativo');
+                }
+            }
             if (elKpiStatus) elKpiStatus.textContent = statusTedAtual;
             if (elKpiPercentual) {
                 const percentual = valorTedAtual > 0 ? ((totalRecebido / valorTedAtual) * 100) : 0;
@@ -5628,12 +5722,11 @@
             exibirCampoComAlteracao('info_ugDesc', ted.ugDesc, 'ugDesc');
             
             document.getElementById('info_inicioVigencia').textContent = formatarData(ted.inicioVigencia);
-            // Vigência e Fim com suporte a aditivos
+            // Vigência e Fim com suporte a aditivos — mostrar apenas a data ativa e meta original abaixo
             if (aditivos.length > 0) {
-                const vigOriginal = ted.vigencia || 0;
-                const vigNova = parseInt(vigOriginal) + totalAditivoMeses;
-                document.getElementById('info_vigencia').innerHTML =
-                    `<span class="valor-original-tachado">${vigOriginal}</span><span class="valor-aditivo-novo">${vigNova}</span>`;
+                const vigOriginal = parseInt(ted.vigencia) || 0;
+                const vigNova = vigOriginal + totalAditivoMeses;
+                document.getElementById('info_vigencia').textContent = vigNova || '-';
 
                 const fimOriginal = formatarData(ted.fimVigencia);
                 // Calcular nova data fim = inicio + vigNova meses
@@ -5647,13 +5740,13 @@
                     }
                 }
                 document.getElementById('info_fimVigencia').innerHTML =
-                    `<span class="valor-original-tachado">${fimOriginal}</span><span class="valor-aditivo-novo">${novaDataFim}</span>`;
+                    `<div class="fim-vigencia-current">${novaDataFim} <span class="badge-prorrogado">Prorrogado</span></div><div class="fim-vigencia-meta">Original: ${fimOriginal} · ${totalAditivoMeses} meses</div>`;
             } else {
                 document.getElementById('info_vigencia').textContent = ted.vigencia || '-';
                 document.getElementById('info_fimVigencia').textContent = formatarData(ted.fimVigencia);
             }
 
-            // Histórico unificado de aditivos e apostilamentos
+            // Histórico unificado de aditivos e apostilamentos (versão compacta para coluna lateral)
             if (alteracoes.length > 0) {
                 const nAditivos = aditivos.length;
                 const nApost = alteracoes.filter(a => a.tipo === 'apostilamento').length;
@@ -5662,51 +5755,30 @@
                 if (nApost > 0) resumoParts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
                 document.getElementById('info_alteracoesResumo').textContent = `Total: ${resumoParts.join(', ')}`;
 
-                let histHtml = '<table><thead><tr><th>#</th><th>Tipo</th><th>Meses</th><th>Data</th><th>Valor do TED</th><th>Alterações</th><th>Observação</th><th></th></tr></thead><tbody>';
+                // Atualizar contador lateral
+                const adCountEl = document.getElementById('aditivosCounter');
+                if (adCountEl) adCountEl.textContent = `${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} · +${totalAditivoMeses} meses`;
+
+                // Montar tabela compacta (colunas: #, Tipo, Meses, Data, Ação)
+                let histHtml = '<table class="tabela-aditivos"><thead><tr><th>#</th><th>Tipo</th><th>Meses</th><th>Data</th><th>Ação</th></tr></thead><tbody>';
                 let contAditivo = 0, contApost = 0;
                 alteracoes.forEach((a, idx) => {
                     const isAditivo = a.tipo === 'aditivo';
                     if (isAditivo) contAditivo++; else contApost++;
                     const ordinal = isAditivo ? contAditivo : contApost;
                     const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
-                    const tipoColor = isAditivo ? '#16a34a' : '#2563eb';
+                    const tipoColor = isAditivo ? '#185FA5' : '#2563eb';
                     const dataStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
                     const mesesStr = isAditivo ? `+${a.meses || 0}` : '-';
-                    const valStr = (isAditivo && typeof a.valorTed !== 'undefined' && a.valorTed !== null) ? parseFloat(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
-                    // Gerar HTML das alterações (campos + tabelas)
-                    let alteracoesHtml = '';
-                    const temCampos = a.camposAlterados && Object.keys(a.camposAlterados).length > 0;
-                    const temTabelas = a.tabelasAlteradas && Object.keys(a.tabelasAlteradas).length > 0;
-                    if (temCampos || temTabelas) {
-                        alteracoesHtml = '<div class="aditivo-changes-list">';
-                        if (temCampos) {
-                            const labelMap = {};
-                            ADITIVO_CAMPOS_CLONE.forEach(c => { labelMap[c.key] = c.label; });
-                            Object.keys(a.camposAlterados).forEach(key => {
-                                const change = a.camposAlterados[key];
-                                const label = labelMap[key] || key;
-                                const de = String(change.de || '').substring(0, 40) || '(vazio)';
-                                const para = String(change.para || '').substring(0, 40) || '(vazio)';
-                                alteracoesHtml += `<div class="aditivo-change-row"><span class="aditivo-change-field">${label}:</span> <span class="aditivo-change-badge aditivo-change-old">${de}</span> → <span class="aditivo-change-badge aditivo-change-new">${para}</span></div>`;
-                            });
-                        }
-                        if (temTabelas) {
-                            alteracoesHtml += gerarResumoTabelasAlteradas(a.tabelasAlteradas);
-                        }
-                        alteracoesHtml += '</div>';
-                    } else {
-                        alteracoesHtml = '-';
-                    }
-                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td>${mesesStr}</td><td>${dataStr}</td><td class="valor-aditivo"><span class="valor-text">${valStr}</span></td><td>${alteracoesHtml}</td><td>${a.obs || '-'}</td><td>
-                        <button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">✎</button>
-                        <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">✖</button>
-                    </td></tr>`;
+
+                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">✎</button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">✖</button></td></tr>`;
                 });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
                 document.getElementById('info_alteracoesHistorico').style.display = 'block';
             } else {
                 document.getElementById('info_alteracoesResumo').textContent = '';
+                document.getElementById('aditivosCounter').textContent = '';
                 document.getElementById('info_alteracoesHistorico').style.display = 'none';
             }
 
