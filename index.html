@@ -3706,17 +3706,17 @@
 
                                 <!-- COLUNA DIREITA: dois cards empilhados -->
                                 <div class="detail-right-col">
-                                    <!-- Card Aditivos -->
-                                    <div class="dc-card">
-                                        <div class="dc-header">
-                                            <span class="dc-title">Aditivos</span>
-                                            <span class="badge-neutro" id="aditivosCounter"></span>
-                                        </div>
-                                        <div id="info_alteracoesHistorico" class="aditivo-historico ted-info-historico" style="display:none;"></div>
-                                        <div class="aditivos-footer">
-                                            <button class="btn-add-aditivo" onclick="abrirModalAlteracao()">+ Adicionar aditivo</button>
-                                        </div>
-                                    </div>
+                                    <!-- Card Aditivos / Apostilamentos -->
+                                                        <div class="dc-card">
+                                                            <div class="dc-header">
+                                                                <span class="dc-title">Aditivos / Apostilamentos</span>
+                                                                <span class="badge-neutro" id="aditivosCounter"></span>
+                                                            </div>
+                                                            <div id="info_alteracoesHistorico" class="aditivo-historico ted-info-historico" style="display:none;"></div>
+                                                            <div class="aditivos-footer">
+                                                                <button class="btn-add-aditivo" onclick="abrirModalAlteracao()">Adicionar aditivo / apostilamento</button>
+                                                            </div>
+                                                        </div>
 
                                     <!-- Card Situação do TED -->
                                     <div class="dc-card">
@@ -6117,7 +6117,7 @@
                 const adCountEl = document.getElementById('aditivosCounter');
                 if (adCountEl) adCountEl.textContent = `${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} · +${totalAditivoMeses} meses`;
 
-                // Montar tabela compacta (colunas: #, Tipo, Meses, Data, Ação)
+                // Montar tabela compacta (colunas: #, Tipo, Meses, Data, Valor do TED, Alterações detalhadas, Observação, Ação)
                 let histHtml = '<table class="tabela-aditivos"><thead><tr><th>#</th><th>Tipo</th><th>Meses</th><th>Data</th><th>Valor do TED</th><th>Alterações</th><th>Observação</th><th>Ação</th></tr></thead><tbody>';
                 let contAditivo = 0, contApost = 0;
                 alteracoes.forEach((a, idx) => {
@@ -6132,11 +6132,40 @@
                     const valorTedStr = (a.valorTed !== undefined && a.valorTed !== null && a.valorTed !== '')
                         ? Number(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits: 2})
                         : '-';
-                    const nAlteracoes = a.camposAlterados ? Object.keys(a.camposAlterados).length : 0;
-                    const alteracoesStr = nAlteracoes > 0 ? String(nAlteracoes) : '-';
+
+                    // Construir resumo detalhado de alterações (campos simples + tabelas)
+                    let changesHtml = '';
+                    if (a.camposAlterados && Object.keys(a.camposAlterados).length) {
+                        const parts = [];
+                        Object.keys(a.camposAlterados).forEach(k => {
+                            const ch = a.camposAlterados[k];
+                            let label = k;
+                            const def = ADITIVO_CAMPOS_CLONE.find(c => c.key === k);
+                            if (def && def.label) label = def.label;
+                            else if (ch && ch.label) label = ch.label || label;
+                            const tipoCampo = def ? def.type : (ch && ch.type ? ch.type : 'text');
+                            const cellHtml = formatarCelulaAlterada(ch.para, ch.de, tipoCampo);
+                            parts.push(`<div style="margin-bottom:0.2rem;"><strong>${label}:</strong> ${cellHtml}</div>`);
+                        });
+                        changesHtml += parts.join('');
+                    }
+                    if (a.tabelasAlteradas) {
+                        Object.keys(a.tabelasAlteradas).forEach(tk => {
+                            const dif = a.tabelasAlteradas[tk];
+                            const tdef = ADITIVO_TABELAS_CLONE.find(tt => tt.key === tk);
+                            const tlabel = tdef ? tdef.label : tk;
+                            const tParts = [];
+                            if ((dif.adicionados || []).length) tParts.push(`+${dif.adicionados.length}`);
+                            if ((dif.removidos || []).length) tParts.push(`-${dif.removidos.length}`);
+                            if ((dif.modificados || []).length) tParts.push(`${dif.modificados.length} mod.`);
+                            if (tParts.length) changesHtml += `<div style="margin-bottom:0.2rem;"><strong>${tlabel}:</strong> ${tParts.join(', ')}</div>`;
+                        });
+                    }
+                    if (!changesHtml) changesHtml = '-';
                     const obsStr = a.obs ? a.obs : '-';
 
-                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td style="font-family:monospace;text-align:right;">${valorTedStr}</td><td style="text-align:center;">${alteracoesStr}</td><td>${obsStr}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">✎</button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">✖</button></td></tr>`;                });
+                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td style="font-family:monospace;text-align:right;">${valorTedStr}</td><td style="max-width:320px;">${changesHtml}</td><td>${obsStr}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">✎</button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">✖</button></td></tr>`;
+                });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
                 document.getElementById('info_alteracoesHistorico').style.display = 'block';
