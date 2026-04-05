@@ -2346,9 +2346,10 @@
         .aditivo-clone-table tr:hover { background: rgba(59,130,246,0.03); }
         .aditivo-clone-table tr[data-removido="1"] td { text-decoration: line-through; color: var(--text-muted); }
         /* Destaque de células alteradas via aditivo/apostilamento nas tabelas principais */
-        .celula-alterada-aditivo { position: relative; }
-        .celula-alterada-aditivo .val-antigo { text-decoration: line-through; color: var(--text-muted); font-size: 0.82em; opacity: 0.65; display: block; line-height: 1.1; }
-        .celula-alterada-aditivo .val-novo { color: #16a34a; font-weight: 700; display: block; line-height: 1.2; }
+        .celula-alterada-aditivo { position: relative; white-space: nowrap; }
+        .celula-alterada-aditivo .val-antigo { text-decoration: line-through; color: var(--text-muted); font-size: 0.92em; opacity: 0.75; display: inline-block; margin-right:6px; }
+        .celula-alterada-aditivo .alter-arrow { color: #9ca3af; margin: 0 6px; font-weight:600; }
+        .celula-alterada-aditivo .val-novo { color: #16a34a; font-weight: 700; display: inline-block; }
         tr.linha-adicionada-aditivo { background: rgba(34,197,94,0.08) !important; }
         tr.linha-adicionada-aditivo td:first-child::before { content: '＋'; color: #16a34a; font-weight: 700; margin-right: 4px; }
         tr.linha-removida-aditivo { background: rgba(239,68,68,0.06) !important; }
@@ -6117,8 +6118,8 @@
                 const adCountEl = document.getElementById('aditivosCounter');
                 if (adCountEl) adCountEl.textContent = `${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} · +${totalAditivoMeses} meses`;
 
-                // Montar tabela compacta (colunas: #, Tipo, Meses, Data, Valor do TED, Alterações detalhadas, Observação, Ação)
-                let histHtml = '<table class="tabela-aditivos"><thead><tr><th>#</th><th>Tipo</th><th>Meses</th><th>Data</th><th>Valor do TED</th><th>Alterações</th><th>Observação</th><th>Ação</th></tr></thead><tbody>';
+                // Montar tabela compacta (colunas: #, Tipo, Meses, Data, Valor do TED, Alterações detalhadas, Ação)
+                let histHtml = '<table class="tabela-aditivos"><thead><tr><th>#</th><th>Tipo</th><th>Meses</th><th>Data</th><th>Valor do TED</th><th>Alterações</th><th>Ação</th></tr></thead><tbody>';
                 let contAditivo = 0, contApost = 0;
                 alteracoes.forEach((a, idx) => {
                     const isAditivo = a.tipo === 'aditivo';
@@ -6154,17 +6155,16 @@
                             const dif = a.tabelasAlteradas[tk];
                             const tdef = ADITIVO_TABELAS_CLONE.find(tt => tt.key === tk);
                             const tlabel = tdef ? tdef.label : tk;
-                            const tParts = [];
-                            if ((dif.adicionados || []).length) tParts.push(`+${dif.adicionados.length}`);
-                            if ((dif.removidos || []).length) tParts.push(`-${dif.removidos.length}`);
-                            if ((dif.modificados || []).length) tParts.push(`${dif.modificados.length} mod.`);
-                            if (tParts.length) changesHtml += `<div style="margin-bottom:0.2rem;"><strong>${tlabel}:</strong> ${tParts.join(', ')}</div>`;
+                            const parts = [];
+                            if ((dif.adicionados || []).length) parts.push(`<span class="aditivo-change-badge aditivo-change-new">+${dif.adicionados.length}</span>`);
+                            if ((dif.removidos || []).length) parts.push(`<span class="aditivo-change-badge aditivo-change-old">-${dif.removidos.length}</span>`);
+                            if ((dif.modificados || []).length) parts.push(`<span class="aditivo-change-badge aditivo-change-field">${dif.modificados.length} mod.</span>`);
+                            if (parts.length) changesHtml += `<div class="aditivo-change-row" style="margin-bottom:0.2rem;"><span class="aditivo-change-field">${tlabel}:</span> ${parts.join(' ')}</div>`;
                         });
                     }
                     if (!changesHtml) changesHtml = '-';
-                    const obsStr = a.obs ? a.obs : '-';
 
-                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td style="font-family:monospace;text-align:right;">${valorTedStr}</td><td style="max-width:320px;">${changesHtml}</td><td>${obsStr}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">✎</button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">✖</button></td></tr>`;
+                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td style="font-family:monospace;text-align:right;">${valorTedStr}</td><td style="max-width:420px;">${changesHtml}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">✎</button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">✖</button></td></tr>`;
                 });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
@@ -6905,7 +6905,7 @@
             return { modMap, addSet, remSet };
         }
 
-        // Formatar valor de célula alterada: mostra valor antigo riscado + valor novo em verde
+        // Formatar valor de célula alterada: mostra valor antigo riscado → valor novo em destaque
         function formatarCelulaAlterada(valorAtual, valorAntigo, tipo) {
             let antigoFormatado = valorAntigo;
             let novoFormatado = valorAtual;
@@ -6921,7 +6921,7 @@
                 try { antigoFormatado = new Date(valorAntigo + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
                 try { novoFormatado = new Date(valorAtual + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
             }
-            return `<span class="celula-alterada-aditivo"><span class="val-antigo">${antigoFormatado}</span><span class="val-novo">${novoFormatado}</span></span>`;
+            return `<span class="celula-alterada-aditivo"><span class="val-antigo">${antigoFormatado}</span><span class="alter-arrow">→</span><span class="val-novo">${novoFormatado}</span></span>`;
         }
 
         // Snapshot: captura valores atuais do TED para comparação futura (incluindo tabelas)
