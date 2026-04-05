@@ -9017,11 +9017,33 @@
         function toggleMonthCols(section, btn) {
             const expanded = btn.getAttribute('data-expanded') === '1';
             const newExpanded = !expanded;
+
+            // localizar wrapper da tabela dentro da mesma seção (pode ser .table-wrapper ou .table-freeze-wrapper)
+            const detalhe = btn.closest('.detalhe-secao');
+            const wrapper = detalhe ? detalhe.querySelector('.table-wrapper, .table-freeze-wrapper') : null;
+            const table = wrapper ? wrapper.querySelector('table') : null;
+
+            // se vamos ocultar, fixar largura atual da tabela para evitar que o layout se expanda
+            if (!newExpanded && table && wrapper) {
+                const w = Math.round(table.getBoundingClientRect().width);
+                wrapper.style.width = w + 'px';
+                wrapper.style.minWidth = w + 'px';
+                wrapper.style.maxWidth = w + 'px';
+                wrapper.style.boxSizing = 'border-box';
+            }
+
+            // aplicar display para realmente remover as colunas do fluxo (não apenas ocultar visualmente)
             document.querySelectorAll('.month-col-' + section).forEach(col => {
-                // preserva a largura da coluna, apenas esconde o conteúdo
-                col.style.visibility = newExpanded ? 'visible' : 'hidden';
-                col.style.pointerEvents = newExpanded ? '' : 'none';
+                col.style.display = newExpanded ? '' : 'none';
             });
+
+            // se estamos mostrando novamente, remover o lock de largura
+            if (newExpanded && wrapper) {
+                wrapper.style.width = '';
+                wrapper.style.minWidth = '';
+                wrapper.style.maxWidth = '';
+            }
+
             btn.setAttribute('data-expanded', newExpanded ? '1' : '0');
             btn.textContent = newExpanded ? 'Ocultar detalhes mensais' : 'Ver detalhes mensais';
         }
@@ -9125,7 +9147,7 @@
             let headerRow1 = tableCompleta.querySelector('thead tr:nth-child(1)');
             // Estado atual do toggle de meses
             const monthsExpandedCadFin = document.getElementById('toggle-months-cadFin')?.getAttribute('data-expanded') === '1';
-            const mmHideCadFin = monthsExpandedCadFin ? '' : ' visibility:hidden;';
+            const mmHideCadFin = monthsExpandedCadFin ? '' : ' display:none;';
 
             let headerHTML = '<th rowspan="2" class="col-nd">ND</th>';
             headerHTML += '<th rowspan="2" class="col-up">UP</th>';
@@ -10712,7 +10734,7 @@
                 
                 // Estado do toggle de meses
                 const monthsExpandedExecFin = document.getElementById('toggle-months-execFin')?.getAttribute('data-expanded') === '1';
-                const mmHideEF = monthsExpandedExecFin ? '' : ' visibility:hidden;';
+                const mmHideEF = monthsExpandedExecFin ? '' : ' display:none;';
 
                 anos.forEach(a=>{ 
                     hdr += `<th class="month-col-execFin" style="text-align:center;${mmHideEF}" colspan="${a.count}">${a.ano}</th>`; 
