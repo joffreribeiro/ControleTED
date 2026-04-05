@@ -2211,16 +2211,13 @@
                 const isFinalizado = /finaliz|finalizado|conclu|denunci|encerr/.test(stNorm);
                 const isVigenciaVencida = vigenciaVencidaFlag || /vigênc.*venc|vigencia.*venc/.test(stNorm);
                 const saldoTedCard = (t.valorTed || 0) - (t.gasto || 0);
-                const saldoPerc = (t.valorTed || 0) > 0 ? saldoTedCard / (t.valorTed || 1) : 0;
                 let cardBorderColor;
-                if (isFinalizado || isVigenciaVencida) {
-                    cardBorderColor = '#888780'; // encerrado/finalizado
-                } else if (saldoTedCard < 0 && Math.abs(saldoTedCard) / (t.valorTed || 1) > 0.20) {
-                    cardBorderColor = '#E24B4A'; // crítico: saldo negativo > 20% do valor
-                } else if (saldoTedCard < 0) {
-                    cardBorderColor = '#EF9F27'; // atenção: saldo negativo ≤ 20%
+                if (isFinalizado) {
+                    cardBorderColor = '#E24B4A'; // vermelho: finalizado / encerrado / denunciado
+                } else if (isVigenciaVencida) {
+                    cardBorderColor = '#EF9F27'; // laranja: vigência vencida
                 } else {
-                    cardBorderColor = '#639922'; // em dia: saldo positivo
+                    cardBorderColor = '#639922'; // verde: em execução
                 }
 
                 // ---- Metadados em linha ----
