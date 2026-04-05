@@ -11171,14 +11171,8 @@
                 if (logoutBtn) logoutBtn.style.display = 'none';
                 if (cloudCtrl) cloudCtrl.style.display = 'none';
                 if (adminPanel) adminPanel.style.display = 'none';
-                if (tabConfig) tabConfig.style.display = 'none';
-                // Se está na aba config, voltar para dashboard
-                try {
-                    var configTab = document.getElementById('config');
-                    if (configTab && configTab.classList.contains('active')) {
-                        switchTab('dashboard');
-                    }
-                } catch(e) {}
+                if (tabConfig) tabConfig.style.display = '';
+                // Se está na aba config, NÃO redirecionar — Configurações é acessível a todos
                 // Desabilitar botões de edição
                 enableEditButtons(false);
             }
