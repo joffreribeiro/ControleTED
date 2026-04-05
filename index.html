@@ -1275,6 +1275,14 @@
             box-shadow: 0 2px 6px rgba(16,24,40,0.06);
         }
 
+        /* Override específico para botões de ação dentro de tabelas (detalhes) */
+        #detalhes #tedsDetalheContainer .tabela-padrao .btn-icon-action {
+            width: 26px; height: 26px; padding: 0; border-radius: 6px; border: 0.5px solid var(--color-border); background: transparent; font-size: 13px;
+            display:inline-flex; align-items:center; justify-content:center; opacity:1;
+        }
+        #detalhes #tedsDetalheContainer .tabela-padrao .btn-icon-action.edit { color: #185FA5; }
+        #detalhes #tedsDetalheContainer .tabela-padrao .btn-icon-action.delete { color: #A32D2D; }
+
         /* Dark mode: keep icons subtle */
         [data-theme="dark"] .btn-icon-action {
             color: rgba(226,232,240,0.8);
@@ -1337,10 +1345,10 @@
             color: var(--color-text-secondary);
         }
 
-        .ted-kpi-card.kpi-valor { }
+        /* kpi-valor: usa estilo padrão do card */
         .ted-kpi-card.kpi-recebido { border-left: 3px solid #639922; }
         .ted-kpi-card.kpi-saldo { border-left: 3px solid #E24B4A; }
-        .ted-kpi-card.kpi-status { }
+        /* kpi-status: usa estilo padrão do card */
 
         .valor-negativo { color: #A32D2D !important; }
 
@@ -1429,6 +1437,17 @@
 
         .aditivos-footer { margin-top:0.5rem; }
         .btn-add-aditivo { width:100%; padding:8px 10px; border:1px dashed var(--color-primary-border); background:transparent; color:var(--color-primary); border-radius:8px; font-weight:600; }
+
+        /* Gantt compacto (rodapé dos cards de cadastro) */
+        .gantt-compact { background: var(--color-bg-surface); padding: 10px 12px; border-radius: 8px; }
+        .gantt-compact .gantt-anos { display:flex; gap:0.25rem; margin-bottom:6px; font-size:10px; color:var(--color-text-secondary); }
+        .gantt-compact .gantt-meses { display:flex; gap:4px; overflow-x:auto; }
+        .gantt-compact .gantt-meses .mes { width:36px; text-align:center; font-size:9px; color:var(--color-text-secondary); }
+        .gantt-compact .gantt-bars { display:flex; gap:4px; margin-top:8px; }
+        .gantt-compact .gantt-bar { height:16px; border-radius:3px; margin: 8px 2px; }
+        .gantt-compact .gantt-bar.previsto { background: #B5D4F4; }
+        .gantt-compact .gantt-bar.realizado { background: #C0DD97; margin-left: -16px; opacity:0.95; }
+        .gantt-compact .gantt-legend { margin-top:8px; font-size:11px; color:var(--color-text-secondary); display:flex; gap:12px; align-items:center; }
 
         .ted-info-toolbar {
             display: flex;
@@ -1566,16 +1585,23 @@
         .tabela-padrao {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
-        .tabela-padrao thead tr {
+        .tabela-padrao thead {
             background: var(--color-bg-surface);
-            color: var(--color-text-primary);
+        }
+        .tabela-padrao thead th {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            padding: 0.6rem 0.5rem;
+            text-align: left;
+            border-bottom: 0.5px solid var(--color-border);
+            white-space: nowrap;
         }
         .tabela-padrao th,
         .tabela-padrao td {
             padding: 0.6rem 0.5rem;
-            border: 1px solid var(--border-light);
             vertical-align: middle;
         }
         /* Colunas congeladas (aplicadas dinamicamente via JS) */
@@ -1628,12 +1654,26 @@
         .tabela-padrao .col-meta { width: 100px; }
         .tabela-padrao .col-saldo { width: 100px; text-align: right; }
         .tabela-padrao .col-percent { width: 80px; text-align: center; }
-        /* Garantir que os cabeçalhos (thead) fiquem centralizados mesmo quando colunas têm alinhamento direito */
-        .tabela-padrao thead th {
-            text-align: center;
+        /* Linhas: branco de base e hover suave */
+        .tabela-padrao tbody tr { background: #ffffff; }
+        .tabela-padrao tbody tr:hover { background: var(--color-bg-surface); }
+        .tabela-padrao tbody td { border-bottom: 0.5px solid var(--color-border); }
+        .tabela-padrao tbody tr:last-child td { border-bottom: none; }
+
+        /* Valores financeiros: alinhamento direito e monospace */
+        .tabela-padrao .col-valor { text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace; }
+
+        /* Linha de total (sempre em tfoot) */
+        .tabela-padrao .linha-total {
+            background: var(--color-bg-surface) !important;
+            font-weight: 500;
+            border-top: 0.5px solid rgba(0,0,0,0.15);
         }
-        /* Linhas alternadas - muito sutis para não confundir com o fundo */
-        .tabela-padrao tbody tr:nth-child(even) { background: #fbfdff; }
+
+        /* Tabela vazia (sem cabeçalho visível) */
+        .tabela-padrao.tabela-vazia thead { display: none; }
+        .empty-metas .empty-title { font-size:13px; color: var(--color-text-secondary); margin:0 0 6px 0; font-weight:500; }
+        .empty-metas .empty-sub { font-size:12px; color: var(--color-text-secondary); opacity:0.7; margin:0; }
         .tabela-padrao tbody tr:nth-child(odd) { background: #ffffff; }
         .tabela-padrao tbody tr:hover { background: #eef6ff; }
         /* reforçar separador entre linhas (melhora contraste com bordas) */
@@ -1651,29 +1691,35 @@
             margin-bottom: 1.75rem;
             padding: 0;
             background: #ffffff;
-            border: 1px solid rgba(30, 64, 175, 0.13);
-            border-radius: 0.85rem;
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(30, 64, 175, 0.04);
+            border: 0.5px solid var(--color-border);
+            border-radius: 12px;
             overflow: hidden;
-            transition: box-shadow 0.2s ease;
+            transition: box-shadow 0.12s ease;
         }
         #detalhes #tedsDetalheContainer .detalhe-secao:hover {
-            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.10), 0 0 0 1px rgba(30, 64, 175, 0.10);
+            box-shadow: 0 6px 18px rgba(12,20,35,0.06);
         }
 
-        /* Cabeçalho da seção — faixa com fundo surface */
+        /* Cabeçalho da seção (novo padrão) */
+        #detalhes #tedsDetalheContainer .detalhe-secao-header {
+            display:flex; align-items:center; justify-content:space-between; gap:1rem;
+            padding: 0.6rem 1rem; background: transparent; border-bottom: 0.5px solid var(--color-border);
+        }
         #detalhes #tedsDetalheContainer .detalhe-secao-titulo {
-            display: flex;
-            align-items: center;
-            gap: 0.55rem;
-            margin: 0;
-            padding: 0.75rem 1.25rem;
-            font-size: 0.92rem;
-            font-weight: 700;
-            color: var(--color-primary);
-            background: var(--color-bg-surface);
-            letter-spacing: 0.02em;
-            border-bottom: 1px solid var(--color-border);
+            display:flex; align-items:center; gap:0.5rem; margin:0; font-size:13px; font-weight:500; color:var(--color-text-primary);
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao-titulo .inline-icon-sm,
+        #detalhes #tedsDetalheContainer .detalhe-secao-titulo i,
+        #detalhes #tedsDetalheContainer .detalhe-secao-titulo svg {
+            width: 16px; height:16px; color:var(--color-text-secondary); opacity:0.9; stroke:currentColor; fill:none;
+        }
+
+        /* Contador/Badge neutro à esquerda do título */
+        .section-count-badge { display:inline-flex; align-items:center; justify-content:center; margin-left:8px; background:var(--color-bg-card); border:0.5px solid var(--color-border); color:var(--color-text-secondary); padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+
+        .detalhe-secao-actions { display:flex; align-items:center; gap:0.5rem; }
+        .section-add-btn {
+            background: #E6F1FB; color: #0C447C; border: 0.5px solid #85B7EB; border-radius:7px; padding:6px 14px; font-size:12px; font-weight:600; cursor:pointer;
         }
         #detalhes #tedsDetalheContainer .detalhe-secao-titulo .inline-icon-sm,
         #detalhes #tedsDetalheContainer .detalhe-secao-titulo i,
@@ -3579,12 +3625,12 @@
 
                     <!-- CADASTRO DE OBJETOS -->
                     <div class="detalhe-secao">
-                        <h3 class="detalhe-secao-titulo"><i data-lucide="package" class="inline-icon-sm"></i> Cadastro de Objetos</h3>
-                        <div class="detalhe-secao-body">
-                        <div style="margin-bottom: 1rem;">
-                            <button type="button" class="btn btn-primary" onclick="abrirModalObjeto()" style="min-width: 160px;">+ Adicionar</button>
+                        <div class="detalhe-secao-header">
+                            <h3 class="detalhe-secao-titulo"><i data-lucide="package" class="inline-icon-sm"></i> Cadastro de Objetos <span class="section-count-badge" id="count-objetos">0</span></h3>
+                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalObjeto()">+ Adicionar</button></div>
                         </div>
-
+                        <div class="detalhe-secao-body">
+                        <div>
                         <div class="table-wrapper" style="max-width: 900px; overflow-x: auto;">
                             <table class="tabela-padrao" style="width: 100%;">
                                 <thead>
@@ -3606,12 +3652,11 @@
 
                     <!-- CADASTRO DE METAS -->
                     <div class="detalhe-secao">
-                        <h3 class="detalhe-secao-titulo"><i data-lucide="target" class="inline-icon-sm"></i> Cadastro de Metas</h3>
-                        <div class="detalhe-secao-body">
-                        
-                        <div style="margin-bottom: 1rem;">
-                            <button type="button" class="btn btn-primary" onclick="abrirModalMeta()" style="min-width: 160px;">+ Adicionar</button>
+                        <div class="detalhe-secao-header">
+                            <h3 class="detalhe-secao-titulo"><i data-lucide="target" class="inline-icon-sm"></i> Cadastro de Metas <span class="section-count-badge" id="count-metas">0</span></h3>
+                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalMeta()">+ Adicionar</button></div>
                         </div>
+                        <div class="detalhe-secao-body">
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem;">
                             <table class="tabela-padrao" style="min-width: 850px;">
@@ -3636,11 +3681,11 @@
 
                     <!-- CADASTRO FÍSICO -->
                     <div class="detalhe-secao">
-                        <h3 class="detalhe-secao-titulo"><i data-lucide="home" class="inline-icon-sm"></i> Cadastro Físico</h3>
-                        <div class="detalhe-secao-body">
-                        <div style="margin-bottom: 1rem;">
-                            <button type="button" class="btn btn-primary" onclick="abrirModalFisicoCad()" style="min-width: 160px;">+ Adicionar</button>
+                        <div class="detalhe-secao-header">
+                            <h3 class="detalhe-secao-titulo"><i data-lucide="home" class="inline-icon-sm"></i> Cadastro Físico <span class="section-count-badge" id="count-fisicos">0</span></h3>
+                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalFisicoCad()">+ Adicionar</button></div>
                         </div>
+                        <div class="detalhe-secao-body">
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
                             <table class="tabela-padrao" style="min-width: 850px;">
@@ -3661,16 +3706,18 @@
                                 </tbody>
                             </table>
                         </div>
+                        <!-- Gantt compacto embutido no rodapé do card -->
+                        <div class="gantt-compact" id="ganttCompactFisico" style="margin-top:0.85rem; overflow-x:auto;"></div>
                         </div>
                     </div>
 
                     <!-- EXECUÇÃO FÍSICA -->
                     <div class="detalhe-secao">
-                        <h3 class="detalhe-secao-titulo"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física</h3>
-                        <div class="detalhe-secao-body">
-                        <div style="margin-bottom: 1rem;">
-                            <button type="button" class="btn btn-primary" onclick="abrirModalExecFisica()" style="min-width: 160px;">+ Adicionar</button>
+                        <div class="detalhe-secao-header">
+                            <h3 class="detalhe-secao-titulo"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física <span class="section-count-badge" id="count-execfis">0</span></h3>
+                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalExecFisica()">+ Adicionar</button></div>
                         </div>
+                        <div class="detalhe-secao-body">
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem;">
                             <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 600px;">
@@ -3693,11 +3740,11 @@
 
                     <!-- CADASTRO FINANCEIRA -->
                     <div class="detalhe-secao">
-                        <h3 class="detalhe-secao-titulo"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro</h3>
-                        <div class="detalhe-secao-body">
-                        <div style="margin-bottom: 1rem;">
-                            <button type="button" class="btn btn-primary" onclick="abrirModalFinanceiro()" style="min-width: 160px;">+ Adicionar</button>
+                        <div class="detalhe-secao-header">
+                            <h3 class="detalhe-secao-titulo"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro <span class="section-count-badge" id="count-financeiro">0</span></h3>
+                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalFinanceiro()">+ Adicionar</button></div>
                         </div>
+                        <div class="detalhe-secao-body">
 
                         <div class="table-wrapper" style="overflow-x: auto; position: relative;">
                             <!-- Filtros Cadastro Financeiro -->
@@ -3737,11 +3784,11 @@
 
                     <!-- EXECUÇÃO FINANCEIRA -->
                     <div class="detalhe-secao">
-                        <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira</h3>
-                        <div class="detalhe-secao-body">
-                        <div style="margin-bottom: 1rem;">
-                            <button type="button" class="btn btn-primary" onclick="abrirModalExecFin()" style="min-width: 160px;">+ Adicionar</button>
+                        <div class="detalhe-secao-header">
+                            <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira <span class="section-count-badge" id="count-execfin">0</span></h3>
+                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalExecFin()">+ Adicionar</button></div>
                         </div>
+                        <div class="detalhe-secao-body">
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
                             <!-- Filtros Execução Financeira -->
@@ -3777,11 +3824,11 @@
 
                     <!-- RECURSOS GERAIS IMBEL (por ND, sem separar por UP) -->
                     <div class="detalhe-secao">
-                        <h3 class="detalhe-secao-titulo"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL</h3>
-                        <div class="detalhe-secao-body">
-                        <div style="margin-bottom: 1rem;">
-                            <button type="button" class="btn btn-primary" onclick="abrirModalRecGeral()" style="min-width: 160px;">+ Adicionar</button>
+                        <div class="detalhe-secao-header">
+                            <h3 class="detalhe-secao-titulo"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL <span class="section-count-badge" id="count-recgeral">0</span></h3>
+                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalRecGeral()">+ Adicionar</button></div>
                         </div>
+                        <div class="detalhe-secao-body">
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
                             <!-- Filtros Recursos Gerais -->
@@ -5592,6 +5639,110 @@
             try { renderEntregasChart(tedId, 'entregasChartFull'); } catch(e) {}
             // Reinicializar ícones Lucide após carregar detalhes
             initLucideIcons();
+            // Atualizar badges de contadores das seções
+            try { atualizarTodosContadoresSecoes(); } catch(e) {}
+            try { renderCompactGanttFisico(); } catch(e) {}
+        }
+
+        // Atualizar todos os badges de contadores nas seções de detalhe
+        function atualizarTodosContadoresSecoes() {
+            try { const c = document.getElementById('count-objetos'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.objetos) ? window.tedSelecionado.objetos.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-metas'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.metas) ? window.tedSelecionado.metas.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.fisicos) ? window.tedSelecionado.fisicos.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-execfis'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.execFisicas) ? window.tedSelecionado.execFisicas.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-financeiro'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.financeiros) ? window.tedSelecionado.financeiros.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-execfin'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.execFinanceiras) ? window.tedSelecionado.execFinanceiras.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-recgeral'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.recursosGerais) ? window.tedSelecionado.recursosGerais.length : 0); } catch(e) {}
+        }
+
+        // Renderizar Gantt compacto no rodapé do card de Cadastro Físico
+        function renderCompactGanttFisico() {
+            const container = document.getElementById('ganttCompactFisico');
+            if (!container || !window.tedSelecionado) return;
+
+            // Determinar data base (meses) usando mesma lógica da tabela
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, date: new Date(d) });
+            }
+
+            const previsto = new Array(meses.length).fill(false);
+            const realizado = new Array(meses.length).fill(false);
+
+            // Marcar meses previstos a partir dos cadastros físicos
+            (window.tedSelecionado.fisicos || []).forEach(f => {
+                let s = null, e = null;
+                if (!isNaN(f.mInicio) && !isNaN(f.mFinal)) {
+                    s = Number(f.mInicio); e = Number(f.mFinal);
+                } else if (f.mesInicio && f.anoInicio) {
+                    const d = new Date(f.anoInicio, (f.mesInicio || 1) -1, 1);
+                    s = Math.floor((d.getFullYear() - startDate.getFullYear())*12 + (d.getMonth() - startDate.getMonth()));
+                    if (f.mesFinal && f.anoFinal) {
+                        const d2 = new Date(f.anoFinal, (f.mesFinal || 1) -1, 1);
+                        e = Math.floor((d2.getFullYear() - startDate.getFullYear())*12 + (d2.getMonth() - startDate.getMonth()));
+                    }
+                }
+                if (s === null) return;
+                for (let i = Math.max(0, s); i <= Math.min(meses.length-1, e===null? s : e); i++) previsto[i] = true;
+            });
+
+            // Marcar meses realizados a partir das execuções físicas
+            (window.tedSelecionado.execFisicas || []).forEach(exec => {
+                if (!exec.data) return;
+                try {
+                    const d = new Date(exec.data + 'T00:00:00');
+                    const idx = Math.floor((d.getFullYear() - startDate.getFullYear())*12 + (d.getMonth() - startDate.getMonth()));
+                    if (idx >= 0 && idx < meses.length) realizado[idx] = true;
+                } catch(e) {}
+            });
+
+            // Construir HTML compacto
+            let html = '';
+            html += '<div class="gantt-anos" aria-hidden="true">';
+            // apenas exibir anos agrupados pela sequência de meses
+            const anos = {};
+            meses.forEach((m,i)=> { anos[m.date.getFullYear()] = (anos[m.date.getFullYear()]||0) + 1; });
+            Object.keys(anos).forEach(ano => { html += `<div style="min-width:36px; padding:2px 6px;">${ano}</div>`; });
+            html += '</div>';
+
+            html += '<div class="gantt-meses" role="list">';
+            meses.forEach(m => { html += `<div class="mes" title="${m.label}">${m.label.split('/')[0]}</div>`; });
+            html += '</div>';
+
+            html += '<div class="gantt-bars">';
+            // Previsto (linha)
+            html += '<div style="display:flex; gap:4px; align-items:center;">';
+            meses.forEach((m, i) => {
+                if (previsto[i]) html += '<div class="gantt-bar previsto" style="width:36px"></div>';
+                else html += '<div style="width:36px"></div>';
+            });
+            html += '</div>';
+            // Realizado (linha)
+            html += '<div style="display:flex; gap:4px; align-items:center; margin-top:6px">';
+            meses.forEach((m, i) => {
+                if (realizado[i]) html += '<div class="gantt-bar realizado" style="width:36px"></div>';
+                else html += '<div style="width:36px"></div>';
+            });
+            html += '</div>';
+            html += '</div>';
+
+            html += '<div class="gantt-legend"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:10px;background:#B5D4F4;border-radius:2px;display:inline-block"></span> Previsto</span>';
+            html += '<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:10px;background:#C0DD97;border-radius:2px;display:inline-block"></span> Realizado</span></div>';
+
+            container.innerHTML = html;
         }
 
         // Exibir informações do TED
@@ -6251,13 +6402,25 @@
                 `;
             }).join('');
 
-            tbody.innerHTML += `
-                <tr class="linha-total">
-                    <td colspan="3" style="text-align: right;">TOTAL:</td>
-                    <td class="col-valor">${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td class="col-acao"></td>
-                </tr>
-            `;
+            // Atualizar tfoot com linha de total
+            const tableEl = tbody.closest('table');
+            if (tableEl) {
+                let tfoot = tableEl.querySelector('tfoot');
+                if (!tfoot) {
+                    tfoot = document.createElement('tfoot');
+                    tableEl.appendChild(tfoot);
+                }
+                tfoot.innerHTML = `
+                    <tr class="linha-total">
+                        <td colspan="3" style="text-align: right;">TOTAL:</td>
+                        <td class="col-valor">${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td class="col-acao"></td>
+                    </tr>
+                `;
+            }
+
+            // Atualizar contador da seção (badge)
+            try { const c = document.getElementById('count-objetos'); if (c) c.textContent = String(window.tedSelecionado.objetos.length); } catch(e) {}
             // Reinicializar ícones Lucide
             initLucideIcons();
         }
@@ -7711,8 +7874,14 @@
             const tableElement = tbody.closest('table');
             
             if (!window.tedSelecionado || !window.tedSelecionado.metas || window.tedSelecionado.metas.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhuma meta cadastrada</td></tr>';
+                // Mostrar placeholder centralizado e esconder o thead
+                if (tableElement) tableElement.classList.add('tabela-vazia');
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 2rem; color: var(--color-text-secondary);"><div class="empty-metas"><p class="empty-title">Nenhuma meta cadastrada.</p><p class="empty-sub">Adicione metas para acompanhar o progresso do TED.</p></div></td></tr>';
+                try { const c = document.getElementById('count-metas'); if (c) c.textContent = '0'; } catch(e) {}
                 return;
+            } else {
+                if (tableElement) tableElement.classList.remove('tabela-vazia');
+                try { const c = document.getElementById('count-metas'); if (c) c.textContent = String(window.tedSelecionado.metas.length); } catch(e) {}
             }
 
             // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
@@ -8198,6 +8367,11 @@
 
             // Atualizar opções de Execução Física (objetos únicos do cadastro físico)
             atualizarOpcoesObjetoExecFisica();
+            // Atualizar contador da seção (badge)
+            try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = String(window.tedSelecionado.fisicos.length); } catch(e) {}
+            // Atualizar contador da seção (badge)
+            try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = String(window.tedSelecionado.fisicos.length); } catch(e) {}
+            try { renderCompactGanttFisico(); } catch(e) {}
         }
 
         // EXECUÇÃO FÍSICA
@@ -8305,8 +8479,8 @@
             let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
             if (headerRow2) headerRow2.remove();
             headerRow2 = document.createElement('tr');
-            headerRow2.style.background = '#4b7ed0';
-            headerRow2.style.color = 'white';
+            headerRow2.style.background = 'var(--color-bg-surface)';
+            headerRow2.style.color = 'var(--color-text-secondary)';
             let headerRow2HTML = '';
             let firstMonthExecFis = true;
             meses.forEach(m => {
