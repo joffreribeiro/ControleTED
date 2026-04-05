@@ -1,9 +1,10 @@
+@charset "UTF-8";
         /* ===== Reset ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* ===== VariÃ¡veis CSS ===== */
+        /* ===== Variáveis CSS ===== */
         :root {
-            /* Tokens de paleta (refatoraÃ§Ã£o) */
+            /* Tokens de paleta (refatoração) */
             --color-primary: #0C447C;
             --color-primary-mid: #185FA5;
             --color-primary-bg: #E6F1FB;
@@ -18,7 +19,7 @@
             --color-danger: #ef4444;
             --radius-card: 10px;
 
-            /* Legacy (compatibilidade com cÃ³digo existente) */
+            /* Legacy (compatibilidade com código existente) */
             --primary: #3b82f6;
             --primary-dark: #2563eb;
             --primary-light: #60a5fa;
@@ -210,7 +211,7 @@
         .topbar-btn-carregar { background: rgba(255,255,255,0.12); color: #ffffff; }
         .topbar-btn-salvar { background: #378ADD; color: #ffffff; }
 
-        /* Subbar (seleÃ§Ã£o de TED) */
+        /* Subbar (seleção de TED) */
         .subbar {
             background: var(--color-bg-card);
             border-bottom: 0.5px solid var(--color-border);
@@ -315,13 +316,13 @@
             white-space: nowrap;
         }
 
-        /* Centralizar todos os cabeÃ§alhos das tabelas padrÃ£o */
+        /* Centralizar todos os cabeçalhos das tabelas padrão */
         .tabela-padrao thead th {
             text-align: center;
             vertical-align: middle;
         }
 
-        /* ForÃ§ar centralizaÃ§Ã£o APENAS no cabeÃ§alho do Resumo Financeiro do dashboard */
+        /* Forçar centralização APENAS no cabeçalho do Resumo Financeiro do dashboard */
         #resumoFinanceiroChart .tabela-padrao thead th {
             text-align: center !important;
             vertical-align: middle !important;
@@ -431,7 +432,7 @@
             #listaTeds { grid-template-columns: 1fr; }
         }
 
-        /* Remover margin extra nos cards dentro da grade (grid jÃ¡ controla espaÃ§amento) */
+        /* Remover margin extra nos cards dentro da grade (grid já controla espaçamento) */
         #listaTeds .card { margin: 0; }
 
         /* Buttons */
@@ -457,7 +458,7 @@
             font-weight: 500;
         }
 
-        /* Barra de execuÃ§Ã£o para coluna ExecuÃ§Ã£o */
+        /* Barra de execução para coluna Execução */
         .exec-bar {
             width: 60px;
             height: 4px;
@@ -490,7 +491,7 @@
         .col-saldo.zero { color: var(--color-text-secondary); }
         .col-saldo.neg { color: #A32D2D; }
 
-        /* Alerta de divergÃªncia entre Cadastro Financeiro e Objetos */
+        /* Alerta de divergência entre Cadastro Financeiro e Objetos */
         .alert-divergencia {
             background: #FAEEDA;
             border: 0.5px solid #EF9F27;
@@ -628,7 +629,7 @@
             margin-bottom: 0.5rem;
         }
 
-        /* CartÃµes compactos do Resumo Geral */
+        /* Cartões compactos do Resumo Geral */
         .stat-card {
             background: #ffffff;
             padding: 14px 16px;
@@ -799,7 +800,7 @@
             margin-bottom: 0.75rem;
             align-items: center;
         }
-        /* Filtro fixo no topo/esquerda da Ã¡rea da tabela (nÃ£o acompanha scroll horizontal) */
+        /* Filtro fixo no topo/esquerda da área da tabela (não acompanha scroll horizontal) */
         .table-wrapper > .filter-bar,
         .table-freeze-wrapper > .filter-bar {
             position: sticky;
@@ -844,7 +845,7 @@
             color: white;
         }
         .filter-btn::after {
-            content: 'â–¼';
+            content: '�-�';
             font-size: 0.55rem;
             margin-left: 0.35rem;
             opacity: 0.7;
@@ -908,7 +909,7 @@
             background: #fecaca;
         }
 
-        /* PrÃ³ximas AÃ§Ãµes - Layout 4 colunas (adiciona coluna extra em telas grandes) */
+        /* Próximas Ações - Layout 4 colunas (adiciona coluna extra em telas grandes) */
         .proximas-acoes-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1089,7 +1090,7 @@
             }
         }
 
-        /* Estilos para InformaÃ§Ãµes do TED */
+        /* Estilos para Informações do TED */
         .ted-info-section {
             margin-bottom: 2rem;
             padding: 1.5rem;
@@ -1238,7 +1239,7 @@
             box-shadow: 0 2px 6px rgba(16,24,40,0.06);
         }
 
-        /* Override especÃ­fico para botÃµes de aÃ§Ã£o dentro de tabelas (detalhes) */
+        /* Override específico para botões de ação dentro de tabelas (detalhes) */
         #detalhes #tedsDetalheContainer .tabela-padrao .btn-icon-action {
             width: 26px; height: 26px; padding: 0; border-radius: 6px; border: 0.5px solid var(--color-border); background: transparent; font-size: 13px;
             display:inline-flex; align-items:center; justify-content:center; opacity:1;
@@ -1385,14 +1386,14 @@
         /* ===== Layout de duas colunas (Detalhes TED) ===== */
         .detail-two-col {
             display: grid;
-            /* duas colunas iguais para que cada card ocupe metade da Ã¡rea */
+            /* duas colunas iguais para que cada card ocupe metade da área */
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-bottom: 1rem;
         }
         .detail-right-col { display: flex; flex-direction: column; gap: 12px; }
 
-        /* Cards dc (Dados Cadastrais, Aditivos, SituaÃ§Ã£o) */
+        /* Cards dc (Dados Cadastrais, Aditivos, Situação) */
         .dc-card { background: #ffffff; border: 0.5px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 14px 16px; }
         .dc-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
         .dc-title { font-size:13px; font-weight:600; color:#1a1a1a; }
@@ -1427,7 +1428,7 @@
         .aditivos-footer { margin-top:10px; }
         .btn-add-aditivo { width:100%; padding:8px; border:0.5px dashed #85B7EB; background:transparent; color:#185FA5; border-radius:6px; font-size:12px; cursor:pointer; }
 
-        /* Gantt compacto (rodapÃ© dos cards de cadastro) */
+        /* Gantt compacto (rodapé dos cards de cadastro) */
         .gantt-compact { background: var(--color-bg-surface); padding: 10px 12px; border-radius: 8px; }
         .gantt-compact .gantt-anos { display:flex; gap:0.25rem; margin-bottom:6px; font-size:10px; color:var(--color-text-secondary); }
         .gantt-compact .gantt-meses { display:flex; gap:4px; overflow-x:auto; }
@@ -1569,7 +1570,7 @@
             z-index: 3;
         }
 
-        /* Sombra para indicar colunas congeladas - Ãºltima coluna freeze */
+        /* Sombra para indicar colunas congeladas - última coluna freeze */
         .table-freeze-wrapper .freeze-col.freeze-last {
             box-shadow: 3px 0 6px rgba(0, 0, 0, 0.15);
         }
@@ -1618,7 +1619,7 @@
         .tabela-padrao .sticky-freeze.sticky-freeze-last {
             box-shadow: 3px 0 6px rgba(0,0,0,0.18);
         }
-        /* DivisÃ£o visual de anos (linha preta) */
+        /* Divisão visual de anos (linha preta) */
         .tabela-padrao .year-divider-cell {
             border-left: 2px solid #000 !important;
             box-shadow: inset 2px 0 0 #000;
@@ -1632,7 +1633,7 @@
             white-space: nowrap;
             letter-spacing: 0.02em;
         }
-        /* Larguras padrÃ£o para colunas comuns */
+        /* Larguras padrão para colunas comuns */
         .tabela-padrao .col-acao { min-width: 70px; text-align: center; }
         .tabela-padrao .col-m { width: 50px; text-align: center; }
         .tabela-padrao .col-mes { width: 90px; text-align: center; }
@@ -1662,13 +1663,13 @@
             border-top: 0.5px solid rgba(0,0,0,0.15);
         }
 
-        /* Tabela vazia (sem cabeÃ§alho visÃ­vel) */
+        /* Tabela vazia (sem cabeçalho visível) */
         .tabela-padrao.tabela-vazia thead { display: none; }
         .empty-metas .empty-title { font-size:13px; color: var(--color-text-secondary); margin:0 0 6px 0; font-weight:500; }
         .empty-metas .empty-sub { font-size:12px; color: var(--color-text-secondary); opacity:0.7; margin:0; }
         .tabela-padrao tbody tr:nth-child(odd) { background: #ffffff; }
         .tabela-padrao tbody tr:hover { background: #eef6ff; }
-        /* reforÃ§ar separador entre linhas (melhora contraste com bordas) */
+        /* reforçar separador entre linhas (melhora contraste com bordas) */
         .tabela-padrao tbody td { border-bottom: 1px solid rgba(16,24,40,0.04); }
 
         /* Dark mode table rows */
@@ -1677,7 +1678,7 @@
         [data-theme="dark"] .tabela-padrao tbody tr:hover { background: #0b2a44; }
         [data-theme="dark"] .tabela-padrao tbody td { border-bottom: 1px solid rgba(255,255,255,0.03); }
 
-        /* ===== Blocos de seÃ§Ã£o padronizados (aba Detalhes) ===== */
+        /* ===== Blocos de seção padronizados (aba Detalhes) ===== */
         #detalhes #tedsDetalheContainer .detalhe-secao {
             position: relative;
             margin-bottom: 1.75rem;
@@ -1692,7 +1693,7 @@
             box-shadow: 0 6px 18px rgba(12,20,35,0.06);
         }
 
-        /* CabeÃ§alho da seÃ§Ã£o (novo padrÃ£o) */
+        /* Cabeçalho da seção (novo padrão) */
         #detalhes #tedsDetalheContainer .detalhe-secao-header {
             display:flex; align-items:center; justify-content:space-between; gap:1rem;
             padding: 0.6rem 1rem; background: transparent; border-bottom: 0.5px solid var(--color-border);
@@ -1706,7 +1707,7 @@
             width: 16px; height:16px; color:var(--color-text-secondary); opacity:0.9; stroke:currentColor; fill:none;
         }
 
-        /* Contador/Badge neutro Ã  esquerda do tÃ­tulo */
+        /* Contador/Badge neutro à esquerda do título */
         .section-count-badge { display:inline-flex; align-items:center; justify-content:center; margin-left:8px; background:var(--color-bg-card); border:0.5px solid var(--color-border); color:var(--color-text-secondary); padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
 
         .detalhe-secao-actions { display:flex; align-items:center; gap:0.5rem; }
@@ -1724,12 +1725,12 @@
             fill: none;
         }
 
-        /* Corpo da seÃ§Ã£o (formulÃ¡rio + tabela) */
+        /* Corpo da seção (formulário + tabela) */
         #detalhes #tedsDetalheContainer .detalhe-secao-body {
             padding: 1.25rem 1.5rem;
         }
 
-        /* Form groups dentro das seÃ§Ãµes: labels mais legÃ­veis */
+        /* Form groups dentro das seções: labels mais legíveis */
         #detalhes #tedsDetalheContainer .detalhe-secao .form-group label {
             font-size: 0.78rem;
             font-weight: 600;
@@ -1751,7 +1752,7 @@
             outline: none;
         }
 
-        /* BotÃ£o "Adicionar" dentro das seÃ§Ãµes */
+        /* Botão "Adicionar" dentro das seções */
         #detalhes #tedsDetalheContainer .detalhe-secao .btn-primary {
             border-radius: 0.5rem;
             font-weight: 600;
@@ -1793,7 +1794,7 @@
             box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
             background: #ffffff;
         }
-        /* Aditivo/Apostilamento histÃ³rico dentro das seÃ§Ãµes claras (detalhe-secao) */
+        /* Aditivo/Apostilamento histórico dentro das seções claras (detalhe-secao) */
         #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico,
         #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico {
             border: 1px solid rgba(30, 64, 175, 0.18) !important;
@@ -1812,7 +1813,7 @@
             color: var(--color-text-primary);
         }
 
-        /* â”€â”€ CabeÃ§alho da tabela: background opaco obrigatÃ³rio â”€â”€ */
+        /* �"?�"? Cabeçalho da tabela: background opaco obrigatório �"?�"? */
         #detalhes #tedsDetalheContainer .tabela-padrao thead th {
             color: var(--color-text-primary);
             border-color: var(--color-border);
@@ -1827,8 +1828,8 @@
             background: var(--color-bg-surface) !important;
         }
 
-        /* â”€â”€ Colunas congeladas (sticky-freeze) â”€â”€ */
-        /* Corpo/rodapÃ©: background sÃ³lido branco */
+        /* �"?�"? Colunas congeladas (sticky-freeze) �"?�"? */
+        /* Corpo/rodapé: background sólido branco */
         #detalhes #tedsDetalheContainer .tabela-padrao tbody .sticky-freeze,
         #detalhes #tedsDetalheContainer .tabela-padrao tfoot .sticky-freeze {
             position: sticky;
@@ -1843,19 +1844,19 @@
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover .sticky-freeze {
             background: #eaf2ff !important;
         }
-        /* CabeÃ§alho congelado: mesmo background opaco, z-index mais alto */
+        /* Cabeçalho congelado: mesmo background opaco, z-index mais alto */
         #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze {
             position: sticky;
             z-index: 15;
             background: var(--color-bg-surface) !important;
             color: var(--color-text-primary);
         }
-        /* Sombra na Ãºltima coluna congelada */
+        /* Sombra na última coluna congelada */
         #detalhes #tedsDetalheContainer .tabela-padrao .sticky-freeze.sticky-freeze-last {
             box-shadow: 4px 0 8px rgba(0,0,0,0.16);
         }
 
-        /* â”€â”€ Linhas do corpo â”€â”€ */
+        /* �"?�"? Linhas do corpo �"?�"? */
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(even) {
             background: #f7faff;
         }
@@ -1871,9 +1872,9 @@
             padding-bottom: 0.6rem;
         }
 
-        /* Garantir legibilidade em modo claro: forÃ§ar texto escuro em todas as cÃ©lulas
+        /* Garantir legibilidade em modo claro: forçar texto escuro em todas as células
            dentro das tabelas da aba Detalhes. Usa alta especificidade e !important para
-           sobrepor estilos inline dinÃ¢micos ou regras de maior precedÃªncia (ex.: sticky-freeze).
+           sobrepor estilos inline dinâmicos ou regras de maior precedência (ex.: sticky-freeze).
         */
         #detalhes #tedsDetalheContainer .tabela-padrao tbody td,
         #detalhes #tedsDetalheContainer .tabela-padrao tbody th,
@@ -1974,8 +1975,8 @@
             background: #0b1a31;
         }
         
-        /* Se o histÃ³rico de aditivos/apostilamentos estiver dentro de um detalhe-secao
-           (bloco claro), forÃ§ar esquema claro para manter legibilidade) */
+        /* Se o histórico de aditivos/apostilamentos estiver dentro de um detalhe-secao
+           (bloco claro), forçar esquema claro para manter legibilidade) */
         #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico,
         #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico {
             background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
@@ -2001,7 +2002,7 @@
             border-bottom: 1px solid rgba(15,23,42,0.04);
         }
         
-        /* ===== Dashboard: Cards e painÃ©is ===== */
+        /* ===== Dashboard: Cards e painéis ===== */
         #dashboard .dashboard-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -2082,7 +2083,7 @@
             background: #e8f4f8 !important;
             font-weight: bold;
         }
-        /* CabeÃ§alho secundÃ¡rio (meses Gantt) */
+        /* Cabeçalho secundário (meses Gantt) */
         .tabela-padrao .header-meses {
             background: var(--color-primary-bg);
             color: var(--color-primary);
@@ -2121,13 +2122,13 @@
         /* Linha alternada para Gantt */
         .gantt-table tbody tr:nth-child(even) { background: #f9f9f9; }
         .gantt-table tbody tr:nth-child(odd) { background: #fff; }
-        /* CabeÃ§alho secundÃ¡rio de meses no Gantt */
+        /* Cabeçalho secundário de meses no Gantt */
         .gantt-table .header-meses {
             background: var(--color-primary-bg);
             color: var(--color-primary);
             font-size: 0.7rem;
         }
-        /* Congelar colunas UP e TED na tabela de vigÃªncia */
+        /* Congelar colunas UP e TED na tabela de vigência */
         .gantt-table .sticky-up,
         .gantt-table .sticky-ted {
             position: sticky;
@@ -2154,14 +2155,14 @@
             left: 140px;
             box-shadow: 4px 0 6px rgba(0,0,0,0.15);
         }
-        /* Barra do Gantt (vigÃªncia) - legado, mantido para compatibilidade */
+        /* Barra do Gantt (vigência) - legado, mantido para compatibilidade */
         .gantt-row-label { white-space: nowrap; font-weight:600; }
-        /* CÃ©lula de mÃªs do Gantt - container posicionado para vlines */
+        /* Célula de mês do Gantt - container posicionado para vlines */
         td.gantt-m {
             position: relative;
             padding: 6px 0 !important;
         }
-        /* Barra dentro de cÃ©lulas de vigÃªncia */
+        /* Barra dentro de células de vigência */
         td.gantt-m .gantt-bar-seg {
             height: 16px;
             background: var(--color-primary-mid);
@@ -2216,7 +2217,7 @@
         td.gantt-m .gantt-bar-seg.bar-aditivo-6 { background: #be185d; }
         td.gantt-m .gantt-bar-seg.bar-aditivo-7 { background: #4d7c0f; }
         td.gantt-m .gantt-bar-seg.bar-aditivo-8 { background: #9333ea; }
-        /* TransiÃ§Ã£o suave entre segmentos: remover border-radius interno */
+        /* Transição suave entre segmentos: remover border-radius interno */
         td.gantt-m.bar-seg-transition .gantt-bar-seg {
             border-radius: 0 !important;
             margin-left: 0 !important;
@@ -2284,7 +2285,7 @@
         .aditivo-historico td.valor-aditivo { text-align: center; vertical-align: middle; white-space: nowrap; }
         .aditivo-historico td.valor-aditivo .valor-text { display:inline-block; min-width:6rem; }
 
-        /* ForÃ§ar contraste no modal (labels/inputs) */
+        /* Forçar contraste no modal (labels/inputs) */
         .aditivo-modal { color: var(--text); }
         .aditivo-modal label { color: var(--text); font-weight:600; display:block; margin-bottom:6px; }
         .aditivo-modal input { color: var(--text); background: var(--bg-secondary); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; }
@@ -2301,7 +2302,7 @@
         .aditivo-modal-expanded .campo-modificado input,
         .aditivo-modal-expanded .campo-modificado select,
         .aditivo-modal-expanded .campo-modificado textarea { border-color: #f59e0b !important; background: rgba(245,158,11,0.06) !important; }
-        .aditivo-modal-expanded .campo-modificado label::after { content: ' âœŽ alterado'; font-size: 0.7rem; color: #f59e0b; font-weight: 400; margin-left: 6px; }
+        .aditivo-modal-expanded .campo-modificado label::after { content: ' �oZ alterado'; font-size: 0.7rem; color: #f59e0b; font-weight: 400; margin-left: 6px; }
         /* Change display in history table */
         .aditivo-change-badge { display: inline-block; font-size: 0.72rem; padding: 1px 6px; border-radius: 4px; margin: 1px 2px; line-height: 1.4; }
         .aditivo-change-old { background: rgba(239,68,68,0.10); color: #dc2626; text-decoration: line-through; }
@@ -2309,7 +2310,7 @@
         .aditivo-change-field { font-weight: 600; color: var(--text-secondary); font-size: 0.72rem; }
         .aditivo-changes-list { display: flex; flex-direction: column; gap: 3px; max-width: 400px; }
         .aditivo-change-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-        /* Info view: valor com alteraÃ§Ã£o via aditivo */
+        /* Info view: valor com alteração via aditivo */
         .valor-alterado-aditivo { display: inline-flex; align-items: center; gap: 6px; }
         .valor-alterado-aditivo .valor-antigo { text-decoration: line-through; color: var(--text-muted); font-size: 0.85em; opacity: 0.7; }
         .valor-alterado-aditivo .valor-novo { color: #16a34a; font-weight: 700; }
@@ -2321,13 +2322,13 @@
         .aditivo-clone-table td[contenteditable="true"]:focus { background: rgba(59,130,246,0.06); outline: 2px solid rgba(59,130,246,0.2); border-radius: 2px; }
         .aditivo-clone-table tr:hover { background: rgba(59,130,246,0.03); }
         .aditivo-clone-table tr[data-removido="1"] td { text-decoration: line-through; color: var(--text-muted); }
-        /* Destaque de cÃ©lulas alteradas via aditivo/apostilamento nas tabelas principais */
+        /* Destaque de células alteradas via aditivo/apostilamento nas tabelas principais */
         .celula-alterada-aditivo { position: relative; white-space: nowrap; }
         .celula-alterada-aditivo .val-antigo { text-decoration: line-through; color: var(--text-muted); font-size: 0.92em; opacity: 0.75; display: inline-block; margin-right:6px; }
         .celula-alterada-aditivo .alter-arrow { color: #9ca3af; margin: 0 6px; font-weight:600; }
         .celula-alterada-aditivo .val-novo { color: #16a34a; font-weight: 700; display: inline-block; }
         tr.linha-adicionada-aditivo { background: rgba(34,197,94,0.08) !important; }
-        tr.linha-adicionada-aditivo td:first-child::before { content: 'ï¼‹'; color: #16a34a; font-weight: 700; margin-right: 4px; }
+        tr.linha-adicionada-aditivo td:first-child::before { content: '�<'; color: #16a34a; font-weight: 700; margin-right: 4px; }
         tr.linha-removida-aditivo { background: rgba(239,68,68,0.06) !important; }
         tr.linha-removida-aditivo td { text-decoration: line-through; color: var(--text-muted) !important; opacity: 0.6; }
         /* Entregas - novo layout de cards */
@@ -2350,7 +2351,7 @@
         .resumo-anual-grid .resumo-value.negative { color: #A32D2D; }
         .resumo-anual-grid .resumo-value.saldo { font-weight:500; color:var(--color-text-primary); border-bottom: none; }
 
-        /* TÃ­tulo pequeno azul para cards (consistente com detalhe-secao-titulo) */
+        /* Título pequeno azul para cards (consistente com detalhe-secao-titulo) */
         .card .card-title-blue {
             display: flex;
             align-items: center;
@@ -2398,7 +2399,7 @@
             border-bottom: 1px solid rgba(15,23,42,0.04) !important;
         }
 
-        /* BotÃµes de Ã­cone (editar/excluir) */
+        /* Botões de ícone (editar/excluir) */
         .btn-icon {
             display: inline-flex;
             align-items: center;
@@ -2433,7 +2434,7 @@
             box-shadow: var(--shadow-sm);
         }
 
-        /* Toast/NotificaÃ§Ã£o */
+        /* Toast/Notificação */
         .toast-container {
             position: fixed;
             top: 80px;
@@ -2545,9 +2546,9 @@
         .modal-objeto .modal-objeto-actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem; }
         .modal-objeto .modal-objeto-error { color:#b91c1c; background:#fff1f2; border:1px solid #fecaca; padding:0.4rem 0.6rem; border-radius:0.35rem; font-size:0.9rem; margin-bottom:0.75rem; display:none; }
         .modal-objeto .modal-objeto-error.open { display:block; }
-        /* ExceÃ§Ã£o: tabela de resumo assinados/encerrados -> fonte escura (mantÃ©m comportamento) */
+        /* Exceção: tabela de resumo assinados/encerrados -> fonte escura (mantém comportamento) */
         #resumoGeralGrid table thead th { color: var(--text) !important; background: transparent !important; }
-        /* CabeÃ§alhos de meses/anos do Gantt (estilo especÃ­fico) */
+        /* Cabeçalhos de meses/anos do Gantt (estilo específico) */
         .tabela-padrao .header-meses,
         .gantt-table .header-meses {
             background: #E6F1FB;
@@ -2555,7 +2556,7 @@
             font-size: 0.7rem;
         }
 
-        /* Corpo das tabelas: fonte e espaÃ§amento unificados */
+        /* Corpo das tabelas: fonte e espaçamento unificados */
         table tbody td,
         .tabela-padrao tbody td,
         .table-wrapper tbody td,
@@ -2566,14 +2567,14 @@
             padding: 9px 12px;
             vertical-align: middle;
             border-bottom: 1px solid rgba(0,0,0,0.06);
-            /* evitar quebra vertical de texto dentro de cÃ©lulas */
+            /* evitar quebra vertical de texto dentro de células */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             word-break: normal;
         }
 
-        /* ===== Fix global: evitar quebra em cÃ©lulas, badges e valores ===== */
+        /* ===== Fix global: evitar quebra em células, badges e valores ===== */
         td, th {
             white-space: nowrap;
             overflow: hidden;
@@ -2617,7 +2618,7 @@
             white-space: nowrap;
         }
 
-        /* Monospace para valores numÃ©ricos */
+        /* Monospace para valores numéricos */
         .mono,
         td.mono,
         .tabela-padrao .col-saldo,
@@ -2629,16 +2630,16 @@
             font-size: 12px !important;
         }
 
-        /* Alinhamento de colunas numÃ©ricas */
+        /* Alinhamento de colunas numéricas */
         .tabela-padrao .col-valor,
         td.col-valor,
         td.valor { text-align: right; }
 
-        /* Zebra e hover padrÃ£o (padrÃ£o claro); regras mais especÃ­ficas em #detalhes continuam vÃ¡lidas */
+        /* Zebra e hover padrão (padrão claro); regras mais específicas em #detalhes continuam válidas */
         .tabela-padrao tbody tr:nth-child(even) td { background: #ffffff; }
         .tabela-padrao tbody tr:hover td { background: #F4F8FE; }
 
-        /* RodapÃ© / linhas de total */
+        /* Rodapé / linhas de total */
         .tabela-padrao tfoot td,
         .tabela-padrao .linha-total td {
             background: #F4F4F2;
@@ -2659,21 +2660,21 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        /* Larguras fixas em px para as 6 colunas que ficam visÃ­veis */
+        /* Larguras fixas em px para as 6 colunas que ficam visíveis */
         #tabelaFinanceiraCompleta col.col-nd  { width: 120px; }
         #tabelaFinanceiraCompleta col.col-up  { width: 80px; }
         #tabelaFinanceiraCompleta col.col-m   { width: 60px; }
         #tabelaFinanceiraCompleta col.col-mes { width: 120px; }
         #tabelaFinanceiraCompleta col.col-valor { width: 160px; }
         #tabelaFinanceiraCompleta col.col-acao  { width: 80px; }
-        /* Container: encolhe ao tamanho da tabela, scroll quando necessÃ¡rio */
+        /* Container: encolhe ao tamanho da tabela, scroll quando necessário */
         #wrapperCadFin {
             display: inline-block;
             width: fit-content;
             max-width: 100%;
             overflow-x: auto;
         }
-        /* Card da seÃ§Ã£o encolhe junto quando meses ocultos */
+        /* Card da seção encolhe junto quando meses ocultos */
         .detalhe-secao.cadFin-collapsed {
             display: inline-block;
             width: fit-content;
