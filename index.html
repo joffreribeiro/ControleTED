@@ -6118,7 +6118,7 @@
                 if (adCountEl) adCountEl.textContent = `${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} · +${totalAditivoMeses} meses`;
 
                 // Montar tabela compacta (colunas: #, Tipo, Meses, Data, Ação)
-                let histHtml = '<table class="tabela-aditivos"><thead><tr><th>#</th><th>Tipo</th><th>Meses</th><th>Data</th><th>Ação</th></tr></thead><tbody>';
+                let histHtml = '<table class="tabela-aditivos"><thead><tr><th>#</th><th>Tipo</th><th>Meses</th><th>Data</th><th>Valor do TED</th><th>Alterações</th><th>Observação</th><th>Ação</th></tr></thead><tbody>';
                 let contAditivo = 0, contApost = 0;
                 alteracoes.forEach((a, idx) => {
                     const isAditivo = a.tipo === 'aditivo';
@@ -6129,8 +6129,14 @@
                     const dataStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
                     const mesesStr = isAditivo ? `+${a.meses || 0}` : '-';
 
-                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">✎</button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">✖</button></td></tr>`;
-                });
+                    const valorTedStr = (a.valorTed !== undefined && a.valorTed !== null && a.valorTed !== '')
+                        ? Number(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits: 2})
+                        : '-';
+                    const nAlteracoes = a.camposAlterados ? Object.keys(a.camposAlterados).length : 0;
+                    const alteracoesStr = nAlteracoes > 0 ? String(nAlteracoes) : '-';
+                    const obsStr = a.obs ? a.obs : '-';
+
+                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td style="font-family:monospace;text-align:right;">${valorTedStr}</td><td style="text-align:center;">${alteracoesStr}</td><td>${obsStr}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">✎</button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">✖</button></td></tr>`;                });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
                 document.getElementById('info_alteracoesHistorico').style.display = 'block';
@@ -7522,6 +7528,11 @@
             const altObj = { tipo, data, obs };
             if (tipo === 'aditivo') {
                 altObj.meses = meses;
+            }
+            // Registrar valor do TED vigente no momento do save (campo VALOR DO TED na tabela)
+            const valorTedAtual = novosValores['valorTed'] || ted.valorTed;
+            if (valorTedAtual !== undefined && valorTedAtual !== null && valorTedAtual !== '') {
+                altObj.valorTed = valorTedAtual;
             }
             altObj.snapshot = snapshot;
             altObj.camposAlterados = alteracoes;
