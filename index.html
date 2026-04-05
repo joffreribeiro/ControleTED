@@ -1200,51 +1200,62 @@
             z-index: 1;
         }
 
-        .ted-kpi-grid {
+        /* ===== Metrics Grid (Detalhes TED) ===== */
+        .metrics-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0.9rem;
-            margin-bottom: 0.35rem;
+            gap: 10px;
+            margin-bottom: 1.25rem;
         }
 
-        .ted-kpi-card {
-            background: var(--color-bg-card);
-            border: 0.5px solid var(--color-border);
-            border-radius: var(--radius-card);
-            padding: 1rem 1.125rem;
-            min-height: 92px;
-            box-shadow: 0 1px 6px rgba(0,0,0,0.04);
-            position: relative;
-            overflow: visible;
+        .metric-card {
+            background: #ffffff;
+            border: 0.5px solid rgba(0,0,0,0.10);
+            border-radius: 12px;
+            padding: 14px 16px;
         }
 
-        .ted-kpi-label {
+        .metric-card.accent-green {
+            border-left: 3px solid #639922;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .metric-card.accent-red {
+            border-left: 3px solid #E24B4A;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .metric-label {
             font-size: 11px;
-            color: var(--color-text-secondary);
+            color: #6b6b6b;
             margin-bottom: 6px;
-            font-weight: 600;
-            text-transform: none;
-            letter-spacing: 0.02em;
         }
 
-        .ted-kpi-value {
-            font-size: 20px;
-            line-height: 1.1;
+        .metric-value {
+            font-size: 19px;
             font-weight: 500;
-            color: var(--color-text-primary);
-            word-break: break-word;
+            color: #1a1a1a;
         }
 
-        .ted-kpi-subtext {
-            margin-top: 0.35rem;
-            font-size: 0.78rem;
-            color: var(--color-text-secondary);
+        .metric-value.green { color: #3B6D11; }
+        .metric-value.red   { color: #A32D2D; }
+
+        .metric-sub {
+            font-size: 11px;
+            color: #6b6b6b;
+            margin-top: 3px;
         }
 
-        /* kpi-valor: usa estilo padrão do card */
-        .ted-kpi-card.kpi-recebido { border-left: 3px solid #639922; }
-        .ted-kpi-card.kpi-saldo { border-left: 3px solid #E24B4A; }
-        /* kpi-status: usa estilo padrão do card */
+        .status-pill {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 999px;
+            background: #E6F1FB;
+            color: #0C447C;
+            margin-top: 4px;
+        }
 
         .valor-negativo { color: #A32D2D !important; }
 
@@ -1420,7 +1431,7 @@
         }
 
         @media (max-width: 768px) {
-            .ted-kpi-grid,
+            .metrics-grid,
             .ted-info-row.row-4,
             .ted-info-row.row-3,
             .ted-info-row.row-5 {
@@ -3315,23 +3326,23 @@
                         </div>
                         
                         <div class="ted-info-grid">
-                            <div class="ted-kpi-grid">
-                                <div class="ted-kpi-card kpi-valor">
-                                    <div class="ted-kpi-label">Valor do TED</div>
-                                    <div class="ted-kpi-value" id="kpi_valorTed">R$ 0,00</div>
+                            <div class="metrics-grid">
+                                <div class="metric-card">
+                                    <div class="metric-label">Valor do TED</div>
+                                    <div class="metric-value" id="kpi_valorTed">R$ 0,00</div>
                                 </div>
-                                <div class="ted-kpi-card kpi-recebido">
-                                    <div class="ted-kpi-label">Recebido</div>
-                                    <div class="ted-kpi-value" id="kpi_recebidoTed">R$ 0,00</div>
-                                    <div class="ted-kpi-subtext" id="kpi_recebidoPercentual">0,0% concluído</div>
+                                <div class="metric-card accent-green">
+                                    <div class="metric-label">Total recebido</div>
+                                    <div class="metric-value green" id="kpi_recebidoTed">R$ 0,00</div>
+                                    <div class="metric-sub" id="kpi_recebidoPercentual">0,0% do valor contratado</div>
                                 </div>
-                                <div class="ted-kpi-card kpi-saldo">
-                                    <div class="ted-kpi-label">Saldo</div>
-                                    <div class="ted-kpi-value" id="kpi_saldoTed">R$ 0,00</div>
+                                <div class="metric-card accent-red" id="kpi_saldoCard">
+                                    <div class="metric-label">Saldo</div>
+                                    <div class="metric-value red" id="kpi_saldoTed">R$ 0,00</div>
                                 </div>
-                                <div class="ted-kpi-card kpi-status">
-                                    <div class="ted-kpi-label">Status</div>
-                                    <div class="ted-kpi-value" id="kpi_statusTed">Em execução</div>
+                                <div class="metric-card">
+                                    <div class="metric-label">Status</div>
+                                    <div id="kpi_statusTed"><span class="status-pill">Em Execução</span></div>
                                 </div>
                             </div>
 
@@ -5694,18 +5705,21 @@
             if (elKpiValor) elKpiValor.textContent = formatarMoeda(valorTedAtual);
             if (elKpiRecebido) elKpiRecebido.textContent = formatarMoeda(totalRecebido);
             if (elKpiSaldo) {
+                const saldoCard = document.getElementById('kpi_saldoCard');
                 if (saldoTed < 0) {
-                    elKpiSaldo.textContent = `−${formatarMoeda(Math.abs(saldoTed))}`;
-                    elKpiSaldo.classList.add('valor-negativo');
+                    elKpiSaldo.textContent = `− ${formatarMoeda(Math.abs(saldoTed))}`;
+                    elKpiSaldo.className = 'metric-value red';
+                    if (saldoCard) { saldoCard.classList.remove('accent-green'); saldoCard.classList.add('accent-red'); }
                 } else {
                     elKpiSaldo.textContent = formatarMoeda(saldoTed);
-                    elKpiSaldo.classList.remove('valor-negativo');
+                    elKpiSaldo.className = 'metric-value green';
+                    if (saldoCard) { saldoCard.classList.remove('accent-red'); saldoCard.classList.add('accent-green'); }
                 }
             }
-            if (elKpiStatus) elKpiStatus.textContent = statusTedAtual;
+            if (elKpiStatus) elKpiStatus.innerHTML = `<span class="status-pill">${statusTedAtual || 'Em Execução'}</span>`;
             if (elKpiPercentual) {
                 const percentual = valorTedAtual > 0 ? ((totalRecebido / valorTedAtual) * 100) : 0;
-                elKpiPercentual.textContent = `${percentual.toFixed(1).replace('.', ',')}% concluído`;
+                elKpiPercentual.textContent = `${percentual.toFixed(1).replace('.', ',')}% do valor contratado`;
             }
             
             // Formatar data para input (YYYY-MM-DD)
