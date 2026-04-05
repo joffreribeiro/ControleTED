@@ -9089,7 +9089,7 @@
         function renderValorFmt(val, bold) {
             const n = parseFloat(val) || 0;
             const s = Math.abs(n).toLocaleString('pt-BR', {minimumFractionDigits: 2});
-            const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,monospace;';
+            const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:nowrap; display:inline-block;';
             const bld = bold ? 'font-weight:700;' : '';
             if (n < -0.005) return `<span style="color:#A32D2D;${mono}${bld}">\u2212\u00a0R$\u00a0${s}</span>`;
             if (n >  0.005) return `<span style="color:#3B6D11;${mono}${bld}">R$\u00a0${s}</span>`;
