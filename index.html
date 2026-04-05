@@ -248,7 +248,7 @@
             if (registrosRelevantes.length === 0) return '';
             
             let html = '<div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.85rem; color:var(--text-secondary);">';
-            html += '<div style="font-weight:600; margin-bottom:0.5rem;">�Y"< Histórico recente</div>';
+            html += '<div style="font-weight:600; margin-bottom:0.5rem;">Y"< Histórico recente</div>';
             
             registrosRelevantes.forEach(r => {
                 const dt = new Date(r.dataHora);
@@ -278,16 +278,16 @@
                     </span>
                     <span class="nav-brand-text">
                         <span class="nav-brand-name">Sistema Controle TED</span>
-                        <span class="nav-brand-sub">TERMO DE EXECU�?�fO DESCENTRALIZADA</span>
+                        <span class="nav-brand-sub">TERMO DE EXECU→fO DESCENTRALIZADA</span>
                     </span>
                 </h1>
                 <div class="nav-actions">
-                    <div class="topbar-badge" title="�sltimo salvamento">
-                        <span id="cloudLastSync">�?"</span>
+                    <div class="topbar-badge" title="sltimo salvamento">
+                        <span id="cloudLastSync">→</span>
                     </div>
                     <button id="btnCarregarTopo" class="topbar-btn topbar-btn-carregar" onclick="carregarDoCloud()">Carregar</button>
                     <button id="btnSalvarTopo" class="topbar-btn topbar-btn-salvar" onclick="salvarNoCloud()">Salvar</button>
-                    <button id="btnAdminLogin" onclick="showLoginScreen()" style="background:none;border:0;color:#ffffff;font-size:0.95rem;margin-left:8px;" title="Admin">�Y"'</button>
+                    <button id="btnAdminLogin" onclick="showLoginScreen()" style="background:none;border:0;color:#ffffff;font-size:0.95rem;margin-left:8px;" title="Admin">Y"'</button>
                 </div>
             </div>
         </nav>
@@ -335,7 +335,7 @@
         <!-- Modal: Cadastro de Objeto -->
         <div id="modalObjetoBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalObjeto()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-                <h3 id="modalObjetoTitulo">�Y"� Novo Objeto</h3>
+                <h3 id="modalObjetoTitulo">📋 Novo Objeto</h3>
                 <div id="modalObjetoError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div class="form-group">
                     <label>Objeto *</label>
@@ -359,7 +359,7 @@
         <!-- Modal: Cadastro de Metas -->
         <div id="modalMetaBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalMeta()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:520px;">
-                <h3 id="modalMetaTitulo">�YZ� Nova Meta</h3>
+                <h3 id="modalMetaTitulo">🎯 Nova Meta</h3>
                 <div id="modalMetaError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div class="form-group">
                     <label>Meta *</label>
@@ -397,7 +397,7 @@
         <!-- Modal: Cadastro Físico -->
         <div id="modalFisicoBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalFisicoCad()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:520px;">
-                <h3 id="modalFisicoCadTitulo">�Y�-️ Novo Cadastro Físico</h3>
+                <h3 id="modalFisicoCadTitulo">Y–️ Novo Cadastro Físico</h3>
                 <div id="modalFisicoCadError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
@@ -439,7 +439,7 @@
         <!-- Modal: Execução Física -->
         <div id="modalExecFisicaBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalExecFisica()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-                <h3 id="modalExecFisicaTitulo">�Y"^ Nova Execução Física</h3>
+                <h3 id="modalExecFisicaTitulo">Y"^ Nova Execução Física</h3>
                 <div id="modalExecFisicaError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div class="form-group">
                     <label>Objeto *</label>
@@ -469,7 +469,7 @@
         <!-- Modal: Cadastro Financeiro -->
         <div id="modalFinanceiroBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalFinanceiro()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:500px;">
-                <h3 id="modalFinanceiroTitulo">�Y'� Novo Cadastro Financeiro</h3>
+                <h3 id="modalFinanceiroTitulo">Y'Novo Cadastro Financeiro</h3>
                 <div id="modalFinanceiroError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
@@ -503,7 +503,7 @@
         <!-- Modal: Execução Financeira -->
         <div id="modalExecFinBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalExecFin()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:500px;">
-                <h3>�Y"S Nova Execução Financeira</h3>
+                <h3>Y"S Nova Execução Financeira</h3>
                 <div id="modalExecFinError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
@@ -533,7 +533,7 @@
         <!-- Modal: Recursos Gerais IMBEL -->
         <div id="modalRecGeralBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalRecGeral()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-                <h3>�Y�>️ Novo Recurso Geral IMBEL</h3>
+                <h3>>️ Novo Recurso Geral IMBEL</h3>
                 <div id="modalRecGeralError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div class="form-group">
                     <label>ND *</label>
@@ -590,9 +590,9 @@
                         <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
-                <!-- Resumo Assinados / Encerrados (Mês �- UP) -->
+                <!-- Resumo Assinados / Encerrados (Mês – UP) -->
                 <div id="resumoGeralContainer" style="margin-top:1rem;">
-                    <h4 class="card-title-blue"><i data-lucide="file-bar-chart" class="inline-icon-sm"></i> Assinados / Encerrados (Mês �- UP)</h4>
+                    <h4 class="card-title-blue"><i data-lucide="file-bar-chart" class="inline-icon-sm"></i> Assinados / Encerrados (Mês – UP)</h4>
                     <p style="font-size:0.75rem; color:var(--text-light); margin:0 0 0.5rem 0;"><span style="color:var(--success-dark); font-weight:600;">Assinados</span> / <span style="color:var(--danger-dark); font-weight:600;">Encerrados</span></p>
                     <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
                         <button class="btn" onclick="showRelatorioMensal()">Relatório Mensal</button>
@@ -864,7 +864,7 @@
                 <div id="tedsDetalheContainer" style="display: none;">
                             <!-- Entregas (DETALHES TAB) -->
                             <!-- Entregas (Visão do TED) removed from start of Details tab -->
-                    <!-- INFORMA�?�.ES DO TED -->
+                    <!-- INFORMA→.ES DO TED -->
                     <div class="ted-info-section" id="infoTEDSection">
                         <div class="ted-info-header">
                             <h3 class="ted-info-title"><i data-lucide="clipboard-list" class="inline-icon"></i> Informações do TED <span id="info_tituloTedCodigo" class="ted-info-title-code"></span></h3>
@@ -908,32 +908,32 @@
                                     <div class="field-grid">
                                         <div>
                                             <div class="field-label">Plano de Trabalho</div>
-                                            <div class="field-value" id="info_planoTrabalho">�?"</div>
+                                            <div class="field-value" id="info_planoTrabalho">→</div>
                                             <input type="text" class="ted-info-input" id="edit_planoTrabalho" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">TED</div>
-                                            <div class="field-value" id="info_numTed">�?"</div>
+                                            <div class="field-value" id="info_numTed">→</div>
                                             <input type="text" class="ted-info-input" id="edit_numTed" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">Objeto</div>
-                                            <div class="field-value" id="info_objetivo">�?"</div>
+                                            <div class="field-value" id="info_objetivo">→</div>
                                             <input type="text" class="ted-info-input" id="edit_objetivo" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">Nº TED-SIAFI</div>
-                                            <div class="field-value mono" id="info_numTedSiafi">�?"</div>
+                                            <div class="field-value mono" id="info_numTedSiafi">→</div>
                                             <input type="text" class="ted-info-input" id="edit_numTedSiafi" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">Código do Plano de Ação</div>
-                                            <div class="field-value mono" id="info_codigoPlano">�?"</div>
+                                            <div class="field-value mono" id="info_codigoPlano">→</div>
                                             <input type="text" class="ted-info-input" id="edit_codigoPlano" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">Nota do Sistema TED</div>
-                                            <div class="field-value" id="info_notaSistema">�?"</div>
+                                            <div class="field-value" id="info_notaSistema">→</div>
                                             <input type="text" class="ted-info-input" id="edit_notaSistema" style="display:none;">
                                         </div>
                                     </div>
@@ -945,22 +945,22 @@
                                     <div class="field-grid">
                                         <div>
                                             <div class="field-label">UP Responsável</div>
-                                            <div class="field-value" id="info_upResponsavel">�?"</div>
+                                            <div class="field-value" id="info_upResponsavel">→</div>
                                             <input type="text" class="ted-info-input" id="edit_upResponsavel" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">UG Executora</div>
-                                            <div class="field-value" id="info_egExecutora">�?"</div>
+                                            <div class="field-value" id="info_egExecutora">→</div>
                                             <input type="text" class="ted-info-input" id="edit_egExecutora" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">Unidade Descentralizadora</div>
-                                            <div class="field-value" id="info_unidadeDesc">�?"</div>
+                                            <div class="field-value" id="info_unidadeDesc">→</div>
                                             <input type="text" class="ted-info-input" id="edit_unidadeDesc" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">UG Descentralizadora</div>
-                                            <div class="field-value" id="info_ugDesc">�?"</div>
+                                            <div class="field-value" id="info_ugDesc">→</div>
                                             <input type="text" class="ted-info-input" id="edit_ugDesc" style="display:none;">
                                         </div>
                                     </div>
@@ -972,22 +972,22 @@
                                     <div class="field-grid" style="margin-bottom:0;">
                                         <div>
                                             <div class="field-label">Início</div>
-                                            <div class="field-value" id="info_inicioVigencia">�?"</div>
+                                            <div class="field-value" id="info_inicioVigencia">→</div>
                                             <input type="date" class="ted-info-input" id="edit_inicioVigencia" style="display:none;" onchange="calcularFimVigenciaEdit()">
                                         </div>
                                         <div>
                                             <div class="field-label">Fim</div>
-                                            <div class="field-value" id="info_fimVigencia">�?"</div>
+                                            <div class="field-value" id="info_fimVigencia">→</div>
                                             <input type="date" class="ted-info-input" id="edit_fimVigencia" style="display:none;" readonly>
                                         </div>
                                         <div>
                                             <div class="field-label">1ª Descentralização</div>
-                                            <div class="field-value" id="info_primeiraDescentralizacao">�?"</div>
+                                            <div class="field-value" id="info_primeiraDescentralizacao">→</div>
                                             <input type="date" class="ted-info-input" id="edit_primeiraDescentralizacao" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">Vigência Atual (meses)</div>
-                                            <div class="field-value" id="info_vigencia">�?"</div>
+                                            <div class="field-value" id="info_vigencia">→</div>
                                             <input type="number" class="ted-info-input" id="edit_vigencia" min="0" style="display:none;" oninput="calcularFimVigenciaEdit()">
                                         </div>
                                     </div>
@@ -1015,7 +1015,7 @@
                                         <div class="field-grid" style="margin-bottom:0;">
                                             <div>
                                                 <div class="field-label">Situação TED</div>
-                                                <div class="field-value" id="info_situacaoTED">�?"</div>
+                                                <div class="field-value" id="info_situacaoTED">→</div>
                                                 <select class="ted-info-input" id="edit_situacaoTED" style="display:none;" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
                                                     <option value="">--</option>
                                                     <option value="finalizado">TED Finalizado</option>
@@ -1024,17 +1024,17 @@
                                             </div>
                                             <div>
                                                 <div class="field-label">Data entrega/denúncia</div>
-                                                <div class="field-value" id="info_dataEntregaDenuncia">�?"</div>
+                                                <div class="field-value" id="info_dataEntregaDenuncia">→</div>
                                                 <input type="date" class="ted-info-input" id="edit_dataEntregaDenuncia" style="display:none;" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
                                             </div>
                                             <div>
                                                 <div class="field-label">Prazo do Relatório Final</div>
-                                                <div class="field-value" id="info_prazoRelatorio">�?"</div>
+                                                <div class="field-value" id="info_prazoRelatorio">→</div>
                                                 <input type="date" class="ted-info-input" id="edit_prazoRelatorio" readonly style="display:none;">
                                             </div>
                                             <div>
                                                 <div class="field-label">Data da Entrega do Relatório</div>
-                                                <div class="field-value" id="info_dataEntregaRelatorio">�?"</div>
+                                                <div class="field-value" id="info_dataEntregaRelatorio">→</div>
                                                 <input type="date" class="ted-info-input" id="edit_dataEntregaRelatorio" style="display:none;" onchange="atualizarStatusPorEntregaRelatorio();">
                                             </div>
                                         </div>
@@ -1141,7 +1141,7 @@
                         </div>
                     </div>
 
-                    <!-- EXECU�?�fO FÍSICA -->
+                    <!-- EXECU→fO FÍSICA -->
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física <span class="section-count-badge" id="count-execfis">0</span></h3>
@@ -1226,7 +1226,7 @@
                         </div>
                     </div>
 
-                    <!-- EXECU�?�fO FINANCEIRA -->
+                    <!-- EXECU→fO FINANCEIRA -->
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira <span class="section-count-badge" id="count-execfin">0</span></h3>
@@ -1367,18 +1367,18 @@
                     </div>
                     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">�Y"� Objetos</h4>
+                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">📋 Objetos</h4>
                             <div id="relatorioObjetos"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">�YZ� Metas</h4>
+                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">🎯 Metas</h4>
                             <div id="relatorioMetas"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                     </div>
 
                     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">�Y�-️ Cadastro Físico</h4>
+                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Y–️ Cadastro Físico</h4>
                             <div id="relatorioCadastroFisico"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
@@ -1393,7 +1393,7 @@
                             <div id="relatorioCadastroFinanceiro"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">�Y'� Execução Financeira</h4>
+                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Y'Execução Financeira</h4>
                             <div id="relatorioExecFinanceira"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                     </div>
@@ -1409,7 +1409,7 @@
                 
                 <!-- Exportar -->
                 <div style="margin-bottom: 2rem;">
-                    <h3 style="margin-bottom: 1rem; color: var(--color-primary);">�Y"� Exportar Dados</h3>
+                    <h3 style="margin-bottom: 1rem; color: var(--color-primary);">📋 Exportar Dados</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
                         <button class="btn btn-primary" onclick="exportarTEDs()">Exportar TEDs</button>
                         <button class="btn btn-primary" onclick="exportarObjetos()">Exportar Objetos</button>
@@ -1419,13 +1419,13 @@
                         <button class="btn btn-primary" onclick="exportarFinanceiros()">Exportar Financeiro</button>
                         <button class="btn btn-primary" onclick="exportarExecFinanceira()">Exportar Exec. Financeira</button>
                         <button class="btn btn-primary" onclick="exportarRecursosGerais()">Exportar Recursos Gerais</button>
-                        <button class="btn btn-secondary" onclick="exportarTudo()">�Y"� Exportar Tudo (ZIP)</button>
+                        <button class="btn btn-secondary" onclick="exportarTudo()">📋 Exportar Tudo (ZIP)</button>
                     </div>
                 </div>
                 
                 <!-- Importar -->
                 <div style="margin-bottom: 2rem;">
-                    <h3 style="margin-bottom: 1rem; color: var(--color-primary);">�Y"� Importar Dados</h3>
+                    <h3 style="margin-bottom: 1rem; color: var(--color-primary);">📋 Importar Dados</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
                         <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
                             <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar TEDs</label>
@@ -1464,12 +1464,12 @@
                 
                 <!-- Backup Completo -->
                 <div style="padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 0.5rem; color: white;">
-                    <h3 style="margin: 0 0 1rem 0;">�Y'� Backup Completo</h3>
+                    <h3 style="margin: 0 0 1rem 0;">Y'Backup Completo</h3>
                     <p style="margin: 0 0 1rem 0; opacity: 0.9;">Exporte ou importe todos os dados de uma vez em formato JSON.</p>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <button class="btn" style="background: white; color: #667eea;" onclick="exportarBackupJSON()">�Y"� Exportar Backup JSON</button>
+                        <button class="btn" style="background: white; color: #667eea;" onclick="exportarBackupJSON()">📋 Exportar Backup JSON</button>
                         <label class="btn" style="background: rgba(255,255,255,0.2); color: white; cursor: pointer;">
-                            �Y"� Importar Backup JSON
+                            📋 Importar Backup JSON
                             <input type="file" accept=".json" onchange="importarBackupJSON(this.files[0])" style="display: none;">
                         </label>
                     </div>
@@ -1477,11 +1477,11 @@
 
                 <!-- Administração (visível apenas para admin logado) -->
                 <div id="adminPanel" style="margin-top:1.5rem; display:none;">
-                    <h3 style="margin-bottom: 1rem; color: var(--color-primary);">�Y"� Administração</h3>
+                    <h3 style="margin-bottom: 1rem; color: var(--color-primary);">📋 Administração</h3>
                     <div style="background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
-                        <p style="margin:0 0 0.5rem; font-size:0.9rem; color:var(--text-muted);">Logado como: <strong id="adminLoggedAs">�?"</strong></p>
+                        <p style="margin:0 0 0.5rem; font-size:0.9rem; color:var(--text-muted);">Logado como: <strong id="adminLoggedAs">→</strong></p>
                         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                            <button class="btn" onclick="testFirestoreConnection()" title="Testar conexão com Firestore">�Y"O Testar Conexão</button>
+                            <button class="btn" onclick="testFirestoreConnection()" title="Testar conexão com Firestore">Y"O Testar Conexão</button>
                             <button class="btn" onclick="doLogout()" style="background:#fee2e2; color:#dc2626;">Sair do modo Admin</button>
                         </div>
                     </div>
@@ -1503,12 +1503,12 @@
         </div>
     </div>
 
-    <!-- Tela de Login (full-page, oculta por padrão �?" modo leitura) -->
+    <!-- Tela de Login (full-page, oculta por padrão → modo leitura) -->
     <div id="loginScreen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(135deg,#0C447C 0%,#185FA5 100%); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
         <div style="background:white; border-radius:1rem; padding:2.5rem; max-width:420px; width:90%; box-shadow:0 25px 50px rgba(0,0,0,0.25); position:relative;">
             <button onclick="hideLoginScreen()" style="position:absolute; top:0.75rem; right:0.75rem; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#94a3b8; line-height:1;" title="Fechar e continuar em modo leitura">&times;</button>
             <div style="text-align:center; margin-bottom:1.5rem;">
-                <div style="font-size:2.5rem; margin-bottom:0.5rem;">�Y"<</div>
+                <div style="font-size:2.5rem; margin-bottom:0.5rem;">Y"<</div>
                 <h2 style="margin:0; color:#0C447C; font-size:1.5rem;">Acesso Administrador</h2>
                 <p style="margin:0.25rem 0 0; color:#64748b; font-size:0.875rem;">Faça login para editar dados</p>
             </div>
@@ -1519,7 +1519,7 @@
             <label style="display:block; margin-bottom:0.25rem; font-weight:600; color:#374151;">Senha</label>
             <input id="modal_login_password" type="password" placeholder="Senha" style="width:100%; padding:0.6rem 0.75rem; margin-bottom:1rem; border:1px solid #d1d5db; border-radius:0.5rem; font-size:1rem;" onkeydown="if(event.key==='Enter') doLogin()" />
             <button onclick="doLogin()" style="width:100%; padding:0.75rem; background:linear-gradient(135deg,#185FA5,#0C447C); color:white; border:none; border-radius:0.5rem; font-size:1rem; font-weight:600; cursor:pointer; margin-bottom:0.5rem;">Entrar</button>
-            <button onclick="doForceCreateAdmin()" style="width:100%; padding:0.6rem; background:#f59e0b; color:white; border:none; border-radius:0.5rem; font-size:0.875rem; font-weight:600; cursor:pointer;">�s� Criar Admin e Entrar</button>
+            <button onclick="doForceCreateAdmin()" style="width:100%; padding:0.6rem; background:#f59e0b; color:white; border:none; border-radius:0.5rem; font-size:0.875rem; font-weight:600; cursor:pointer;">⚠️ Criar Admin e Entrar</button>
             <p id="loginStatus" style="text-align:center; margin-top:0.75rem; font-size:0.8rem; color:#94a3b8;">Aguardando conexão com Firebase...</p>
         </div>
     </div>
@@ -1533,7 +1533,7 @@
                     var banner = document.createElement('div');
                     banner.id = 'fileProtocolBanner';
                     banner.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:#f59e0b;color:#07203a;padding:0.6rem 1rem;z-index:9999;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-family:sans-serif;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.12);';
-                    banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.05rem;">�s�️</span><div>Você abriu o arquivo localmente. O Firebase pode não funcionar sem servidor.</div></div>' +
+                    banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.05rem;">⚠️️</span><div>Você abriu o arquivo localmente. O Firebase pode não funcionar sem servidor.</div></div>' +
                         '<div style="display:flex;align-items:center;gap:8px;">' +
                         '<a href="http://localhost:5000" style="color:#07203a;font-weight:700;text-decoration:underline;">Abrir no servidor</a>' +
                         '<button id="closeFileBanner" style="background:transparent;border:1px solid rgba(0,0,0,0.08);padding:6px 10px;border-radius:6px;cursor:pointer;">Fechar</button>' +
@@ -1547,7 +1547,7 @@
 
         // Firestore-only persistence (localStorage removed)
 
-        // ===== SISTEMA DE TOAST/NOTIFICA�?�.ES =====
+        // ===== SISTEMA DE TOAST/NOTIFICA→.ES =====
         function showToast(message, type = 'info', duration = 3000) {
             let container = document.querySelector('.toast-container');
             if (!container) {
@@ -1560,10 +1560,10 @@
             toast.className = `toast ${type}`;
             
             const icons = {
-                success: '�o.',
-                error: '�O',
-                warning: '�s�️',
-                info: '�"�️'
+                success: 'o.',
+                error: 'O',
+                warning: '⚠️️',
+                info: '"️'
             };
             
             toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${message}</span>`;
@@ -1811,7 +1811,7 @@
             }
 
             // Calcular status pela mesma lógica de atualizarStatusPorEntregaRelatorio()
-            // Prioridade: dataEntregaRelatorio �?' situacaoTED �?' fallback
+            // Prioridade: dataEntregaRelatorio → situacaoTED → fallback
             if (t.dataEntregaRelatorio) {
                 return { text: 'TED Finalizado', origin: 'calculado (dataEntregaRelatorio)', vigenciaVencida: false };
             }
@@ -1822,7 +1822,7 @@
                 return { text: 'TED Denunciado', origin: 'calculado (situacaoTED)', vigenciaVencida: false };
             }
 
-            // Sem situação especial �?' "Em Execução" (consistente com Detalhes)
+            // Sem situação especial → "Em Execução" (consistente com Detalhes)
             return { text: 'Em Execução', origin: 'calculado', vigenciaVencida: vigenciaVencida };
         }
 
@@ -2221,7 +2221,7 @@
 
                 // ---- Metadados em linha ----
                 const metaParts = [];
-                if (inicioStr !== '-' || fimStr !== '-') metaParts.push(`${inicioStr} �?" ${fimStr}`);
+                if (inicioStr !== '-' || fimStr !== '-') metaParts.push(`${inicioStr} → ${fimStr}`);
                 if (fimValido) metaParts.push(`${Math.max(0, diasRestantes)} dias rest.`);
                 const up = t.upResponsavel || t.up || '';
                 if (up) metaParts.push(up);
@@ -2230,7 +2230,7 @@
                 // ---- Saldo ----
                 const fmtMoeda = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 const saldoHtml = saldoTedCard < 0
-                    ? `<span class="ted-card-saldo-neg">�^' ${fmtMoeda(saldoTedCard)}</span>`
+                    ? `<span class="ted-card-saldo-neg">^' ${fmtMoeda(saldoTedCard)}</span>`
                     : `<span class="ted-card-saldo-pos">${fmtMoeda(saldoTedCard)}</span>`;
 
                 return `
@@ -2238,7 +2238,7 @@
                         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                             <div style="flex:1; min-width:0;">
                                 <a class="ted-card-title" href="#" onclick="switchTab('detalhes', null); carregarDetalhes(${t.id}); return false;">TED ${t.numTed}</a>
-                                <p class="ted-card-obj">${t.objetivo || '�?"'}</p>
+                                <p class="ted-card-obj">${t.objetivo || '→'}</p>
                                 <p class="ted-card-meta">${metaLine}</p>
                             </div>
                             <div style="display:flex; gap:6px; align-items:flex-start; margin-left:10px;">
@@ -2280,7 +2280,7 @@
             initLucideIcons();
         }
 
-        // Renderizar resumo de TEDs assinados/encerrados �?" tabela transposta (UPs nas linhas, Meses nas colunas)
+        // Renderizar resumo de TEDs assinados/encerrados → tabela transposta (UPs nas linhas, Meses nas colunas)
         function renderResumoGeralAssinadosEncerrados() {
             // Garantir que o container exista
             if (!document.getElementById('resumoGeralGrid')) {
@@ -2543,7 +2543,7 @@
 
                 const vig = (data.vigentes[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;" style="font-size:11px;">TED ${x.num}</a>`).join(', ');
                 const enc = (data.encerrados[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;" style="font-size:11px;">TED ${x.num}</a>`).join(', ');
-                h.push(`<tr><td style="padding:5px 8px; vertical-align:top; font-weight:600; font-size:11px; white-space:nowrap;">${mesLabel}</td><td style="padding:5px 8px; font-size:11px;">${vig || '<span style="color:var(--text-muted);">�?"</span>'}</td><td style="padding:5px 8px; font-size:11px;">${enc || '<span style="color:var(--text-muted);">�?"</span>'}</td></tr>`);
+                h.push(`<tr><td style="padding:5px 8px; vertical-align:top; font-weight:600; font-size:11px; white-space:nowrap;">${mesLabel}</td><td style="padding:5px 8px; font-size:11px;">${vig || '<span style="color:var(--text-muted);">→</span>'}</td><td style="padding:5px 8px; font-size:11px;">${enc || '<span style="color:var(--text-muted);">→</span>'}</td></tr>`);
             });
 
             h.push('</tbody></table></div>');
@@ -2933,7 +2933,7 @@
                                 else if (vigVencModal) cls = 'badge-vigencia-vencida';
                                 const isFinalizadoModal = /finaliz|finalizado/.test(sNorm);
                                 const mostrarNotaModal = vigVencModal && !/vigênc.*venc|vigencia.*venc|encerr/.test(sNorm) && !isFinalizadoModal;
-                                const notaModal = mostrarNotaModal ? '<span style="font-size:0.7rem; color:#b45309; font-weight:600; margin-left:6px;">�s� Vigência Vencida</span>' : '';
+                                const notaModal = mostrarNotaModal ? '<span style="font-size:0.7rem; color:#b45309; font-weight:600; margin-left:6px;">⚠️ Vigência Vencida</span>' : '';
                                 return `<span class="badge ${cls}" title="Origem: ${originModal}">${computedStatusModal}</span>${notaModal}`;
                             })()}
                         </p>
@@ -3059,10 +3059,10 @@
 
         // Editar TED
         function editarTED() {
-            alert('�s�️ Edição será implementada na próxima versão');
+            alert('⚠️ Edição será implementada na próxima versão');
         }
 
-        // FUN�?�.ES PARA DETALHES TED
+        // FUN→.ES PARA DETALHES TED
         // Carregar seletor de TEDs na aba detalhes
         function atualizarSeletorTED() {
             const seletor = document.getElementById('seletorTED');
@@ -3276,7 +3276,7 @@
             if (elKpiSaldo) {
                 const saldoCard = document.getElementById('kpi_saldoCard');
                 if (saldoTed < 0) {
-                    elKpiSaldo.textContent = `�^' ${formatarMoeda(Math.abs(saldoTed))}`;
+                    elKpiSaldo.textContent = `^' ${formatarMoeda(Math.abs(saldoTed))}`;
                     elKpiSaldo.className = 'metric-value red';
                     if (saldoCard) { saldoCard.classList.remove('accent-green'); saldoCard.classList.add('accent-red'); }
                 } else {
@@ -3369,7 +3369,7 @@
             exibirCampoComAlteracao('info_ugDesc', ted.ugDesc, 'ugDesc');
             
             document.getElementById('info_inicioVigencia').textContent = formatarData(ted.inicioVigencia);
-            // Vigência e Fim com suporte a aditivos �?" mostrar apenas a data ativa e meta original abaixo
+            // Vigência e Fim com suporte a aditivos → mostrar apenas a data ativa e meta original abaixo
             if (aditivos.length > 0) {
                 const vigOriginal = parseInt(ted.vigencia) || 0;
                 const vigNova = vigOriginal + totalAditivoMeses;
@@ -3502,7 +3502,7 @@
                     const nota = document.createElement('span');
                     nota.className = 'nota-vigencia-vencida';
                     nota.style.cssText = 'font-size:0.75rem; color:#b45309; font-weight:600; margin-left:8px;';
-                    nota.textContent = '�s� Vigência Vencida';
+                    nota.textContent = '⚠️ Vigência Vencida';
                     infoStatusEl.parentElement.appendChild(nota);
                 } else {
                     infoStatusEl.style.color = '';
@@ -3758,11 +3758,11 @@
         }
 
         // OBJETOS
-        // �"?�"? Modal Cadastro de Objetos �"?�"?
+        //"?"? Modal Cadastro de Objetos"?"?
         window._editandoObjetoId = null;
 
         function abrirModalObjeto(editId) {
-            if (!window.tedSelecionado) { alert('�s�️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalObjetoBackdrop');
             const titulo = document.getElementById('modalObjetoTitulo');
@@ -3777,7 +3777,7 @@
                 const obj = (window.tedSelecionado.objetos || []).find(o => o.id === editId);
                 if (obj) {
                     window._editandoObjetoId = editId;
-                    titulo.textContent = '�o�️ Editar Objeto';
+                    titulo.textContent = '🔑 Editar Objeto';
                     document.getElementById('modalObjetoNome').value = obj.objeto;
                     document.getElementById('modalObjetoQtde').value = formatarMilharesPtBR(Number(obj.qtde));
                     const valUnit = Number(obj.valorUnitario);
@@ -3787,7 +3787,7 @@
                     document.getElementById('modalObjetoValor').value = formatarMilharesPtBR(valUnitUnits) + ',' + String(valUnitRemainder).padStart(2, '0');
                 }
             } else {
-                titulo.textContent = '�Y"� Novo Objeto';
+                titulo.textContent = '📋 Novo Objeto';
             }
 
             backdrop.classList.add('open');
@@ -3808,9 +3808,9 @@
             const qtde = parseNumber(document.getElementById('modalObjetoQtde').value);
             const valorUnitario = parseNumber(document.getElementById('modalObjetoValor').value);
 
-            if (!objeto) { errEl.textContent = '�s�️ Preencha o nome do objeto!'; errEl.classList.add('open'); return; }
-            if (isNaN(qtde) || qtde <= 0) { errEl.textContent = '�s�️ Quantidade deve ser maior que zero!'; errEl.classList.add('open'); return; }
-            if (isNaN(valorUnitario) || valorUnitario <= 0) { errEl.textContent = '�s�️ Valor unitário deve ser maior que zero!'; errEl.classList.add('open'); return; }
+            if (!objeto) { errEl.textContent = '⚠️ Preencha o nome do objeto!'; errEl.classList.add('open'); return; }
+            if (isNaN(qtde) || qtde <= 0) { errEl.textContent = '⚠️ Quantidade deve ser maior que zero!'; errEl.classList.add('open'); return; }
+            if (isNaN(valorUnitario) || valorUnitario <= 0) { errEl.textContent = '⚠️ Valor unitário deve ser maior que zero!'; errEl.classList.add('open'); return; }
 
             if (!window.tedSelecionado.objetos) window.tedSelecionado.objetos = [];
 
@@ -3852,7 +3852,7 @@
                 .filter(f => f.objeto === nomeObjeto)
                 .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
             if (somaFisico > (parseNumber(qtdeObjeto) || 0)) {
-                alert(`�s�️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${nomeObjeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades no Cadastro Físico para manter a consistência.`);
+                alert(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${nomeObjeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades no Cadastro Físico para manter a consistência.`);
             }
         }
 
@@ -3866,7 +3866,7 @@
                     .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
                 const qtdeObj = parseNumber(obj.qtde) || 0;
                 if (somaFisico > qtdeObj) {
-                    alertas.push(`�?� "${obj.objeto}": Físico = ${formatNumber(somaFisico)} > Objeto = ${formatNumber(qtdeObj)}`);
+                    alertas.push(`→ "${obj.objeto}": Físico = ${formatNumber(somaFisico)} > Objeto = ${formatNumber(qtdeObj)}`);
                 }
             });
             return alertas;
@@ -3903,7 +3903,7 @@
                     .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
                 const qtdeExcedida = somaFisico > qt;
                 const alertaFisico = qtdeExcedida 
-                    ? ` <span title="Soma no Cad. Físico (${formatNumber(somaFisico)}) excede a qtde do Objeto (${formatNumber(qt)})" style="color:#ef4444;font-weight:700;cursor:help;">�s�️</span>` 
+                    ? ` <span title="Soma no Cad. Físico (${formatNumber(somaFisico)}) excede a qtde do Objeto (${formatNumber(qt)})" style="color:#ef4444;font-weight:700;cursor:help;">⚠️️</span>` 
                     : '';
                 // Formatar células com destaque de alteração
                 const tdObjeto = obj.objeto;
@@ -4021,7 +4021,7 @@
             fimEl.value = `${yyyy}-${mm}-${dd}`;
         }
 
-        // ========== ADITIVOS DE VIG�SNCIA ==========
+        // ========== ADITIVOS DE VIGSNCIA ==========
 
         // Migração: unificar ted.aditivos e ted.apostilamentos em ted.alteracoes
         function migrarParaAlteracoesUnificadas(ted) {
@@ -4164,7 +4164,7 @@
             // Convert these to synthetic modifications.
             addSet.forEach(k => {
                 if (remSet.has(k)) {
-                    // Both add and remove with same key �?" synthesize a modification
+                    // Both add and remove with same key → synthesize a modification
                     const addItem = addItems[k];
                     const remItem = remItems[k];
                     const camposAlterados = {};
@@ -4231,7 +4231,7 @@
                     alteracoes[c.key] = { de: snapshot[c.key], para: novosValores[c.key] };
                 }
             });
-            // Comparar valorTed �?" somente se foi explicitamente definido (aditivo tem campo de valor; apostilamento não)
+            // Comparar valorTed → somente se foi explicitamente definido (aditivo tem campo de valor; apostilamento não)
             if (novosValores.hasOwnProperty('valorTed')) {
                 if (String(snapshot.valorTed || '') !== String(novosValores.valorTed || '')) {
                     alteracoes.valorTed = { de: snapshot.valorTed, para: novosValores.valorTed };
@@ -4607,18 +4607,18 @@
             // Construir HTML do seletor de tipo + conteúdo dinâmico
             overlay.innerHTML = `
                 <div class="aditivo-modal aditivo-modal-expanded">
-                    <h3 id="alteracaoModalTitulo">�z. ${isEdit ? 'Editar' : 'Novo'} Aditivo / Apostilamento</h3>
-                    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Selecione o tipo e altere campos e tabelas conforme necessário �?" as mudanças serão rastreadas automaticamente.</p>
+                    <h3 id="alteracaoModalTitulo">✏️ ${isEdit ? 'Editar' : 'Novo'} Aditivo / Apostilamento</h3>
+                    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Selecione o tipo e altere campos e tabelas conforme necessário → as mudanças serão rastreadas automaticamente.</p>
 
-                    <div class="aditivo-section-title">�Y"< Tipo da Alteração</div>
+                    <div class="aditivo-section-title">Y"< Tipo da Alteração</div>
                     <div style="display:flex; gap:1.5rem; margin-bottom:1rem; padding:0.75rem; background:var(--bg-secondary,#f8fafc); border-radius:8px; border:1px solid var(--border);">
                         <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
                             <input type="radio" name="alteracaoTipo" value="aditivo" ${tipoInicial === 'aditivo' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#16a34a; width:18px; height:18px;">
-                            <span style="color:#16a34a;">�Y"< Aditivo</span>
+                            <span style="color:#16a34a;">Y"< Aditivo</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
                             <input type="radio" name="alteracaoTipo" value="apostilamento" ${tipoInicial === 'apostilamento' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#2563eb; width:18px; height:18px;">
-                            <span style="color:#2563eb;">�Y"� Apostilamento</span>
+                            <span style="color:#2563eb;">📋 Apostilamento</span>
                         </label>
                     </div>
 
@@ -4666,11 +4666,11 @@
             const titulo = overlay.querySelector('#alteracaoModalTitulo');
             const btn = overlay.querySelector('#alteracaoBtnConfirmar');
             if (tipo === 'aditivo') {
-                titulo.textContent = `�z. ${isEdit ? 'Editar' : 'Novo'} Aditivo de Vigência / Valor do TED`;
+                titulo.textContent = `✏️ ${isEdit ? 'Editar' : 'Novo'} Aditivo de Vigência / Valor do TED`;
                 btn.style.background = '#16a34a';
                 btn.textContent = isEdit ? 'Salvar Alterações' : 'Adicionar Aditivo';
             } else {
-                titulo.textContent = `�Y"� ${isEdit ? 'Editar' : 'Novo'} Apostilamento`;
+                titulo.textContent = `📋 ${isEdit ? 'Editar' : 'Novo'} Apostilamento`;
                 btn.style.background = '#2563eb';
                 btn.textContent = isEdit ? 'Salvar Alterações' : 'Salvar Apostilamento';
             }
@@ -4700,7 +4700,7 @@
             let dadosEspecificosHtml = '';
             if (tipo === 'aditivo') {
                 dadosEspecificosHtml = `
-                    <div class="aditivo-section-title">�Y"< Dados do Aditivo</div>
+                    <div class="aditivo-section-title">Y"< Dados do Aditivo</div>
                     <div class="aditivo-clone-grid">
                         <div class="form-group">
                             <label>Quantidade de meses a acrescentar *</label>
@@ -4717,7 +4717,7 @@
                     </div>`;
             } else {
                 dadosEspecificosHtml = `
-                    <div class="aditivo-section-title">�Y"< Dados do Apostilamento</div>
+                    <div class="aditivo-section-title">Y"< Dados do Apostilamento</div>
                     <div class="aditivo-clone-grid">
                         <div class="form-group">
                             <label>Data do Apostilamento *</label>
@@ -4734,7 +4734,7 @@
             conteudo.innerHTML = `
                 ${dadosEspecificosHtml}
 
-                <div class="aditivo-section-title">�Y"" Informações Gerais do TED (edite se necessário)</div>
+                <div class="aditivo-section-title">Y"" Informações Gerais do TED (edite se necessário)</div>
                 <div class="aditivo-clone-grid">
                     ${camposCloneHtml}
                 </div>
@@ -5116,7 +5116,7 @@
             return num < 0 ? '-' + resultado : resultado;
         }
 
-        // Máscara para número inteiro em input (1000 �?' 1.000)
+        // Máscara para número inteiro em input (1000 → 1.000)
         function applyNumberMaskToInput(input) {
             if (!input) return;
             if (input.dataset.maskNumber === '1') return;
@@ -5155,7 +5155,7 @@
             } catch(e) {}
         }
 
-        // Formatar conteúdo de célula contenteditable como número inteiro pt-BR (1000 �?' 1.000)
+        // Formatar conteúdo de célula contenteditable como número inteiro pt-BR (1000 → 1.000)
         function formatarCelulaContentEditableNumber(td) {
             const raw = td.textContent || '';
             const digits = raw.replace(/\D/g, '');
@@ -5228,11 +5228,11 @@
             }
         }
 
-        // �"?�"? Modal Cadastro de Metas �"?�"?
+        //"?"? Modal Cadastro de Metas"?"?
         window._editandoMetaId = null;
 
         function abrirModalMeta(editId) {
-            if (!window.tedSelecionado) { alert('�s�️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalMetaBackdrop');
             const titulo = document.getElementById('modalMetaTitulo');
@@ -5250,7 +5250,7 @@
                 const m = (window.tedSelecionado.metas || []).find(x => x.id === editId);
                 if (m) {
                     window._editandoMetaId = editId;
-                    titulo.textContent = '�o�️ Editar Meta';
+                    titulo.textContent = '🔑 Editar Meta';
                     document.getElementById('modalMetaNome').value = m.meta;
                     document.getElementById('modalMetaDescricao').value = m.descricao || '';
                     document.getElementById('modalMetaMInicio').value = m.mInicio;
@@ -5258,7 +5258,7 @@
                     calcularMesesMetaModal();
                 }
             } else {
-                titulo.textContent = '�YZ� Nova Meta';
+                titulo.textContent = '🎯 Nova Meta';
             }
             backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
             setTimeout(() => document.getElementById('modalMetaNome').focus(), 80);
@@ -5277,14 +5277,14 @@
             const mInicio = parseInt(document.getElementById('modalMetaMInicio').value);
             const mFinal = parseInt(document.getElementById('modalMetaMFinal').value);
 
-            if (!meta || isNaN(mInicio) || isNaN(mFinal)) { errEl.textContent = '�s�️ Preencha todos os campos corretamente!'; errEl.classList.add('open'); return; }
+            if (!meta || isNaN(mInicio) || isNaN(mFinal)) { errEl.textContent = '⚠️ Preencha todos os campos corretamente!'; errEl.classList.add('open'); return; }
 
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
                 startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else { errEl.textContent = '�s�️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
+            } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
 
             const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
             const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
@@ -5596,7 +5596,7 @@
         }
 
         // CADASTRO FÍSICO
-        // �"?�"? Modal Cadastro Físico �"?�"?
+        //"?"? Modal Cadastro Físico"?"?
         window._editandoFisicoId = null;
 
         function _popularSelectObjetosModal(selectId) {
@@ -5607,7 +5607,7 @@
         }
 
         function abrirModalFisicoCad(editId) {
-            if (!window.tedSelecionado) { alert('�s�️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalFisicoBackdrop');
             const titulo = document.getElementById('modalFisicoCadTitulo');
@@ -5627,7 +5627,7 @@
                 const f = (window.tedSelecionado.fisicos || []).find(x => x.id === editId);
                 if (f) {
                     window._editandoFisicoId = editId;
-                    titulo.textContent = '�o�️ Editar Cadastro Físico';
+                    titulo.textContent = '🔑 Editar Cadastro Físico';
                     document.getElementById('modalFisicoCadFase').value = f.fase;
                     document.getElementById('modalFisicoCadObjeto').value = f.objeto;
                     document.getElementById('modalFisicoCadQtde').value = formatarMilharesPtBR(Number(f.qtde));
@@ -5636,7 +5636,7 @@
                     calcularMesesFisicoModal();
                 }
             } else {
-                titulo.textContent = '�Y�-️ Novo Cadastro Físico';
+                titulo.textContent = 'Y–️ Novo Cadastro Físico';
             }
             backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
             setTimeout(() => document.getElementById('modalFisicoCadFase').focus(), 80);
@@ -5657,10 +5657,10 @@
             const mFinal = parseInt(document.getElementById('modalFisicoCadMFinal').value);
 
             if (!fase || !objeto || isNaN(qtde) || qtde < 0 || isNaN(mInicio) || isNaN(mFinal)) {
-                errEl.textContent = '�s�️ Preencha todos os campos do cadastro físico'; errEl.classList.add('open'); return;
+                errEl.textContent = '⚠️ Preencha todos os campos do cadastro físico'; errEl.classList.add('open'); return;
             }
             if (!window.tedSelecionado.objetos || !window.tedSelecionado.objetos.length) {
-                errEl.textContent = '�s�️ Cadastre um objeto primeiro.'; errEl.classList.add('open'); return;
+                errEl.textContent = '⚠️ Cadastre um objeto primeiro.'; errEl.classList.add('open'); return;
             }
 
             let startDate;
@@ -5668,7 +5668,7 @@
                 startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else { errEl.textContent = '�s�️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
+            } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
 
             const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
             const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
@@ -5687,7 +5687,7 @@
                 const somaFisico = window.tedSelecionado.fisicos.filter(f => f.objeto === objeto).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
                 const qtdeObjeto = parseNumber(objRef.qtde) || 0;
                 if (somaFisico > qtdeObjeto) {
-                    alert(`�s�️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${objeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades para manter a consistência.`);
+                    alert(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${objeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades para manter a consistência.`);
                 }
             }
 
@@ -5832,7 +5832,7 @@
                 let realizadoBadge = '';
                 if (f.realizada) {
                     const antesTxt = f.realizadaAntes ? ' (antes do previsto)' : '';
-                    realizadoBadge = `<span class="badge done" title="Realizada em ${f.dataRealizada || ''}${antesTxt}">�o"</span>`;
+                    realizadoBadge = `<span class="badge done" title="Realizada em ${f.dataRealizada || ''}${antesTxt}">o"</span>`;
                 }
 
                 const mKey = matchKeyFis(f);
@@ -5881,7 +5881,7 @@
                     let cellContent = '';
                     if (isRealizedMonth) {
                         const nfTxt = f.nfRealizada || f.nf || '';
-                        tdTitle = `Realizada em ${f.dataRealizada || ''} �?� Qtd: ${formatNumber(f.qtdeRealizada ?? f.qtde ?? '')} �?� ${nfTxt ? ('NF: ' + nfTxt) : 'NF: -'}`;
+                        tdTitle = `Realizada em ${f.dataRealizada || ''} → Qtd: ${formatNumber(f.qtdeRealizada ?? f.qtde ?? '')} → ${nfTxt ? ('NF: ' + nfTxt) : 'NF: -'}`;
                         const qText = formatNumber(f.qtdeRealizada ?? f.qtde ?? '');
                         cellContent = `${qText}${nfTxt ? '<br><small style="color:var(--text-muted);font-size:0.75rem">NF: ' + nfTxt + '</small>' : ''}`;
                     }
@@ -5905,10 +5905,10 @@
             try { renderCompactGanttFisico(); } catch(e) {}
         }
 
-        // EXECU�?�fO FÍSICA
-        // �"?�"? Modal Execução Física �"?�"?
+        // EXECU→fO FÍSICA
+        //"?"? Modal Execução Física"?"?
         function abrirModalExecFisica() {
-            if (!window.tedSelecionado) { alert('�s�️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalExecFisicaBackdrop');
             const errEl = document.getElementById('modalExecFisicaError');
@@ -5935,7 +5935,7 @@
             const nf = document.getElementById('modalExecFisicaNf').value || '';
 
             if (!objeto || isNaN(qtde) || qtde < 0 || !data) {
-                errEl.textContent = '�s�️ Preencha todos os campos da execução física'; errEl.classList.add('open'); return;
+                errEl.textContent = '⚠️ Preencha todos os campos da execução física'; errEl.classList.add('open'); return;
             }
 
             window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto, qtde, data, nf });
@@ -6108,7 +6108,7 @@
                             const date = d.data || '';
                             const nfText = d.nf ? `NF: ${d.nf}` : 'NF: -';
                             const qt = d.qtde != null ? `Qtd: ${formatNumber(d.qtde)}` : '';
-                            return [date, nfText, qt].filter(Boolean).join(' �?� ');
+                            return [date, nfText, qt].filter(Boolean).join(' → ');
                         });
                         title = parts.join('\n');
                     }
@@ -6383,11 +6383,11 @@
             document.getElementById('modalFinanceiroMesDesc').value = `${nomesMeses[d.getMonth()]}/${d.getFullYear()}`;
         }
 
-        // �"?�"? Modal Cadastro Financeiro �"?�"?
+        //"?"? Modal Cadastro Financeiro"?"?
         window._editandoFinanceiroId = null;
 
         function abrirModalFinanceiro(editId) {
-            if (!window.tedSelecionado) { alert('�s�️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalFinanceiroBackdrop');
             const titulo = document.getElementById('modalFinanceiroTitulo');
@@ -6404,7 +6404,7 @@
                 const f = (window.tedSelecionado.financeiros || []).find(x => x.id === editId);
                 if (f) {
                     window._editandoFinanceiroId = editId;
-                    titulo.textContent = '�o�️ Editar Cadastro Financeiro';
+                    titulo.textContent = '🔑 Editar Cadastro Financeiro';
                     document.getElementById('modalFinanceiroND').value = f.numero;
                     document.getElementById('modalFinanceiroUP').value = f.up || f.ug;
                     document.getElementById('modalFinanceiroM').value = f.m;
@@ -6436,7 +6436,7 @@
             const valor = parseNumber(document.getElementById('modalFinanceiroValor').value);
 
             if (!numero || isNaN(m) || !up || isNaN(valor)) {
-                errEl.textContent = '�s�️ Preencha todos os campos do cadastro financeiro'; errEl.classList.add('open'); return;
+                errEl.textContent = '⚠️ Preencha todos os campos do cadastro financeiro'; errEl.classList.add('open'); return;
             }
 
             let startDate;
@@ -6444,7 +6444,7 @@
                 startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else { errEl.textContent = '�s�️ Defina a 1ª descentralização.'; errEl.classList.add('open'); return; }
+            } else { errEl.textContent = '⚠️ Defina a 1ª descentralização.'; errEl.classList.add('open'); return; }
 
             const d = new Date(startDate); d.setMonth(d.getMonth() + m);
             const mesDesc = d.getMonth() + 1;
@@ -6749,13 +6749,13 @@
                     } else if (estaNoMes) {
                         totaisPorMes[mesIdx] += valorNum;
                         if (oldMesDesc !== null) {
-                            // New M position �?" highlight as changed (green border)
+                            // New M position → highlight as changed (green border)
                             html += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                         } else {
                             html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                         }
                     } else if (estaNoMesAntigo) {
-                        // Old M position �?" show strikethrough faded value
+                        // Old M position → show strikethrough faded value
                         const oldValor = mods && mods.valor ? Number(mods.valor.de || 0) : valorNum;
                         html += `<td class="month-col-cadFin" style="background:#fee2e2; text-align:right; padding-right:0.25rem; font-size:0.7rem; opacity:0.6;${mmHideCadFin}" title="M anterior: ${mods.m.de}"><s>${oldValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</s></td>`;
                     } else {
@@ -6837,7 +6837,7 @@
                     alertDiv.style.background = '#fffbeb'; // light warning
                     alertDiv.style.border = '1px solid #fef3c7';
                     alertDiv.style.color = '#92400e';
-                    alertDiv.innerHTML = `�s�️ A soma dos valores lançados no Cadastro Financeiro (<strong>R$ ${totalFinanceiro.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>) é maior que o total previsto no Cadastro de Objetos (<strong>R$ ${totalObjetos.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>).`;
+                    alertDiv.innerHTML = `⚠️ A soma dos valores lançados no Cadastro Financeiro (<strong>R$ ${totalFinanceiro.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>) é maior que o total previsto no Cadastro de Objetos (<strong>R$ ${totalObjetos.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>).`;
                 } else {
                     alertDiv.style.display = 'none';
                     alertDiv.innerHTML = '';
@@ -6870,7 +6870,7 @@
             initLucideIcons();
         }
 
-        // EXECU�?�fO FINANCEIRA
+        // EXECU→fO FINANCEIRA
         function atualizarOpcoesExecFinanceira() {
             // Popula selects do modal de execução financeira
             const selectND = document.getElementById('modalExecFinND');
@@ -6893,9 +6893,9 @@
             selectUP.innerHTML = '<option value="">-- Selecione UP --</option>' + upsUnicos.map(up => `<option value="${up}">${up}</option>`).join('');
         }
         
-        // �"?�"? Modal Execução Financeira �"?�"?
+        //"?"? Modal Execução Financeira"?"?
         function abrirModalExecFin() {
-            if (!window.tedSelecionado) { alert('�s�️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalExecFinBackdrop');
             const errEl = document.getElementById('modalExecFinError');
@@ -6922,11 +6922,11 @@
             const data = document.getElementById('modalExecFinData').value;
 
             if (!nd || !up || isNaN(valor) || !data) {
-                errEl.textContent = '�s�️ Preencha todos os campos da execução financeira'; errEl.classList.add('open'); return;
+                errEl.textContent = '⚠️ Preencha todos os campos da execução financeira'; errEl.classList.add('open'); return;
             }
             const cad = window.tedSelecionado.financeiros || [];
             const existe = cad.some(f => String(f.numero) === nd && String(f.up || f.ug) === up);
-            if (!existe) { errEl.textContent = '�s�️ A combinação ND+UP informada não existe no cadastro financeiro!'; errEl.classList.add('open'); return; }
+            if (!existe) { errEl.textContent = '⚠️ A combinação ND+UP informada não existe no cadastro financeiro!'; errEl.classList.add('open'); return; }
 
             window.tedSelecionado.execFinanceiras.push({ id: Date.now(), nd, up, valor, data });
             atualizarGastoFromExecFinanceiras(window.tedSelecionado);
@@ -7345,7 +7345,7 @@
             });
             renderTable(containerObjs, ['TED','Objeto','Qtde','Valor Unit.','Valor Total'], rowsObjs);
 
-            // Metas (sem gantt) �?" mostrar M Início/M Final como valores brutos e Mês Início/Mês Final como MMM/AAAA
+            // Metas (sem gantt) → mostrar M Início/M Final como valores brutos e Mês Início/Mês Final como MMM/AAAA
             const mesesNomes = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
             const rowsMetas = [];
             teds.forEach(t => {
@@ -7384,7 +7384,7 @@
             });
             renderTable(containerMetas, ['TED','Meta','Descrição','M Início','M Final','Mês Início','Mês Final'], rowsMetas);
 
-            // Cadastro Físico (sem gantt) �?" mostrar mInicio/mFinal brutos e Mês Início/Mês Final como MMM/AAAA
+            // Cadastro Físico (sem gantt) → mostrar mInicio/mFinal brutos e Mês Início/Mês Final como MMM/AAAA
             const rowsFis = [];
             teds.forEach(t => {
                 (t.fisicos || []).forEach(f => {
@@ -7440,7 +7440,7 @@
             });
             renderTable(containerExecFis, ['TED','Objeto','Qtde','Data'], rowsExecFis);
 
-            // Cadastro Financeiro �?" formatar Mês Desc como MMM/AAAA quando possível
+            // Cadastro Financeiro → formatar Mês Desc como MMM/AAAA quando possível
             const rowsCadFin = [];
             const mesesNomesRel = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
             teds.forEach(t => {
@@ -7517,7 +7517,7 @@
             const anoText = (selAno && selAno.selectedOptions && selAno.selectedOptions.length)
                 ? Array.from(selAno.selectedOptions).map(o => o.value).join(', ') : '-- Todos --';
 
-            const headerHtml = `<div style="margin-bottom:12px;"><h1 style="margin:0 0 6px 0;">Relatórios TED</h1><div style="font-size:13px;color:#333">Filtros �?" TED: ${tedText} | UP: ${upText} | Ano: ${anoText}</div><hr/></div>`;
+            const headerHtml = `<div style="margin-bottom:12px;"><h1 style="margin:0 0 6px 0;">Relatórios TED</h1><div style="font-size:13px;color:#333">Filtros → TED: ${tedText} | UP: ${upText} | Ano: ${anoText}</div><hr/></div>`;
 
             const styles = `
                 @page { size: A4 landscape; margin: 10mm; }
@@ -8045,7 +8045,7 @@
             table += '</tr>';
             table += '</thead>';
 
-            // Pré-calcular mapa mês�?'segmento para cada row (para saber a cor de cada célula)
+            // Pré-calcular mapa mês→segmento para cada row (para saber a cor de cada célula)
             function buildSegmentMap(r) {
                 // Para cada mês-idx, armazena { cssClass, cor, tooltip }
                 const map = {};
@@ -8053,7 +8053,7 @@
                     const sIdx = Math.max(0, monthDiff(minDate, new Date(seg.de.getFullYear(), seg.de.getMonth(), 1)));
                     const eIdx = Math.min(totalMonths-1, monthDiff(minDate, new Date(seg.ate.getFullYear(), seg.ate.getMonth(), 1)));
                     for (let m = sIdx; m <= eIdx; m++) {
-                        // �sltimo segmento que cobre este mês vence (aditivo sobrescreve original)
+                        //sltimo segmento que cobre este mês vence (aditivo sobrescreve original)
                         map[m] = { cssClass: seg.cssClass, cor: seg.cor, tooltip: seg.label };
                     }
                 });
@@ -8082,7 +8082,7 @@
                         });
                     }
 
-                    const titleParts = [`${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} �?' ${r.fim.toLocaleDateString('pt-BR')}`];
+                    const titleParts = [`${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}`];
                     if (r.temAditivo) {
                         r.segmentos.slice(1).forEach(s => titleParts.push(s.label));
                     }
@@ -8583,7 +8583,7 @@
             const diff = financeTotal - objetosTotal;
             if (Math.abs(diff) < 0.01) { el.style.display = 'none'; el.innerHTML = ''; return; }
             el.style.display = 'block';
-            el.innerHTML = `�s� <strong>Divergência detectada:</strong> Cadastro Financeiro ${financeTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} �?� Cadastro de Objetos ${objetosTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} �?� Diferença ${diff.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            el.innerHTML = `⚠️ <strong>Divergência detectada:</strong> Cadastro Financeiro ${financeTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} → Cadastro de Objetos ${objetosTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} → Diferença ${diff.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
         }
 
         // Editar valor da Execução Física
@@ -8598,7 +8598,7 @@
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
-                alert('�s�️ Data de descentralização não definida');
+                alert('⚠️ Data de descentralização não definida');
                 return;
             }
             
@@ -8620,7 +8620,7 @@
             if (novoValor === null) return;
             const qtde = parseFloat(novoValor);
             if (isNaN(qtde) || qtde < 0) {
-                alert('�s�️ Valor inválido');
+                alert('⚠️ Valor inválido');
                 return;
             }
 
@@ -8663,7 +8663,7 @@
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
-                alert('�s�️ Data de descentralização não definida');
+                alert('⚠️ Data de descentralização não definida');
                 return;
             }
             
@@ -8758,7 +8758,7 @@
         // Função logout substituída por doLogout() no bloco de login helpers
 
         // =============================================
-        // FUN�?�.ES DE ATUALIZA�?�fO EM CASCATA
+        // FUN→.ES DE ATUALIZA→fO EM CASCATA
         // =============================================
 
         // Recalcular meses de metas, físicos e financeiros com base na 1ª descentralização
@@ -8846,9 +8846,9 @@
                 ndsUnicos.map(nd => `<option value="${nd}">${nd}</option>`).join('');
         }
 
-        // �"?�"? Modal Recursos Gerais IMBEL �"?�"?
+        //"?"? Modal Recursos Gerais IMBEL"?"?
         function abrirModalRecGeral() {
-            if (!window.tedSelecionado) { alert('�s�️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalRecGeralBackdrop');
             const errEl = document.getElementById('modalRecGeralError');
@@ -8873,7 +8873,7 @@
             const data = document.getElementById('modalRecGeralData').value;
 
             if (!nd || isNaN(valor) || !data) {
-                errEl.textContent = '�s�️ Preencha todos os campos (ND, Valor e Data)'; errEl.classList.add('open'); return;
+                errEl.textContent = '⚠️ Preencha todos os campos (ND, Valor e Data)'; errEl.classList.add('open'); return;
             }
 
             window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
@@ -8905,7 +8905,7 @@
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
-                alert('�s�️ Data de descentralização não definida');
+                alert('⚠️ Data de descentralização não definida');
                 return;
             }
 
@@ -9084,7 +9084,7 @@
             const recs = window.tedSelecionado.recursosGerais || [];
 
             // Conjunto de NDs presentes no cadastro ou nos recursos gerais (normalizadas para agrupar corretamente)
-            // Mapa: ND normalizada �?' ND para exibição (preferir formato do cadastro com pontos)
+            // Mapa: ND normalizada → ND para exibição (preferir formato do cadastro com pontos)
             const ndDisplayMap = {};
             cad.forEach(f => {
                 const norm = normalizarND(f.numero);
@@ -9308,7 +9308,7 @@
             }, 1500);
         }
 
-        // Salvamento imediato (sem debounce) �?" para usar em importações etc.
+        // Salvamento imediato (sem debounce) → para usar em importações etc.
         async function salvarDadosImediato() {
             if (!window.currentUserProfile || window.currentUserProfile.role !== 'admin') return;
             if (_salvarDebounceTimer) { clearTimeout(_salvarDebounceTimer); _salvarDebounceTimer = null; }
@@ -9320,7 +9320,7 @@
             _salvandoEmAndamento = true;
             // Feedback visual: indicador de salvando
             const syncEl = document.getElementById('cloudLastSync');
-            if (syncEl) syncEl.textContent = '�Y'� Salvando...';
+            if (syncEl) syncEl.textContent = '💾 Salvando...';
             try {
                 if (window && window.firestoreBatchSet) {
                     await window.firestoreBatchSet('teds', dados.teds || []);
@@ -9332,11 +9332,11 @@
                     if (iconEl) { iconEl.style.color = 'var(--success)'; iconEl.title = 'Conectado ao Firestore'; }
                 } else {
                     console.warn('Firestore batch helper not available; dados not persisted.');
-                    if (syncEl) syncEl.textContent = '�s�️ Sem conexão';
+                    if (syncEl) syncEl.textContent = '⚠️ Sem conexão';
                 }
             } catch (e) {
                 console.warn('Erro salvando no Firestore', e);
-                if (syncEl) syncEl.textContent = '�O Erro ao salvar';
+                if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
                 showToast('Erro ao salvar dados. Tentando novamente em breve...', 'danger');
             } finally {
                 _salvandoEmAndamento = false;
@@ -9344,7 +9344,7 @@
         }
 
         // =============================================
-        // FUN�?�.ES DE EXPORTA�?�fO E IMPORTA�?�fO (CSV/JSON)
+        // FUN→.ES DE EXPORTA→fO E IMPORTA→fO (CSV/JSON)
         // =============================================
 
         // Função auxiliar para converter array para CSV
@@ -9504,7 +9504,7 @@
             showToast('Cadastro Físico exportado com sucesso!', 'success');
         }
 
-        // EXPORTAR EXECU�?�fO FÍSICA
+        // EXPORTAR EXECU→fO FÍSICA
         function exportarExecFisica() {
             const rows = [];
             dados.teds.forEach(ted => {
@@ -9648,7 +9648,7 @@
             showToast('Cadastro Financeiro exportado com sucesso!', 'success');
         }
 
-        // EXPORTAR EXECU�?�fO FINANCEIRA
+        // EXPORTAR EXECU→fO FINANCEIRA
         function exportarExecFinanceira() {
             const rows = [];
             dados.teds.forEach(ted => {
@@ -9713,7 +9713,7 @@
             reader.onload = function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
-                    if (confirm('�s�️ Isso substituirá TODOS os dados atuais. Deseja continuar?')) {
+                    if (confirm('⚠️ Isso substituirá TODOS os dados atuais. Deseja continuar?')) {
                         dados = imported;
                         salvarDadosImediato();
                         atualizarDashboard();
@@ -9725,7 +9725,7 @@
                         switchTab('dashboard', dashBtn);
                     }
                 } catch (err) {
-                    alert('�O Erro ao importar: arquivo inválido.');
+                    alert('❌ Erro ao importar: arquivo inválido.');
                 }
             };
             reader.readAsText(file);
@@ -9819,9 +9819,9 @@
                     atualizarDashboard();
                     atualizarListaTEDs();
                     atualizarSeletorTED();
-                    alert(`�o. ${countNovos} TED(s) criado(s), ${countAtualizados} TED(s) atualizado(s)!`);
+                    alert(`o. ${countNovos} TED(s) criado(s), ${countAtualizados} TED(s) atualizado(s)!`);
                 } catch (err) {
-                    alert('�O Erro ao importar: ' + err.message);
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
@@ -9867,9 +9867,9 @@
                     });
                     salvarDadosImediato();
                     atualizarTabelasEmCascata('objetos');
-                    alert(`�o. ${countItens} objeto(s) importado(s) para ${countTeds} TED(s)!`);
+                    alert(`o. ${countItens} objeto(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
-                    alert('�O Erro ao importar: ' + err.message);
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
@@ -9946,9 +9946,9 @@
                     });
                     salvarDadosImediato();
                     atualizarTabelasEmCascata('metas');
-                    alert(`�o. ${countItens} meta(s) importada(s) para ${countTeds} TED(s)!`);
+                    alert(`o. ${countItens} meta(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
-                    alert('�O Erro ao importar: ' + err.message);
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
@@ -10026,15 +10026,15 @@
                     });
                     salvarDadosImediato();
                     atualizarTabelasEmCascata('fisicos');
-                    alert(`�o. ${countItens} registro(s) físico(s) importado(s) para ${countTeds} TED(s)!`);
+                    alert(`o. ${countItens} registro(s) físico(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
-                    alert('�O Erro ao importar: ' + err.message);
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
         }
 
-        // IMPORTAR EXECU�?�fO FÍSICA
+        // IMPORTAR EXECU→fO FÍSICA
         function importarExecFisica(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -10069,9 +10069,9 @@
                         }
                     });
                     try { salvarDadosImediato(); } catch(e) {}
-                    alert(`�o. ${countItens} execução(ões) física(s) importada(s) para ${countTeds} TED(s)!`);
+                    alert(`o. ${countItens} execução(ões) física(s) importada(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
-                    alert('�O Erro ao importar: ' + err.message);
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
@@ -10137,15 +10137,15 @@
                     });
                     salvarDadosImediato();
                     atualizarTabelasEmCascata('financeiros');
-                    alert(`�o. ${countItens} registro(s) financeiro(s) importado(s) para ${countTeds} TED(s)!`);
+                    alert(`o. ${countItens} registro(s) financeiro(s) importado(s) para ${countTeds} TED(s)!`);
                 } catch (err) {
-                    alert('�O Erro ao importar: ' + err.message);
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
         }
 
-        // IMPORTAR EXECU�?�fO FINANCEIRA (suporta CSV simplificado e Tesouro Gerencial)
+        // IMPORTAR EXECU→fO FINANCEIRA (suporta CSV simplificado e Tesouro Gerencial)
         function importarExecFinanceira(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -10154,7 +10154,7 @@
                     let texto = e.target.result;
                     if (texto.charCodeAt(0) === 0xFEFF) texto = texto.substring(1);
 
-                    // Mapa de códigos UG �?' sigla UP
+                    // Mapa de códigos UG → sigla UP
                     const mapaUP = {
                         '168003': 'UA', '168005': 'FI', '168008': 'FE',
                         '168006': 'FJF', '168007': 'FMCE', '168004': 'FPV'
@@ -10191,7 +10191,7 @@
                     }
 
                     const lines = texto.split('\n').filter(l => l.trim());
-                    if (lines.length < 2) { alert('�s�️ Arquivo vazio.'); return; }
+                    if (lines.length < 2) { alert('⚠️ Arquivo vazio.'); return; }
 
                     const headers = splitCSV(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
 
@@ -10216,7 +10216,7 @@
 
                         console.log('[ExecFin] Tesouro Gerencial - SIAFI=' + (colSiafi||'?') + ', UP=' + (colUP||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
 
-                        if (!colND) { alert('�O Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', ')); return; }
+                        if (!colND) { alert('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', ')); return; }
 
                         // Parsear dados
                         const rows = [];
@@ -10229,7 +10229,7 @@
 
                         // Agrupar por SIAFI
                         const grouped = {};
-                        // Detectar coluna NC exata (quando houver) �?" preferir header igual a 'NC'
+                        // Detectar coluna NC exata (quando houver) → preferir header igual a 'NC'
                         const headerLowerMap = headers.reduce((acc,h)=>{ acc[h.toLowerCase().trim()]=h; return acc; }, {});
                         const colNC = (function(){
                             // procurar header com nome exatamente 'nc' (ignorando case/espacos)
@@ -10275,9 +10275,9 @@
                         const siafiKeys = Object.keys(grouped);
                         const totalItens = siafiKeys.reduce((s, k) => s + grouped[k].itens.length, 0);
 
-                        if (siafiKeys.length === 0) { alert('�O Nenhum dado válido encontrado.'); return; }
+                        if (siafiKeys.length === 0) { alert('❌ Nenhum dado válido encontrado.'); return; }
 
-                        if (!confirm('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n�s�️ Os dados de Execução Financeira existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?')) return;
+                        if (!confirm('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Execução Financeira existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?')) return;
 
                         const normSiafi = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
 
@@ -10359,14 +10359,14 @@
                         let msg = countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!';
                         const skipped = totalItens - countItens;
                         if (tedsNaoEncontrados.length > 0) {
-                            msg += '\n�s�️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
+                            msg += '\n⚠️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
                         }
                         if (skipped > 0) {
-                            msg += '\n�s�️ ' + skipped + ' item(ns) ignorado(s) porque a(s) ND(s) não existe(m) no cadastro financeiro.';
+                            msg += '\n⚠️ ' + skipped + ' item(ns) ignorado(s) porque a(s) ND(s) não existe(m) no cadastro financeiro.';
                         }
                         if (countItens === 0) {
                             // Nenhum dado importado, mostrar alerta detalhado
-                            alert('�O Nenhum dado importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + (tedsNaoEncontrados.length ? ('\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ')) : '') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
+                            alert('❌ Nenhum dado importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + (tedsNaoEncontrados.length ? ('\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ')) : '') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
                         } else {
                             // Se houve itens importados, exibir toast (warning quando houver problemas)
                             const level = (tedsNaoEncontrados.length || skipped) ? 'warning' : 'success';
@@ -10441,13 +10441,13 @@
                         const totalInFile = Object.keys(grouped).reduce((s,k)=>s+grouped[k].length,0);
                         const skipped = totalInFile - countItens;
                         let msg = countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!';
-                        if (skipped > 0) msg += '\n�s�️ ' + skipped + ' item(ns) ignorado(s) porque a(s) ND(s) não existe(m) no cadastro financeiro.';
+                        if (skipped > 0) msg += '\n⚠️ ' + skipped + ' item(ns) ignorado(s) porque a(s) ND(s) não existe(m) no cadastro financeiro.';
                         const level = skipped ? 'warning' : 'success';
                         showToast(msg, level);
                     }
                 } catch (err) {
                     console.error('Erro na importação:', err);
-                    alert('�O Erro ao importar: ' + err.message);
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
@@ -10459,7 +10459,7 @@
             return String(nd || '').replace(/[\.\-\s]/g, '').trim();
         }
 
-        // Formatar ND com pontos: 339030 �?' 33.90.30, 449052 �?' 44.90.52
+        // Formatar ND com pontos: 339030 → 33.90.30, 449052 → 44.90.52
         function formatarNDComPontos(nd) {
             const digits = String(nd || '').replace(/[^0-9]/g, '');
             if (digits.length === 6) {
@@ -10524,7 +10524,7 @@
 
                     const lines = texto.split('\n').filter(l => l.trim());
                     if (lines.length < 2) {
-                        alert('�s�️ Arquivo vazio ou sem dados.');
+                        alert('⚠️ Arquivo vazio ou sem dados.');
                         return;
                     }
 
@@ -10558,11 +10558,11 @@
                     console.log('[RecGerais] Colunas: SIAFI=' + (colSiafi||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
 
                     if (!colSiafi) {
-                        alert('�O Coluna "NC - Transferência" não encontrada.\n\nCabeçalhos: ' + headers.join(', '));
+                        alert('❌ Coluna "NC - Transferência" não encontrada.\n\nCabeçalhos: ' + headers.join(', '));
                         return;
                     }
                     if (!colND) {
-                        alert('�O Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', '));
+                        alert('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', '));
                         return;
                     }
 
@@ -10590,7 +10590,7 @@
                         // Valor
                         const valor = parseNumber(row[colValor] || 0);
 
-                        // Data (dd/mm/aaaa �?' yyyy-mm-dd)
+                        // Data (dd/mm/aaaa → yyyy-mm-dd)
                         let data = '';
                         const dataRaw = String(row[colData] || '').trim();
                         if (dataRaw) {
@@ -10614,11 +10614,11 @@
                     console.log('[RecGerais] SIAFIs no CSV:', siafiKeys.length, '(' + siafiKeys.join(', ') + ') | Total itens:', totalItens);
 
                     if (siafiKeys.length === 0) {
-                        alert('�O Nenhum dado válido encontrado no arquivo.');
+                        alert('❌ Nenhum dado válido encontrado no arquivo.');
                         return;
                     }
 
-                    if (!confirm('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n�s�️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?')) {
+                    if (!confirm('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?')) {
                         return;
                     }
 
@@ -10647,7 +10647,7 @@
                         // Limpar dados antigos deste TED
                         ted.recursosGerais = [];
 
-                        // Mapa de NDs do cadastro financeiro (normalizada �?' formato com pontos)
+                        // Mapa de NDs do cadastro financeiro (normalizada → formato com pontos)
                         const cadNDs = {};
                         (ted.financeiros || []).forEach(f => {
                             const ndNorm = normalizarND(f.numero);
@@ -10677,20 +10677,20 @@
 
                     let msg = countItens + ' recurso(s) importado(s) para ' + countTeds + ' TED(s)!';
                     if (tedsNaoEncontrados.length > 0) {
-                        msg += '\n�s�️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
+                        msg += '\n⚠️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
                         if (countItens === 0) {
-                            alert('�O Nenhum recurso importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + '\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
+                            alert('❌ Nenhum recurso importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + '\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
                         } else {
                             showToast(msg, 'warning');
                         }
                     } else if (countItens === 0) {
-                        alert('�O Nenhum recurso importado.\n\nCabeçalhos: ' + headers.join(', ') + '\nLinhas: ' + rows.length);
+                        alert('❌ Nenhum recurso importado.\n\nCabeçalhos: ' + headers.join(', ') + '\nLinhas: ' + rows.length);
                     } else {
                         showToast(msg, 'success');
                     }
                 } catch (err) {
                     console.error('Erro na importação:', err);
-                    alert('�O Erro ao importar: ' + err.message);
+                    alert('❌ Erro ao importar: ' + err.message);
                 }
             };
             reader.readAsText(file);
@@ -10846,8 +10846,8 @@
             if (freezeCount <= 0) return;
 
             // Calcular larguras por índice lógico percorrendo TODAS as linhas do thead
-            // com grid de ocupância �?" necessário porque colunas fixas têm rowspan="2"
-            // e N�fO aparecem na última linha do thead.
+            // com grid de ocupância → necessário porque colunas fixas têm rowspan="2"
+            // e NfO aparecem na última linha do thead.
             const colWidths = [];
             if (table.tHead && table.tHead.rows.length) {
                 const occ = [];
@@ -10897,7 +10897,7 @@
                 // Congelar célula apenas se ela estiver TOTALMENTE dentro da área congelada
                 if (logicalStart < 0 || (logicalStart + cs) > freezeCount) return;
                 cell.classList.add('sticky-freeze');
-                // �? a última célula congelada se vai até o limite da área congelada
+                //? a última célula congelada se vai até o limite da área congelada
                 if ((logicalStart + cs) === freezeCount) cell.classList.add('sticky-freeze-last');
                 cell.style.left = leftOffsets[logicalStart] + 'px';
                 const bg = window.getComputedStyle(cell).backgroundColor;
@@ -11041,7 +11041,7 @@
             });
         }
 
-        // Login handler (inline �?" works even if app.js not loaded yet)
+        // Login handler (inline → works even if app.js not loaded yet)
         async function doLogin() {
             setLoginError('');
             setLoginSuccess('');
@@ -11153,19 +11153,19 @@
             var tabConfig = document.getElementById('tab-config');
 
             if (isAdmin) {
-                if (modeEl) { modeEl.textContent = '�o�️ Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
+                if (modeEl) { modeEl.textContent = '🔑 Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
                 if (loginBtn) loginBtn.style.display = 'none';
                 if (logoutBtn) logoutBtn.style.display = 'inline-block';
                 if (cloudCtrl) cloudCtrl.style.display = 'flex';
                 if (adminPanel) adminPanel.style.display = 'block';
                 if (tabConfig) tabConfig.style.display = '';
                 if (adminLoggedAs && window.currentUserProfile) {
-                    adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '�?"');
+                    adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '→');
                 }
                 // Habilitar botões de edição
                 enableEditButtons(true);
             } else {
-                if (modeEl) { modeEl.textContent = '�Y'� Leitura'; modeEl.style.background = '#e0e7ff'; modeEl.style.color = '#3730a3'; }
+                if (modeEl) { modeEl.textContent = '📖 Leitura'; modeEl.style.background = '#e0e7ff'; modeEl.style.color = '#3730a3'; }
                 if (loginBtn) loginBtn.style.display = 'inline-block';
                 if (logoutBtn) logoutBtn.style.display = 'none';
                 if (cloudCtrl) cloudCtrl.style.display = 'none';
