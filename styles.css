@@ -480,7 +480,7 @@
             border-radius: 999px;
             background: var(--color-primary-mid);
         }
-        .exec-perc { font-family: inherit; font-variant-numeric: tabular-nums; font-size: 13px; margin-left: 8px; color: var(--color-text-primary); }
+        .exec-perc { font-family: inherit; font-variant-numeric: normal; font-size: 13px; margin-left: 8px; color: var(--color-text-primary); }
         .status-badge { display:inline-block; font-size:11px; padding:3px 9px; border-radius:999px; margin-left:8px; font-weight:600; }
         .status-badge.concluido { background:#EAF3DE; color:#3B6D11; }
         .status-badge.acima { background:#FCEBEB; color:#A32D2D; }
@@ -492,7 +492,7 @@
         .exec-row.animate { animation: rowEnter 360ms cubic-bezier(.2,.9,.2,1) forwards; }
 
         /* Saldo: monospace e estados */
-        .col-saldo { font-family: inherit; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+        .col-saldo { font-family: inherit; font-variant-numeric: normal; font-size: 13px; text-align: right; }
         .col-saldo.zero { color: var(--color-text-secondary); }
         .col-saldo.neg { color: #A32D2D; }
 
@@ -1660,7 +1660,7 @@
         .tabela-padrao tbody tr:last-child td { border-bottom: none; }
 
         /* Valores financeiros: alinhamento direito com numerais tabulares */
-        .tabela-padrao .col-valor { text-align: right; font-variant-numeric: tabular-nums; }
+        .tabela-padrao .col-valor { text-align: right; font-variant-numeric: normal; }
 
         /* Linha de total (sempre em tfoot) */
         .tabela-padrao .linha-total {
@@ -2399,6 +2399,16 @@
         #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico th {
             background: rgba(15,23,42,0.02) !important;
             color: #0f172a !important;
+
+        /* Padronização de fonte nas áreas de Detalhes solicitadas */
+        #detalhes #tedsDetalheContainer .field-value,
+        #detalhes #tedsDetalheContainer .aditivo-historico th,
+        #detalhes #tedsDetalheContainer .aditivo-historico td,
+        #detalhes #tedsDetalheContainer #tabelaFinanceiraCompleta th,
+        #detalhes #tedsDetalheContainer #tabelaFinanceiraCompleta td {
+            font-family: inherit !important;
+            font-variant-numeric: normal !important;
+        }
         }
         #detalhes #tedsDetalheContainer .detalhe-secao .aditivo-historico td,
         #detalhes #tedsDetalheContainer .detalhe-secao .ted-info-historico td {

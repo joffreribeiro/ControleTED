@@ -929,12 +929,12 @@
                                         </div>
                                         <div>
                                             <div class="field-label">Nº TED-SIAFI</div>
-                                            <div class="field-value mono" id="info_numTedSiafi">→</div>
+                                            <div class="field-value" id="info_numTedSiafi">→</div>
                                             <input type="text" class="ted-info-input" id="edit_numTedSiafi" style="display:none;">
                                         </div>
                                         <div>
                                             <div class="field-label">Código do Plano de Ação</div>
-                                            <div class="field-value mono" id="info_codigoPlano">→</div>
+                                            <div class="field-value" id="info_codigoPlano">→</div>
                                             <input type="text" class="ted-info-input" id="edit_codigoPlano" style="display:none;">
                                         </div>
                                         <div>
@@ -3473,7 +3473,7 @@
                     }
                     if (!changesHtml) changesHtml = '-';
 
-                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td style="font-family:monospace;text-align:right;">${valorTedStr}</td><td style="max-width:420px;">${changesHtml}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td></tr>`;
+                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td>${mesesStr}</td><td>${dataStr}</td><td style="text-align:right;">${valorTedStr}</td><td style="max-width:420px;">${changesHtml}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td></tr>`;
                 });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
@@ -6507,11 +6507,11 @@
             atualizarGantt();
         }
 
-        // ===== Helper: formatar valor com cor e monospace =====
+        // ===== Helper: formatar valor com cor =====
         function renderValorFmt(val, bold) {
             const n = parseFloat(val) || 0;
             const s = Math.abs(n).toLocaleString('pt-BR', {minimumFractionDigits: 2});
-            const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:nowrap; display:inline-block;';
+            const mono = 'white-space:nowrap; display:inline-block;';
             const bld = bold ? 'font-weight:700;' : '';
             if (n < -0.005) return `<span style="color:#A32D2D;${mono}${bld}">\u2212\u00a0R$\u00a0${s}</span>`;
             if (n >  0.005) return `<span style="color:#3B6D11;${mono}${bld}">R$\u00a0${s}</span>`;
