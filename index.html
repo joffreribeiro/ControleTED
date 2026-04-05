@@ -2085,48 +2085,9 @@
         // Atualizar Dashboard
         function atualizarDashboard() {
             document.getElementById('totalTeds').textContent = dados.teds.length;
-            // Tentar alinhar o cartão "Em Execução" com a linha "Vigentes" da tabela.
-            // Obter os dados do relatório (meses desc + mapa de vigentes por mês)
-            let tedsEmExecucao = 0;
-            try {
-                const rel = buildRelatorioData();
-                if (rel && Array.isArray(rel.months) && rel.months.length > 0) {
-                    const mostRecent = rel.months[0]; // meses já vêm em ordem decrescente
-                    // Preferir valor numérico acumulado (saldo) se disponível
-                    if (rel.vigentesNumeric && typeof rel.vigentesNumeric[mostRecent] === 'number') {
-                        tedsEmExecucao = rel.vigentesNumeric[mostRecent];
-                    } else if (rel.vigentes && typeof rel.vigentes[mostRecent] !== 'undefined') {
-                        const v = rel.vigentes[mostRecent];
-                        if (Array.isArray(v)) tedsEmExecucao = v.length;
-                        else if (typeof v === 'number') tedsEmExecucao = v;
-                        else if (v && typeof v === 'object' && typeof v.length === 'number') tedsEmExecucao = v.length;
-                    }
-                }
-            } catch (e) {
-                console.warn('buildRelatorioData error', e);
-            }
-
-            // Fallback: se não conseguiu determinar pelo relatório, calcular pelo critério temporal atual
-            if (!tedsEmExecucao) {
-                tedsEmExecucao = dados.teds.filter(t => {
-                    const hoje = new Date();
-                    const inicioNorm = normalizarData(t.inicioVigencia);
-                    if (!inicioNorm) return false;
-                    const inicio = new Date(inicioNorm + 'T00:00:00');
-                    if (isNaN(inicio.getTime())) return false;
-
-                    const fimAditivo = calcularFimComAditivos(t);
-                    const fimNorm = normalizarData(t.fimVigencia || '');
-                    const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
-                    const fimEfetivo = (fimAditivo && !isNaN(fimAditivo.getTime())) ? fimAditivo : (fimOrig && !isNaN(fimOrig.getTime()) ? fimOrig : null);
-                    const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
-                    const encDt = encNorm ? new Date(encNorm + 'T00:00:00') : null;
-                    const fimReal = (encDt && !isNaN(encDt.getTime())) ? encDt : fimEfetivo;
-
-                    if (!fimReal) return hoje >= inicio;
-                    return hoje >= inicio && hoje <= fimReal;
-                }).length;
-            }
+            // Regra de negócio: Em Execução = TED não encerrado,
+            // independentemente de a vigência já ter vencido.
+            const tedsEmExecucao = (dados.teds || []).filter(t => !isTedFinalizado(t)).length;
             document.getElementById('tedsExecucao').textContent = tedsEmExecucao;
 
             const valorTotal = dados.teds.reduce((sum, t) => sum + t.valorTed, 0);
@@ -2218,7 +2179,7 @@
                 const stNorm = String(computedStatusLocal).toLowerCase();
                 let badgeClassLocal = 'badge-planejamento';
                 if (/execu|em execução/.test(stNorm)) {
-                    badgeClassLocal = vigenciaVencidaFlag ? 'badge-vigencia-vencida' : 'badge-execucao';
+                    badgeClassLocal = 'badge-execucao';
                 } else if (/vigênc.*venc|vigencia.*venc/.test(stNorm)) {
                     badgeClassLocal = 'badge-vigencia-vencida';
                 } else if (/finaliz|finalizado/.test(stNorm)) {
@@ -2262,6 +2223,10 @@
                     ? `<span class="ted-card-saldo-neg">- ${fmtMoeda(saldoTedCard)}</span>`
                     : `<span class="ted-card-saldo-pos">${fmtMoeda(saldoTedCard)}</span>`;
 
+                const vigenciaSubHtml = (/execu|em execução/.test(stNorm) && vigenciaVencidaFlag)
+                    ? '<div class="ted-card-status-note">Vigência Vencida</div>'
+                    : '';
+
                 return `
                     <div class="ted-card" style="border-left-color:${cardBorderColor};">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -2270,9 +2235,12 @@
                                 <p class="ted-card-obj">${t.objetivo || '→'}</p>
                                 <p class="ted-card-meta">${metaLine}</p>
                             </div>
-                            <div style="display:flex; gap:6px; align-items:flex-start; margin-left:10px;">
-                                <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
-                                <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
+                            <div class="ted-card-status-col" style="margin-left:10px;">
+                                <div class="ted-card-status-row">
+                                    <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
+                                    <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
+                                </div>
+                                ${vigenciaSubHtml}
                             </div>
                         </div>
 
