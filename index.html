@@ -715,11 +715,12 @@
                     </select>
                     <span class="filter-label">Status:</span>
                     <select id="filterStatus_teds" onchange="atualizarListaTEDs()">
-                        <option value="">Todos</option>
+                        <option value="Em Execução">Em Execução</option>
+                        <option value="TED Finalizado">TED Finalizado</option>
                     </select>
                     <button class="btn-limpar" onclick="(function(){
                         document.getElementById('filterUP_teds').value='';
-                        document.getElementById('filterStatus_teds').value='';
+                        document.getElementById('filterStatus_teds').value='Em Execução';
                         atualizarListaTEDs();
                     })()">Limpar</button>
                 </div>
@@ -2143,14 +2144,13 @@
                 }
                 if (selStatus) {
                     listaFiltrada = listaFiltrada.filter(t => {
-                        const statusObj = getDisplayStatus(t) || { text: '-' };
-                        return String(statusObj.text || '').trim() === selStatus;
+                        const situacaoFiltro = getSituacaoGantt(t);
+                        return String(situacaoFiltro || '').trim() === selStatus;
                     });
                 } else {
                     // Padrão: mostrar apenas Em Execução quando sem filtro
                     listaFiltrada = listaFiltrada.filter(t => {
-                        const statusObj = getDisplayStatus(t) || { text: '-' };
-                        return String((statusObj.text || '').trim()) === 'Em Execução';
+                        return getSituacaoGantt(t) === 'Em Execução';
                     });
                 }
             } catch (e) { console.warn('Erro aplicando filtros TEDs', e); }
@@ -6198,15 +6198,13 @@
             const prevStatus = selStatus.value;
 
             const ups = [...new Set((dados.teds || []).map(t => String(t.upResponsavel || t.up || '').trim()))].filter(Boolean).sort();
-            const statusSet = new Set();
-            (dados.teds || []).forEach(t => {
-                const s = (getDisplayStatus(t) || {}).text || '';
-                if (s) statusSet.add(String(s).trim());
-            });
-            const statuses = Array.from(statusSet).sort();
+            const statuses = ['Em Execução', 'TED Finalizado'];
 
             selUp.innerHTML = '<option value="">Todas</option>' + ups.map(u => `<option value="${u}" ${u === prevUp ? 'selected' : ''}>${u}</option>`).join('');
-            selStatus.innerHTML = '<option value="">Todos</option>' + statuses.map(s => `<option value="${s}" ${s === prevStatus ? 'selected' : ''}>${s}</option>`).join('');
+            selStatus.innerHTML = statuses.map(s => {
+                const selected = prevStatus ? (s === prevStatus) : (s === 'Em Execução');
+                return `<option value="${s}" ${selected ? 'selected' : ''}>${s}</option>`;
+            }).join('');
         }
 
         // Helper para popular um menu de filtro
