@@ -1,42 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Logo Sistema Controle TED">
   <defs>
-    <linearGradient id="globeBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#3b82f6"/>
-      <stop offset="100%" stop-color="#1a4fa3"/>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4285f4"/>
+      <stop offset="100%" stop-color="#1a56db"/>
     </linearGradient>
-    <linearGradient id="docGrad" x1="0" y1="0" x2="0.5" y2="1">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#dbeafe"/>
-    </linearGradient>
-    <radialGradient id="globeShine" cx="35%" cy="30%" r="55%">
-      <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.45"/>
-      <stop offset="100%" stop-color="#1e40af" stop-opacity="0"/>
-    </radialGradient>
   </defs>
 
-  <!-- Globe body -->
-  <circle cx="220" cy="272" r="210" fill="url(#globeBg)"/>
-  <circle cx="220" cy="272" r="210" fill="url(#globeShine)"/>
+  <!-- Fundo circular azul -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)"/>
 
-  <!-- Globe latitude lines -->
-  <ellipse cx="220" cy="272" rx="210" ry="73" fill="none" stroke="#93c5fd" stroke-width="6" opacity="0.55"/>
-  <ellipse cx="220" cy="272" rx="210" ry="140" fill="none" stroke="#93c5fd" stroke-width="5" opacity="0.35"/>
-  <!-- Globe vertical center line -->
-  <ellipse cx="220" cy="272" rx="73" ry="210" fill="none" stroke="#93c5fd" stroke-width="6" opacity="0.45"/>
-  <!-- Globe horizontal axis -->
-  <line x1="10" y1="272" x2="430" y2="272" stroke="#93c5fd" stroke-width="5" opacity="0.4"/>
+  <!-- Documento branco central -->
+  <rect x="156" y="100" width="200" height="250" rx="14" fill="#ffffff" opacity="0.95"/>
 
-  <!-- Document (white, overlapping globe, bottom-right) -->
-  <rect x="270" y="160" width="210" height="268" rx="16" fill="url(#docGrad)" filter="drop-shadow(0 8px 24px rgba(0,0,0,0.22))"/>
-  <!-- Dog-ear fold -->
-  <polygon points="422,160 480,218 480,160" fill="#bfdbfe"/>
-  <line x1="422" y1="160" x2="422" y2="218" stroke="#93c5fd" stroke-width="2"/>
-  <line x1="422" y1="218" x2="480" y2="218" stroke="#93c5fd" stroke-width="2"/>
+  <!-- Linhas de texto no documento -->
+  <rect x="186" y="150" width="90" height="10" rx="5" fill="#1e3a8a" opacity="0.7"/>
+  <rect x="186" y="175" width="140" height="10" rx="5" fill="#1e3a8a" opacity="0.55"/>
+  <rect x="186" y="200" width="120" height="10" rx="5" fill="#1e3a8a" opacity="0.55"/>
+  <rect x="186" y="225" width="140" height="10" rx="5" fill="#1e3a8a" opacity="0.45"/>
+  <rect x="186" y="250" width="100" height="10" rx="5" fill="#1e3a8a" opacity="0.35"/>
 
-  <!-- Document text lines -->
-  <rect x="300" y="248" width="120" height="12" rx="6" fill="#1e3a8a" opacity="0.85"/>
-  <rect x="300" y="276" width="148" height="12" rx="6" fill="#1e3a8a" opacity="0.75"/>
-  <rect x="300" y="304" width="108" height="12" rx="6" fill="#1e3a8a" opacity="0.75"/>
-  <rect x="300" y="332" width="136" height="12" rx="6" fill="#1e3a8a" opacity="0.65"/>
-  <rect x="300" y="360" width="96"  height="12" rx="6" fill="#1e3a8a" opacity="0.55"/>
+  <!-- Faixa azul e branco abaixo do documento -->
+  <rect x="116" y="370" width="280" height="40" rx="20" fill="#ffffff" opacity="0.25"/>
+  <rect x="136" y="378" width="120" height="24" rx="12" fill="#ffffff" opacity="0.45"/>
+  <rect x="266" y="378" width="110" height="24" rx="12" fill="#93c5fd" opacity="0.5"/>
 </svg>
