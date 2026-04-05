@@ -1800,7 +1800,8 @@
 
         // Retorna o status a ser exibido para um TED e sua origem.
         // Retorna um objeto: { text: string, origin: 'campo'|'inferido', vigenciaVencida: boolean }
-        // Usa a mesma lógica de atualizarStatusPorEntregaRelatorio() para consistência com Detalhes.
+        // Regra de negócio: TED somente é tratado como finalizado/denunciado quando
+        // houver data de entrega/denúncia (ou data de entrega do relatório).
         function getDisplayStatus(t) {
             if (!t) return { text: '-', origin: 'inferido', vigenciaVencida: false };
 
@@ -1818,16 +1819,21 @@
                 }
             }
 
-            // Calcular status pela mesma lógica de atualizarStatusPorEntregaRelatorio()
-            // Prioridade: dataEntregaRelatorio → situacaoTED → fallback
-            if (t.dataEntregaRelatorio) {
-                return { text: 'TED Finalizado', origin: 'calculado (dataEntregaRelatorio)', vigenciaVencida: false };
+            const situacaoNorm = String(t.situacaoTED || '').toLowerCase();
+            const dtEncNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || t.dataEntregaRelatorio || '');
+            const temDataEncerramento = !!dtEncNorm;
+
+            // Encerrado somente quando existe data de entrega/denúncia
+            if (temDataEncerramento) {
+                if (situacaoNorm.includes('denunci')) {
+                    return { text: 'TED Denunciado', origin: 'calculado (dataEntregaDenuncia)', vigenciaVencida: false };
+                }
+                return { text: 'TED Finalizado', origin: 'calculado (dataEntregaDenuncia)', vigenciaVencida: false };
             }
-            if (t.situacaoTED === 'finalizado' || t.situacaoTED === 'denunciado') {
-                return { text: 'Relatório Final', origin: 'calculado (situacaoTED)', vigenciaVencida: vigenciaVencida };
-            }
-            if (t.situacaoTED && String(t.situacaoTED).toLowerCase().includes('denunci')) {
-                return { text: 'TED Denunciado', origin: 'calculado (situacaoTED)', vigenciaVencida: false };
+
+            // Situação marcada sem data de encerramento -> fase de relatório
+            if (situacaoNorm === 'finalizado' || situacaoNorm === 'denunciado' || situacaoNorm.includes('denunci')) {
+                return { text: 'Relatório Final', origin: 'calculado (situacaoTED sem data)', vigenciaVencida: vigenciaVencida };
             }
 
             // Sem situação especial → "Em Execução" (consistente com Detalhes)
@@ -1839,9 +1845,8 @@
         function isTedFinalizado(ted) {
             if (!ted) return false;
             try {
-                if (ted.dataEntregaRelatorio) return true;
-                const s = (ted.situacaoTED || '').toString().toLowerCase();
-                if (s.includes('finaliz') || s.includes('denunci')) return true;
+                const dtEncNorm = normalizarData(ted.dataEntregaDenuncia || ted.dataEntrega || ted.dataEntregaRelatorio || '');
+                if (dtEncNorm) return true;
             } catch(e) { /* ignore */ }
             return false;
         }
