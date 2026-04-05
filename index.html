@@ -5,340 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle TED - Sistema Termo de Execução Descentralizada</title>
     <!-- Favicon: usar a logo do projeto -->
-    <link rel="icon" type="image/svg+xml" href="logo-controle-ted.svg">
-    <link rel="shortcut icon" href="logo-controle-ted.svg">
-    <link rel="apple-touch-icon" href="logo-controle-ted.svg">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        /* JS functions moved to script block to avoid invalid CSS parsing */
-
-        /* popularFiltrosTEDs moved to script block (to avoid JS inside <style>) */
-
-        :root {
-            /* ── Nova paleta de cores ───────────────────────────── */
-            --color-primary: #0C447C;        /* azul escuro — usar APENAS em header/topbar */
-            --color-primary-mid: #185FA5;
-            --color-primary-light: #378ADD;
-            --color-primary-bg: #E6F1FB;     /* fundo azul suave para badges e destaques */
-            --color-primary-border: #85B7EB;
-
-            --color-success: #639922;
-            --color-success-bg: #EAF3DE;
-            --color-danger: #A32D2D;
-            --color-danger-bg: #FCEBEB;
-            --color-warning: #854F0B;
-            --color-warning-bg: #FAEEDA;
-
-            --color-text-primary: #1a1a1a;
-            --color-text-secondary: #6b6b6b;
-            --color-text-muted: #9b9b9b;
-
-            --color-bg-page: #F4F4F2;        /* fundo geral da página */
-            --color-bg-card: #ffffff;        /* fundo dos cards/tabelas */
-            --color-bg-surface: #F8F8F6;     /* fundo de cabeçalhos de tabela */
-            --color-border: rgba(0,0,0,0.10);
-
-            --radius-card: 12px;
-            --radius-pill: 999px;
-            /* ───────────────────────────────────────────────────── */
-
-            /* Cores Primárias (mapeadas para nova paleta) */
-            --primary: #185FA5;
-            --primary-dark: #0C447C;
-            --primary-light: #378ADD;
-            --primary-50: #E6F1FB;
-            --primary-100: #E6F1FB;
-            --primary-gradient: linear-gradient(135deg, #185FA5 0%, #0C447C 100%);
-            --primary-gradient-hover: linear-gradient(135deg, #0C447C 0%, #083362 100%);
-            
-            /* Cores Secundárias */
-            --secondary: #1a1a1a;
-            --secondary-light: #6b6b6b;
-            
-            /* Cores de Estado */
-            --success: #639922;
-            --success-light: #EAF3DE;
-            --success-dark: #4a7218;
-            --danger: #A32D2D;
-            --danger-light: #FCEBEB;
-            --danger-dark: #7a2020;
-            --warning: #854F0B;
-            --warning-light: #FAEEDA;
-            --warning-dark: #6d3e08;
-            --info: #06b6d4;
-            --info-light: #cffafe;
-            
-            /* Backgrounds */
-            --bg-primary: #ffffff;
-            --bg-secondary: #F4F4F2;
-            --bg-alt: #F8F8F6;
-            --bg-hover: #F8F8F6;
-            
-            /* Bordas */
-            --border: rgba(0,0,0,0.10);
-            --border-light: rgba(0,0,0,0.05);
-            --border-dark: rgba(0,0,0,0.18);
-            
-            /* Texto */
-            --text: #1a1a1a;
-            --text-secondary: #6b6b6b;
-            --text-light: #6b6b6b;
-            --text-muted: #9b9b9b;
-            
-            /* Header */
-            --header-blue: #0C447C;
-            --header-gradient: linear-gradient(135deg, #0C447C 0%, #185FA5 100%);
-            
-            /* Sombras */
-            --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-            --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
-            --shadow-primary: 0 4px 14px 0 rgb(59 130 246 / 0.3);
-            
-            /* Border Radius */
-            --radius-sm: 0.375rem;
-            --radius: 8px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --radius-xl: 1rem;
-            --radius-2xl: 1.5rem;
-            --radius-full: 999px;
-            
-            /* Espaçamento (escala 4px) */
-            --space-1: 0.25rem;   /* 4px */
-            --space-2: 0.5rem;    /* 8px */
-            --space-3: 0.75rem;   /* 12px */
-            --space-4: 1rem;      /* 16px */
-            --space-5: 1.25rem;   /* 20px */
-            --space-6: 1.5rem;    /* 24px */
-            --space-8: 2rem;      /* 32px */
-            --space-10: 2.5rem;   /* 40px */
-            --space-12: 3rem;     /* 48px */
-            --space-16: 4rem;     /* 64px */
-            
-            /* Transições */
-            --transition-fast: all 0.15s ease;
-            --transition: all 0.2s ease;
-            --transition-slow: all 0.3s ease;
-            
-            /* Light mode (padrão) */
-            --light: #F8F8F6;
-        }
-
-        /* Dark Mode */
-        [data-theme="dark"] {
-            --primary: #60a5fa;
-            --primary-dark: #3b82f6;
-            --primary-light: #93c5fd;
-            --primary-50: #1e3a5f;
-            --primary-100: #1e40af;
-            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-            
-            --secondary: #f1f5f9;
-            --secondary-light: #e2e8f0;
-            
-            --success-light: #064e3b;
-            --danger-light: #7f1d1d;
-            --warning-light: #78350f;
-            --info-light: #164e63;
-            
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-alt: #334155;
-            --bg-hover: #334155;
-            
-            --border: #334155;
-            --border-light: #475569;
-            --border-dark: #64748b;
-            
-            --text: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --text-light: #94a3b8;
-            --text-muted: #64748b;
-            
-            --header-blue: #3b82f6;
-            --header-gradient: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            
-            --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4);
-            --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.4);
-            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.4);
-            
-            --light: #1e293b;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background-color: var(--bg-secondary);
-            color: var(--text);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        /* Navbar — topbar azul escuro */ 
-        nav {
-            background: var(--color-primary);
-            height: 52px;
-            position: sticky;
-            top: 0;
-            z-index: 110;
-            border-bottom: 1px solid rgba(255,255,255,0.10);
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-        }
-
-        .nav-inner {
-            max-width: 95%;
-            margin: 0 auto;
-            padding: 0 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 100%;
-        }
-
-        nav h1 {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin: 0;
-        }
-
-        /* Badge do ícone */
-        .nav-brand-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: transparent;
-            box-shadow: none;
-            flex-shrink: 0;
-            position: relative;
-            overflow: hidden;
-        }
-        .nav-brand-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        /* Brilho sutil no badge */
-        .nav-brand-icon::after {
-            content: none;
-        }
-
-        /* Texto do título */
-        .nav-brand-text {
-            display: inline-flex;
-            flex-direction: column;
-            line-height: 1.15;
-            align-items: flex-start;
-        }
-        .nav-brand-name {
-            font-size: 14px;
-            font-weight: 500;
-            color: #ffffff;
-            display: inline-block;
-        }
-        .nav-brand-sub {
-            font-size: 11px;
-            font-weight: 600;
-            color: #85B7EB;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            display: block;
-            width: 100%;
-            white-space: nowrap;
-        }
-
-        /* Dark mode brand */
-        [data-theme="dark"] .nav-brand-icon {
-            background: linear-gradient(135deg, #185FA5 0%, #378ADD 100%);
-            box-shadow: 0 4px 14px rgba(56,138,221,0.4);
-        }
-        [data-theme="dark"] .nav-brand-name {
-            color: #ffffff;
-            -webkit-text-fill-color: #ffffff;
-        }
-
-        /* Esconder o <i> Lucide antigo dentro do h1 (mantido para não quebrar) */
-        nav h1 > i[data-lucide] {
-            display: none;
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        nav button {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: var(--space-2) var(--space-6);
-            border-radius: var(--radius);
-            cursor: pointer;
-            font-weight: 600;
-            transition: var(--transition);
-        }
-
-        nav button:hover {
-            background: var(--danger-dark);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow);
-        }
-
-        /* Theme Toggle Button */
-        .theme-toggle {
-            background: var(--bg-alt) !important;
-            color: var(--text) !important;
-            padding: var(--space-2) !important;
-            border-radius: var(--radius-full) !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-        }
-
-        .theme-toggle:hover {
-            background: var(--border) !important;
-            transform: rotate(15deg) !important;
-        }
-
-        /* Topbar specific controls */
-        .topbar-badge {
-            background: rgba(255,255,255,0.08);
-            color: #9FE1CB;
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
 
         .topbar-btn {
             font-size: 13px;
@@ -606,37 +272,59 @@
             font-weight: 500;
         }
 
-        /* Barra de execução para coluna Execução (%) */
+        /* Barra de execução para coluna Execução */
         .exec-bar {
-            position: relative;
-            height: 18px;
-            background: var(--bg-alt);
+            width: 60px;
+            height: 4px;
+            background: var(--color-bg-surface);
             border-radius: 999px;
             overflow: hidden;
-            border: 1px solid var(--border);
+            position: relative;
+            flex: 0 0 auto;
         }
         .exec-bar-fill {
             height: 100%;
             width: 0%;
             transition: width 0.45s ease;
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 999px;
+            background: var(--color-primary-mid);
         }
-        .exec-bar-fill.complete {
-            background: linear-gradient(90deg, var(--success) 0%, var(--success-dark) 100%);
-        }
-        .exec-bar-label {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 0.75rem;
-            font-weight: 700;
-            pointer-events: none;
-        }
-        /* Entrada animada das linhas da tabela */
+        .exec-perc { font-family: monospace; font-size: 12px; margin-left: 8px; color: var(--color-text-primary); }
+        .status-badge { display:inline-block; font-size:11px; padding:3px 9px; border-radius:999px; margin-left:8px; font-weight:600; }
+        .status-badge.concluido { background:#EAF3DE; color:#3B6D11; }
+        .status-badge.acima { background:#FCEBEB; color:#A32D2D; }
+        .status-badge.andamento { background:#FAEEDA; color:#854F0B; }
+
+        /* Linha animada */
         .exec-row { opacity: 0; transform: translateY(6px); }
         @keyframes rowEnter { to { opacity: 1; transform: translateY(0); } }
         .exec-row.animate { animation: rowEnter 360ms cubic-bezier(.2,.9,.2,1) forwards; }
+
+        /* Saldo: monospace e estados */
+        .col-saldo { font-family: monospace; font-size: 12px; text-align: right; }
+        .col-saldo.zero { color: var(--color-text-secondary); }
+        .col-saldo.neg { color: #A32D2D; }
+
+        /* Alerta de divergência entre Cadastro Financeiro e Objetos */
+        .alert-divergencia {
+            background: #FAEEDA;
+            border: 0.5px solid #EF9F27;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 0 1.5rem 1.25rem;
+            font-size: 12px;
+            color: #633806;
+            display: none;
+        }
+
+        /* Badge UP */
+        .badge-up { display:inline-block; font-size:11px; padding:3px 8px; border-radius:999px; font-weight:600; }
+        .badge-up.info { background:#E6F1FB; color:#0C447C; }
+        .badge-up.neutral { background:var(--color-bg-surface); color:var(--color-text-secondary); }
+        .badge-status { display:inline-block; font-size:11px; padding:3px 9px; border-radius:999px; font-weight:600; }
+        .badge-status.regular { background:#EAF3DE; color:#3B6D11; }
+        .badge-status.acima { background:#FAEEDA; color:#854F0B; }
+        .badge-status.critico { background:#FCEBEB; color:#A32D2D; }
 
         .btn-primary {
             background: var(--primary-gradient);
@@ -855,11 +543,11 @@
             left: 0;
             z-index: 80;
             background: var(--bg-alt);
-            padding: 0.35rem 0.4rem;
+            padding: 10px 12px;
             margin-bottom: 0.5rem;
             width: 100%;
             box-sizing: border-box;
-            border-bottom: 1px solid var(--border-light);
+            border-bottom: 0.5px solid var(--color-border);
         }
         .filter-bar-label {
             font-weight: 600;
@@ -3648,6 +3336,8 @@
                             </table>
                         </div>
                         </div>
+                        <!-- Alerta de divergência entre Cadastro Financeiro e Cadastro de Objetos -->
+                        <div id="divergenciaFinanceiroAlert" class="alert-divergencia" aria-live="polite"></div>
                     </div>
 
                     <!-- CADASTRO DE METAS -->
@@ -8518,12 +8208,19 @@
                 const prevista = fisicos.filter(f => f.objeto === obj).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
                 const entregasObj = execs.filter(e => e.objeto === obj);
                 const entregueTotal = entregasObj.reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
-                const saldo = Math.max(0, prevista - entregueTotal);
-                const execPercRaw = prevista > 0 ? Math.min(100, (entregueTotal / prevista) * 100) : 0;
-                const execPerc = execPercRaw.toFixed(2);
-                let percColor = '#fef08a'; // amarelo claro padrão
-                if (parseFloat(execPerc) === 100) percColor = '#dcfce7'; // verde claro 100%
-                else if (parseFloat(execPerc) === 0) percColor = '#fee2e2'; // vermelho claro 0%
+                const saldo = prevista - entregueTotal; // permitir negativo
+                const execPercActual = prevista > 0 ? ((entregueTotal / prevista) * 100) : 0;
+                const fillPct = Math.max(0, Math.min(100, execPercActual));
+                const fillWidth = fillPct.toFixed(2) + '%';
+
+                // determinar status e cores
+                let statusClass = 'andamento';
+                let statusLabel = 'Em andamento';
+                if (execPercActual >= 100) {
+                    if (Math.abs(execPercActual - 100) < 0.0001) { statusClass = 'concluido'; statusLabel = 'Concluído'; }
+                    else { statusClass = 'acima'; statusLabel = 'Acima'; }
+                }
+                const fillColor = execPercActual >= 100 ? '#C0DD97' : (execPercActual > 0 ? '#FBBF24' : '#E5E7EB');
 
                 // Mapa mês->quantidade entregue e detalhes (data, nf, qtde)
                 const mapaMes = new Map();
@@ -8531,7 +8228,6 @@
                 entregasObj.forEach(e => {
                     if (!e.data) return;
                     const d = new Date(e.data + 'T00:00:00');
-                    // calcular índice relativo
                     const diffMonths = (d.getFullYear() - startDate.getFullYear()) * 12 + (d.getMonth() - startDate.getMonth());
                     if (diffMonths >= 0 && diffMonths < 60) {
                         mapaMes.set(diffMonths, (mapaMes.get(diffMonths) || 0) + (parseNumber(e.qtde) || 0));
@@ -8540,28 +8236,26 @@
                     }
                 });
 
-                // construir célula com barra de execução e tooltip com detalhes
-                const pct = Math.max(0, Math.min(100, execPercRaw));
-                const isComplete = pct >= 100;
-                const labelColor = isComplete ? '#ffffff' : '#0f172a';
-                const fillWidth = pct.toFixed(2) + '%';
-                const tooltipDetails = `Execução: ${execPerc}%\nPrevisto: ${formatNumber(prevista)}\nEntregue: ${formatNumber(entregueTotal)}\nSaldo: ${formatNumber(saldo)}`;
+                const tooltipDetails = `Execução: ${execPercActual.toFixed(2)}%\nPrevisto: ${formatNumber(prevista)}\nEntregue: ${formatNumber(entregueTotal)}\nSaldo: ${formatNumber(saldo)}`;
+                const saldoClass = saldo === 0 ? 'zero' : (saldo < 0 ? 'neg' : '');
+                const saldoDisplay = saldo < 0 ? '−' + formatNumber(Math.abs(saldo)) : formatNumber(saldo);
+
                 let html = `<tr class="exec-row" style="animation-delay:${i * 40}ms;">
                     <td class="col-objeto">${obj}</td>
                     <td class="col-qtde">${formatNumber(prevista)}</td>
                     <td class="col-qtde">${formatNumber(entregueTotal)}</td>
-                    <td class="col-qtde">${formatNumber(saldo)}</td>
+                    <td class="col-saldo ${saldoClass}">${saldoDisplay}</td>
                     <td class="col-percent">
-                        <div class="exec-bar" title="${tooltipDetails}">
-                            <div class="exec-bar-fill ${isComplete ? 'complete' : ''}" style="width:${fillWidth};"></div>
-                            <div class="exec-bar-label" style="color:${labelColor};">${execPerc}%</div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="exec-bar" title="${tooltipDetails}"><div class="exec-bar-fill" style="width:${fillWidth};background:${fillColor}"></div></div>
+                            <div class="exec-perc">${execPercActual.toFixed(2)}%</div>
+                            <div class="status-badge ${statusClass}">${statusLabel}</div>
                         </div>
                     </td>`;
 
                 meses.forEach((_, idx) => {
                     const val = mapaMes.get(idx) || '';
                     const bg = val ? '#e0f2fe' : 'transparent';
-                    // Build tooltip with date(s) and NF(s) if details exist
                     let title = 'Clique para editar';
                     const details = mapaDetails.get(idx) || [];
                     if (details.length) {
@@ -10869,6 +10563,44 @@
             if (resumoDevolvido) resumoDevolvido.innerHTML = `<span style="color:#ef4444">-${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
             if (resumoSaldo) resumoSaldo.innerHTML = `<span style="font-weight:700;color:${saldoAnual<0? '#ef4444':'inherit'}">${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
             if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
+        }
+
+        // Função para visualizar detalhes mensais (drill-down) da Execução Financeira
+        function verDetalhesMensaisExecFinanceira(nd, up) {
+            if (!window.tedSelecionado) return;
+            const execs = (window.tedSelecionado.execFinanceiras || []).filter(e => String(e.nd || e.numero) === String(nd) && String(e.up || e.ug) === String(up));
+            if (!execs.length) { alert(`Nenhum lançamento mensal encontrado para ND: ${nd} / UP: ${up}`); return; }
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            else startDate = new Date();
+            const mesesPt = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            const mapa = new Map();
+            execs.forEach(e => {
+                if (!e.data) return;
+                try {
+                    const d = new Date(e.data + 'T00:00:00');
+                    const idx = (d.getFullYear() - startDate.getFullYear()) * 12 + (d.getMonth() - startDate.getMonth());
+                    const label = `${mesesPt[d.getMonth()]}/${d.getFullYear()}`;
+                    mapa.set(label, (mapa.get(label) || 0) + (parseFloat(e.valor || e.valorRealizado) || 0));
+                } catch(ex) {}
+            });
+            let msg = `Detalhes mensais para ND: ${nd} / UP: ${up}\n\n`;
+            Array.from(mapa.entries()).forEach(([m,v]) => { msg += `${m}: ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}\n`; });
+            msg += `\nTotal: ${(Array.from(mapa.values()).reduce((s,x)=>s+(x||0),0)).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            alert(msg);
+        }
+
+        // Verificar divergência entre soma do Cadastro Financeiro e soma do Cadastro de Objetos
+        function verificarDivergenciaFinanceiroObjetos() {
+            const el = document.getElementById('divergenciaFinanceiroAlert');
+            if (!el || !window.tedSelecionado) return;
+            const financeTotal = (window.tedSelecionado.financeiros || []).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+            const objetosTotal = (window.tedSelecionado.objetos || []).reduce((s,o)=>s+(parseFloat(o.valorTotal)||0),0);
+            const diff = financeTotal - objetosTotal;
+            if (Math.abs(diff) < 0.01) { el.style.display = 'none'; el.innerHTML = ''; return; }
+            el.style.display = 'block';
+            el.innerHTML = `⚠ <strong>Divergência detectada:</strong> Cadastro Financeiro ${financeTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} • Cadastro de Objetos ${objetosTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} • Diferença ${diff.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
         }
 
         // Editar valor da Execução Física
