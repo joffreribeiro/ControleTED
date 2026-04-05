@@ -108,3 +108,78 @@ nav {
 
 /* hide potential floating settings button variants */
 #floating-settings, .floating-settings, .settings-floating, [data-role="floating-settings"] { display:none !important; }
+
+/* ===== Regras de tabela padronizadas (sincronizadas com index.html) ===== */
+table thead th,
+.tabela-padrao thead th,
+.table-freeze-wrapper thead th,
+.table-wrapper thead th {
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary) !important;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-primary-border);
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+table tbody td,
+.tabela-padrao tbody td,
+.table-wrapper tbody td,
+.table-freeze-wrapper tbody td {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-primary) !important;
+  padding: 9px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  word-break: break-word;
+}
+
+/* Monospace para valores numéricos */
+.mono,
+td.mono,
+.tabela-padrao .col-saldo,
+.tabela-padrao .col-valor,
+td.valor,
+td.saldo,
+td.nd-code {
+  font-family: 'Courier New', Courier, monospace !important;
+  font-size: 12px !important;
+}
+
+.tabela-padrao .col-valor,
+td.col-valor,
+td.valor { text-align: right; }
+
+.tabela-padrao tbody tr:hover td { background: #F4F8FE; }
+
+.tabela-padrao tfoot td,
+.tabela-padrao .linha-total td {
+  background: #F4F4F2;
+  font-weight: 600;
+  font-size: 13px;
+  border-top: 1px solid rgba(0,0,0,0.12);
+}
+
+/* Ajustes ao colapsar meses na tabela Cadastro Financeira (manter consistência) */
+#tabelaFinanceiraCompleta.months-collapsed {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+#tabelaFinanceiraCompleta.months-collapsed th,
+#tabelaFinanceiraCompleta.months-collapsed td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#tabelaFinanceiraCompleta.months-collapsed th.col-nd { width: 12%; }
+#tabelaFinanceiraCompleta.months-collapsed th.col-up { width: 18%; }
+#tabelaFinanceiraCompleta.months-collapsed th.col-m { width: 8%; }
+#tabelaFinanceiraCompleta.months-collapsed th.col-mes { width: 24%; }
+#tabelaFinanceiraCompleta.months-collapsed th.col-valor { width: 28%; }
+#tabelaFinanceiraCompleta.months-collapsed th.col-acao { width: 10%; }

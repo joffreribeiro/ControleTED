@@ -1430,7 +1430,7 @@
         .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:14px; }
         .field-label { font-size:11px; color:#6b6b6b; margin-bottom:2px; }
         .field-value { font-size:13px; font-weight:500; color:#1a1a1a; min-height:1.2em; word-break:break-word; }
-        .field-value.mono { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,'Roboto Mono','Courier New',monospace; font-size:11px; }
+        .field-value.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace; font-size:12px; }
         .field-value.empty { color:#9b9b9b; }
 
         /* Legado (mantido para compatibilidade com outros usos) */
@@ -2572,15 +2572,17 @@
         .tabela-padrao thead th,
         .table-freeze-wrapper thead th,
         .table-wrapper thead th {
-            background-color: #F4F4F2;
-            color: #1a1a1a;
+            background-color: #E6F1FB;
+            color: #0C447C !important;
             font-size: 11px;
-            font-weight: 500;
+            font-weight: 600;
             padding: 10px 12px;
-            border-bottom: 0.5px solid rgba(0,0,0,0.12);
+            border-bottom: 2px solid #85B7EB;
             white-space: nowrap;
-            text-align: left;
+            text-align: center;
             vertical-align: middle;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
         /* Exceção: tabela de resumo assinados/encerrados -> fonte escura (mantém comportamento) */
         #resumoGeralGrid table thead th { color: var(--text) !important; background: transparent !important; }
@@ -2592,7 +2594,52 @@
             font-size: 0.7rem;
         }
 
-        /* Ajustes ao colapsar meses na tabela Cadastro Financeiro */
+        /* Corpo das tabelas: fonte e espaçamento unificados */
+        table tbody td,
+        .tabela-padrao tbody td,
+        .table-wrapper tbody td,
+        .table-freeze-wrapper tbody td {
+            font-size: 13px;
+            font-weight: 400;
+            color: #1a1a1a !important;
+            padding: 9px 12px;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            word-break: break-word;
+        }
+
+        /* Monospace para valores numéricos */
+        .mono,
+        td.mono,
+        .tabela-padrao .col-saldo,
+        .tabela-padrao .col-valor,
+        td.valor,
+        td.saldo,
+        td.nd-code {
+            font-family: 'Courier New', Courier, monospace !important;
+            font-size: 12px !important;
+        }
+
+        /* Alinhamento de colunas numéricas */
+        .tabela-padrao .col-valor,
+        td.col-valor,
+        td.valor { text-align: right; }
+
+        /* Zebra e hover padrão (padrão claro); regras mais específicas em #detalhes continuam válidas */
+        .tabela-padrao tbody tr:nth-child(even) td { background: #ffffff; }
+        .tabela-padrao tbody tr:hover td { background: #F4F8FE; }
+
+        /* Rodapé / linhas de total */
+        .tabela-padrao tfoot td,
+        .tabela-padrao .linha-total td {
+            background: #F4F4F2;
+            font-weight: 600;
+            font-size: 13px;
+            border-top: 1px solid rgba(0,0,0,0.12);
+        }
+
+        /* Ajustes ao colapsar meses na tabela Cadastro Financeiro (mantido)
+           - garante layout fixo e colunas proporcionais quando os meses são ocultos */
         #tabelaFinanceiraCompleta.months-collapsed {
             width: 100% !important;
             table-layout: fixed !important;
@@ -9047,6 +9094,11 @@
             if (n < -0.005) return `<span style="color:#A32D2D;${mono}${bld}">\u2212\u00a0R$\u00a0${s}</span>`;
             if (n >  0.005) return `<span style="color:#3B6D11;${mono}${bld}">R$\u00a0${s}</span>`;
             return `<span style="color:#9b9b9b;${mono}${bld}">R$\u00a0${s}</span>`;
+        }
+
+        // Backward-compatible alias: nova função para valores reais (mantém renderValorFmt disponível)
+        function renderValorRealFmt(val, bold) {
+            return renderValorFmt(val, bold);
         }
 
         // ===== Helper: badge para coluna UP =====
