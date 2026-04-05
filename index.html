@@ -1865,6 +1865,10 @@
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
+                tab.style.display = '';
+                tab.style.visibility = '';
+                tab.style.opacity = '';
+                tab.style.transform = '';
             });
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -1887,7 +1891,10 @@
             }
 
             // Marcar botão ativo (btnEl pode ser o botão ou um filho como <i>)
-            const activeBtn = btnEl ? btnEl.closest('.tab-btn') || btnEl : null;
+            let activeBtn = btnEl ? btnEl.closest('.tab-btn') || btnEl : null;
+            if (!activeBtn) {
+                activeBtn = document.querySelector(`.tab-btn[onclick*="switchTab('${tabName}'"]`);
+            }
             if (activeBtn) activeBtn.classList.add('active');
             try {
                 const wrap = document.getElementById('filterFullWrap');
@@ -11204,13 +11211,13 @@
                 if (logoutBtn) logoutBtn.style.display = 'none';
                 if (cloudCtrl) cloudCtrl.style.display = 'none';
                 if (adminPanel) adminPanel.style.display = 'none';
-                if (tabConfig) tabConfig.style.display = 'none';
+                if (tabConfig) tabConfig.style.display = '';
                 if (tabRelatorios) tabRelatorios.style.display = 'none';
-                if (tabConfigAlt) tabConfigAlt.style.display = 'none';
+                if (tabConfigAlt) tabConfigAlt.style.display = '';
                 // Se está em aba restrita, voltar para dashboard
                 try {
                     var activeTab = document.querySelector('.tab-content.active');
-                    if (activeTab && (activeTab.id === 'config' || activeTab.id === 'config-alt' || activeTab.id === 'relatorios')) {
+                    if (activeTab && (activeTab.id === 'relatorios')) {
                         switchTab('dashboard');
                     }
                 } catch(e) {}
