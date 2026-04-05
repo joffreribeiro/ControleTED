@@ -137,7 +137,11 @@ table tbody td,
   padding: 9px 12px;
   vertical-align: middle;
   border-bottom: 1px solid rgba(0,0,0,0.06);
-  word-break: break-word;
+  /* evitar quebra vertical de texto nas células */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
 }
 
 /* Monospace para valores numéricos */
@@ -183,3 +187,57 @@ td.valor { text-align: right; }
 #tabelaFinanceiraCompleta.months-collapsed th.col-mes { width: 24%; }
 #tabelaFinanceiraCompleta.months-collapsed th.col-valor { width: 28%; }
 #tabelaFinanceiraCompleta.months-collapsed th.col-acao { width: 10%; }
+
+/* ===== Fix global: evitar quebra em células, badges e valores ===== */
+td, th {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td span,
+td .badge,
+td .badge-pill,
+td .status-badge,
+td [class*="badge"],
+td [class*="pill"],
+td [class*="status"] {
+  white-space: nowrap;
+  display: inline-block;
+  overflow: hidden;
+}
+
+td.valor,
+td.saldo,
+td.valor-total,
+td.valor-unit,
+td [class*="valor"],
+td [class*="saldo"] {
+  white-space: nowrap;
+}
+
+td.up-col,
+th.up-col,
+td[data-col="up"],
+.gantt-up-cell {
+  white-space: nowrap;
+  min-width: 48px;
+  text-align: center;
+}
+
+.table-wrapper,
+.tabela-container,
+[class*="table-container"],
+[class*="tabela-wrapper"] {
+  overflow-x: auto;
+  width: 100%;
+}
+
+table { min-width: max-content; }
+
+td.execucao-col,
+td[data-col="execucao"],
+th.execucao-col {
+  min-width: 160px;
+  white-space: nowrap;
+}

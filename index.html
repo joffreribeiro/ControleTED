@@ -1401,7 +1401,8 @@
             font-weight: 500;
             min-height: 1.5rem;
             line-height: 1.35;
-            word-break: break-word;
+            word-break: normal;
+            overflow-wrap: normal;
         }
 
         /* ===== Layout de duas colunas (Detalhes TED) ===== */
@@ -1429,7 +1430,7 @@
         /* Campo grid */
         .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:14px; }
         .field-label { font-size:11px; color:#6b6b6b; margin-bottom:2px; }
-        .field-value { font-size:13px; font-weight:500; color:#1a1a1a; min-height:1.2em; word-break:break-word; }
+        .field-value { font-size:13px; font-weight:500; color:#1a1a1a; min-height:1.2em; word-break:normal; overflow-wrap:normal; }
         .field-value.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace; font-size:12px; }
         .field-value.empty { color:#9b9b9b; }
 
@@ -2605,7 +2606,65 @@
             padding: 9px 12px;
             vertical-align: middle;
             border-bottom: 1px solid rgba(0,0,0,0.06);
-            word-break: break-word;
+            /* evitar quebra vertical de texto dentro de células */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: normal;
+        }
+
+        /* ===== Fix global: evitar quebra em células, badges e valores ===== */
+        td, th {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        td span,
+        td .badge,
+        td .badge-pill,
+        td .status-badge,
+        td [class*="badge"],
+        td [class*="pill"],
+        td [class*="status"] {
+            white-space: nowrap;
+            display: inline-block;
+            overflow: hidden;
+        }
+
+        td.valor,
+        td.saldo,
+        td.valor-total,
+        td.valor-unit,
+        td [class*="valor"],
+        td [class*="saldo"] {
+            white-space: nowrap;
+        }
+
+        td.up-col,
+        th.up-col,
+        td[data-col="up"],
+        .gantt-up-cell {
+            white-space: nowrap;
+            min-width: 48px;
+            text-align: center;
+        }
+
+        .table-wrapper,
+        .tabela-container,
+        [class*="table-container"],
+        [class*="tabela-wrapper"] {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        table { min-width: max-content; }
+
+        td.execucao-col,
+        td[data-col="execucao"],
+        th.execucao-col {
+            min-width: 160px;
+            white-space: nowrap;
         }
 
         /* Monospace para valores numéricos */
