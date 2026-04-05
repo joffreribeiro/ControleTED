@@ -2243,7 +2243,7 @@
                             </div>
                             <div style="display:flex; gap:6px; align-items:flex-start; margin-left:10px;">
                                 <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
-                                <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete">�o.</button>
+                                <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
                             </div>
                         </div>
 
@@ -3444,7 +3444,7 @@
                     }
                     if (!changesHtml) changesHtml = '-';
 
-                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td style="font-family:monospace;text-align:right;">${valorTedStr}</td><td style="max-width:420px;">${changesHtml}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar">�oZ</button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover">�o-</button></td></tr>`;
+                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace">${mesesStr}</td><td>${dataStr}</td><td style="font-family:monospace;text-align:right;">${valorTedStr}</td><td style="max-width:420px;">${changesHtml}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td></tr>`;
                 });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
@@ -3917,8 +3917,8 @@
                         <td class="col-valor">${tdVU}</td>
                         <td class="col-valor">${tdVT}</td>
                         <td class="col-acao">
-                            <button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar">�oZ</button>
-                            <button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover">�o.</button>
+                            <button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
+                            <button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
                         </td>
                     </tr>
                 `;
@@ -4075,7 +4075,7 @@
         // Definição das tabelas do TED para clone/comparação
         const ADITIVO_TABELAS_CLONE = [
             {
-                key: 'objetos', label: '�Y"� Objetos',
+                key: 'objetos', label: 'Objetos',
                 colunas: [
                     { field: 'objeto', label: 'Objeto' },
                     { field: 'qtde', label: 'Qtde', type: 'number' },
@@ -4085,7 +4085,7 @@
                 idField: 'id', matchFields: ['objeto']
             },
             {
-                key: 'metas', label: '�YZ� Metas',
+                key: 'metas', label: 'Metas',
                 colunas: [
                     { field: 'meta', label: 'Meta' },
                     { field: 'descricao', label: 'Descrição' },
@@ -4095,7 +4095,7 @@
                 idField: 'id', matchFields: ['meta']
             },
             {
-                key: 'fisicos', label: '�Y"� Físico',
+                key: 'fisicos', label: 'Físico',
                 colunas: [
                     { field: 'fase', label: 'Fase' },
                     { field: 'objeto', label: 'Objeto' },
@@ -4106,7 +4106,7 @@
                 idField: 'id', matchFields: ['fase', 'objeto']
             },
             {
-                key: 'financeiros', label: '�Y'� Financeiro',
+                key: 'financeiros', label: 'Financeiro',
                 colunas: [
                     { field: 'numero', label: 'ND' },
                     { field: 'up', label: 'UP' },
@@ -4185,7 +4185,7 @@
             return { modMap, addSet, remSet };
         }
 
-        // Formatar valor de célula alterada: mostra valor antigo riscado �?' valor novo em destaque
+        // Formatar valor de célula alterada: mostra valor antigo riscado → valor novo em destaque
         function formatarCelulaAlterada(valorAtual, valorAntigo, tipo) {
             let antigoFormatado = valorAntigo;
             let novoFormatado = valorAtual;
@@ -4201,7 +4201,7 @@
                 try { antigoFormatado = new Date(valorAntigo + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
                 try { novoFormatado = new Date(valorAtual + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
             }
-            return `<span class="celula-alterada-aditivo"><span class="val-antigo">${antigoFormatado}</span><span class="alter-arrow">�?'</span><span class="val-novo">${novoFormatado}</span></span>`;
+            return `<span class="celula-alterada-aditivo"><span class="val-antigo">${antigoFormatado}</span><span class="alter-arrow">→</span><span class="val-novo">${novoFormatado}</span></span>`;
         }
 
         // Snapshot: captura valores atuais do TED para comparação futura (incluindo tabelas)
@@ -4335,7 +4335,7 @@
             if (!tabelasAlteradas || Object.keys(tabelasAlteradas).length === 0) return '';
             let html = '';
             // Labels de fallback para tabelas que foram removidas do ADITIVO_TABELAS_CLONE
-            const fallbackLabels = { execFisicas: '�o. Execução Física', execFinanceiras: '�Y'� Execução Financeira', recursosGerais: '�Y"S Recursos Gerais' };
+            const fallbackLabels = { execFisicas: 'Execução Física', execFinanceiras: 'Execução Financeira', recursosGerais: 'Recursos Gerais' };
             // Iterar todas as chaves presentes no objeto de alterações
             Object.keys(tabelasAlteradas).forEach(tabelaKey => {
                 const rawDiffs = tabelasAlteradas[tabelaKey];
@@ -4357,7 +4357,7 @@
                     html += ` <span class="aditivo-change-badge aditivo-change-old">-${effectiveRemoved} removido${effectiveRemoved > 1 ? 's' : ''}</span>`;
                 }
                 if (effectiveModified > 0) {
-                    html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">�oZ${effectiveModified} alterado${effectiveModified > 1 ? 's' : ''}</span>`;
+                    html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">${effectiveModified} alterado${effectiveModified > 1 ? 's' : ''}</span>`;
                     // Detalhes das modificações
                     Object.keys(modMap).forEach(mk => {
                         const camposAlterados = modMap[mk];
@@ -4365,7 +4365,7 @@
                             const ch = camposAlterados[field];
                             const colDef = tabDef ? tabDef.colunas.find(c => c.field === field) : null;
                             const tipo = colDef ? colDef.type : 'text';
-                            html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.7rem;color:var(--text-muted);">${ch.label || field}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(ch.de, tipo)}</span> �?' <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(ch.para, tipo)}</span></div>`;
+                            html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.7rem;color:var(--text-muted);">${ch.label || field}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(ch.de, tipo)}</span> → <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(ch.para, tipo)}</span></div>`;
                         });
                     });
                 }
@@ -4400,12 +4400,12 @@
                         }
                         html += `<td contenteditable="true" data-field="${col.field}" data-type="${col.type || 'text'}" data-orig="${String(item[col.field] || '').replace(/"/g, '&quot;')}">${val !== undefined && val !== null ? val : ''}</td>`;
                     });
-                    html += `<td><button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;">�o.</button></td>`;
+                    html += `<td><button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`;
                     html += '</tr>';
                 });
                 html += '</tbody></table></div>';
                 // Botão para adicionar nova linha
-                html += `<button type="button" onclick="adicionarLinhaCloneAditivo('${prefix}', '${tabDef.key}')" style="font-size:0.78rem;padding:4px 12px;border:1px dashed rgba(34,197,94,0.5);border-radius:6px;background:rgba(34,197,94,0.08);color:#16a34a;cursor:pointer;margin-bottom:0.75rem;" title="Adicionar novo item">�z. Adicionar ${tabDef.label.replace(/^[^\s]+\s/, '')}</button>`;
+                html += `<button type="button" onclick="adicionarLinhaCloneAditivo('${prefix}', '${tabDef.key}')" style="font-size:0.78rem;padding:4px 12px;border:1px dashed rgba(34,197,94,0.5);border-radius:6px;background:rgba(34,197,94,0.08);color:#16a34a;cursor:pointer;margin-bottom:0.75rem;" title="Adicionar novo item"><i data-lucide="plus" class="inline-icon-sm"></i> Adicionar ${tabDef.label.replace(/^[^\s]+\s/, '')}</button>`;
             });
             return html;
         }
@@ -4432,7 +4432,7 @@
             });
             // Botão remover
             const tdBtn = document.createElement('td');
-            tdBtn.innerHTML = `<button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;">�o.</button>`;
+            tdBtn.innerHTML = `<button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
             tr.appendChild(tdBtn);
             tbody.appendChild(tr);
             // Aplicar máscaras de formatação na nova linha
@@ -4687,9 +4687,9 @@
                 const roAttr = c.readonly ? ' readonly disabled' : '';
                 const roStyle = c.readonly ? ' style="opacity:0.6;cursor:not-allowed;background:var(--bg-tertiary,#f3f4f6);"' : '';
                 if (c.type === 'textarea') {
-                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' �Y"'' : ''}</label><textarea id="alt_clone_${c.key}" data-campo="${c.key}"${roAttr}${roStyle}>${val}</textarea></div>`;
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><textarea id="alt_clone_${c.key}" data-campo="${c.key}"${roAttr}${roStyle}>${val}</textarea></div>`;
                 } else {
-                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' �Y"'' : ''}</label><input type="${c.type}" id="alt_clone_${c.key}" data-campo="${c.key}" value="${escaped}"${roAttr}${roStyle}></div>`;
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><input type="${c.type}" id="alt_clone_${c.key}" data-campo="${c.key}" value="${escaped}"${roAttr}${roStyle}></div>`;
                 }
             });
 
@@ -5528,8 +5528,8 @@
                     <td class="col-mes">${inicioStr}</td>
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
-                        <button class="btn-icon-action edit" onclick="editarMeta(${meta.id})" title="Editar">�oZ</button>
-                        <button class="btn-icon-action delete" onclick="removerMeta(${meta.id})" title="Remover">�o.</button>
+                        <button class="btn-icon-action edit" onclick="editarMeta(${meta.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
+                        <button class="btn-icon-action delete" onclick="removerMeta(${meta.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -5854,9 +5854,9 @@
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
                         ${realizadoBadge}
-                        <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar">�oZ</button>
-                        <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover">�o.</button>
-                        <button class="btn-icon-action done-action" onclick="abrirModalMarcarRealizada(${f.id})" title="Marcar realizada">�o"�Z</button>
+                        <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
+                        <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
+                        <button class="btn-icon-action done-action" onclick="abrirModalMarcarRealizada(${f.id})" title="Marcar realizada"><i data-lucide="check-check" class="inline-icon-sm"></i></button>
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal
@@ -6083,7 +6083,7 @@
 
                 const tooltipDetails = `Execução: ${execPercActual.toFixed(2)}%\nPrevisto: ${formatNumber(prevista)}\nEntregue: ${formatNumber(entregueTotal)}\nSaldo: ${formatNumber(saldo)}`;
                 const saldoClass = saldo === 0 ? 'zero' : (saldo < 0 ? 'neg' : '');
-                const saldoDisplay = saldo < 0 ? '�^'' + formatNumber(Math.abs(saldo)) : formatNumber(saldo);
+                const saldoDisplay = saldo < 0 ? '-' + formatNumber(Math.abs(saldo)) : formatNumber(saldo);
 
                 let html = `<tr class="exec-row" style="animation-delay:${i * 40}ms;">
                     <td class="col-objeto">${obj}</td>
@@ -6416,7 +6416,7 @@
                     calcularMesFinanceiroModal();
                 }
             } else {
-                titulo.textContent = '�Y'� Novo Cadastro Financeiro';
+                titulo.textContent = 'Novo Cadastro Financeiro';
             }
             backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
             setTimeout(() => document.getElementById('modalFinanceiroND').focus(), 80);
@@ -6725,8 +6725,8 @@
                     <td class="col-mes">${mesDescStr}</td>
                     <td class="col-valor">${tdValor}</td>
                     <td class="col-acao">
-                        <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar">�oZ</button>
-                        <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover">�o.</button>
+                        <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
+                        <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
                     </td>`;
                 
                 // Adicionar células do Gantt - mostrar valor com fundo azul claro no mês correspondente
@@ -10990,8 +10990,10 @@
 
         // Inicializar Lucide Icons
         function initLucideIcons() {
-            if (typeof lucide !== 'undefined') {
+            if (window.lucide && typeof lucide.createIcons === 'function') {
                 lucide.createIcons();
+            } else if (window.lucide && typeof lucide.replace === 'function') {
+                lucide.replace({ 'stroke-width': 1.5, width: 18, height: 18 });
             }
         }
 
@@ -11358,21 +11360,10 @@
             }
         }, 5000);
     </script>
-</body>
-</html>
-
-    <!-- Garantir renderização dos ícones Lucide (quando presentes via data-lucide) -->
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            try {
-                if (window.lucide && typeof lucide.replace === 'function') {
-                    lucide.replace({ 'stroke-width': 1.5, 'width': 18, 'height': 18 });
-                }
-            } catch (e) {
-                console.warn('Lucide replace failed:', e);
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            initLucideIcons();
         });
     </script>
-
- </body>
- </html>
+</body>
+</html>
