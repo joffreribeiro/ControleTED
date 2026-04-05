@@ -10992,6 +10992,9 @@
             if (resumoDevolvido) resumoDevolvido.innerHTML = `<span style="color:#ef4444">-${devolvido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
             if (resumoSaldo) resumoSaldo.innerHTML = `<span style="font-weight:700;color:${saldoAnual<0? '#ef4444':'inherit'}">${saldoAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
             if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidacaoPerc.toFixed(2)}%`;
+            } catch (err) {
+                console.error('Erro em atualizarTabelaExecFinanceira:', err);
+            }
         }
 
         // Função para visualizar detalhes mensais (drill-down) da Execução Financeira
