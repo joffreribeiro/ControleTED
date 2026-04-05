@@ -647,10 +647,6 @@
                     <select id="filterUP_gantt" multiple size="4" onchange="renderGanttVigencia()" style="min-width:140px; padding:0.25rem; font-size:0.8rem;"></select>
                     <span class="filter-bar-label" style="margin-left:0.5rem;">Situação:</span>
                     <select id="filterStatus_gantt" multiple size="4" onchange="renderGanttVigencia()" style="min-width:160px; padding:0.25rem; font-size:0.8rem;"></select>
-                    <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px; margin-left:0.5rem; cursor:pointer; color:var(--text);">
-                        <input type="checkbox" id="ganttOcultarFinalizados" checked onchange="renderGanttVigencia()">
-                        Ocultar Finalizados/Vig. Vencida
-                    </label>
                     <button class="btn" style="font-size:0.75rem; padding:0.2rem 0.5rem; margin-left:0.25rem;" onclick="limparFiltrosGantt()">Limpar</button>
                 </div>
                 <div id="ganttVigencia" style="max-width:100%;">
@@ -7873,24 +7869,30 @@
             const prevStatus = Array.from(selStatus.selectedOptions || []).map(o => o.value);
 
             const ups = [...new Set((dados.teds || []).map(t => String(t.upResponsavel || t.up || '').trim()))].filter(Boolean).sort();
-            const statusSet = new Set();
-            (dados.teds || []).forEach(t => {
-                const s = (getDisplayStatus(t) || {}).text || '';
-                if (s) statusSet.add(String(s).trim());
-            });
-            const statuses = Array.from(statusSet).sort();
+            const statuses = ['Em Execução', 'TED Finalizado'];
 
             selUp.innerHTML = ups.map(u => `<option value="${u}" ${prevUp.indexOf(u) !== -1 ? 'selected' : ''}>${u}</option>`).join('');
-            selStatus.innerHTML = statuses.map(s => `<option value="${s}" ${prevStatus.indexOf(s) !== -1 ? 'selected' : ''}>${s}</option>`).join('');
+            selStatus.innerHTML = statuses.map(s => {
+                const selected = prevStatus.length ? (prevStatus.indexOf(s) !== -1) : (s === 'Em Execução');
+                return `<option value="${s}" ${selected ? 'selected' : ''}>${s}</option>`;
+            }).join('');
+        }
+
+        // Situação simplificada para o filtro da Vigência:
+        // Em Execução | TED Finalizado (inclui denunciados com data de encerramento)
+        function getSituacaoGantt(t) {
+            return isTedFinalizado(t) ? 'TED Finalizado' : 'Em Execução';
         }
 
         function limparFiltrosGantt() {
             const selUp = document.getElementById('filterUP_gantt');
             const selStatus = document.getElementById('filterStatus_gantt');
             if (selUp) Array.from(selUp.options).forEach(o => o.selected = false);
-            if (selStatus) Array.from(selStatus.options).forEach(o => o.selected = false);
-            const chk = document.getElementById('ganttOcultarFinalizados');
-            if (chk) chk.checked = true;
+            if (selStatus) {
+                Array.from(selStatus.options).forEach(o => {
+                    o.selected = (o.value === 'Em Execução');
+                });
+            }
             renderGanttVigencia();
         }
 
@@ -7920,22 +7922,10 @@
                 const selStatusList = Array.from(selStatus.selectedOptions).map(o => o.value).filter(Boolean);
                 if (selStatusList.length > 0) {
                     teds = teds.filter(t => {
-                        const s = (getDisplayStatus(t) || {}).text || '';
+                        const s = getSituacaoGantt(t);
                         return selStatusList.includes(String(s).trim());
                     });
                 }
-            }
-
-            // Ocultar Finalizados/Vigência Vencida por padrão
-            const chkOcultar = document.getElementById('ganttOcultarFinalizados');
-            if (chkOcultar && chkOcultar.checked) {
-                teds = teds.filter(t => {
-                    const statusResult = getDisplayStatus(t) || { text: '', vigenciaVencida: false };
-                    const s = (statusResult.text || '').toLowerCase();
-                    if (/finaliz|finalizado|vigênc.*venc|vigencia.*venc|encerrad/.test(s)) return false;
-                    if (statusResult.vigenciaVencida) return false;
-                    return true;
-                });
             }
 
             if (!teds.length) {
