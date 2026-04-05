@@ -570,7 +570,7 @@
             <button class="tab-btn" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
             <button id="tab-novo" class="tab-btn" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
             <button class="tab-btn" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
-            <button class="tab-btn" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <button id="tab-relatorios" class="tab-btn" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
             <button id="tab-config" class="tab-btn" onclick="switchTab('config', this)"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
@@ -11152,6 +11152,7 @@
             var adminPanel = document.getElementById('adminPanel');
             var adminLoggedAs = document.getElementById('adminLoggedAs');
             var tabConfig = document.getElementById('tab-config');
+            var tabRelatorios = document.getElementById('tab-relatorios');
 
             if (isAdmin) {
                 if (modeEl) { modeEl.textContent = '🔑 Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
@@ -11160,6 +11161,7 @@
                 if (cloudCtrl) cloudCtrl.style.display = 'flex';
                 if (adminPanel) adminPanel.style.display = 'block';
                 if (tabConfig) tabConfig.style.display = '';
+                if (tabRelatorios) tabRelatorios.style.display = '';
                 if (adminLoggedAs && window.currentUserProfile) {
                     adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '→');
                 }
@@ -11171,8 +11173,15 @@
                 if (logoutBtn) logoutBtn.style.display = 'none';
                 if (cloudCtrl) cloudCtrl.style.display = 'none';
                 if (adminPanel) adminPanel.style.display = 'none';
-                if (tabConfig) tabConfig.style.display = '';
-                // Se está na aba config, NÃO redirecionar — Configurações é acessível a todos
+                if (tabConfig) tabConfig.style.display = 'none';
+                if (tabRelatorios) tabRelatorios.style.display = 'none';
+                // Se está em aba restrita, voltar para dashboard
+                try {
+                    var activeTab = document.querySelector('.tab-content.active');
+                    if (activeTab && (activeTab.id === 'config' || activeTab.id === 'relatorios')) {
+                        switchTab('dashboard');
+                    }
+                } catch(e) {}
                 // Desabilitar botões de edição
                 enableEditButtons(false);
             }
