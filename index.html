@@ -2650,16 +2650,6 @@
             text-align: center;
         }
 
-        .table-wrapper,
-        .tabela-container,
-        [class*="table-container"],
-        [class*="tabela-wrapper"] {
-            overflow-x: auto;
-            width: 100%;
-        }
-
-        table { min-width: max-content; }
-
         td.execucao-col,
         td[data-col="execucao"],
         th.execucao-col {
@@ -2697,10 +2687,9 @@
             border-top: 1px solid rgba(0,0,0,0.12);
         }
 
-        /* Ajustes ao colapsar meses na tabela Cadastro Financeiro (mantido)
-           - garante layout fixo e colunas proporcionais quando os meses são ocultos */
+        /* Cadastro Financeiro: quando meses ocultos a tabela tem largura fixa (~620px) */
         #tabelaFinanceiraCompleta.months-collapsed {
-            width: 100% !important;
+            width: auto !important;
             min-width: 0 !important;
             table-layout: fixed !important;
         }
@@ -2710,13 +2699,21 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        /* Colunas proporcionais quando os meses estão ocultos (total 100%) */
-        #tabelaFinanceiraCompleta.months-collapsed th.col-nd { width: 12%; }
-        #tabelaFinanceiraCompleta.months-collapsed th.col-up { width: 18%; }
-        #tabelaFinanceiraCompleta.months-collapsed th.col-m { width: 8%; }
-        #tabelaFinanceiraCompleta.months-collapsed th.col-mes { width: 24%; }
-        #tabelaFinanceiraCompleta.months-collapsed th.col-valor { width: 28%; }
-        #tabelaFinanceiraCompleta.months-collapsed th.col-acao { width: 10%; }
+        /* Larguras fixas em px para as 6 colunas que ficam visíveis */
+        #tabelaFinanceiraCompleta col.col-nd  { width: 120px; }
+        #tabelaFinanceiraCompleta col.col-up  { width: 80px; }
+        #tabelaFinanceiraCompleta col.col-m   { width: 60px; }
+        #tabelaFinanceiraCompleta col.col-mes { width: 120px; }
+        #tabelaFinanceiraCompleta col.col-valor { width: 160px; }
+        #tabelaFinanceiraCompleta col.col-acao  { width: 80px; }
+        /* Container: encolhe ao tamanho da tabela, scroll quando necessário */
+        #tabelaFinanceiraCompleta.months-collapsed ~ * { display: none; }
+        #wrapperCadFin {
+            display: inline-block;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+        }
     </style>
     </head>
     <body>
@@ -3888,7 +3885,7 @@
                         </div>
                         <div class="detalhe-secao-body">
 
-                        <div class="table-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; overflow-x: auto; position: relative;">
+                        <div id="wrapperCadFin" class="table-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; overflow-x: auto; position: relative; display: inline-block; width: fit-content; max-width: 100%;">
                             <!-- Filtros Cadastro Financeiro -->
                             <div class="filter-bar" id="filterBarCadFin">
                                 <span class="filter-bar-label">Filtrar:</span>
@@ -3906,6 +3903,14 @@
                                 </div>
                             </div>
                             <table id="tabelaFinanceiraCompleta" class="tabela-padrao" style="min-width: 1400px;">
+                                <colgroup>
+                                    <col class="col-nd">
+                                    <col class="col-up">
+                                    <col class="col-m">
+                                    <col class="col-mes">
+                                    <col class="col-valor">
+                                    <col class="col-acao">
+                                </colgroup>
                                 <thead>
                                     <tr>
                                         <th class="col-nd">ND</th>
@@ -9185,11 +9190,11 @@
 
             if (!newExpanded && table) {
                 if (section === 'cadFin') {
-                    // Cadastro Financeiro: NÃO travar o wrapper. Apenas ajustar a tabela para
-                    // preencher 100% do container (limpa o min-width de 1400px do modo expandido).
+                    // Colapsar: tabela com largura automática (px fixo via colgroup CSS).
+                    // O wrapper encolhe junto porque é inline-block / fit-content.
                     table.classList.add('months-collapsed');
                     table.style.minWidth = '0';
-                    table.style.width = '100%';
+                    table.style.width = 'auto';
                     table.style.tableLayout = 'fixed';
                 } else if (wrapper) {
                     // outras seções: travar wrapper na largura atual para não colapsar
@@ -9519,7 +9524,7 @@
                 if (!monthsExpanded) {
                     tableCompleta.classList.add('months-collapsed');
                     tableCompleta.style.minWidth = '0';
-                    tableCompleta.style.width = '100%';
+                    tableCompleta.style.width = 'auto';
                     tableCompleta.style.tableLayout = 'fixed';
                 } else {
                     tableCompleta.classList.remove('months-collapsed');

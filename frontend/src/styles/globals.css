@@ -225,16 +225,6 @@ td[data-col="up"],
   text-align: center;
 }
 
-.table-wrapper,
-.tabela-container,
-[class*="table-container"],
-[class*="tabela-wrapper"] {
-  overflow-x: auto;
-  width: 100%;
-}
-
-table { min-width: max-content; }
-
 td.execucao-col,
 td[data-col="execucao"],
 th.execucao-col {
