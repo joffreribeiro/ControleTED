@@ -26,52 +26,79 @@
         /* popularFiltrosTEDs moved to script block (to avoid JS inside <style>) */
 
         :root {
-            /* Cores Primárias */
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --primary-light: #60a5fa;
-            --primary-50: #eff6ff;
-            --primary-100: #dbeafe;
-            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            --primary-gradient-hover: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            /* ── Nova paleta de cores ───────────────────────────── */
+            --color-primary: #0C447C;        /* azul escuro — usar APENAS em header/topbar */
+            --color-primary-mid: #185FA5;
+            --color-primary-light: #378ADD;
+            --color-primary-bg: #E6F1FB;     /* fundo azul suave para badges e destaques */
+            --color-primary-border: #85B7EB;
+
+            --color-success: #639922;
+            --color-success-bg: #EAF3DE;
+            --color-danger: #A32D2D;
+            --color-danger-bg: #FCEBEB;
+            --color-warning: #854F0B;
+            --color-warning-bg: #FAEEDA;
+
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #6b6b6b;
+            --color-text-muted: #9b9b9b;
+
+            --color-bg-page: #F4F4F2;        /* fundo geral da página */
+            --color-bg-card: #ffffff;        /* fundo dos cards/tabelas */
+            --color-bg-surface: #F8F8F6;     /* fundo de cabeçalhos de tabela */
+            --color-border: rgba(0,0,0,0.10);
+
+            --radius-card: 12px;
+            --radius-pill: 999px;
+            /* ───────────────────────────────────────────────────── */
+
+            /* Cores Primárias (mapeadas para nova paleta) */
+            --primary: #185FA5;
+            --primary-dark: #0C447C;
+            --primary-light: #378ADD;
+            --primary-50: #E6F1FB;
+            --primary-100: #E6F1FB;
+            --primary-gradient: linear-gradient(135deg, #185FA5 0%, #0C447C 100%);
+            --primary-gradient-hover: linear-gradient(135deg, #0C447C 0%, #083362 100%);
             
             /* Cores Secundárias */
-            --secondary: #1f2937;
-            --secondary-light: #374151;
+            --secondary: #1a1a1a;
+            --secondary-light: #6b6b6b;
             
             /* Cores de Estado */
-            --success: #10b981;
-            --success-light: #d1fae5;
-            --success-dark: #059669;
-            --danger: #ef4444;
-            --danger-light: #fee2e2;
-            --danger-dark: #dc2626;
-            --warning: #f59e0b;
-            --warning-light: #fef3c7;
-            --warning-dark: #d97706;
+            --success: #639922;
+            --success-light: #EAF3DE;
+            --success-dark: #4a7218;
+            --danger: #A32D2D;
+            --danger-light: #FCEBEB;
+            --danger-dark: #7a2020;
+            --warning: #854F0B;
+            --warning-light: #FAEEDA;
+            --warning-dark: #6d3e08;
             --info: #06b6d4;
             --info-light: #cffafe;
             
             /* Backgrounds */
             --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-alt: #f1f5f9;
-            --bg-hover: #f8fafc;
+            --bg-secondary: #F4F4F2;
+            --bg-alt: #F8F8F6;
+            --bg-hover: #F8F8F6;
             
             /* Bordas */
-            --border: #e2e8f0;
-            --border-light: #f1f5f9;
-            --border-dark: #cbd5e1;
+            --border: rgba(0,0,0,0.10);
+            --border-light: rgba(0,0,0,0.05);
+            --border-dark: rgba(0,0,0,0.18);
             
             /* Texto */
-            --text: #1e293b;
-            --text-secondary: #475569;
-            --text-light: #64748b;
-            --text-muted: #94a3b8;
+            --text: #1a1a1a;
+            --text-secondary: #6b6b6b;
+            --text-light: #6b6b6b;
+            --text-muted: #9b9b9b;
             
             /* Header */
-            --header-blue: #1e40af;
-            --header-gradient: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            --header-blue: #0C447C;
+            --header-gradient: linear-gradient(135deg, #0C447C 0%, #185FA5 100%);
             
             /* Sombras */
             --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -85,12 +112,12 @@
             
             /* Border Radius */
             --radius-sm: 0.375rem;
-            --radius: 0.5rem;
-            --radius-md: 0.625rem;
-            --radius-lg: 0.75rem;
+            --radius: 8px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
             --radius-xl: 1rem;
             --radius-2xl: 1.5rem;
-            --radius-full: 9999px;
+            --radius-full: 999px;
             
             /* Espaçamento (escala 4px) */
             --space-1: 0.25rem;   /* 4px */
@@ -110,7 +137,7 @@
             --transition-slow: all 0.3s ease;
             
             /* Light mode (padrão) */
-            --light: #f3f4f6;
+            --light: #F8F8F6;
         }
 
         /* Dark Mode */
@@ -166,16 +193,16 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Navbar — modernizado: badge do ícone, fundo levemente translúcido e espaçamento reduzido */ 
+        /* Navbar — topbar azul escuro */ 
         nav {
-            background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-            backdrop-filter: blur(6px);
-            box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+            background: var(--color-primary);
+            backdrop-filter: none;
+            box-shadow: 0 4px 16px rgba(12,68,124,0.25);
             padding: 0.75rem 0;
             position: sticky;
             top: 0;
             z-index: 110;
-            border-bottom: 1px solid rgba(16,24,40,0.04);
+            border-bottom: 1px solid rgba(255,255,255,0.10);
             transition: var(--transition);
         }
 
@@ -231,16 +258,14 @@
             font-size: 1.75rem;
             font-weight: 800;
             letter-spacing: -0.03em;
-            background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #ffffff;
+            -webkit-text-fill-color: #ffffff;
             display: inline-block;
         }
         .nav-brand-sub {
             font-size: 0.68rem;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: rgba(255,255,255,0.75);
             letter-spacing: 0.08em;
             text-transform: uppercase;
             display: block;
@@ -252,13 +277,12 @@
 
         /* Dark mode brand */
         [data-theme="dark"] .nav-brand-icon {
-            background: linear-gradient(135deg, #3b82f6 0%, #a78bfa 100%);
-            box-shadow: 0 4px 14px rgba(59,130,246,0.4);
+            background: linear-gradient(135deg, #185FA5 0%, #378ADD 100%);
+            box-shadow: 0 4px 14px rgba(56,138,221,0.4);
         }
         [data-theme="dark"] .nav-brand-name {
-            background: linear-gradient(135deg, #60a5fa 0%, #c4b5fd 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
+            color: #ffffff;
+            -webkit-text-fill-color: #ffffff;
         }
 
         /* Esconder o <i> Lucide antigo dentro do h1 (mantido para não quebrar) */
@@ -1059,22 +1083,18 @@
         /* Estilos para Informações do TED */
         .ted-info-section {
             margin-bottom: 2rem;
-            padding: 2rem;
-            background: linear-gradient(135deg, #1f3a8a 0%, #1e40af 38%, #1d4ed8 100%);
-            border-radius: 1rem;
-            box-shadow: 0 14px 36px rgba(15, 23, 42, 0.22);
+            padding: 1.5rem;
+            background: var(--color-bg-card);
+            border-radius: var(--radius-card);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
             position: relative;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.10);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
             overflow: hidden;
         }
 
         .ted-info-section::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at top right, rgba(255,255,255,0.16), transparent 26%), linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
-            pointer-events: none;
+            content: none;
         }
 
         .ted-info-header {
@@ -1083,7 +1103,7 @@
             align-items: center;
             margin-bottom: 1.5rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.14);
+            border-bottom: 1px solid var(--color-border);
             position: relative;
             z-index: 1;
         }
@@ -1091,21 +1111,21 @@
         .ted-info-section .ted-info-title,
         .card .ted-info-title {
             margin: 0;
-            color: #ffffff;
+            color: var(--color-primary);
             display: inline-flex;
             align-items: center;
             gap: 0.2rem;
-            font-size: 0.92rem; /* igual ao .detalhe-secao-titulo */
+            font-size: 0.92rem;
             font-weight: 700;
         }
 
         .ted-info-title .inline-icon {
-            color: #ffffff;
+            color: var(--color-primary);
         }
 
 
         .ted-info-title-code {
-            color: #ffffff;
+            color: var(--color-primary);
             font-weight: 700;
             margin-left: 0.5rem;
             font-size: 2.1rem;
@@ -1132,38 +1152,37 @@
         }
 
         .btn-edit {
-            background: rgba(255, 255, 255, 0.14);
-            color: white;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--color-primary-bg);
+            color: var(--color-primary);
+            border: 1px solid var(--color-primary-border);
         }
 
         .btn-edit:hover {
-            background: rgba(255, 255, 255, 0.22);
+            background: var(--color-primary-border);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(12,68,124,0.15);
         }
 
         .btn-save {
-            background: #10b981;
+            background: var(--color-success);
             color: white;
         }
 
         .btn-save:hover {
-            background: #059669;
+            background: var(--success-dark);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 12px rgba(99,153,34,0.3);
         }
 
         .btn-cancel {
-            background: #ef4444;
+            background: var(--color-danger);
             color: white;
         }
 
         .btn-cancel:hover {
-            background: #dc2626;
+            background: var(--danger-dark);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 4px 12px rgba(163,45,45,0.3);
         }
 
         /* Action button icons (delete, edit) - discreet / low-contrast */
@@ -1239,12 +1258,12 @@
         }
 
         .ted-kpi-card {
-            background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.07));
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 1rem;
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-card);
             padding: 1rem 1rem 0.9rem;
             min-height: 92px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 6px 18px rgba(15, 23, 42, 0.10);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             position: relative;
             overflow: hidden;
         }
@@ -1256,14 +1275,14 @@
             top: 0;
             bottom: 0;
             width: 4px;
-            background: var(--kpi-accent, #60a5fa);
+            background: var(--kpi-accent, var(--color-primary-light));
         }
 
         .ted-kpi-label {
             font-size: 0.76rem;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            color: rgba(255,255,255,0.72);
+            color: var(--color-text-secondary);
             margin-bottom: 0.45rem;
             font-weight: 700;
         }
@@ -1272,20 +1291,20 @@
             font-size: 1.28rem;
             line-height: 1.2;
             font-weight: 800;
-            color: #fff;
+            color: var(--color-text-primary);
             word-break: break-word;
         }
 
         .ted-kpi-subtext {
             margin-top: 0.35rem;
             font-size: 0.78rem;
-            color: rgba(255,255,255,0.70);
+            color: var(--color-text-secondary);
         }
 
-        .ted-kpi-card.kpi-valor { --kpi-accent: #7dd3fc; }
-        .ted-kpi-card.kpi-recebido { --kpi-accent: #4ade80; }
-        .ted-kpi-card.kpi-saldo { --kpi-accent: #fbbf24; }
-        .ted-kpi-card.kpi-status { --kpi-accent: #fb7185; }
+        .ted-kpi-card.kpi-valor { --kpi-accent: var(--color-primary-light); }
+        .ted-kpi-card.kpi-recebido { --kpi-accent: var(--color-success); }
+        .ted-kpi-card.kpi-saldo { --kpi-accent: var(--color-warning); }
+        .ted-kpi-card.kpi-status { --kpi-accent: var(--color-danger); }
 
         .ted-info-row {
             display: grid;
@@ -1305,28 +1324,27 @@
         }
 
         .ted-info-card {
-            background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05));
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 0.9rem;
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
             padding: 1rem 1rem 0.9rem;
             transition: all 0.18s ease-in-out;
-            backdrop-filter: blur(6px);
             min-height: 92px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
         }
 
         .ted-info-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
-            border-color: rgba(255,255,255,0.20);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+            border-color: var(--color-primary-border);
         }
 
         .ted-info-label {
             font-weight: 600;
-            color: rgba(219,234,254,0.82);
+            color: var(--color-text-secondary);
             font-size: 0.78rem;
             display: block;
             margin-bottom: 0.55rem;
@@ -1335,7 +1353,7 @@
         }
 
         .ted-info-value {
-            color: white;
+            color: var(--color-text-primary);
             font-size: 1rem;
             font-weight: 600;
             min-height: 1.5rem;
@@ -1349,17 +1367,17 @@
             gap: 0.9rem;
             margin: 0.15rem 0 0.1rem;
             padding: 0.85rem 1rem;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 0.9rem;
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
             flex-wrap: wrap;
         }
 
         .ted-info-resumo {
             font-size: 0.85rem;
-            color: rgba(239,246,255,0.9);
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--color-text-secondary);
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
             border-radius: 999px;
             padding: 0.35rem 0.75rem;
             display: inline-flex;
@@ -1369,9 +1387,9 @@
 
         .ted-info-historico {
             display: none;
-            background: rgba(9, 18, 52, 0.26);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 0.9rem;
+            background: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
             padding: 0.3rem 0.75rem 0.75rem;
             overflow-x: auto;
         }
@@ -1386,8 +1404,8 @@
             font-size: 0.78rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: rgba(219,234,254,0.8);
-            background: rgba(255,255,255,0.04);
+            color: var(--color-text-secondary);
+            background: var(--color-bg-surface);
         }
 
         .ted-info-historico th,
@@ -1396,25 +1414,25 @@
         }
 
         .ted-info-historico tbody tr:hover {
-            background: rgba(255,255,255,0.035);
+            background: var(--color-primary-bg);
         }
 
         .ted-info-input {
             width: 100%;
             padding: 0.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid var(--color-border);
             border-radius: 0.375rem;
-            background: rgba(255, 255, 255, 0.9);
-            color: #1f2937;
+            background: var(--color-bg-card);
+            color: var(--color-text-primary);
             font-size: 1rem;
             font-family: inherit;
         }
 
         .ted-info-input:focus {
             outline: none;
-            border-color: white;
+            border-color: var(--color-primary-mid);
             background: white;
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 3px var(--color-primary-bg);
         }
 
         @media (max-width: 768px) {
@@ -1482,8 +1500,8 @@
             font-size: 0.8rem;
         }
         .tabela-padrao thead tr {
-            background: var(--primary-gradient);
-            color: white;
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
         }
         .tabela-padrao th,
         .tabela-padrao td {
@@ -1506,8 +1524,8 @@
         }
         .tabela-padrao thead .sticky-freeze {
             z-index: 4;
-            background: var(--primary-gradient) !important;
-            color: #fff;
+            background: var(--color-bg-surface) !important;
+            color: var(--color-text-primary);
         }
         .tabela-padrao .sticky-freeze.sticky-freeze-last {
             box-shadow: 3px 0 6px rgba(0,0,0,0.18);
@@ -1574,7 +1592,7 @@
             box-shadow: 0 4px 20px rgba(15, 23, 42, 0.10), 0 0 0 1px rgba(30, 64, 175, 0.10);
         }
 
-        /* Cabeçalho da seção — faixa com gradiente */
+        /* Cabeçalho da seção — faixa com fundo surface */
         #detalhes #tedsDetalheContainer .detalhe-secao-titulo {
             display: flex;
             align-items: center;
@@ -1583,10 +1601,10 @@
             padding: 0.75rem 1.25rem;
             font-size: 0.92rem;
             font-weight: 700;
-            color: #ffffff;
-            background: linear-gradient(135deg, #2f57be 0%, #1e40af 100%);
+            color: var(--color-primary);
+            background: var(--color-bg-surface);
             letter-spacing: 0.02em;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+            border-bottom: 1px solid var(--color-border);
         }
         #detalhes #tedsDetalheContainer .detalhe-secao-titulo .inline-icon-sm,
         #detalhes #tedsDetalheContainer .detalhe-secao-titulo i,
@@ -1594,8 +1612,8 @@
             width: 18px;
             height: 18px;
             opacity: 0.92;
-            color: #ffffff; /* garante ícone branco */
-            stroke: currentColor; /* lucide usa stroke=currentColor */
+            color: var(--color-primary);
+            stroke: currentColor;
             fill: none;
         }
 
@@ -1645,8 +1663,9 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(147, 197, 253, 0.15);
         }
         [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao-titulo {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-            color: #e0ecff;
+            background: #0f1e32;
+            color: #93c5fd;
+            border-bottom-color: rgba(147,197,253,0.15);
         }
         [data-theme="dark"] #detalhes #tedsDetalheContainer .detalhe-secao .form-group label {
             color: #94a3b8;
@@ -1682,13 +1701,14 @@
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao thead tr {
-            background: linear-gradient(180deg, #2f57be 0%, #2748a1 100%);
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
         }
 
-        /* ── Cabeçalho da tabela: background OPACO obrigatório ── */
+        /* ── Cabeçalho da tabela: background opaco obrigatório ── */
         #detalhes #tedsDetalheContainer .tabela-padrao thead th {
-            color: #eef4ff;
-            border-color: rgba(255,255,255,0.12);
+            color: var(--color-text-primary);
+            border-color: var(--color-border);
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
@@ -1697,9 +1717,7 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            /* Background opaco explícito – impede que células roladas
-               apareçam "através" do cabeçalho ao rolar horizontalmente */
-            background: linear-gradient(180deg, #2f57be 0%, #2748a1 100%) !important;
+            background: var(--color-bg-surface) !important;
         }
 
         /* ── Colunas congeladas (sticky-freeze) ── */
@@ -1718,12 +1736,12 @@
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover .sticky-freeze {
             background: #eaf2ff !important;
         }
-        /* Cabeçalho congelado: mesmo gradiente opaco, z-index mais alto */
+        /* Cabeçalho congelado: mesmo background opaco, z-index mais alto */
         #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze {
             position: sticky;
             z-index: 15;
-            background: linear-gradient(180deg, #2f57be 0%, #2748a1 100%) !important;
-            color: #eef4ff;
+            background: var(--color-bg-surface) !important;
+            color: var(--color-text-primary);
         }
         /* Sombra na última coluna congelada */
         #detalhes #tedsDetalheContainer .tabela-padrao .sticky-freeze.sticky-freeze-last {
@@ -1808,7 +1826,8 @@
         }
 
         [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao thead tr {
-            background: linear-gradient(180deg, #1f4fb8 0%, #183b88 100%);
+            background: linear-gradient(180deg, #1a2f55 0%, #131e36 100%);
+            color: #e0ecff;
         }
 
         [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(even) {
@@ -1830,7 +1849,7 @@
 
         /* Dark mode: colunas congeladas com background opaco */
         [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze {
-            background: linear-gradient(180deg, #1f4fb8 0%, #183b88 100%) !important;
+            background: linear-gradient(180deg, #1a2f55 0%, #131e36 100%) !important;
         }
         [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tbody .sticky-freeze,
         [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao tfoot .sticky-freeze {
@@ -1958,8 +1977,8 @@
         }
         /* Cabeçalho secundário (meses Gantt) */
         .tabela-padrao .header-meses {
-            background: #4b7ed0;
-            color: white;
+            background: var(--color-primary-bg);
+            color: var(--color-primary);
             font-size: 0.7rem;
         }
         /* Estilos isolados para a tabela do Gantt - manter consistente com .tabela-padrao */
@@ -1970,8 +1989,8 @@
             font-size: 0.8rem;
         }
         .gantt-table thead tr {
-            background: #2c5aa0;
-            color: white;
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
         }
         .gantt-table th,
         .gantt-table td {
@@ -1997,8 +2016,8 @@
         .gantt-table tbody tr:nth-child(odd) { background: #fff; }
         /* Cabeçalho secundário de meses no Gantt */
         .gantt-table .header-meses {
-            background: #4b7ed0;
-            color: white;
+            background: var(--color-primary-bg);
+            color: var(--color-primary);
             font-size: 0.7rem;
         }
         /* Congelar colunas UP e TED na tabela de vigência */
@@ -2009,8 +2028,8 @@
         .gantt-table th.sticky-up,
         .gantt-table th.sticky-ted {
             z-index: 30;
-            background: #2c5aa0;
-            color: white;
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
         }
         .gantt-table td.sticky-up,
         .gantt-table td.sticky-ted {
@@ -2216,16 +2235,17 @@
             padding: 0.45rem 0.9rem;
             font-size: 0.92rem;
             font-weight: 700;
-            color: #ffffff;
-            background: linear-gradient(135deg, #2f57be 0%, #1e40af 100%);
+            color: var(--color-primary);
+            background: var(--color-bg-surface);
             border-radius: 0.5rem;
             letter-spacing: 0.02em;
+            border: 1px solid var(--color-border);
         }
         .card .card-title-blue .inline-icon-sm,
         .card .card-title-blue svg {
             width: 18px;
             height: 18px;
-            color: #ffffff;
+            color: var(--color-primary);
             stroke: currentColor;
             fill: none;
             opacity: 0.92;
