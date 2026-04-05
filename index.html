@@ -7617,9 +7617,10 @@
                 return;
             }
 
+            const fisicos = ted.fisicos || [];
             const objetos = ted.objetos || [];
-            if (!objetos.length) {
-                container.innerHTML = '<p style="color:var(--text);">Nenhum objeto cadastrado para este TED.</p>';
+            if (!fisicos.length && !objetos.length) {
+                container.innerHTML = '<p style="color:var(--text);">Nenhum cadastro físico/objeto para este TED.</p>';
                 return;
             }
 
@@ -7638,11 +7639,35 @@
                 return true;
             });
 
-            const items = objetos.map(o => {
-                const entregues = execsFiltrados.filter(e => e.objeto === o.objeto).reduce((s,e)=>s+(parseFloat(e.qtde)||0),0);
-                const planejado = parseFloat(o.qtde) || 0;
-                const perc = planejado > 0 ? (entregues/planejado)*100 : 0;
-                return { nome: o.objeto, entregues, planejado, perc };
+            // Base planejada deve ser idêntica à tabela de Execução Física: soma da qtde do Cadastro Físico por objeto.
+            let objetosBase = [];
+            if (fisicos.length) {
+                const fisicosOrdered = Array.from(fisicos);
+                fisicosOrdered.sort((a, b) => {
+                    const aVal = a && a.fase != null ? a.fase : '';
+                    const bVal = b && b.fase != null ? b.fase : '';
+                    const aNum = Number(aVal);
+                    const bNum = Number(bVal);
+                    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+                    return String(aVal).localeCompare(String(bVal), 'pt', { numeric: true });
+                });
+                fisicosOrdered.forEach(f => {
+                    if (!f || !f.objeto) return;
+                    if (!objetosBase.includes(f.objeto)) objetosBase.push(f.objeto);
+                });
+            } else {
+                objetosBase = [...new Set(objetos.map(o => o.objeto).filter(Boolean))];
+            }
+
+            const items = objetosBase.map(nomeObj => {
+                const entregues = execsFiltrados
+                    .filter(e => e.objeto === nomeObj)
+                    .reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
+                const planejado = fisicos.length
+                    ? fisicos.filter(f => f.objeto === nomeObj).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0)
+                    : objetos.filter(o => o.objeto === nomeObj).reduce((s, o) => s + (parseNumber(o.qtde) || 0), 0);
+                const perc = planejado > 0 ? (entregues / planejado) * 100 : 0;
+                return { nome: nomeObj, entregues, planejado, perc };
             });
 
             // Render as responsive cards grid
