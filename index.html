@@ -1407,7 +1407,8 @@
         /* ===== Layout de duas colunas (Detalhes TED) ===== */
         .detail-two-col {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 320px;
+            /* duas colunas iguais para que cada card ocupe metade da área */
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-bottom: 1rem;
         }
