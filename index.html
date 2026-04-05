@@ -566,13 +566,12 @@
     <div class="container">
         <!-- Abas -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('dashboard', this)"><i data-lucide="layout-dashboard"></i> Dashboard</button>
-            <button class="tab-btn" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
-            <button id="tab-novo" class="tab-btn" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
-            <button class="tab-btn" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
-            <button id="tab-relatorios" class="tab-btn" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
-            <button id="tab-config" class="tab-btn" onclick="switchTab('config', this)"><i data-lucide="settings"></i> Configurações</button>
-            <button id="tab-config-alt" class="tab-btn" onclick="switchTab('config-alt', this)"><i data-lucide="wrench"></i> Configurações 2</button>
+            <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)"><i data-lucide="layout-dashboard"></i> Dashboard</button>
+            <button class="tab-btn" data-tab="teds" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
+            <button id="tab-novo" class="tab-btn" data-tab="novo" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
+            <button class="tab-btn" data-tab="detalhes" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
+            <button id="tab-relatorios" class="tab-btn" data-tab="relatorios" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <button id="tab-config" class="tab-btn" data-tab="config" onclick="switchTab('config', this)"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
         <!-- TAB 1: Dashboard -->
@@ -1496,10 +1495,6 @@
             </div>
         </div>
 
-        <!-- TAB 7: Configurações 2 (fallback visual) -->
-        <div id="config-alt" class="tab-content">
-            <div id="configAltMount"></div>
-        </div>
     </div>
 
     <!-- Modal de Detalhes -->
@@ -1851,16 +1846,6 @@
         }
 
         // Trocar Abas
-        function renderConfigAlt() {
-            try {
-                var source = document.querySelector('#config .card');
-                var mount = document.getElementById('configAltMount');
-                if (!source || !mount) return;
-                mount.innerHTML = source.outerHTML;
-                try { initLucideIcons(); } catch(e) {}
-            } catch(e) {}
-        }
-
         function switchTab(tabName, btnEl) {
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -1886,14 +1871,10 @@
                 tabEl.style.transform = 'none';
             }
 
-            if (tabName === 'config-alt') {
-                renderConfigAlt();
-            }
-
             // Marcar botão ativo (btnEl pode ser o botão ou um filho como <i>)
             let activeBtn = btnEl ? btnEl.closest('.tab-btn') || btnEl : null;
             if (!activeBtn) {
-                activeBtn = document.querySelector(`.tab-btn[onclick*="switchTab('${tabName}'"]`);
+                activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
             }
             if (activeBtn) activeBtn.classList.add('active');
             try {
@@ -11189,7 +11170,6 @@
             var adminLoggedAs = document.getElementById('adminLoggedAs');
             var tabConfig = document.getElementById('tab-config');
             var tabRelatorios = document.getElementById('tab-relatorios');
-            var tabConfigAlt = document.getElementById('tab-config-alt');
 
             if (isAdmin) {
                 if (modeEl) { modeEl.textContent = '🔑 Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
@@ -11199,7 +11179,6 @@
                 if (adminPanel) adminPanel.style.display = 'block';
                 if (tabConfig) tabConfig.style.display = '';
                 if (tabRelatorios) tabRelatorios.style.display = '';
-                if (tabConfigAlt) tabConfigAlt.style.display = '';
                 if (adminLoggedAs && window.currentUserProfile) {
                     adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '→');
                 }
@@ -11213,7 +11192,6 @@
                 if (adminPanel) adminPanel.style.display = 'none';
                 if (tabConfig) tabConfig.style.display = '';
                 if (tabRelatorios) tabRelatorios.style.display = 'none';
-                if (tabConfigAlt) tabConfigAlt.style.display = '';
                 // Se está em aba restrita, voltar para dashboard
                 try {
                     var activeTab = document.querySelector('.tab-content.active');
