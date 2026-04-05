@@ -196,23 +196,24 @@
         /* Navbar — topbar azul escuro */ 
         nav {
             background: var(--color-primary);
-            backdrop-filter: none;
-            box-shadow: 0 4px 16px rgba(12,68,124,0.25);
-            padding: 0.75rem 0;
+            height: 52px;
             position: sticky;
             top: 0;
             z-index: 110;
             border-bottom: 1px solid rgba(255,255,255,0.10);
             transition: var(--transition);
+            display: flex;
+            align-items: center;
         }
 
         .nav-inner {
             max-width: 95%;
             margin: 0 auto;
-            padding: 0 1.5rem;
+            padding: 0 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 100%;
         }
 
         nav h1 {
@@ -227,8 +228,8 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 54px;
-            height: 54px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: transparent;
             box-shadow: none;
@@ -255,24 +256,20 @@
             align-items: flex-start;
         }
         .nav-brand-name {
-            font-size: 1.75rem;
-            font-weight: 800;
-            letter-spacing: -0.03em;
+            font-size: 14px;
+            font-weight: 500;
             color: #ffffff;
-            -webkit-text-fill-color: #ffffff;
             display: inline-block;
         }
         .nav-brand-sub {
-            font-size: 0.68rem;
+            font-size: 11px;
             font-weight: 600;
-            color: rgba(255,255,255,0.75);
+            color: #85B7EB;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             display: block;
             width: 100%;
-            text-align: justify;
-            text-align-last: justify;
-            white-space: normal;
+            white-space: nowrap;
         }
 
         /* Dark mode brand */
@@ -293,7 +290,7 @@
         .nav-actions {
             display: flex;
             align-items: center;
-            gap: var(--space-3);
+            gap: 0.5rem;
         }
 
         nav button {
@@ -330,6 +327,55 @@
             background: var(--border) !important;
             transform: rotate(15deg) !important;
         }
+
+        /* Topbar specific controls */
+        .topbar-badge {
+            background: rgba(255,255,255,0.08);
+            color: #9FE1CB;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar-btn {
+            font-size: 13px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .topbar-btn-carregar { background: rgba(255,255,255,0.12); color: #ffffff; }
+        .topbar-btn-salvar { background: #378ADD; color: #ffffff; }
+
+        /* Subbar (seleção de TED) */
+        .subbar {
+            background: var(--color-bg-card);
+            border-bottom: 0.5px solid var(--color-border);
+            height: 44px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+        }
+        .subbar-inner { max-width: 95%; margin: 0 auto; width: 100%; padding: 0 1rem; display:flex; align-items:center; }
+        .ted-chip {
+            background: #E6F1FB;
+            color: #0C447C;
+            padding: 6px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .ted-status-dot { width:8px; height:8px; background: var(--color-success); border-radius:50%; display:inline-block; }
+        .ted-chip .lucide { opacity: 0.9; color: #0C447C; }
+
+        /* Hide possible floating settings button selectors if present */
+        #floating-settings, .floating-settings, .settings-floating, [data-role="floating-settings"] { display:none !important; }
 
         .theme-toggle i {
             width: 20px;
@@ -2708,30 +2754,30 @@
                     </span>
                     <span class="nav-brand-text">
                         <span class="nav-brand-name">Sistema Controle TED</span>
-                        <span class="nav-brand-sub">Termo de Execução Descentralizada</span>
+                        <span class="nav-brand-sub">TERMO DE EXECUÇÃO DESCENTRALIZADA</span>
                     </span>
                 </h1>
                 <div class="nav-actions">
-                <button class="btn-icon theme-toggle" onclick="toggleTheme()" title="Alternar tema">
-                    <i data-lucide="sun" class="theme-icon-light"></i>
-                    <i data-lucide="moon" class="theme-icon-dark"></i>
-                </button>
-                <!-- Cloud controls (visíveis apenas para admin) -->
-                <div id="adminCloudControls" style="display:none; align-items:center; gap:0.35rem;">
-                    <button class="btn" onclick="salvarNoCloud()" title="Salvar dados na nuvem" style="font-size:0.8rem; padding:0.3rem 0.6rem;">☁ Salvar</button>
-                    <button class="btn" onclick="carregarDoCloud()" title="Carregar dados da nuvem" style="font-size:0.8rem; padding:0.3rem 0.6rem;">☁ Carregar</button>
-                </div>
-                <div id="cloudIndicator" style="display:flex;align-items:center;gap:0.35rem;margin-left:0.25rem;">
-                    <span id="cloudStatusIcon" title="Status da nuvem" style="font-size:12px;color:var(--text-muted)">●</span>
-                    <span id="cloudLastSync" style="font-size:11px;color:var(--text-muted)"></span>
-                </div>
-                <!-- Indicador de modo + Login/Logout -->
-                <span id="modeIndicator" style="font-size:0.75rem; padding:0.2rem 0.6rem; border-radius:1rem; background:#e0e7ff; color:#3730a3; font-weight:600; margin-left:0.5rem;">👁 Leitura</span>
-                <button id="btnAdminLogin" onclick="showLoginScreen()" style="font-size:0.8rem; padding:0.3rem 0.7rem; background:none; border:1px solid var(--border); border-radius:0.4rem; cursor:pointer; color:var(--text-muted); margin-left:0.25rem;" title="Login administrador">🔑 Admin</button>
-                <button id="btnAdminLogout" onclick="doLogout()" style="display:none; font-size:0.8rem; padding:0.3rem 0.7rem; background:#fee2e2; border:1px solid #fca5a5; border-radius:0.4rem; cursor:pointer; color:#dc2626; margin-left:0.25rem;" title="Sair do modo admin">Sair</button>
+                    <div class="topbar-badge" title="Último salvamento">
+                        <span id="cloudLastSync">—</span>
+                    </div>
+                    <button id="btnCarregarTopo" class="topbar-btn topbar-btn-carregar" onclick="carregarDoCloud()">Carregar</button>
+                    <button id="btnSalvarTopo" class="topbar-btn topbar-btn-salvar" onclick="salvarNoCloud()">Salvar</button>
+                    <button id="btnAdminLogin" onclick="showLoginScreen()" style="background:none;border:0;color:#ffffff;font-size:0.95rem;margin-left:8px;" title="Admin">🔑</button>
                 </div>
             </div>
         </nav>
+
+        <!-- Subbar (seletor de TED) -->
+        <div class="subbar">
+            <div class="subbar-inner">
+                <div class="ted-chip" id="selectedTedChip" onclick="toggleTedDropdown()">
+                    <span class="ted-status-dot" aria-hidden="true"></span>
+                    <span class="ted-chip-text" id="selectedTedText">Selecionar TED</span>
+                    <i data-lucide="chevron-down" class="lucide"></i>
+                </div>
+            </div>
+        </div>
 
         <!-- Modal: Marcar Realizada -->
         <div id="modalMarcarRealizadaBackdrop" class="modal-backdrop" aria-hidden="true">

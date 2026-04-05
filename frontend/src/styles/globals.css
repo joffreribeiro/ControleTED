@@ -75,3 +75,36 @@ body {
 .form-label {
   @apply block text-sm font-medium text-gray-700 mb-2;
 }
+
+/* Topbar / Subbar styles to match index.html header refactor */
+nav {
+  background: var(--color-primary);
+  height: 52px;
+  display: flex;
+  align-items: center;
+}
+.nav-inner {
+  width: 100%;
+  max-width: 95%;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+.nav-brand-icon { width:36px; height:36px; }
+.nav-brand-name { font-size:14px; font-weight:500; color:#fff; }
+.nav-brand-sub { font-size:11px; color:#85B7EB; letter-spacing:0.08em; text-transform:uppercase; }
+.topbar-badge { background: rgba(255,255,255,0.08); color:#9FE1CB; font-size:11px; padding:4px 10px; border-radius:999px; display:inline-flex; align-items:center; }
+.topbar-btn { font-size:13px; padding:6px 10px; border-radius:6px; border:none; cursor:pointer; }
+.topbar-btn-carregar { background: rgba(255,255,255,0.12); color:#fff; }
+.topbar-btn-salvar { background: #378ADD; color:#fff; }
+
+.subbar { background: var(--color-bg-card); border-bottom: 0.5px solid var(--color-border); height:44px; display:flex; align-items:center; }
+.subbar-inner { max-width:95%; margin:0 auto; padding:0 1rem; display:flex; align-items:center; }
+.ted-chip { background:#E6F1FB; color:#0C447C; padding:6px 10px; border-radius:999px; display:inline-flex; gap:8px; align-items:center; cursor:pointer; }
+.ted-status-dot { width:8px; height:8px; background:var(--color-success); border-radius:50%; display:inline-block; }
+
+/* hide potential floating settings button variants */
+#floating-settings, .floating-settings, .settings-floating, [data-role="floating-settings"] { display:none !important; }
