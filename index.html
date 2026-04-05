@@ -3013,12 +3013,12 @@
     <div class="container">
         <!-- Abas -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('dashboard')"><i data-lucide="layout-dashboard"></i> Dashboard</button>
-            <button class="tab-btn" onclick="switchTab('teds')"><i data-lucide="file-text"></i> TED</button>
-            <button id="tab-novo" class="tab-btn" onclick="switchTab('novo')" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
-            <button class="tab-btn" onclick="switchTab('detalhes')"><i data-lucide="search"></i> Detalhes TED</button>
-            <button class="tab-btn" onclick="switchTab('relatorios')"><i data-lucide="file-bar-chart"></i> Relatórios</button>
-            <button id="tab-config" class="tab-btn" onclick="switchTab('config')"><i data-lucide="settings"></i> Configurações</button>
+            <button class="tab-btn active" onclick="switchTab('dashboard', this)"><i data-lucide="layout-dashboard"></i> Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
+            <button id="tab-novo" class="tab-btn" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
+            <button class="tab-btn" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
+            <button class="tab-btn" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <button id="tab-config" class="tab-btn" onclick="switchTab('config', this)"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
         <!-- TAB 1: Dashboard -->
@@ -4301,7 +4301,7 @@
         }
 
         // Trocar Abas
-        function switchTab(tabName) {
+        function switchTab(tabName, btnEl) {
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -4311,8 +4311,11 @@
             });
 
             // Mostrar aba selecionada
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            const tabEl = document.getElementById(tabName);
+            if (tabEl) tabEl.classList.add('active');
+            // Marcar botão ativo (btnEl pode ser o botão ou um filho como <i>)
+            const activeBtn = btnEl ? btnEl.closest('.tab-btn') || btnEl : null;
+            if (activeBtn) activeBtn.classList.add('active');
             try {
                 const wrap = document.getElementById('filterFullWrap');
                 if (wrap) wrap.style.display = (tabName === 'detalhes') ? 'none' : 'flex';
