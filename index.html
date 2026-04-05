@@ -10627,88 +10627,107 @@
         }
 
         function atualizarTabelaExecFinanceira() {
-            const tbody = document.getElementById('tabelaExecFinanceira');
-            const tableEl = tbody.closest('table');
-            const resumoPrev = document.getElementById('resExecPrevisto');
-            const resumoReceberAnt = document.getElementById('resExecReceberAnterior');
-            const resumoRecebido = document.getElementById('resExecRecebido');
-            const resumoDevolvido = document.getElementById('resExecDevolvido');
-            const resumoSaldo = document.getElementById('resExecSaldo');
-            const resumoLiquidacao = document.getElementById('resExecLiquidacao');
+            try {
+                const tbody = document.getElementById('tabelaExecFinanceira');
+                if (!tbody) {
+                    console.warn('tabelaExecFinanceira not found');
+                    return;
+                }
+                
+                const tableEl = tbody.closest('table');
+                if (!tableEl) {
+                    console.warn('tabelaExecFinanceira table parent not found');
+                    return;
+                }
 
-            const setResumoZeros = () => {
-                if (resumoPrev) resumoPrev.textContent = '0,00';
-                if (resumoReceberAnt) resumoReceberAnt.textContent = '0,00';
-                if (resumoRecebido) resumoRecebido.textContent = '0,00';
-                if (resumoDevolvido) resumoDevolvido.innerHTML = '0,00';
-                if (resumoSaldo) resumoSaldo.innerHTML = '<span style="font-weight:700">0,00</span>';
-                if (resumoLiquidacao) resumoLiquidacao.textContent = '0%';
-            };
-            
-            // Popular menus de filtro
-            try { popularFiltrosExecFin(); } catch(e) {}
+                const resumoPrev = document.getElementById('resExecPrevisto');
+                const resumoReceberAnt = document.getElementById('resExecReceberAnterior');
+                const resumoRecebido = document.getElementById('resExecRecebido');
+                const resumoDevolvido = document.getElementById('resExecDevolvido');
+                const resumoSaldo = document.getElementById('resExecSaldo');
+                const resumoLiquidacao = document.getElementById('resExecLiquidacao');
 
-            if (!window.tedSelecionado) {
-                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
-                setResumoZeros();
-                return;
-            }
+                const setResumoZeros = () => {
+                    if (resumoPrev) resumoPrev.textContent = '0,00';
+                    if (resumoReceberAnt) resumoReceberAnt.textContent = '0,00';
+                    if (resumoRecebido) resumoRecebido.textContent = '0,00';
+                    if (resumoDevolvido) resumoDevolvido.innerHTML = '0,00';
+                    if (resumoSaldo) resumoSaldo.innerHTML = '<span style="font-weight:700">0,00</span>';
+                    if (resumoLiquidacao) resumoLiquidacao.textContent = '0%';
+                };
+                
+                // Popular menus de filtro
+                try { popularFiltrosExecFin(); } catch(e) {}
 
-            // Base (60 meses)
-            let startDate;
-            if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
-            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
-                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else {
-                startDate = new Date();
-            }
+                if (!window.tedSelecionado) {
+                    tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
+                    setResumoZeros();
+                    return;
+                }
 
-            const meses = [];
-            for (let i=0;i<60;i++) {
-                const d = new Date(startDate);
-                d.setMonth(d.getMonth() + i);
-                const mes = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
-                const ano2 = String(d.getFullYear()).slice(-2);
-                meses.push({label:`${mes}/${ano2}`, ano:d.getFullYear(), mes:d.getMonth()+1, fullYear:d.getFullYear()});
-            }
+                // Base (60 meses)
+                let startDate;
+                if (window.tedSelecionado.primeiraDescentralizacao) {
+                    startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                    startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+                } else {
+                    startDate = new Date();
+                }
 
-            const anos = [];
-            meses.forEach(m => {
-                if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ano:m.ano, count:1}); else anos[anos.length-1].count += 1;
-            });
+                const meses = [];
+                for (let i=0;i<60;i++) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + i);
+                    const mes = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
+                    const ano2 = String(d.getFullYear()).slice(-2);
+                    meses.push({label:`${mes}/${ano2}`, ano:d.getFullYear(), mes:d.getMonth()+1, fullYear:d.getFullYear()});
+                }
 
-            // Cabeçalho com rowspan
-            let hr1 = tableEl.querySelector('thead tr');
-            let hdr = '<th rowspan="2" class="col-nd">ND</th>'+
-                      '<th rowspan="2" class="col-up">UP</th>'+
-                      '<th rowspan="2" class="col-valor">Valor Previsto</th>'+
-                      '<th rowspan="2" class="col-valor">Valor Realizado</th>'+
-                      '<th rowspan="2" class="col-saldo">Saldo</th>'+
-                      '<th rowspan="2" class="col-status">Status</th>';
-            
-            // Estado do toggle de meses
-            const monthsExpandedExecFin = document.getElementById('toggle-months-execFin')?.getAttribute('data-expanded') === '1';
-            const mmHideEF = monthsExpandedExecFin ? '' : ' display:none;';
+                const anos = [];
+                meses.forEach(m => {
+                    if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ano:m.ano, count:1}); else anos[anos.length-1].count += 1;
+                });
 
-            anos.forEach(a=>{ 
-                hdr += `<th class="month-col-execFin" style="text-align:center;${mmHideEF}" colspan="${a.count}">${a.ano}</th>`; 
-            });
-            hr1.innerHTML = hdr;
+                // Cabeçalho com rowspan
+                const theadTr = tableEl.querySelector('thead tr');
+                if (!theadTr) {
+                    console.warn('thead tr not found in tabelaExecFinanceira');
+                    tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Erro ao carregar dados</td></tr>';
+                    setResumoZeros();
+                    return;
+                }
 
-            let hr2 = tableEl.querySelector('thead tr:nth-child(2)');
-            if (hr2) hr2.remove();
-            hr2 = document.createElement('tr');
-            hr2.className = 'header-meses';
-            let hdr2 = '';
-            meses.forEach(m => { 
-                hdr2 += `<th class="month-col-execFin" style="${mmHideEF}">${m.label}</th>`; 
-            });
-            hr2.innerHTML = hdr2;
-            tableEl.querySelector('thead').appendChild(hr2);
+                let hdr = '<th rowspan="2" class="col-nd">ND</th>'+
+                          '<th rowspan="2" class="col-up">UP</th>'+
+                          '<th rowspan="2" class="col-valor">Valor Previsto</th>'+
+                          '<th rowspan="2" class="col-valor">Valor Realizado</th>'+
+                          '<th rowspan="2" class="col-saldo">Saldo</th>'+
+                          '<th rowspan="2" class="col-status">Status</th>';
+                
+                // Estado do toggle de meses
+                const monthsExpandedExecFin = document.getElementById('toggle-months-execFin')?.getAttribute('data-expanded') === '1';
+                const mmHideEF = monthsExpandedExecFin ? '' : ' display:none;';
 
-            const cad = window.tedSelecionado.financeiros || [];
-            const execs = window.tedSelecionado.execFinanceiras || [];
+                anos.forEach(a=>{ 
+                    hdr += `<th class="month-col-execFin" style="text-align:center;${mmHideEF}" colspan="${a.count}">${a.ano}</th>`; 
+                });
+                theadTr.innerHTML = hdr;
+
+                let hr2 = tableEl.querySelector('thead tr:nth-child(2)');
+                if (hr2) hr2.remove();
+                hr2 = document.createElement('tr');
+                hr2.className = 'header-meses';
+                let hdr2 = '';
+                meses.forEach(m => { 
+                    hdr2 += `<th class="month-col-execFin" style="${mmHideEF}">${m.label}</th>`; 
+                });
+                hr2.innerHTML = hdr2;
+                const thead = tableEl.querySelector('thead');
+                if (thead) thead.appendChild(hr2);
+
+                const cad = window.tedSelecionado.financeiros || [];
+                const execs = window.tedSelecionado.execFinanceiras || [];
 
             // Conjunto de chaves ND+UP presentes apenas no cadastro financeiro
             const chaves = new Set([
