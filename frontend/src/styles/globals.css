@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #0C447C;        /* azul escuro — usar APENAS em header/topbar */
+  --color-primary-mid: #185FA5;
+  --color-primary-light: #378ADD;
+  --color-primary-bg: #E6F1FB;     /* fundo azul suave para badges e destaques */
+  --color-primary-border: #85B7EB;
+
+  --color-success: #639922;
+  --color-success-bg: #EAF3DE;
+  --color-danger: #A32D2D;
+  --color-danger-bg: #FCEBEB;
+  --color-warning: #854F0B;
+  --color-warning-bg: #FAEEDA;
+
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #6b6b6b;
+  --color-text-muted: #9b9b9b;
+
+  --color-bg-page: #F4F4F2;        /* fundo geral da página */
+  --color-bg-card: #ffffff;        /* fundo dos cards/tabelas */
+  --color-bg-surface: #F8F8F6;     /* fundo de cabeçalhos de tabela */
+  --color-border: rgba(0,0,0,0.10);
+
+  --radius-card: 12px;
+  --radius-md: 8px;
+  --radius-pill: 999px;
+}
+
 * {
   margin: 0;
   padding: 0;
