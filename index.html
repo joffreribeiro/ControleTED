@@ -3685,9 +3685,12 @@
                     <!-- CADASTRO FÍSICO -->
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
-                            <h3 class="detalhe-secao-titulo"><i data-lucide="home" class="inline-icon-sm"></i> Cadastro Físico <span class="section-count-badge" id="count-fisicos">0</span></h3>
-                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalFisicoCad()">+ Adicionar</button></div>
-                        </div>
+                                <h3 class="detalhe-secao-titulo"><i data-lucide="home" class="inline-icon-sm"></i> Cadastro Físico <span class="section-count-badge" id="count-fisicos">0</span></h3>
+                                <div class="detalhe-secao-actions">
+                                    <button type="button" class="btn-toggle-months" id="toggle-months-cadFis" data-expanded="0" onclick="toggleMonthCols('cadFis', this)">Ver detalhes mensais</button>
+                                    <button type="button" class="section-add-btn" onclick="abrirModalFisicoCad()">+ Adicionar</button>
+                                </div>
+                            </div>
                         <div class="detalhe-secao-body">
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; position: relative;">
@@ -3718,7 +3721,10 @@
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física <span class="section-count-badge" id="count-execfis">0</span></h3>
-                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalExecFisica()">+ Adicionar</button></div>
+                            <div class="detalhe-secao-actions">
+                                <button type="button" class="btn-toggle-months" id="toggle-months-execFis" data-expanded="0" onclick="toggleMonthCols('execFis', this)">Ver detalhes mensais</button>
+                                <button type="button" class="section-add-btn" onclick="abrirModalExecFisica()">+ Adicionar</button>
+                            </div>
                         </div>
                         <div class="detalhe-secao-body">
 
@@ -5703,6 +5709,17 @@
         function renderCompactGanttFisico() {
             const container = document.getElementById('ganttCompactFisico');
             if (!container || !window.tedSelecionado) return;
+
+                    // Respeitar toggle de meses do Cadastro Físico: ocultar compact gantt se meses estiverem colapsados
+                    try {
+                        const toggleBtn = document.getElementById('toggle-months-cadFis');
+                        if (toggleBtn && toggleBtn.getAttribute('data-expanded') !== '1') {
+                            container.style.display = 'none';
+                            return;
+                        } else {
+                            container.style.display = '';
+                        }
+                    } catch(e) {}
 
             // Determinar data base (meses) usando mesma lógica da tabela
             let startDate;
@@ -8270,6 +8287,10 @@
 
             // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
             let headerRow1 = tableElement.querySelector('thead tr');
+            // Estado do toggle de meses (Cadastro Físico)
+            const monthsExpandedCadFis = document.getElementById('toggle-months-cadFis')?.getAttribute('data-expanded') === '1';
+            const mmHideCadFis = monthsExpandedCadFis ? '' : ' display:none;';
+
             let headerHTML = '<th rowspan="2" class="col-fase">Fase</th>';
             headerHTML += '<th rowspan="2" class="col-objeto">Objeto</th>';
             headerHTML += '<th rowspan="2" class="col-qtde">Qtde</th>';
@@ -8281,7 +8302,7 @@
             headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
             
             anos.forEach(a => {
-                headerHTML += `<th style="text-align: center;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th class="month-col-cadFis" style="text-align: center;${mmHideCadFis}" colspan="${a.count}">${a.ano}</th>`;
             });
             
             headerRow1.innerHTML = headerHTML;
@@ -8297,7 +8318,7 @@
             headerRow2.className = 'header-meses';
             let headerRow2HTML = '';
             meses.forEach(m => {
-                headerRow2HTML += `<th>${m.label}</th>`;
+                headerRow2HTML += `<th class="month-col-cadFis" style="${mmHideCadFis}">${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableElement.querySelector('thead').appendChild(headerRow2);
@@ -8402,7 +8423,7 @@
                         cellContent = `${qText}${nfTxt ? '<br><small style="color:var(--text-muted);font-size:0.75rem">NF: ' + nfTxt + '</small>' : ''}`;
                     }
 
-                    html += `<td style="background: ${cor};" title="${tdTitle}">${cellContent}</td>`;
+                    html += `<td class="month-col-cadFis" style="background: ${cor}; ${mmHideCadFis}" title="${tdTitle}">${cellContent}</td>`;
                 });
                 
                 html += '</tr>';
@@ -8511,6 +8532,10 @@
 
             // Cabeçalho com rowspan nas colunas fixas
             let headerRow1 = tableElement.querySelector('thead tr');
+            // Estado do toggle de meses (Execução Física)
+            const monthsExpandedExecFis = document.getElementById('toggle-months-execFis')?.getAttribute('data-expanded') === '1';
+            const mmHideExecFis = monthsExpandedExecFis ? '' : ' display:none;';
+
             let headerHTML = '<th rowspan="2" class="col-objeto">Objeto</th>';
             headerHTML += '<th rowspan="2" class="col-qtde">Qtd Prevista</th>';
             headerHTML += '<th rowspan="2" class="col-qtde">Qtd Entregue</th>';
@@ -8519,7 +8544,7 @@
             let firstAnoExecFis = true;
             anos.forEach(a => {
                 firstAnoExecFis = false;
-                headerHTML += `<th colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th class="month-col-execFis" style="text-align:center;${mmHideExecFis}" colspan="${a.count}">${a.ano}</th>`;
             });
             headerRow1.innerHTML = headerHTML;
 
@@ -8532,7 +8557,7 @@
             let firstMonthExecFis = true;
             meses.forEach(m => {
                 firstMonthExecFis = false;
-                headerRow2HTML += `<th class="col-mes">${m.label}</th>`;
+                headerRow2HTML += `<th class="month-col-execFis" style="${mmHideExecFis}">${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableElement.querySelector('thead').appendChild(headerRow2);
@@ -8624,7 +8649,7 @@
                         });
                         title = parts.join('\n');
                     }
-                    html += `<td class="col-mes" style="background: ${bg}; cursor: pointer;" onclick="editarValorExecFisica('${obj}', ${idx})" title="${title}">${val ? formatNumber(val) : ''}</td>`;
+                    html += `<td class="month-col-execFis col-mes" style="background: ${bg}; cursor: pointer; ${mmHideExecFis}" onclick="editarValorExecFisica('${obj}', ${idx})" title="${title}">${val ? formatNumber(val) : ''}</td>`;
                 });
                 html += '</tr>';
                 return html;
