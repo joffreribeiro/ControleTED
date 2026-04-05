@@ -653,40 +653,42 @@
 
         /* Cartões compactos do Resumo Geral */
         .stat-card {
-            background: white;
-            padding: 0.6rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-light);
-            text-align: center;
-            transition: var(--transition);
-            box-shadow: var(--shadow-sm);
-            min-height: 56px;
-            display:flex;
-            flex-direction:column;
-            justify-content:center;
+            background: #ffffff;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 0.5px solid rgba(0,0,0,0.10);
+            text-align: left;
+            transition: box-shadow 0.15s;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         }
 
         .stat-card .label {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            margin-bottom: 0.25rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            font-weight: 600;
+            font-size: 11px;
+            color: #6b6b6b;
+            margin-bottom: 6px;
+            font-weight: 500;
+            letter-spacing: 0;
         }
 
         .stat-card .value {
-            font-size: 1.45rem;
-            font-weight: 700;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: 22px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+        .stat-card.accent-green {
+            border-left: 3px solid #639922;
+            border-radius: 0 12px 12px 0;
+        }
+        .stat-card.accent-red {
+            border-left: 3px solid #E24B4A;
+            border-radius: 0 12px 12px 0;
         }
 
         /* Badge */
@@ -936,25 +938,36 @@
             gap: 1rem;
         }
         .proxima-col {
-            background: #f9fafb;
-            border: 1px solid var(--border);
-            border-radius: 0.5rem;
-            padding: 0.5rem;
+            background: #ffffff;
+            border: 0.5px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            padding: 12px 14px;
             min-height: 90px;
-            min-width: 0; /* permitir que a coluna encolha dentro do grid */
+            min-width: 0;
             display: flex;
             flex-direction: column;
         }
         .proxima-col > div {
-            flex: 1 1 auto; /* garantir que o conteúdo principal ocupe o espaço e nivele alturas */
+            flex: 1 1 auto;
         }
-        /* garantir que tabelas internas não expandam a coluna e causem quebra */
         .proxima-col .table-wrapper { min-width: 0; max-width: 100%; }
         .proxima-col table { min-width: 0; width: 100%; }
-        .proxima-col h4 {
-            font-size: 0.95rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.5rem;
+        .proxima-col .proxima-col-header {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            border-bottom: 0.5px solid rgba(0,0,0,0.08);
+        }
+        .proxima-col .proxima-col-header svg,
+        .proxima-col .proxima-col-header .inline-icon-sm {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
         }
         @media (max-width: 1200px) {
             .proximas-acoes-grid { grid-template-columns: repeat(3, 1fr); }
@@ -2216,15 +2229,15 @@
             font-weight: 700;
             margin-left: 6px;
         }
-        /* Barra de aditivo no Gantt - cores por aditivo */
-        td.gantt-m .gantt-bar-seg.bar-aditivo-1 { background: #16a34a; }
-        td.gantt-m .gantt-bar-seg.bar-aditivo-2 { background: #d97706; }
-        td.gantt-m .gantt-bar-seg.bar-aditivo-3 { background: #dc2626; }
-        td.gantt-m .gantt-bar-seg.bar-aditivo-4 { background: #7c3aed; }
-        td.gantt-m .gantt-bar-seg.bar-aditivo-5 { background: #0891b2; }
-        td.gantt-m .gantt-bar-seg.bar-aditivo-6 { background: #be185d; }
-        td.gantt-m .gantt-bar-seg.bar-aditivo-7 { background: #4d7c0f; }
-        td.gantt-m .gantt-bar-seg.bar-aditivo-8 { background: #9333ea; }
+        /* Barra de aditivo no Gantt - TODAS as barras usam a mesma cor (previsto) */
+        td.gantt-m .gantt-bar-seg.bar-aditivo-1 { background: #B5D4F4; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-2 { background: #B5D4F4; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-3 { background: #B5D4F4; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-4 { background: #B5D4F4; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-5 { background: #B5D4F4; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-6 { background: #B5D4F4; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-7 { background: #B5D4F4; }
+        td.gantt-m .gantt-bar-seg.bar-aditivo-8 { background: #B5D4F4; }
         /* Transição suave entre segmentos: remover border-radius interno */
         td.gantt-m.bar-seg-transition .gantt-bar-seg {
             border-radius: 0 !important;
@@ -2252,6 +2265,10 @@
             height: 10px;
             border-radius: 2px;
         }
+        /* Nova legenda compacta */
+        .gantt-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: #6b6b6b; }
+        .gantt-legend .legend-item { display: flex; align-items: center; gap: 5px; }
+        .gantt-legend .dot { width: 10px; height: 6px; border-radius: 2px; display: inline-block; }
         /* Modal de aditivo */
         .aditivo-modal-overlay {
             display: none;
@@ -3139,13 +3156,13 @@
                         <div class="label">TED Em Execução</div>
                         <div class="value" id="tedsExecucao">0</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="label">Orçamento Total</div>
-                            <div class="value" id="orcamentoTotal">0,00</div>
+                    <div class="stat-card" style="border-radius:12px;">
+                        <div class="label">Orçamento Total (R$)</div>
+                        <div class="value" id="orcamentoTotal">0,00</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="label">Total Gasto</div>
-                            <div class="value" id="totalGasto">0,00</div>
+                    <div class="stat-card accent-green" id="statTotalRecebido">
+                        <div class="label">Total Recebido (R$)</div>
+                        <div class="value" id="totalGasto">0,00</div>
                     </div>
                 </div>
                 <!-- Resumo Assinados / Encerrados (Mês × UP) -->
@@ -3166,25 +3183,25 @@
                 <h2>Próximas Ações</h2>
                 <div class="proximas-acoes-grid">
                     <div class="proxima-col">
-                        <h4 class="card-title-blue"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h4>
+                        <div class="proxima-col-header"><i data-lucide="package" class="inline-icon-sm" style="color:#378ADD;"></i> Entregas</div>
                         <div id="proximasEntregas">
                             <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem entregas programadas nos próximos 30 dias.</p>
                         </div>
                     </div>
                     <div class="proxima-col">
-                        <h4 class="card-title-blue"><i data-lucide="wallet" class="inline-icon-sm"></i> Recebimentos</h4>
+                        <div class="proxima-col-header"><i data-lucide="wallet" class="inline-icon-sm" style="color:#3B6D11;"></i> Recebimentos</div>
                         <div id="proximosRecebimentos">
                             <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>
                         </div>
                     </div>
                     <div class="proxima-col">
-                        <h4 class="card-title-blue"><i data-lucide="calendar-clock" class="inline-icon-sm"></i> Fim de Vigência</h4>
+                        <div class="proxima-col-header"><i data-lucide="calendar-clock" class="inline-icon-sm" style="color:#854F0B;"></i> Fim de Vigência</div>
                         <div id="proximasVigencias">
                             <p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem TEDs com vigência terminando nos próximos 30 dias.</p>
                         </div>
                     </div>
                         <div class="proxima-col">
-                            <h4 class="card-title-blue"><i data-lucide="alert-triangle" class="inline-icon-sm"></i> Alerta</h4>
+                            <div class="proxima-col-header"><i data-lucide="alert-triangle" class="inline-icon-sm" style="color:#A32D2D;"></i> Alerta</div>
                             <div id="proximasVigenciasVencidas">
                                 <p class="empty-state" style="padding:0.75rem; color:var(--text);">Nenhum TED com vigência vencida e não encerrado.</p>
                             </div>
@@ -4645,6 +4662,19 @@
             document.getElementById('orcamentoTotal').textContent = valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
             document.getElementById('totalGasto').textContent = gastoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
+            // Aplicar accent-red no card "Total Recebido" se saldo global negativo
+            const saldoGlobal = valorTotal - gastoTotal;
+            const cardRecebido = document.getElementById('statTotalRecebido');
+            if (cardRecebido) {
+                if (saldoGlobal < -0.01) {
+                    cardRecebido.classList.remove('accent-green');
+                    cardRecebido.classList.add('accent-red');
+                } else {
+                    cardRecebido.classList.remove('accent-red');
+                    cardRecebido.classList.add('accent-green');
+                }
+            }
+
             // Atualizar blocos de próximas entregas e próximos recebimentos (30 dias)
             try { renderUpcomingEntregas(); } catch(e) { console.warn('renderUpcomingEntregas error', e); }
             try { renderUpcomingRecebimentos(); } catch(e) { console.warn('renderUpcomingRecebimentos error', e); }
@@ -5047,16 +5077,34 @@
             const h = [];
             h.push('<div class="card">');
             h.push('<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;"><h3 style="margin:0; font-size:1rem">Relatório Mensal</h3><div><button class="btn" onclick="downloadRelatorioCSV()">Exportar CSV</button> <button class="btn" onclick="document.getElementById(\'relatorioMensalContainer\').innerHTML = \'' + '' + '\'">Fechar</button></div></div>');
-            h.push('<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">');
-            h.push('<thead><tr><th style="text-align:left; padding:6px; border-bottom:2px solid var(--border);">Mês</th><th style="text-align:left; padding:6px; border-bottom:2px solid var(--border);">Vigentes</th><th style="text-align:left; padding:6px; border-bottom:2px solid var(--border);">Encerrados</th></tr></thead>');
+            h.push('<table style="width:100%; border-collapse:collapse; font-size:11px;">');
+            h.push('<thead><tr>' +
+                '<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border); font-size:11px;">Mês</th>' +
+                '<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border); font-size:11px;">Vigentes</th>' +
+                '<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border); font-size:11px;">Encerrados</th>' +
+                '</tr></thead>');
             h.push('<tbody>');
 
+            let lastYear = null;
             data.months.forEach(mk => {
                 const p = mk.split('-');
-                const mesLabel = data.nomeMeses[parseInt(p[1], 10) - 1] + '/' + p[0];
-                const vig = (data.vigentes[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;">TED ${x.num}</a>`).join(', ');
-                const enc = (data.encerrados[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;">TED ${x.num}</a>`).join(', ');
-                h.push(`<tr><td style="padding:6px; vertical-align:top; font-weight:600;">${mesLabel}</td><td style="padding:6px;">${vig || '<span style=\"color:var(--text-muted);\">—</span>'}</td><td style="padding:6px;">${enc || '<span style=\"color:var(--text-muted);\">—</span>'}</td></tr>`);
+                const year = p[0];
+                const mesLabel = data.nomeMeses[parseInt(p[1], 10) - 1] + '/' + year;
+
+                // Separador visual de ano
+                if (year !== lastYear) {
+                    if (lastYear !== null) {
+                        // linha separadora entre anos
+                        h.push(`<tr><td colspan="3" style="background:#E6F1FB; text-align:center; font-weight:600; font-size:11px; padding:4px 8px; color:#0C447C; border-top:1px solid #B5D4F4;">${year}</td></tr>`);
+                    } else {
+                        h.push(`<tr><td colspan="3" style="background:#E6F1FB; text-align:center; font-weight:600; font-size:11px; padding:4px 8px; color:#0C447C;">${year}</td></tr>`);
+                    }
+                    lastYear = year;
+                }
+
+                const vig = (data.vigentes[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;" style="font-size:11px;">TED ${x.num}</a>`).join(', ');
+                const enc = (data.encerrados[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;" style="font-size:11px;">TED ${x.num}</a>`).join(', ');
+                h.push(`<tr><td style="padding:5px 8px; vertical-align:top; font-weight:600; font-size:11px; white-space:nowrap;">${mesLabel}</td><td style="padding:5px 8px; font-size:11px;">${vig || '<span style="color:var(--text-muted);">—</span>'}</td><td style="padding:5px 8px; font-size:11px;">${enc || '<span style="color:var(--text-muted);">—</span>'}</td></tr>`);
             });
 
             h.push('</tbody></table></div>');
@@ -10317,9 +10365,9 @@
                 return;
             }
 
-            // Paleta de cores para os aditivos
-            const aditivoCores = ['#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#be185d','#4d7c0f','#9333ea'];
-            const corOriginal = '#2c6fc2';
+            // Paleta de cores - todas uniformes
+            const aditivoCores = ['#B5D4F4','#B5D4F4','#B5D4F4','#B5D4F4','#B5D4F4','#B5D4F4','#B5D4F4','#B5D4F4'];
+            const corOriginal = '#B5D4F4';
 
             // Normalizar datas e construir segmentos por aditivo
             const rows = teds.map(t => {
@@ -10542,15 +10590,13 @@
             table += '</tbody>';
             table += '</table>';
 
-            // Legenda
-            let legenda = '<div class="gantt-legenda">';
-            legenda += `<div class="gantt-legenda-item"><span class="gantt-legenda-cor" style="background:${corOriginal}"></span> Vigência Original</div>`;
-            for (let ai = 0; ai < maxAditivoIdx; ai++) {
-                const cor = aditivoCores[ai % aditivoCores.length];
-                legenda += `<div class="gantt-legenda-item"><span class="gantt-legenda-cor" style="background:${cor}"></span> Aditivo ${ai+1}</div>`;
-            }
-            legenda += '<div class="gantt-legenda-item"><span class="gantt-legenda-cor" style="background:#f97316"></span> Mês Atual</div>';
-            legenda += '</div>';
+            // Legenda compacta fixa
+            const legenda = `<div class="gantt-legend">
+                <span class="legend-item"><span class="dot" style="background:#B5D4F4"></span> Previsto</span>
+                <span class="legend-item"><span class="dot" style="background:#C0DD97"></span> Realizado</span>
+                <span class="legend-item"><span class="dot" style="background:#F09595"></span> Atrasado</span>
+                <span class="legend-item"><span class="dot" style="background:#f97316"></span> Mês Atual</span>
+            </div>`;
 
             table += legenda;
             table += '</div>';
