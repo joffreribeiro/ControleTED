@@ -2214,15 +2214,13 @@
                 const saldoPerc = (t.valorTed || 0) > 0 ? saldoTedCard / (t.valorTed || 1) : 0;
                 let cardBorderColor;
                 if (isFinalizado || isVigenciaVencida) {
-                    cardBorderColor = '#888780';
-                } else if (saldoPerc < -0.20) {
-                    cardBorderColor = '#E24B4A';
-                } else if (saldoTedCard < 0 || percentualFisico < 90 && percentualGasto >= 90) {
-                    cardBorderColor = '#EF9F27';
-                } else if (saldoTedCard >= 0 && percentualGasto >= 90) {
-                    cardBorderColor = '#639922';
+                    cardBorderColor = '#888780'; // encerrado/finalizado
+                } else if (saldoTedCard < 0 && Math.abs(saldoTedCard) / (t.valorTed || 1) > 0.20) {
+                    cardBorderColor = '#E24B4A'; // crítico: saldo negativo > 20% do valor
+                } else if (saldoTedCard < 0) {
+                    cardBorderColor = '#EF9F27'; // atenção: saldo negativo ≤ 20%
                 } else {
-                    cardBorderColor = '#EF9F27';
+                    cardBorderColor = '#639922'; // em dia: saldo positivo
                 }
 
                 // ---- Metadados em linha ----
