@@ -287,7 +287,13 @@
                     </div>
                     <button id="btnCarregarTopo" class="topbar-btn topbar-btn-carregar" onclick="carregarDoCloud()">Carregar</button>
                     <button id="btnSalvarTopo" class="topbar-btn topbar-btn-salvar" onclick="salvarNoCloud()">Salvar</button>
-                    <button id="btnAdminLogin" onclick="showLoginScreen()" style="background:none;border:0;color:#ffffff;font-size:0.95rem;margin-left:8px;" title="Admin">Y"'</button>
+                    <span id="modeIndicator" class="topbar-badge topbar-mode" title="Modo atual">📖 Leitura</span>
+                    <button id="btnAdminLogout" class="topbar-btn topbar-btn-logoff" onclick="doLogout()" style="display:none;" title="Sair do modo Admin">
+                        <i data-lucide="log-out" class="inline-icon-sm"></i> Sair
+                    </button>
+                    <button id="btnAdminLogin" class="topbar-btn topbar-btn-admin-login" onclick="showLoginScreen()" title="Entrar como Admin">
+                        <i data-lucide="lock" class="inline-icon-sm"></i>
+                    </button>
                 </div>
             </div>
         </nav>

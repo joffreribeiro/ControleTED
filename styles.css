@@ -210,6 +210,11 @@
         }
         .topbar-btn-carregar { background: rgba(255,255,255,0.12); color: #ffffff; }
         .topbar-btn-salvar { background: #378ADD; color: #ffffff; }
+        .topbar-btn-admin-login { background: rgba(255,255,255,0.10); color: #ffffff; border: 1px solid rgba(255,255,255,0.25) !important; }
+        .topbar-btn-admin-login:hover { background: rgba(255,255,255,0.20); }
+        .topbar-btn-logoff { background: #dc2626; color: #ffffff; }
+        .topbar-btn-logoff:hover { background: #b91c1c; }
+        .topbar-mode { cursor: default; font-weight: 500; }
 
         /* Subbar (seleção de TED) */
         .subbar {
