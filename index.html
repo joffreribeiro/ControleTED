@@ -735,6 +735,63 @@
             font-weight: 600;
         }
 
+        /* ===== Filtros da aba TED (barra horizontal) ===== */
+        .teds-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1rem;
+            padding: 10px 0;
+            border-bottom: 0.5px solid rgba(0,0,0,0.08);
+            flex-wrap: wrap;
+        }
+        .teds-filter-bar select {
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 7px;
+            border: 0.5px solid rgba(0,0,0,0.15);
+            background: #ffffff;
+            cursor: pointer;
+            color: #1a1a1a;
+        }
+        .teds-filter-bar .filter-label {
+            font-size: 12px;
+            color: #6b6b6b;
+            white-space: nowrap;
+        }
+        .teds-filter-bar .btn-limpar {
+            font-size: 12px;
+            color: #185FA5;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 8px;
+        }
+        .teds-filter-bar .btn-limpar:hover { text-decoration: underline; }
+
+        /* ===== Card de TED ===== */
+        .ted-card {
+            background: #ffffff;
+            border: 0.5px solid rgba(0,0,0,0.08);
+            border-radius: 0 12px 12px 0;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border-left: 3px solid #888780;
+        }
+        .ted-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .ted-card-title { font-size: 16px; font-weight: 500; color: #1a1a1a; text-decoration: none; }
+        .ted-card-title:hover { text-decoration: underline; }
+        .ted-card-obj { font-size: 12px; color: #6b6b6b; margin: 3px 0 10px; }
+        .ted-card-meta { font-size: 11px; color: #9b9b9b; margin-bottom: 10px; }
+        .ted-card-progress { margin-bottom: 8px; }
+        .ted-card-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .ted-card-progress-label { font-size: 11px; color: #6b6b6b; }
+        .ted-card-progress-pct { font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #1a1a1a; }
+        .ted-card-progress-track { background: rgba(0,0,0,0.07); border-radius: 4px; height: 6px; overflow: hidden; }
+        .ted-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.07); }
+        .ted-card-saldo-pos { font-size: 12px; font-weight: 500; color: #3B6D11; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .ted-card-saldo-neg { font-size: 12px; font-weight: 500; color: #A32D2D; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
         /* Filtros Multi-Select estilo Excel */
         .filter-bar {
             display: flex;
@@ -3182,16 +3239,25 @@
         <!-- TAB 2: Listar TEDs -->
         <div id="teds" class="tab-content">
             <div class="card">
-                <h2>Termos de Execução Descentralizada</h2>
-                <div style="text-align: left; margin-bottom: 0.75rem; display:flex; gap:0.5rem; align-items:center;">
-                    <button class="btn btn-primary" onclick="switchTab('novo')">Criar Novo TED</button>
-                    <div style="display:flex; gap:0.5rem; align-items:center; margin-left: auto;">
-                        <label style="font-size:0.9rem; color:var(--text);">Filtrar UP:</label>
-                        <select id="filterUP_teds" multiple size="4" onchange="atualizarListaTEDs()" style="min-width:140px; padding:0.25rem;"></select>
-                        <label style="font-size:0.9rem; color:var(--text);">Filtrar Status:</label>
-                        <select id="filterStatus_teds" multiple size="4" onchange="atualizarListaTEDs()" style="min-width:160px; padding:0.25rem;"></select>
-                        <button class="btn" onclick="(function(){ const up=document.getElementById('filterUP_teds'); const st=document.getElementById('filterStatus_teds'); for(let i=0;i<up.options.length;i++){up.options[i].selected=false;} for(let i=0;i<st.options.length;i++){st.options[i].selected=false;} atualizarListaTEDs(); })()">Limpar</button>
-                    </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <h2 style="margin:0;">Termos de Execução Descentralizada</h2>
+                    <button class="btn btn-primary" onclick="switchTab('novo', this)">+ Novo TED</button>
+                </div>
+                <!-- Barra de filtros horizontal -->
+                <div class="teds-filter-bar">
+                    <span class="filter-label">UP:</span>
+                    <select id="filterUP_teds" onchange="atualizarListaTEDs()">
+                        <option value="">Todas</option>
+                    </select>
+                    <span class="filter-label">Status:</span>
+                    <select id="filterStatus_teds" onchange="atualizarListaTEDs()">
+                        <option value="">Todos</option>
+                    </select>
+                    <button class="btn-limpar" onclick="(function(){
+                        document.getElementById('filterUP_teds').value='';
+                        document.getElementById('filterStatus_teds').value='';
+                        atualizarListaTEDs();
+                    })()">Limpar</button>
                 </div>
                 <div id="listaTeds">
                     <div class="empty-state">
@@ -4576,21 +4642,20 @@
             // Aplicar filtros selecionados (UP e Status)
             let listaFiltrada = dados.teds.slice();
             try {
-                // Read multi-select values (support multiple UPs and multiple Status)
                 const upEl = document.getElementById('filterUP_teds');
                 const statusEl = document.getElementById('filterStatus_teds');
-                const selUpList = upEl ? Array.from(upEl.selectedOptions).map(o => String(o.value || '').trim()).filter(v => v) : [];
-                const selStatusList = statusEl ? Array.from(statusEl.selectedOptions).map(o => String(o.value || '').trim()).filter(v => v) : [];
-                if (selUpList.length > 0) {
-                    listaFiltrada = listaFiltrada.filter(t => selUpList.includes(String(t.upResponsavel || t.up || '').trim()));
+                const selUp = upEl ? String(upEl.value || '').trim() : '';
+                const selStatus = statusEl ? String(statusEl.value || '').trim() : '';
+                if (selUp) {
+                    listaFiltrada = listaFiltrada.filter(t => String(t.upResponsavel || t.up || '').trim() === selUp);
                 }
-                if (selStatusList.length > 0) {
+                if (selStatus) {
                     listaFiltrada = listaFiltrada.filter(t => {
                         const statusObj = getDisplayStatus(t) || { text: '-' };
-                        return selStatusList.includes(String(statusObj.text || '').trim());
+                        return String(statusObj.text || '').trim() === selStatus;
                     });
                 } else {
-                    // Nenhum status selecionado: por padrão mostrar apenas os TEDs "Em Execução"
+                    // Padrão: mostrar apenas Em Execução quando sem filtro
                     listaFiltrada = listaFiltrada.filter(t => {
                         const statusObj = getDisplayStatus(t) || { text: '-' };
                         return String((statusObj.text || '').trim()) === 'Em Execução';
@@ -4640,75 +4705,76 @@
                     badgeClassLocal = 'badge-vigencia-vencida';
                 }
 
-                // Estilo do card: borda vermelha para Finalizado, borda amarela para Vigência Vencida
-                const isFinalizado = /finaliz|finalizado/.test(stNorm);
-                const isVigenciaVencida = vigenciaVencidaFlag || /vigênc.*venc|vigencia.*venc|encerr/.test(stNorm);
-                let cardStyle = 'margin: 0 0 1rem 0;';
-                if (isFinalizado) {
-                    cardStyle = 'margin: 0 0 1rem 0; border-left: 4px solid #ef4444; background: rgba(239,68,68,0.04);';
-                } else if (isVigenciaVencida) {
-                    cardStyle = 'margin: 0 0 1rem 0; border-left: 4px solid #f59e0b; background: rgba(245,158,11,0.04);';
+                // ---- Borda lateral por status ----
+                const isFinalizado = /finaliz|finalizado|conclu|denunci|encerr/.test(stNorm);
+                const isVigenciaVencida = vigenciaVencidaFlag || /vigênc.*venc|vigencia.*venc/.test(stNorm);
+                const saldoTedCard = (t.valorTed || 0) - (t.gasto || 0);
+                const saldoPerc = (t.valorTed || 0) > 0 ? saldoTedCard / (t.valorTed || 1) : 0;
+                let cardBorderColor;
+                if (isFinalizado || isVigenciaVencida) {
+                    cardBorderColor = '#888780';
+                } else if (saldoPerc < -0.20) {
+                    cardBorderColor = '#E24B4A';
+                } else if (saldoTedCard < 0 || percentualFisico < 90 && percentualGasto >= 90) {
+                    cardBorderColor = '#EF9F27';
+                } else if (saldoTedCard >= 0 && percentualGasto >= 90) {
+                    cardBorderColor = '#639922';
+                } else {
+                    cardBorderColor = '#EF9F27';
                 }
 
-                // Nota de vigência vencida (exibir abaixo do badge quando status é diferente de "Vigência Vencida" mas vigência está vencida)
-                const mostrarNotaVigencia = vigenciaVencidaFlag && !/vigênc.*venc|vigencia.*venc|encerr/.test(stNorm) && !isFinalizado;
-                const notaVigenciaHtml = mostrarNotaVigencia
-                    ? '<div style="font-size:0.7rem; color:#b45309; font-weight:600; margin-top:2px; text-align:right;">⚠ Vigência Vencida</div>'
-                    : '';
-                
+                // ---- Metadados em linha ----
+                const metaParts = [];
+                if (inicioStr !== '-' || fimStr !== '-') metaParts.push(`${inicioStr} – ${fimStr}`);
+                if (fimValido) metaParts.push(`${Math.max(0, diasRestantes)} dias rest.`);
+                const up = t.upResponsavel || t.up || '';
+                if (up) metaParts.push(up);
+                const metaLine = metaParts.join(' · ');
+
+                // ---- Saldo ----
+                const fmtMoeda = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                const saldoHtml = saldoTedCard < 0
+                    ? `<span class="ted-card-saldo-neg">− ${fmtMoeda(saldoTedCard)}</span>`
+                    : `<span class="ted-card-saldo-pos">${fmtMoeda(saldoTedCard)}</span>`;
+
                 return `
-                    <div class="card" style="${cardStyle}">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                            <div style="flex: 1;">
-                                <h3><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${t.id}); return false;" style="color:inherit; text-decoration:none;">TED ${t.numTed}</a></h3>
-                                <p style="font-size: 0.875rem; color: var(--text); margin: 0.5rem 0 0 0;">${t.objetivo}</p>
+                    <div class="ted-card" style="border-left-color:${cardBorderColor};">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="flex:1; min-width:0;">
+                                <a class="ted-card-title" href="#" onclick="switchTab('detalhes', null); carregarDetalhes(${t.id}); return false;">TED ${t.numTed}</a>
+                                <p class="ted-card-obj">${t.objetivo || '—'}</p>
+                                <p class="ted-card-meta">${metaLine}</p>
                             </div>
-                            <div style="display:flex; gap:0.5rem; align-items:flex-start;">
-                                <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                                    <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
-                                    ${notaVigenciaHtml}
-                                </div>
+                            <div style="display:flex; gap:6px; align-items:flex-start; margin-left:10px;">
+                                <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
                                 <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete">✕</button>
                             </div>
                         </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
-                            <div>
-                                <p style="margin: 0; color: var(--text);">Valor: <strong>${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></p>
-                                <p style="margin: 0.5rem 0 0 0; color: var(--text);">UP: <strong>${t.upResponsavel || t.up || ''}</strong></p>
+
+                        <div class="ted-card-progress">
+                            <div class="ted-card-progress-header">
+                                <span class="ted-card-progress-label">Exec. Financeira</span>
+                                <span class="ted-card-progress-pct">${percentualGasto}%</span>
                             </div>
-                            <div>
-                                <p style="margin: 0; color: var(--text);">Vigência: ${inicioStr} a ${fimStr}</p>
-                                <p style="margin: 0.5rem 0 0 0; color: var(--text);">Dias restantes: <strong>${Math.max(0, diasRestantes)}</strong></p>
+                            <div class="ted-card-progress-track">
+                                <div style="background:#4CAF50; height:100%; width:${Math.min(100,percentualGasto)}%; border-radius:4px;"></div>
                             </div>
                         </div>
 
-                        <div style="margin-bottom: 1rem;">
-                            <div style="display:flex; gap:1rem; align-items:flex-start;">
-                                <div style="flex:1;">
-                                    <div style="display:flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.875rem;">
-                                        <span>Execução Financeira</span>
-                                        <span><strong>${percentualGasto}%</strong></span>
-                                    </div>
-                                    <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.25rem;">
-                                        <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
-                                    </div>
-                                    <p style="font-size: 0.75rem; color: var(--text); margin: 0;">Gasto: ${t.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de ${t.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-                                </div>
-                                <div style="flex:1;">
-                                    <div style="display:flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.875rem;">
-                                        <span>Execução Física</span>
-                                        <span><strong>${percentualFisico}%</strong></span>
-                                    </div>
-                                    <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.25rem;">
-                                        <div style="background: linear-gradient(90deg,#2196F3,#64B5F6); height:100%; width: ${percentualFisico}%;"></div>
-                                    </div>
-                                    <p style="font-size: 0.75rem; color: var(--text); margin: 0;">Progresso: ${percentualFisico}%</p>
-                                </div>
+                        <div class="ted-card-progress">
+                            <div class="ted-card-progress-header">
+                                <span class="ted-card-progress-label">Exec. Física</span>
+                                <span class="ted-card-progress-pct">${percentualFisico}%</span>
+                            </div>
+                            <div class="ted-card-progress-track">
+                                <div style="background:#2196F3; height:100%; width:${Math.min(100,percentualFisico)}%; border-radius:4px;"></div>
                             </div>
                         </div>
 
-                        
+                        <div class="ted-card-footer">
+                            <span style="font-size:11px; color:#9b9b9b;">Saldo</span>
+                            ${saldoHtml}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -8566,13 +8632,10 @@
             const selStatus = document.getElementById('filterStatus_teds');
             if (!selUp || !selStatus) return;
 
-            // preservar seleções atuais
-            const prevUp = Array.from(selUp.selectedOptions || []).map(o => o.value);
-            const prevStatus = Array.from(selStatus.selectedOptions || []).map(o => o.value);
+            const prevUp = selUp.value;
+            const prevStatus = selStatus.value;
 
-            // Reunir UPs
             const ups = [...new Set((dados.teds || []).map(t => String(t.upResponsavel || t.up || '').trim()))].filter(Boolean).sort();
-            // Reunir Status a partir da função de exibição
             const statusSet = new Set();
             (dados.teds || []).forEach(t => {
                 const s = (getDisplayStatus(t) || {}).text || '';
@@ -8580,9 +8643,8 @@
             });
             const statuses = Array.from(statusSet).sort();
 
-            // Popular selects (multiselect) preservando seleções
-            selUp.innerHTML = ups.map(u => `<option value="${u}" ${prevUp.indexOf(u) !== -1 ? 'selected' : ''}>${u}</option>`).join('');
-            selStatus.innerHTML = statuses.map(s => `<option value="${s}" ${prevStatus.indexOf(s) !== -1 ? 'selected' : ''}>${s}</option>`).join('');
+            selUp.innerHTML = '<option value="">Todas</option>' + ups.map(u => `<option value="${u}" ${u === prevUp ? 'selected' : ''}>${u}</option>`).join('');
+            selStatus.innerHTML = '<option value="">Todos</option>' + statuses.map(s => `<option value="${s}" ${s === prevStatus ? 'selected' : ''}>${s}</option>`).join('');
         }
 
         // Helper para popular um menu de filtro
