@@ -735,6 +735,26 @@
             font-weight: 600;
         }
 
+        /* ===== Badges de status financeiro ===== */
+        .badge-regular, .badge-acima, .badge-critico, .badge-abaixo {
+            font-size: 11px; font-weight: 500; padding: 3px 9px;
+            border-radius: 999px; white-space: nowrap; display: inline-block;
+        }
+        .badge-regular { background: #EAF3DE; color: #3B6D11; }
+        .badge-acima   { background: #FAEEDA; color: #854F0B; }
+        .badge-critico { background: #FCEBEB; color: #A32D2D; }
+        .badge-abaixo  { background: #E6F1FB; color: #0C447C; }
+        /* UP badges */
+        .up-badge { font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 999px; white-space: nowrap; display: inline-block; }
+        .up-badge-fjf { background: #E6F1FB; color: #0C447C; }
+        .up-badge-fpv { background: #E6F1FB; color: #0C447C; }
+        .up-badge-fe  { background: #F4F4F2; color: #5F5E5A; }
+        /* Toggle months button */
+        .btn-toggle-months { background: #F4F4F2; color: #6b6b6b; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 7px; padding: 5px 12px; font-size: 12px; cursor: pointer; }
+        .btn-toggle-months:hover { background: #e8e8e4; }
+        /* Status column */
+        .tabela-padrao .col-status { width: 90px; text-align: center; }
+
         /* ===== Filtros da aba TED (barra horizontal) ===== */
         .teds-filter-bar {
             display: flex;
@@ -3707,7 +3727,10 @@
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro <span class="section-count-badge" id="count-financeiro">0</span></h3>
-                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalFinanceiro()">+ Adicionar</button></div>
+                            <div class="detalhe-secao-actions">
+                                <button type="button" class="btn-toggle-months" id="toggle-months-cadFin" data-expanded="0" onclick="toggleMonthCols('cadFin', this)">Ver detalhes mensais</button>
+                                <button type="button" class="section-add-btn" onclick="abrirModalFinanceiro()">+ Adicionar</button>
+                            </div>
                         </div>
                         <div class="detalhe-secao-body">
 
@@ -3751,7 +3774,10 @@
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira <span class="section-count-badge" id="count-execfin">0</span></h3>
-                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalExecFin()">+ Adicionar</button></div>
+                            <div class="detalhe-secao-actions">
+                                <button type="button" class="btn-toggle-months" id="toggle-months-execFin" data-expanded="0" onclick="toggleMonthCols('execFin', this)">Ver detalhes mensais</button>
+                                <button type="button" class="section-add-btn" onclick="abrirModalExecFin()">+ Adicionar</button>
+                            </div>
                         </div>
                         <div class="detalhe-secao-body">
 
@@ -3769,7 +3795,7 @@
                                     <div class="filter-menu" id="filterUpExecMenu"></div>
                                 </div>
                             </div>
-                            <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 600px;">
+                            <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 700px;">
                                 <thead>
                                     <tr>
                                         <th class="col-nd">ND</th>
@@ -3777,6 +3803,7 @@
                                         <th class="col-valor">Valor Previsto</th>
                                         <th class="col-valor">Valor Realizado</th>
                                         <th class="col-saldo">Saldo</th>
+                                        <th class="col-status">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaExecFinanceira">
@@ -8914,6 +8941,40 @@
             atualizarGantt();
         }
 
+        // ===== Helper: formatar valor com cor e monospace =====
+        function renderValorFmt(val, bold) {
+            const n = parseFloat(val) || 0;
+            const s = Math.abs(n).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,monospace;';
+            const bld = bold ? 'font-weight:700;' : '';
+            if (n < -0.005) return `<span style="color:#A32D2D;${mono}${bld}">\u2212\u00a0R$\u00a0${s}</span>`;
+            if (n >  0.005) return `<span style="color:#3B6D11;${mono}${bld}">R$\u00a0${s}</span>`;
+            return `<span style="color:#9b9b9b;${mono}${bld}">R$\u00a0${s}</span>`;
+        }
+
+        // ===== Helper: badge para coluna UP =====
+        function renderUpBadge(up) {
+            const raw = String(up || '').trim();
+            if (!raw) return '';
+            const u = raw.toUpperCase();
+            let cls = '';
+            if (u.includes('FJF')) cls = 'up-badge up-badge-fjf';
+            else if (u.includes('FPV')) cls = 'up-badge up-badge-fpv';
+            else if (/\bFE\b/.test(u)) cls = 'up-badge up-badge-fe';
+            return cls ? `<span class="${cls}">${raw}</span>` : raw;
+        }
+
+        // ===== Helper: alternar colunas de meses =====
+        function toggleMonthCols(section, btn) {
+            const expanded = btn.getAttribute('data-expanded') === '1';
+            const newExpanded = !expanded;
+            document.querySelectorAll('.month-col-' + section).forEach(col => {
+                col.style.display = newExpanded ? '' : 'none';
+            });
+            btn.setAttribute('data-expanded', newExpanded ? '1' : '0');
+            btn.textContent = newExpanded ? 'Ocultar detalhes mensais' : 'Ver detalhes mensais';
+        }
+
         function atualizarTabelaFinanceira() {
             const tbody = document.getElementById('tabelaFinanceira');
             const headerGantt = document.getElementById('ganttHeaderFinanceira');
@@ -9019,7 +9080,7 @@
             headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
             
             anos.forEach(a => {
-                headerHTML += `<th style="text-align: center;" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th class="month-col-cadFin" style="text-align:center;${mmHideCadFin}" colspan="${a.count}">${a.ano}</th>`;
             });
             
             headerRow1.innerHTML = headerHTML;
@@ -9029,13 +9090,17 @@
             headerRow2.className = 'header-meses';
             let headerRow2HTML = '';
             meses.forEach(m => {
-                headerRow2HTML += `<th>${m.label}</th>`;
+                headerRow2HTML += `<th class="month-col-cadFin" style="${mmHideCadFin}">${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableCompleta.querySelector('thead').appendChild(headerRow2);
 
             // Criar linhas de dados
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+            // Estado atual do toggle de meses
+            const monthsExpandedCadFin = document.getElementById('toggle-months-cadFin')?.getAttribute('data-expanded') === '1';
+            const mmHideCadFin = monthsExpandedCadFin ? '' : ' display:none;';
             
             // Array para acumular totais por coluna (mês)
             const totaisPorMes = new Array(meses.length).fill(0);
@@ -9057,7 +9122,7 @@
                 const mods = modMapFin[mKey];
                 const isAdded = addSetFin.has(mKey);
                 const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
-                const tdValor = mods && mods.valor ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                const tdValor = mods && mods.valor ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : renderValorFmt(valorNum);
                 const tdM = mods && mods.m ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
                 // If M changed, also show old Mês Desc with strikethrough
                 if (mods && mods.m && startDate) {
@@ -9069,7 +9134,7 @@
                 }
                 let html = `<tr${trClass}>
                     <td class="col-nd">${numeroDisplay}</td>
-                    <td class="col-up">${f.up || f.ug || ''}</td>
+                    <td class="col-up">${renderUpBadge(f.up || f.ug || '')}</td>
                     <td class="col-m">${tdM}</td>
                     <td class="col-mes">${mesDescStr}</td>
                     <td class="col-valor">${tdValor}</td>
@@ -9094,21 +9159,21 @@
                     if (estaNoMes && estaNoMesAntigo) {
                         // Same cell for old and new (shouldn't happen if M actually changed, but handle)
                         totaisPorMes[mesIdx] += valorNum;
-                        html += `<td style="background: #e0f2fe; text-align: right; padding-right: 0.25rem; font-size: 0.7rem;">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                        html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                     } else if (estaNoMes) {
                         totaisPorMes[mesIdx] += valorNum;
                         if (oldMesDesc !== null) {
                             // New M position — highlight as changed (green border)
-                            html += `<td style="background: #dcfce7; text-align: right; padding-right: 0.25rem; font-size: 0.7rem; border: 2px solid #16a34a;" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            html += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                         } else {
-                            html += `<td style="background: #e0f2fe; text-align: right; padding-right: 0.25rem; font-size: 0.7rem;">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                         }
                     } else if (estaNoMesAntigo) {
                         // Old M position — show strikethrough faded value
                         const oldValor = mods && mods.valor ? Number(mods.valor.de || 0) : valorNum;
-                        html += `<td style="background: #fee2e2; text-align: right; padding-right: 0.25rem; font-size: 0.7rem; opacity: 0.6;" title="M anterior: ${mods.m.de}"><s>${oldValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</s></td>`;
+                        html += `<td class="month-col-cadFin" style="background:#fee2e2; text-align:right; padding-right:0.25rem; font-size:0.7rem; opacity:0.6;${mmHideCadFin}" title="M anterior: ${mods.m.de}"><s>${oldValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</s></td>`;
                     } else {
-                        html += `<td></td>`;
+                        html += `<td class="month-col-cadFin" style="${mmHideCadFin}"></td>`;
                     }
                 });
                 
@@ -9119,9 +9184,9 @@
             // Linha total com somatório por coluna - mostrar valor com fundo azul claro
             const totalCells = totaisPorMes.map((total) => {
                 if (total > 0) {
-                    return `<td style="background: #e0f2fe; text-align: right; padding-right: 0.25rem; font-size: 0.7rem;">${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                    return `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                 }
-                return `<td></td>`;
+                return `<td class="month-col-cadFin" style="${mmHideCadFin}"></td>`;
             }).join('');
 
             // Linha "Previsto Anual" (mesclada por ano) com somatório dos meses de cada ano
@@ -9133,7 +9198,7 @@
                 }
                 idxMesAno += a.count;
                 const valorAno = somaAno.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                return `<td colspan="${a.count}" style="background:#dbeafe; text-align:center; font-weight:700;">${valorAno}</td>`;
+                return `<td colspan="${a.count}" class="month-col-cadFin" style="background:#dbeafe; text-align:center; font-weight:700;${mmHideCadFin}">${valorAno}</td>`;
             }).join('');
             
             tbody.innerHTML += `
@@ -9142,7 +9207,7 @@
                     <td class="col-up"></td>
                     <td class="col-m"></td>
                     <td class="col-mes"></td>
-                    <td class="col-valor">${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="col-valor">${renderValorFmt(totalValor, true)}</td>
                     <td class="col-acao"></td>
                     ${totalCells}
                 </tr>
@@ -10573,10 +10638,15 @@
                       '<th rowspan="2" class="col-up">UP</th>'+
                       '<th rowspan="2" class="col-valor">Valor Previsto</th>'+
                       '<th rowspan="2" class="col-valor">Valor Realizado</th>'+
-                      '<th rowspan="2" class="col-saldo">Saldo</th>';
+                      '<th rowspan="2" class="col-saldo">Saldo</th>'+
+                      '<th rowspan="2" class="col-status">Status</th>';
             
+            // Estado do toggle de meses
+            const monthsExpandedExecFin = document.getElementById('toggle-months-execFin')?.getAttribute('data-expanded') === '1';
+            const mmHideEF = monthsExpandedExecFin ? '' : ' display:none;';
+
             anos.forEach(a=>{ 
-                hdr += `<th style="text-align:center;" colspan="${a.count}">${a.ano}</th>`; 
+                hdr += `<th class="month-col-execFin" style="text-align:center;${mmHideEF}" colspan="${a.count}">${a.ano}</th>`; 
             });
             hr1.innerHTML = hdr;
 
@@ -10586,7 +10656,7 @@
             hr2.className = 'header-meses';
             let hdr2 = '';
             meses.forEach(m => { 
-                hdr2 += `<th>${m.label}</th>`; 
+                hdr2 += `<th class="month-col-execFin" style="${mmHideEF}">${m.label}</th>`; 
             });
             hr2.innerHTML = hdr2;
             tableEl.querySelector('thead').appendChild(hr2);
@@ -10668,18 +10738,28 @@
                     return `${formatted}`;
                 };
 
+                // Badge de status
+                const _diff = realizado - previsto;
+                const _pct = previsto > 0 ? Math.abs(_diff) / previsto : 0;
+                let statusBadge;
+                if (Math.abs(_diff) < 1)           statusBadge = '<span class="badge-regular">Regular</span>';
+                else if (_diff > 0 && _pct < 0.10) statusBadge = '<span class="badge-acima">Acima</span>';
+                else if (_diff > 0 && _pct >= 0.10) statusBadge = '<span class="badge-critico">Crítico</span>';
+                else                                statusBadge = '<span class="badge-abaixo">Abaixo</span>';
+
                 let html = `<tr>`+
                            `<td class="col-nd">${nd}</td>`+
-                           `<td class="col-up">${up}</td>`+
-                           `<td class="col-valor">${previsto < 0 ? '<span style="color:#ef4444">' + previsto.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td class="col-valor">${realizado < 0 ? '<span style="color:#ef4444">' + realizado.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`+
-                           `<td class="col-saldo"><span style="font-weight:700;color:${saldo<0? '#ef4444':'inherit'}">${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>`;
+                           `<td class="col-up">${renderUpBadge(up)}</td>`+
+                           `<td class="col-valor">${renderValorFmt(previsto)}</td>`+
+                           `<td class="col-valor">${renderValorFmt(realizado)}</td>`+
+                           `<td class="col-saldo">${renderValorFmt(saldo, true)}</td>`+
+                           `<td class="col-status">${statusBadge}</td>`;
 
                 meses.forEach((_,i)=>{
                     const val = mapaMes.get(i);
                     const cellBg = val ? '#e0f2fe' : 'transparent';
-                    const display = (val !== undefined && val !== null && val !== '') ? (parseFloat(val) < 0 ? `<span style="color:#ef4444">${(val).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : (val).toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
-                    html += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor: pointer;" onclick="editarValorExecFinanceira('${nd}', '${up}', ${i})" title="Clique para editar">${display}</td>`;
+                    const display = (val !== undefined && val !== null && val !== '') ? renderValorFmt(parseFloat(val)) : '';
+                    html += `<td class="month-col-execFin" style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor:pointer;${mmHideEF}" onclick="editarValorExecFinanceira('${nd}', '${up}', ${i})" title="Clique para editar">${display}</td>`;
                 });
 
                 html += '</tr>';
@@ -10692,14 +10772,15 @@
             let totalRow = '<tr class="linha-total">';
             totalRow += '<td class="col-nd">TOTAL</td>';
             totalRow += '<td class="col-up"></td>';
-            totalRow += `<td class="col-valor">${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += `<td class="col-valor">${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += `<td class="col-saldo"><span style="font-weight:700;color:${totalSaldo<0? '#ef4444':'inherit'}">${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>`;
+            totalRow += `<td class="col-valor">${renderValorFmt(totalPrevisto, true)}</td>`;
+            totalRow += `<td class="col-valor">${renderValorFmt(totalRealizado, true)}</td>`;
+            totalRow += `<td class="col-saldo">${renderValorFmt(totalSaldo, true)}</td>`;
+            totalRow += '<td class="col-status"></td>';
             meses.forEach((_, idx) => {
                 const val = totalMeses.get(idx);
                 const cellBg = val ? '#e0f2fe' : 'transparent';
-                const display = (val !== undefined && val !== null && val !== '') ? (parseFloat(val) < 0 ? `<span style="color:#ef4444">${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : val.toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
-                totalRow += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem;">${display}</td>`;
+                const display = (val !== undefined && val !== null && val !== '') ? renderValorFmt(parseFloat(val)) : '';
+                totalRow += `<td class="month-col-execFin" style="text-align:right; background:${cellBg}; font-size:0.7rem;${mmHideEF}">${display}</td>`;
             });
             totalRow += '</tr>';
 
@@ -10736,10 +10817,10 @@
 
             const cellsByAno = (calcFn) => anos.map(a => {
                 const valor = calcFn(a.ano);
-                return `<td colspan="${a.count}" style="background:#dbeafe; text-align:center; font-weight:700;">${fmt(valor)}</td>`;
+                return `<td colspan="${a.count}" class="month-col-execFin" style="background:#dbeafe; text-align:center; font-weight:700;${mmHideEF}">${fmt(valor)}</td>`;
             }).join('');
 
-            const rowPrevistoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Previsto Anual</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0))}</tr>`;
+            const rowPrevistoAnual = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Previsto Anual</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0))}</tr>`;
             const anosOrdem = anos.map(a => a.ano);
             const saldoAtualByAno = {};
             const aReceberAnteriorByAno = {};
@@ -10753,10 +10834,10 @@
                 }
             });
 
-            const rowReceberAnterior = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">A Receber (ano anterior)</td>${cellsByAno((ano)=> (aReceberAnteriorByAno[ano] || 0))}</tr>`;
-            const rowRecebidoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
-            const rowDevolvido = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Devolvido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual = `<tr class="linha-total"><td colspan="5" style="text-align:left; font-weight:700;">Saldo Atual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
+            const rowReceberAnterior = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">A Receber (ano anterior)</td>${cellsByAno((ano)=> (aReceberAnteriorByAno[ano] || 0))}</tr>`;
+            const rowRecebidoAnual = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
+            const rowDevolvido = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Devolvido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
+            const rowSaldoAnual = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Saldo Atual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowRecebidoAnual + rowDevolvido + rowSaldoAnual;
 
