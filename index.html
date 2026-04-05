@@ -1850,10 +1850,10 @@
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
-                tab.style.display = '';
-                tab.style.visibility = '';
-                tab.style.opacity = '';
-                tab.style.transform = '';
+                tab.style.setProperty('display', 'none', 'important');
+                tab.style.setProperty('visibility', 'hidden', 'important');
+                tab.style.setProperty('opacity', '0', 'important');
+                tab.style.setProperty('transform', 'none', 'important');
             });
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -1865,10 +1865,20 @@
 
             // Forçar visibilidade do conteúdo ativo para evitar estados de opacidade/residual
             if (tabEl) {
-                tabEl.style.display = 'block';
-                tabEl.style.visibility = 'visible';
-                tabEl.style.opacity = '1';
-                tabEl.style.transform = 'none';
+                tabEl.style.setProperty('display', 'block', 'important');
+                tabEl.style.setProperty('visibility', 'visible', 'important');
+                tabEl.style.setProperty('opacity', '1', 'important');
+                tabEl.style.setProperty('transform', 'none', 'important');
+
+                // Hard-fix para tabs que estavam abrindo em branco
+                if (tabName === 'relatorios' || tabName === 'config') {
+                    const card = tabEl.querySelector('.card');
+                    if (card) {
+                        card.style.setProperty('display', 'block', 'important');
+                        card.style.setProperty('visibility', 'visible', 'important');
+                        card.style.setProperty('opacity', '1', 'important');
+                    }
+                }
             }
 
             // Marcar botão ativo (btnEl pode ser o botão ou um filho como <i>)
