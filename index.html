@@ -2707,12 +2707,20 @@
         #tabelaFinanceiraCompleta col.col-valor { width: 160px; }
         #tabelaFinanceiraCompleta col.col-acao  { width: 80px; }
         /* Container: encolhe ao tamanho da tabela, scroll quando necessário */
-        #tabelaFinanceiraCompleta.months-collapsed ~ * { display: none; }
         #wrapperCadFin {
             display: inline-block;
             width: fit-content;
             max-width: 100%;
             overflow-x: auto;
+        }
+        /* Card da seção encolhe junto quando meses ocultos */
+        .detalhe-secao.cadFin-collapsed {
+            display: inline-block;
+            width: fit-content;
+            max-width: 100%;
+        }
+        .detalhe-secao.cadFin-collapsed .detalhe-secao-header {
+            min-width: 0;
         }
     </style>
     </head>
@@ -9190,12 +9198,12 @@
 
             if (!newExpanded && table) {
                 if (section === 'cadFin') {
-                    // Colapsar: tabela com largura automática (px fixo via colgroup CSS).
-                    // O wrapper encolhe junto porque é inline-block / fit-content.
                     table.classList.add('months-collapsed');
                     table.style.minWidth = '0';
                     table.style.width = 'auto';
                     table.style.tableLayout = 'fixed';
+                    // Encolhe o card inteiro junto com a tabela
+                    if (detalhe) detalhe.classList.add('cadFin-collapsed');
                 } else if (wrapper) {
                     // outras seções: travar wrapper na largura atual para não colapsar
                     const w = Math.round(table.getBoundingClientRect().width);
@@ -9222,6 +9230,7 @@
                     table.classList.remove('months-collapsed');
                     if (section === 'cadFin') {
                         table.style.minWidth = '1400px';
+                        if (detalhe) detalhe.classList.remove('cadFin-collapsed');
                     }
                     table.style.width = '';
                     table.style.tableLayout = '';
@@ -9521,16 +9530,19 @@
             // Ajustar min-width da tabela conforme estado do toggle (meses expandidos ou ocultos)
             if (tableCompleta) {
                 const monthsExpanded = document.getElementById('toggle-months-cadFin')?.getAttribute('data-expanded') === '1';
+                const secaoCadFin = document.getElementById('wrapperCadFin')?.closest('.detalhe-secao');
                 if (!monthsExpanded) {
                     tableCompleta.classList.add('months-collapsed');
                     tableCompleta.style.minWidth = '0';
                     tableCompleta.style.width = 'auto';
                     tableCompleta.style.tableLayout = 'fixed';
+                    if (secaoCadFin) secaoCadFin.classList.add('cadFin-collapsed');
                 } else {
                     tableCompleta.classList.remove('months-collapsed');
                     tableCompleta.style.minWidth = '1400px';
                     tableCompleta.style.width = '';
                     tableCompleta.style.tableLayout = '';
+                    if (secaoCadFin) secaoCadFin.classList.remove('cadFin-collapsed');
                 }
             }
 
@@ -12394,6 +12406,9 @@
                         atualizarListaTEDs();
                         atualizarSeletorTED();
                         showToast('Backup importado com sucesso!', 'success');
+                        // Navegar para o Dashboard para exibir os dados restaurados
+                        const dashBtn = document.querySelector('.tab-btn[onclick*="dashboard"]');
+                        switchTab('dashboard', dashBtn);
                     }
                 } catch (err) {
                     alert('❌ Erro ao importar: arquivo inválido.');
