@@ -6151,16 +6151,8 @@
                         changesHtml += parts.join('');
                     }
                     if (a.tabelasAlteradas) {
-                        Object.keys(a.tabelasAlteradas).forEach(tk => {
-                            const dif = a.tabelasAlteradas[tk];
-                            const tdef = ADITIVO_TABELAS_CLONE.find(tt => tt.key === tk);
-                            const tlabel = tdef ? tdef.label : tk;
-                            const parts = [];
-                            if ((dif.adicionados || []).length) parts.push(`<span class="aditivo-change-badge aditivo-change-new">+${dif.adicionados.length}</span>`);
-                            if ((dif.removidos || []).length) parts.push(`<span class="aditivo-change-badge aditivo-change-old">-${dif.removidos.length}</span>`);
-                            if ((dif.modificados || []).length) parts.push(`<span class="aditivo-change-badge aditivo-change-field">${dif.modificados.length} mod.</span>`);
-                            if (parts.length) changesHtml += `<div class="aditivo-change-row" style="margin-bottom:0.2rem;"><span class="aditivo-change-field">${tlabel}:</span> ${parts.join(' ')}</div>`;
-                        });
+                        // Usar resumo detalhado já existente para mostrar campos alterados dentro das tabelas
+                        changesHtml += gerarResumoTabelasAlteradas(a.tabelasAlteradas);
                     }
                     if (!changesHtml) changesHtml = '-';
 
