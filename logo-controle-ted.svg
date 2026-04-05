@@ -1,29 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Logo Sistema Controle TED">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#1d4ed8"/>
-      <stop offset="100%" stop-color="#0b2f7a"/>
+    <linearGradient id="globeBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1a4fa3"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="100%" stop-color="#1d4ed8"/>
+    <linearGradient id="docGrad" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dbeafe"/>
     </linearGradient>
+    <radialGradient id="globeShine" cx="35%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#1e40af" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
-  <circle cx="256" cy="256" r="228" fill="url(#bg)"/>
+  <!-- Globe body -->
+  <circle cx="220" cy="272" r="210" fill="url(#globeBg)"/>
+  <circle cx="220" cy="272" r="210" fill="url(#globeShine)"/>
 
-  <path d="M318 90 L402 174 L402 286 C402 340 358 384 304 384 H182 C128 384 84 340 84 286 V152 C84 98 128 54 182 54 H280 C294 54 307 58 318 67 Z" fill="#ffffff" opacity="0.94"/>
-  <path d="M318 90 V146 C318 162 330 174 346 174 H402" fill="none" stroke="#dbeafe" stroke-width="18" stroke-linejoin="round"/>
+  <!-- Globe latitude lines -->
+  <ellipse cx="220" cy="272" rx="210" ry="73" fill="none" stroke="#93c5fd" stroke-width="6" opacity="0.55"/>
+  <ellipse cx="220" cy="272" rx="210" ry="140" fill="none" stroke="#93c5fd" stroke-width="5" opacity="0.35"/>
+  <!-- Globe vertical center line -->
+  <ellipse cx="220" cy="272" rx="73" ry="210" fill="none" stroke="#93c5fd" stroke-width="6" opacity="0.45"/>
+  <!-- Globe horizontal axis -->
+  <line x1="10" y1="272" x2="430" y2="272" stroke="#93c5fd" stroke-width="5" opacity="0.4"/>
 
-  <rect x="132" y="198" width="120" height="12" rx="6" fill="#1e3a8a" opacity="0.95"/>
-  <rect x="132" y="232" width="112" height="12" rx="6" fill="#1e3a8a" opacity="0.95"/>
-  <rect x="132" y="266" width="100" height="12" rx="6" fill="#1e3a8a" opacity="0.95"/>
+  <!-- Document (white, overlapping globe, bottom-right) -->
+  <rect x="270" y="160" width="210" height="268" rx="16" fill="url(#docGrad)" filter="drop-shadow(0 8px 24px rgba(0,0,0,0.22))"/>
+  <!-- Dog-ear fold -->
+  <polygon points="422,160 480,218 480,160" fill="#bfdbfe"/>
+  <line x1="422" y1="160" x2="422" y2="218" stroke="#93c5fd" stroke-width="2"/>
+  <line x1="422" y1="218" x2="480" y2="218" stroke="#93c5fd" stroke-width="2"/>
 
-  <rect x="270" y="198" width="96" height="12" rx="6" fill="#1e3a8a" opacity="0.95"/>
-  <rect x="270" y="232" width="86" height="12" rx="6" fill="#1e3a8a" opacity="0.95"/>
-  <rect x="270" y="266" width="110" height="12" rx="6" fill="#1e3a8a" opacity="0.95"/>
-
-  <path d="M54 338 C136 392, 252 410, 458 336" fill="none" stroke="#ffffff" stroke-width="32" stroke-linecap="round"/>
-  <path d="M70 318 C164 374, 280 384, 472 316" fill="none" stroke="url(#accent)" stroke-width="24" stroke-linecap="round"/>
-  <path d="M84 294 C186 346, 300 346, 454 286" fill="none" stroke="#1e3a8a" stroke-width="18" stroke-linecap="round"/>
+  <!-- Document text lines -->
+  <rect x="300" y="248" width="120" height="12" rx="6" fill="#1e3a8a" opacity="0.85"/>
+  <rect x="300" y="276" width="148" height="12" rx="6" fill="#1e3a8a" opacity="0.75"/>
+  <rect x="300" y="304" width="108" height="12" rx="6" fill="#1e3a8a" opacity="0.75"/>
+  <rect x="300" y="332" width="136" height="12" rx="6" fill="#1e3a8a" opacity="0.65"/>
+  <rect x="300" y="360" width="96"  height="12" rx="6" fill="#1e3a8a" opacity="0.55"/>
 </svg>
