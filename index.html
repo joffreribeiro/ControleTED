@@ -2701,6 +2701,7 @@
            - garante layout fixo e colunas proporcionais quando os meses são ocultos */
         #tabelaFinanceiraCompleta.months-collapsed {
             width: 100% !important;
+            min-width: 0 !important;
             table-layout: fixed !important;
         }
         #tabelaFinanceiraCompleta.months-collapsed th,
@@ -9177,37 +9178,21 @@
             const expanded = btn.getAttribute('data-expanded') === '1';
             const newExpanded = !expanded;
 
-            // localizar wrapper da tabela dentro da mesma seção (pode ser .table-wrapper ou .table-freeze-wrapper)
+            // localizar wrapper da tabela dentro da mesma seção
             const detalhe = btn.closest('.detalhe-secao');
             const wrapper = detalhe ? detalhe.querySelector('.table-wrapper, .table-freeze-wrapper') : null;
             const table = wrapper ? wrapper.querySelector('table') : null;
 
-            // Ao ocultar meses: para o Cadastro Financeiro, igualar largura ao container de Execução Financeira
-            if (!newExpanded && table && wrapper) {
+            if (!newExpanded && table) {
                 if (section === 'cadFin') {
-                    // buscar o wrapper da Execução Financeira (tbody com id tabelaExecFinanceira)
-                    const execTbody = document.getElementById('tabelaExecFinanceira');
-                    const execWrapper = execTbody ? execTbody.closest('.table-wrapper, .table-freeze-wrapper') : null;
-                    if (execWrapper) {
-                        const ew = Math.round(execWrapper.getBoundingClientRect().width);
-                        wrapper.style.width = ew + 'px';
-                        wrapper.style.minWidth = ew + 'px';
-                        wrapper.style.maxWidth = ew + 'px';
-                        wrapper.style.boxSizing = 'border-box';
-                    } else {
-                        // fallback: travar pela largura atual da tabela
-                        const w = Math.round(table.getBoundingClientRect().width);
-                        wrapper.style.width = w + 'px';
-                        wrapper.style.minWidth = w + 'px';
-                        wrapper.style.maxWidth = w + 'px';
-                        wrapper.style.boxSizing = 'border-box';
-                    }
-
-                    // forçar layout fixo e ocupação total para distribuir colunas proporcionalmente
+                    // Cadastro Financeiro: NÃO travar o wrapper. Apenas ajustar a tabela para
+                    // preencher 100% do container (limpa o min-width de 1400px do modo expandido).
                     table.classList.add('months-collapsed');
-                    try { table.style.width = '100%'; table.style.tableLayout = 'fixed'; } catch (e) {}
-                } else {
-                    // comportamento legado para outras seções
+                    table.style.minWidth = '0';
+                    table.style.width = '100%';
+                    table.style.tableLayout = 'fixed';
+                } else if (wrapper) {
+                    // outras seções: travar wrapper na largura atual para não colapsar
                     const w = Math.round(table.getBoundingClientRect().width);
                     wrapper.style.width = w + 'px';
                     wrapper.style.minWidth = w + 'px';
@@ -9216,19 +9201,25 @@
                 }
             }
 
-            // aplicar display para realmente remover as colunas do fluxo (não apenas ocultar visualmente)
+            // mostrar/ocultar colunas de mês
             document.querySelectorAll('.month-col-' + section).forEach(col => {
                 col.style.display = newExpanded ? '' : 'none';
             });
 
-            // se estamos mostrando novamente, remover o lock de largura e resetar layout
-            if (newExpanded && wrapper) {
-                wrapper.style.width = '';
-                wrapper.style.minWidth = '';
-                wrapper.style.maxWidth = '';
+            // ao expandir: restaurar estado original
+            if (newExpanded) {
+                if (wrapper) {
+                    wrapper.style.width = '';
+                    wrapper.style.minWidth = '';
+                    wrapper.style.maxWidth = '';
+                }
                 if (table) {
                     table.classList.remove('months-collapsed');
-                    try { table.style.width = ''; table.style.tableLayout = ''; } catch (e) {}
+                    if (section === 'cadFin') {
+                        table.style.minWidth = '1400px';
+                    }
+                    table.style.width = '';
+                    table.style.tableLayout = '';
                 }
             }
 
@@ -9520,6 +9511,22 @@
             } catch (e) {
                 // não bloquear função se erro ao calcular alerta
                 console.error('Erro ao calcular alerta financeiro:', e);
+            }
+
+            // Ajustar min-width da tabela conforme estado do toggle (meses expandidos ou ocultos)
+            if (tableCompleta) {
+                const monthsExpanded = document.getElementById('toggle-months-cadFin')?.getAttribute('data-expanded') === '1';
+                if (!monthsExpanded) {
+                    tableCompleta.classList.add('months-collapsed');
+                    tableCompleta.style.minWidth = '0';
+                    tableCompleta.style.width = '100%';
+                    tableCompleta.style.tableLayout = 'fixed';
+                } else {
+                    tableCompleta.classList.remove('months-collapsed');
+                    tableCompleta.style.minWidth = '1400px';
+                    tableCompleta.style.width = '';
+                    tableCompleta.style.tableLayout = '';
+                }
             }
 
             // Reinicializar ícones Lucide
