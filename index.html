@@ -248,7 +248,7 @@
             if (registrosRelevantes.length === 0) return '';
             
             let html = '<div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.85rem; color:var(--text-secondary);">';
-            html += '<div style="font-weight:600; margin-bottom:0.5rem;">Y"< Histórico recente</div>';
+            html += '<div style="font-weight:600; margin-bottom:0.5rem;">Historico recente</div>';
             
             registrosRelevantes.forEach(r => {
                 const dt = new Date(r.dataHora);
@@ -403,7 +403,7 @@
         <!-- Modal: Cadastro Físico -->
         <div id="modalFisicoBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalFisicoCad()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:520px;">
-                <h3 id="modalFisicoCadTitulo">Y–️ Novo Cadastro Físico</h3>
+                <h3 id="modalFisicoCadTitulo">Novo Cadastro Físico</h3>
                 <div id="modalFisicoCadError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
@@ -445,7 +445,7 @@
         <!-- Modal: Execução Física -->
         <div id="modalExecFisicaBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalExecFisica()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-                <h3 id="modalExecFisicaTitulo">Y"^ Nova Execução Física</h3>
+                <h3 id="modalExecFisicaTitulo">Nova Execução Física</h3>
                 <div id="modalExecFisicaError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div class="form-group">
                     <label>Objeto *</label>
@@ -475,7 +475,7 @@
         <!-- Modal: Cadastro Financeiro -->
         <div id="modalFinanceiroBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalFinanceiro()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:500px;">
-                <h3 id="modalFinanceiroTitulo">Y'Novo Cadastro Financeiro</h3>
+                <h3 id="modalFinanceiroTitulo">Novo Cadastro Financeiro</h3>
                 <div id="modalFinanceiroError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
@@ -509,7 +509,7 @@
         <!-- Modal: Execução Financeira -->
         <div id="modalExecFinBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalExecFin()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:500px;">
-                <h3>Y"S Nova Execução Financeira</h3>
+                <h3>Nova Execução Financeira</h3>
                 <div id="modalExecFinError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                     <div class="form-group">
@@ -539,7 +539,7 @@
         <!-- Modal: Recursos Gerais IMBEL -->
         <div id="modalRecGeralBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalRecGeral()">
             <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-                <h3>>️ Novo Recurso Geral IMBEL</h3>
+                <h3>Novo Recurso Geral IMBEL</h3>
                 <div id="modalRecGeralError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div class="form-group">
                     <label>ND *</label>
@@ -1385,7 +1385,7 @@
 
                     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Y–️ Cadastro Físico</h4>
+                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Cadastro Físico</h4>
                             <div id="relatorioCadastroFisico"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
@@ -1400,7 +1400,7 @@
                             <div id="relatorioCadastroFinanceiro"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                         <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Y'Execução Financeira</h4>
+                            <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Execução Financeira</h4>
                             <div id="relatorioExecFinanceira"><p style="margin:0; color:var(--text);">Selecione filtros para exibir.</p></div>
                         </div>
                     </div>
@@ -1516,7 +1516,7 @@
         <div style="background:white; border-radius:1rem; padding:2.5rem; max-width:420px; width:90%; box-shadow:0 25px 50px rgba(0,0,0,0.25); position:relative;">
             <button onclick="hideLoginScreen()" style="position:absolute; top:0.75rem; right:0.75rem; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#94a3b8; line-height:1;" title="Fechar e continuar em modo leitura">&times;</button>
             <div style="text-align:center; margin-bottom:1.5rem;">
-                <div style="font-size:2.5rem; margin-bottom:0.5rem;">Y"<</div>
+                <div style="font-size:2.5rem; margin-bottom:0.5rem;">🔐</div>
                 <h2 style="margin:0; color:#0C447C; font-size:1.5rem;">Acesso Administrador</h2>
                 <p style="margin:0.25rem 0 0; color:#64748b; font-size:0.875rem;">Faça login para editar dados</p>
             </div>
@@ -1568,10 +1568,10 @@
             toast.className = `toast ${type}`;
             
             const icons = {
-                success: 'o.',
-                error: 'O',
+                success: 'OK',
+                error: 'X',
                 warning: '⚠️️',
-                info: '"️'
+                info: 'i'
             };
             
             toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${message}</span>`;
@@ -2259,7 +2259,7 @@
                 // ---- Saldo ----
                 const fmtMoeda = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 const saldoHtml = saldoTedCard < 0
-                    ? `<span class="ted-card-saldo-neg">^' ${fmtMoeda(saldoTedCard)}</span>`
+                    ? `<span class="ted-card-saldo-neg">- ${fmtMoeda(saldoTedCard)}</span>`
                     : `<span class="ted-card-saldo-pos">${fmtMoeda(saldoTedCard)}</span>`;
 
                 return `
@@ -3305,7 +3305,7 @@
             if (elKpiSaldo) {
                 const saldoCard = document.getElementById('kpi_saldoCard');
                 if (saldoTed < 0) {
-                    elKpiSaldo.textContent = `^' ${formatarMoeda(Math.abs(saldoTed))}`;
+                    elKpiSaldo.textContent = `- ${formatarMoeda(Math.abs(saldoTed))}`;
                     elKpiSaldo.className = 'metric-value red';
                     if (saldoCard) { saldoCard.classList.remove('accent-green'); saldoCard.classList.add('accent-red'); }
                 } else {
@@ -4639,11 +4639,11 @@
                     <h3 id="alteracaoModalTitulo">✏️ ${isEdit ? 'Editar' : 'Novo'} Aditivo / Apostilamento</h3>
                     <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Selecione o tipo e altere campos e tabelas conforme necessário → as mudanças serão rastreadas automaticamente.</p>
 
-                    <div class="aditivo-section-title">Y"< Tipo da Alteração</div>
+                    <div class="aditivo-section-title">Tipo da Alteração</div>
                     <div style="display:flex; gap:1.5rem; margin-bottom:1rem; padding:0.75rem; background:var(--bg-secondary,#f8fafc); border-radius:8px; border:1px solid var(--border);">
                         <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
                             <input type="radio" name="alteracaoTipo" value="aditivo" ${tipoInicial === 'aditivo' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#16a34a; width:18px; height:18px;">
-                            <span style="color:#16a34a;">Y"< Aditivo</span>
+                            <span style="color:#16a34a;">Aditivo</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
                             <input type="radio" name="alteracaoTipo" value="apostilamento" ${tipoInicial === 'apostilamento' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#2563eb; width:18px; height:18px;">
@@ -4729,7 +4729,7 @@
             let dadosEspecificosHtml = '';
             if (tipo === 'aditivo') {
                 dadosEspecificosHtml = `
-                    <div class="aditivo-section-title">Y"< Dados do Aditivo</div>
+                    <div class="aditivo-section-title">Dados do Aditivo</div>
                     <div class="aditivo-clone-grid">
                         <div class="form-group">
                             <label>Quantidade de meses a acrescentar *</label>
@@ -4746,7 +4746,7 @@
                     </div>`;
             } else {
                 dadosEspecificosHtml = `
-                    <div class="aditivo-section-title">Y"< Dados do Apostilamento</div>
+                    <div class="aditivo-section-title">Dados do Apostilamento</div>
                     <div class="aditivo-clone-grid">
                         <div class="form-group">
                             <label>Data do Apostilamento *</label>
@@ -5665,7 +5665,7 @@
                     calcularMesesFisicoModal();
                 }
             } else {
-                titulo.textContent = 'Y–️ Novo Cadastro Físico';
+                titulo.textContent = 'Novo Cadastro Físico';
             }
             backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
             setTimeout(() => document.getElementById('modalFisicoCadFase').focus(), 80);
