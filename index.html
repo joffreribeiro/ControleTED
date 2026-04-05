@@ -9324,7 +9324,7 @@
                 const mods = modMapFin[mKey];
                 const isAdded = addSetFin.has(mKey);
                 const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
-                const tdValor = mods && mods.valor ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : renderValorFmt(valorNum);
+                const tdValor = mods && mods.valor ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : renderValorRealFmt(valorNum);
                 const tdM = mods && mods.m ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
                 // If M changed, also show old Mês Desc with strikethrough
                 if (mods && mods.m && startDate) {
@@ -9409,7 +9409,7 @@
                     <td class="col-up"></td>
                     <td class="col-m"></td>
                     <td class="col-mes"></td>
-                    <td class="col-valor">${renderValorFmt(totalValor, true)}</td>
+                    <td class="col-valor">${renderValorRealFmt(totalValor, true)}</td>
                     <td class="col-acao"></td>
                     ${totalCells}
                 </tr>
@@ -10971,15 +10971,15 @@
                 let html = `<tr>`+
                            `<td class="col-nd">${nd}</td>`+
                            `<td class="col-up">${renderUpBadge(up)}</td>`+
-                           `<td class="col-valor">${renderValorFmt(previsto)}</td>`+
-                           `<td class="col-valor">${renderValorFmt(realizado)}</td>`+
-                           `<td class="col-saldo">${renderValorFmt(saldo, true)}</td>`+
+                           `<td class="col-valor">${renderValorRealFmt(previsto)}</td>`+
+                           `<td class="col-valor">${renderValorRealFmt(realizado)}</td>`+
+                           `<td class="col-saldo">${renderValorRealFmt(saldo, true)}</td>`+
                            `<td class="col-status">${statusBadge}</td>`;
 
                 meses.forEach((_,i)=>{
                     const val = mapaMes.get(i);
                     const cellBg = val ? '#e0f2fe' : 'transparent';
-                    const display = (val !== undefined && val !== null && val !== '') ? renderValorFmt(parseFloat(val)) : '';
+                    const display = (val !== undefined && val !== null && val !== '') ? renderValorRealFmt(parseFloat(val)) : '';
                     html += `<td class="month-col-execFin" style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor:pointer;${mmHideEF}" onclick="editarValorExecFinanceira('${nd}', '${up}', ${i})" title="Clique para editar">${display}</td>`;
                 });
 
@@ -10993,14 +10993,14 @@
             let totalRow = '<tr class="linha-total">';
             totalRow += '<td class="col-nd">TOTAL</td>';
             totalRow += '<td class="col-up"></td>';
-            totalRow += `<td class="col-valor">${renderValorFmt(totalPrevisto, true)}</td>`;
-            totalRow += `<td class="col-valor">${renderValorFmt(totalRealizado, true)}</td>`;
-            totalRow += `<td class="col-saldo">${renderValorFmt(totalSaldo, true)}</td>`;
+            totalRow += `<td class="col-valor">${renderValorRealFmt(totalPrevisto, true)}</td>`;
+            totalRow += `<td class="col-valor">${renderValorRealFmt(totalRealizado, true)}</td>`;
+            totalRow += `<td class="col-saldo">${renderValorRealFmt(totalSaldo, true)}</td>`;
             totalRow += '<td class="col-status"></td>';
             meses.forEach((_, idx) => {
                 const val = totalMeses.get(idx);
                 const cellBg = val ? '#e0f2fe' : 'transparent';
-                const display = (val !== undefined && val !== null && val !== '') ? renderValorFmt(parseFloat(val)) : '';
+                const display = (val !== undefined && val !== null && val !== '') ? renderValorRealFmt(parseFloat(val)) : '';
                 totalRow += `<td class="month-col-execFin" style="text-align:right; background:${cellBg}; font-size:0.7rem;${mmHideEF}">${display}</td>`;
             });
             totalRow += '</tr>';
