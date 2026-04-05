@@ -2591,6 +2591,25 @@
             color: #0C447C;
             font-size: 0.7rem;
         }
+
+        /* Ajustes ao colapsar meses na tabela Cadastro Financeiro */
+        #tabelaFinanceiraCompleta.months-collapsed {
+            width: 100% !important;
+            table-layout: fixed !important;
+        }
+        #tabelaFinanceiraCompleta.months-collapsed th,
+        #tabelaFinanceiraCompleta.months-collapsed td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        /* Colunas proporcionais quando os meses estão ocultos (total 100%) */
+        #tabelaFinanceiraCompleta.months-collapsed th.col-nd { width: 12%; }
+        #tabelaFinanceiraCompleta.months-collapsed th.col-up { width: 18%; }
+        #tabelaFinanceiraCompleta.months-collapsed th.col-m { width: 8%; }
+        #tabelaFinanceiraCompleta.months-collapsed th.col-mes { width: 24%; }
+        #tabelaFinanceiraCompleta.months-collapsed th.col-valor { width: 28%; }
+        #tabelaFinanceiraCompleta.months-collapsed th.col-acao { width: 10%; }
     </style>
     </head>
     <body>
@@ -3762,7 +3781,7 @@
                         </div>
                         <div class="detalhe-secao-body">
 
-                        <div class="table-wrapper" style="overflow-x: auto; position: relative;">
+                        <div class="table-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; overflow-x: auto; position: relative;">
                             <!-- Filtros Cadastro Financeiro -->
                             <div class="filter-bar" id="filterBarCadFin">
                                 <span class="filter-bar-label">Filtrar:</span>
@@ -9052,13 +9071,38 @@
             const wrapper = detalhe ? detalhe.querySelector('.table-wrapper, .table-freeze-wrapper') : null;
             const table = wrapper ? wrapper.querySelector('table') : null;
 
-            // se vamos ocultar, fixar largura atual da tabela para evitar que o layout se expanda
+            // Ao ocultar meses: para o Cadastro Financeiro, igualar largura ao container de Execução Financeira
             if (!newExpanded && table && wrapper) {
-                const w = Math.round(table.getBoundingClientRect().width);
-                wrapper.style.width = w + 'px';
-                wrapper.style.minWidth = w + 'px';
-                wrapper.style.maxWidth = w + 'px';
-                wrapper.style.boxSizing = 'border-box';
+                if (section === 'cadFin') {
+                    // buscar o wrapper da Execução Financeira (tbody com id tabelaExecFinanceira)
+                    const execTbody = document.getElementById('tabelaExecFinanceira');
+                    const execWrapper = execTbody ? execTbody.closest('.table-wrapper, .table-freeze-wrapper') : null;
+                    if (execWrapper) {
+                        const ew = Math.round(execWrapper.getBoundingClientRect().width);
+                        wrapper.style.width = ew + 'px';
+                        wrapper.style.minWidth = ew + 'px';
+                        wrapper.style.maxWidth = ew + 'px';
+                        wrapper.style.boxSizing = 'border-box';
+                    } else {
+                        // fallback: travar pela largura atual da tabela
+                        const w = Math.round(table.getBoundingClientRect().width);
+                        wrapper.style.width = w + 'px';
+                        wrapper.style.minWidth = w + 'px';
+                        wrapper.style.maxWidth = w + 'px';
+                        wrapper.style.boxSizing = 'border-box';
+                    }
+
+                    // forçar layout fixo e ocupação total para distribuir colunas proporcionalmente
+                    table.classList.add('months-collapsed');
+                    try { table.style.width = '100%'; table.style.tableLayout = 'fixed'; } catch (e) {}
+                } else {
+                    // comportamento legado para outras seções
+                    const w = Math.round(table.getBoundingClientRect().width);
+                    wrapper.style.width = w + 'px';
+                    wrapper.style.minWidth = w + 'px';
+                    wrapper.style.maxWidth = w + 'px';
+                    wrapper.style.boxSizing = 'border-box';
+                }
             }
 
             // aplicar display para realmente remover as colunas do fluxo (não apenas ocultar visualmente)
@@ -9066,11 +9110,15 @@
                 col.style.display = newExpanded ? '' : 'none';
             });
 
-            // se estamos mostrando novamente, remover o lock de largura
+            // se estamos mostrando novamente, remover o lock de largura e resetar layout
             if (newExpanded && wrapper) {
                 wrapper.style.width = '';
                 wrapper.style.minWidth = '';
                 wrapper.style.maxWidth = '';
+                if (table) {
+                    table.classList.remove('months-collapsed');
+                    try { table.style.width = ''; table.style.tableLayout = ''; } catch (e) {}
+                }
             }
 
             btn.setAttribute('data-expanded', newExpanded ? '1' : '0');
