@@ -9017,7 +9017,9 @@
             const expanded = btn.getAttribute('data-expanded') === '1';
             const newExpanded = !expanded;
             document.querySelectorAll('.month-col-' + section).forEach(col => {
-                col.style.display = newExpanded ? '' : 'none';
+                // preserva a largura da coluna, apenas esconde o conteúdo
+                col.style.visibility = newExpanded ? 'visible' : 'hidden';
+                col.style.pointerEvents = newExpanded ? '' : 'none';
             });
             btn.setAttribute('data-expanded', newExpanded ? '1' : '0');
             btn.textContent = newExpanded ? 'Ocultar detalhes mensais' : 'Ver detalhes mensais';
@@ -9122,7 +9124,7 @@
             let headerRow1 = tableCompleta.querySelector('thead tr:nth-child(1)');
             // Estado atual do toggle de meses
             const monthsExpandedCadFin = document.getElementById('toggle-months-cadFin')?.getAttribute('data-expanded') === '1';
-            const mmHideCadFin = monthsExpandedCadFin ? '' : ' display:none;';
+            const mmHideCadFin = monthsExpandedCadFin ? '' : ' visibility:hidden;';
 
             let headerHTML = '<th rowspan="2" class="col-nd">ND</th>';
             headerHTML += '<th rowspan="2" class="col-up">UP</th>';
@@ -10709,7 +10711,7 @@
                 
                 // Estado do toggle de meses
                 const monthsExpandedExecFin = document.getElementById('toggle-months-execFin')?.getAttribute('data-expanded') === '1';
-                const mmHideEF = monthsExpandedExecFin ? '' : ' display:none;';
+                const mmHideEF = monthsExpandedExecFin ? '' : ' visibility:hidden;';
 
                 anos.forEach(a=>{ 
                     hdr += `<th class="month-col-execFin" style="text-align:center;${mmHideEF}" colspan="${a.count}">${a.ano}</th>`; 
