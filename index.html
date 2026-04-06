@@ -2027,11 +2027,6 @@
         async function criarTED(event) {
             event.preventDefault();
 
-            if (window._readOnlyMode) {
-                showToast('Modo leitura ativo. Faça login como administrador para criar TEDs.', 'warning');
-                return;
-            }
-
             // Extrair mês e ano da data de descentralização
             const dataDesc = document.getElementById('primeiraDescentralizacao').value;
             const dateObj = new Date(dataDesc + 'T00:00:00');
