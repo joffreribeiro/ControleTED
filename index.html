@@ -2748,7 +2748,7 @@
                 html += `<tr>`;
                 html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
                 html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
-                html += `<td>${it.nd}</td>`;
+                html += `<td>${formatarNDComPontos(it.nd)}</td>`;
                 html += `<td>${it.up}</td>`;
                 html += `<td class="col-valor" style="text-align:right;">${it.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
                 html += `</tr>`;
@@ -4599,6 +4599,10 @@
                         const td = tr.querySelector(`td[data-field="${col.field}"]`);
                         if (!td) return;
                         let val = td.textContent.trim();
+                        // Sanitizar ND (campo 'numero') removendo caracteres não numéricos/pontos/traços
+                        if (col.field === 'numero') {
+                            val = String(val).replace(/[^0-9.\-]/g, '').trim();
+                        }
                         if (col.type === 'currency') {
                             val = parseNumber(val) || 0;
                         } else if (col.type === 'number') {
@@ -6520,7 +6524,7 @@
                 if (f) {
                     window._editandoFinanceiroId = editId;
                     titulo.textContent = '🔑 Editar Cadastro Financeiro';
-                    document.getElementById('modalFinanceiroND').value = f.numero;
+                    document.getElementById('modalFinanceiroND').value = String(f.numero || '').replace(/[^0-9.\-]/g, '').trim();
                     document.getElementById('modalFinanceiroUP').value = f.up || f.ug;
                     document.getElementById('modalFinanceiroM').value = f.m;
                     const valFin = Number(f.valor);
@@ -7031,7 +7035,8 @@
 
         function salvarModalExecFin() {
             const errEl = document.getElementById('modalExecFinError');
-            const nd = document.getElementById('modalExecFinND').value.trim();
+            const ndRaw = document.getElementById('modalExecFinND').value.trim();
+            const nd = String(ndRaw).replace(/[^0-9.\-]/g, '').trim();
             const up = document.getElementById('modalExecFinUP').value.trim();
             const valor = parseNumber(document.getElementById('modalExecFinValor').value);
             const data = document.getElementById('modalExecFinData').value;
@@ -7040,7 +7045,7 @@
                 errEl.textContent = '⚠️ Preencha todos os campos da execução financeira'; errEl.classList.add('open'); return;
             }
             const cad = window.tedSelecionado.financeiros || [];
-            const existe = cad.some(f => String(f.numero) === nd && String(f.up || f.ug) === up);
+            const existe = cad.some(f => normalizarND(f.numero) === normalizarND(nd) && String(f.up || f.ug) === up);
             if (!existe) { errEl.textContent = '⚠️ A combinação ND+UP informada não existe no cadastro financeiro!'; errEl.classList.add('open'); return; }
 
             window.tedSelecionado.execFinanceiras.push({ id: Date.now(), nd, up, valor, data });
@@ -7570,7 +7575,7 @@
                     const mesDescStr = (f.mesDesc && f.anoDesc) ? `${mesesNomesRel[(parseInt(f.mesDesc)||1)-1]}/${f.anoDesc}` : (f.mesDesc || '');
                     rowsCadFin.push(`<tr>
                         <td>${t.numTed || ''}</td>
-                        <td>${f.numero || ''}</td>
+                        <td>${formatarNDComPontos(f.numero || '')}</td>
                         <td>${f.up || f.ug || ''}</td>
                         <td>${f.m || ''}</td>
                         <td>${mesDescStr}</td>
@@ -7592,7 +7597,7 @@
                     }
                     rowsExecFin.push(`<tr>
                         <td>${t.numTed || ''}</td>
-                        <td>${e.nd || ''}</td>
+                        <td>${formatarNDComPontos(e.nd || '')}</td>
                         <td>${e.up || e.ug || ''}</td>
                         <td>${(e.valor || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
                         <td>${formatDate(e.data)}</td>
@@ -9026,7 +9031,8 @@
 
         function salvarModalRecGeral() {
             const errEl = document.getElementById('modalRecGeralError');
-            const nd = document.getElementById('modalRecGeralND').value.trim();
+            const ndRaw = document.getElementById('modalRecGeralND').value.trim();
+            const nd = String(ndRaw).replace(/[^0-9.\-]/g, '').trim();
             const valor = parseNumber(document.getElementById('modalRecGeralValor').value);
             const data = document.getElementById('modalRecGeralData').value;
 
@@ -9246,11 +9252,11 @@
             const ndDisplayMap = {};
             cad.forEach(f => {
                 const norm = normalizarND(f.numero);
-                if (norm && !ndDisplayMap[norm]) ndDisplayMap[norm] = String(f.numero);
+                if (norm && !ndDisplayMap[norm]) ndDisplayMap[norm] = formatarNDComPontos(norm);
             });
             recs.forEach(r => {
                 const norm = normalizarND(r.nd);
-                if (norm && !ndDisplayMap[norm]) ndDisplayMap[norm] = String(r.nd);
+                if (norm && !ndDisplayMap[norm]) ndDisplayMap[norm] = formatarNDComPontos(norm);
             });
 
             const ndsNormSet = new Set(Object.keys(ndDisplayMap));
@@ -10615,9 +10621,9 @@
         }
 
         // IMPORTAR RECURSOS GERAIS (CSV do Tesouro Gerencial)
-        // Normalizar ND removendo pontos, traços e espaços para comparação
+        // Normalizar ND removendo tudo que não for dígito (mais robusto)
         function normalizarND(nd) {
-            return String(nd || '').replace(/[\.\-\s]/g, '').trim();
+            return String(nd || '').replace(/[^0-9]/g, '').trim();
         }
 
         // Formatar ND com pontos: 339030 → 33.90.30, 449052 → 44.90.52
