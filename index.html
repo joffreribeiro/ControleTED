@@ -3273,12 +3273,16 @@
         // Exibir informações do TED
         function exibirInformacoesTED() {
             if (!window.tedSelecionado) return;
-            
+
             const ted = window.tedSelecionado;
-            const totalRecebido = (ted.execFinanceiras || []).reduce((soma, item) => soma + (parseNumber(item.valor) || 0), 0);
+            // Total recebido e saldo agora vindos da tabela Recursos Gerais (IMBEL)
+            const totalRecebido = (ted.recursosGerais || []).reduce((soma, item) => soma + (parseFloat(item.valor) || 0), 0);
             const valorTedAtual = parseNumber(ted.valorTed) || 0;
             const saldoTed = valorTedAtual - totalRecebido;
-            const statusTedAtual = ted.statusTED || ted.status || 'Em execução';
+            // Determinar status usando a regra centralizada (data de entrega/denúncia / vigência)
+            const statusObj = getDisplayStatus(ted) || { text: (ted.statusTED || ted.status || 'Em Execução'), origin: 'inferido', vigenciaVencida: false };
+            const statusText = statusObj.text || (ted.statusTED || ted.status || 'Em Execução');
+            const vigenciaVencidaFlag = !!statusObj.vigenciaVencida;
 
             const elTituloTedCodigo = document.getElementById('info_tituloTedCodigo');
             if (elTituloTedCodigo) {
@@ -3317,7 +3321,18 @@
                     if (saldoCard) { saldoCard.classList.remove('accent-red'); saldoCard.classList.add('accent-green'); }
                 }
             }
-            if (elKpiStatus) elKpiStatus.innerHTML = `<span class="status-pill">${statusTedAtual || 'Em Execução'}</span>`;
+
+            if (elKpiStatus) {
+                // Mostrar o pill de status e, se aplicável, uma nota de vigência vencida abaixo (mantendo status como 'Em Execução')
+                let statusHtml = `<span class="status-pill">${statusText}</span>`;
+                const stNorm = String(statusText || '').toLowerCase();
+                const showVigNote = (/execu|em execução/.test(stNorm) && vigenciaVencidaFlag) || (/vigênc.*venc|vigencia.*venc/.test(stNorm));
+                if (showVigNote) {
+                    statusHtml += `<div class="metric-sub" style="color:var(--warning);margin-top:6px;">Vigência Vencida</div>`;
+                }
+                elKpiStatus.innerHTML = statusHtml;
+            }
+
             if (elKpiPercentual) {
                 const percentual = valorTedAtual > 0 ? ((totalRecebido / valorTedAtual) * 100) : 0;
                 elKpiPercentual.textContent = `${percentual.toFixed(1).replace('.', ',')}% do valor contratado`;
