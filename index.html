@@ -4502,23 +4502,26 @@
                 arr.forEach((item, idx) => {
                     html += `<tr data-tabela="${tabDef.key}" data-idx="${idx}">`;
                     tabDef.colunas.forEach(col => {
-                        let val = item[col.field];
+                        let rawVal = item[col.field];
+                        // sanitizar entrada textual primeiro
+                        if (typeof rawVal === 'string') rawVal = sanitizeString(rawVal);
+                        let val = rawVal;
 
                         // Sanitizar ND (campo 'numero') para evitar símbolos/garbage vindo dos dados
                         if (col.field === 'numero' || (col.label && String(col.label).toLowerCase().includes('nd'))) {
-                            const digits = String(val || '').replace(/[^0-9]/g, '');
+                            const digits = String(rawVal || '').replace(/[^0-9]/g, '');
                             val = digits ? formatarNDComPontos(digits) : '';
-                        } else if (col.type === 'currency' && val !== undefined && val !== null) {
-                            const _n = Number(val), _cents = Math.round(_n * 100), _units = Math.floor(_cents / 100), _rem = _cents % 100;
+                        } else if (col.type === 'currency' && rawVal !== undefined && rawVal !== null && rawVal !== '') {
+                            const _n = Number(rawVal || 0), _cents = Math.round(_n * 100), _units = Math.floor(_cents / 100), _rem = _cents % 100;
                             val = formatarMilharesPtBR(_units) + ',' + String(_rem).padStart(2, '0');
-                        } else if (col.type === 'number' && val !== undefined && val !== null && val !== '') {
-                            val = formatarMilharesPtBR(Number(val));
-                        } else if (col.type === 'date' && val) {
-                            try { val = new Date(val + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
+                        } else if (col.type === 'number' && rawVal !== undefined && rawVal !== null && rawVal !== '') {
+                            val = formatarMilharesPtBR(Number(rawVal));
+                        } else if (col.type === 'date' && rawVal) {
+                            try { val = new Date(rawVal + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
                         }
 
                         // data-orig também com valor sanitizado para ND
-                        const dataOrig = (col.field === 'numero') ? String(item[col.field] || '').replace(/[^0-9]/g, '') : String(item[col.field] || '').replace(/\"/g, '&quot;');
+                        const dataOrig = (col.field === 'numero') ? String(item[col.field] || '').replace(/[^0-9]/g, '') : sanitizeString(String(item[col.field] || '')).replace(/\"/g, '&quot;');
                         html += `<td contenteditable="true" data-field="${col.field}" data-type="${col.type || 'text'}" data-orig="${dataOrig}">${val !== undefined && val !== null ? val : ''}</td>`;
                     });
                     html += `<td><button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`;
@@ -4558,7 +4561,8 @@
             tbody.appendChild(tr);
             // Aplicar máscaras de formatação na nova linha
             aplicarMascarasCelulasClone(tr);
-            // Garantir ícones do Lucide na nova linha
+            // Limpar conteúdo (remover chars invisíveis) e garantir ícones do Lucide na nova linha
+            try { if (typeof limparConteudoCelulasClone === 'function') limparConteudoCelulasClone(tr); } catch(e) {}
             try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); }, 30); } catch(e) {}
             // Focar no primeiro campo da nova linha
             const primeiraCelula = tr.querySelector('td[contenteditable]');
@@ -5351,7 +5355,7 @@
                 try {
                     let txt = td.textContent || '';
                     // remover caracteres de controle e BOMs
-                    txt = String(txt).replace(/[\u0000-\u001F\u007F-\u009F\uFEFF]/g, '').trim();
+                    txt = String(txt).replace(/[\u0000-\u001F\u007F-\u009F\u00A0\u2000-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g, '').trim();
                     if (td.dataset.field === 'numero') {
                         const digits = txt.replace(/\D/g, '');
                         td.textContent = digits ? formatarNDComPontos(digits) : '';
@@ -5371,6 +5375,18 @@
                     // noop
                 }
             });
+        }
+
+        // Sanitizar string removendo caracteres invisíveis e de controle
+        function sanitizeString(s) {
+            if (s === undefined || s === null) return '';
+            try {
+                let t = String(s);
+                // Normalizar e remover caracteres de controle, NBSP, marcas de direção e zero-width
+                t = t.normalize ? t.normalize('NFKC') : t;
+                t = t.replace(/[\u0000-\u001F\u007F-\u009F\u00A0\u2000-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g, '');
+                return t.trim();
+            } catch (e) { return String(s); }
         }
 
         // Função auxiliar: calcular fim com aditivos
