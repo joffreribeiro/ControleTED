@@ -715,7 +715,8 @@
                     </select>
                     <span class="filter-label">Status:</span>
                     <select id="filterStatus_teds" onchange="atualizarListaTEDs()">
-                        <option value="Em Execução">Em Execução</option>
+                        <option value="Todos">Todos</option>
+                        <option value="Em Execução" selected>Em Execução</option>
                         <option value="TED Finalizado">TED Finalizado</option>
                     </select>
                     <button class="btn-limpar" onclick="(function(){
@@ -2142,13 +2143,14 @@
                 if (selUp) {
                     listaFiltrada = listaFiltrada.filter(t => String(t.upResponsavel || t.up || '').trim() === selUp);
                 }
-                if (selStatus) {
+                // Se o usuário escolheu uma situação específica (exceto 'Todos'), filtrar por ela
+                if (selStatus && selStatus !== 'Todos') {
                     listaFiltrada = listaFiltrada.filter(t => {
                         const situacaoFiltro = getSituacaoGantt(t);
                         return String(situacaoFiltro || '').trim() === selStatus;
                     });
-                } else {
-                    // Padrão: mostrar apenas Em Execução quando sem filtro
+                } else if (!selStatus) {
+                    // Padrão: quando nenhum valor for selecionado, mostrar apenas Em Execução
                     listaFiltrada = listaFiltrada.filter(t => {
                         return getSituacaoGantt(t) === 'Em Execução';
                     });
@@ -6996,8 +6998,8 @@
             });
 
             // Fórmulas da tabela:
-            // Saldo Atual = Recebido Anual + Devolvido (devolvido é negativo na apresentação, então internamente: recebido - devolvidoAbs)
-            // A Receber (ano anterior) do ano N = Previsto + A Receber - Saldo Atual do ano N-1
+            // Saldo Anual = Recebido Anual - Devolvido (devolvido é apresentado como valor absoluto)
+            // A Receber (ano anterior) do ano N = Previsto + A Receber - Saldo Anual do ano N-1
             // Para o primeiro ano, A Receber (ano anterior) = 0,00
             anosOrdenados.forEach((ano, idx) => {
                 const recebido = recebidoByAno[ano] || 0;
@@ -7048,8 +7050,8 @@
             renderRow('Recebido Anual', recebidoByAno);
             // Devolvido (exibir como negativo e em cor específica)
             renderRow('Devolvido', devolvidoByAno, { negative: true });
-            // Saldo Atual (última linha, destaque)
-            renderRow('Saldo Atual', saldoAtualByAno, { saldo: true });
+            // Saldo Anual (última linha, destaque)
+            renderRow('Saldo Anual', saldoAtualByAno, { saldo: true });
 
             html += `</div></div>`;
             resumoContainer.innerHTML = html;
@@ -8470,7 +8472,7 @@
             const rowReceberAnterior = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">A Receber (ano anterior)</td>${cellsByAno((ano)=> (aReceberAnteriorByAno[ano] || 0))}</tr>`;
             const rowRecebidoAnual = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
             const rowDevolvido = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Devolvido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Saldo Atual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
+            const rowSaldoAnual = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowRecebidoAnual + rowDevolvido + rowSaldoAnual;
 
@@ -8546,7 +8548,7 @@
             const idxAnoAtual = anosOrdem.indexOf(anoAtual);
             const aReceberAnterior = idxAnoAtual >= 0 ? (aReceberAnteriorByAno[anoAtual] || 0) : (previstoAnoAnterior - recebidoAnoAnterior - devolvidoAnoAnterior);
 
-            // Saldo Atual: Recebido Anual + Devolvido (devolvido com sinal negativo)
+            // Saldo Anual = Recebido Anual - Devolvido (devolvido com sinal negativo na origem)
             const saldoAnual = recebidoAnual + devolvidoNeg;
             
             // Liquidação percentual
@@ -9259,7 +9261,7 @@
             const rowReceberAnterior = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">A Receber (ano anterior)</td>${cellsByAno((ano)=> (aReceberAnteriorByAno[ano] || 0))}</tr>`;
             const rowRecebidoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
             const rowDevolvido = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Devolvido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Atual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
+            const rowSaldoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowRecebidoAnual + rowDevolvido + rowSaldoAnual;
         }
