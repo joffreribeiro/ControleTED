@@ -4227,23 +4227,28 @@
             });
             const addSet = new Set();
             const addItems = {};
+            const addItemsList = [];
             (alteracoes.adicionados || []).forEach(add => {
                 const item = add.item || add;
                 const k = matchKey(item);
                 addSet.add(k);
                 addItems[k] = item;
+                addItemsList.push({ k, item });
             });
             const remSet = new Set();
             const remItems = {};
+            const remItemsList = [];
             (alteracoes.removidos || []).forEach(rem => {
                 const item = rem.item || rem;
                 const k = matchKey(item);
                 remSet.add(k);
                 remItems[k] = item;
+                remItemsList.push({ k, item });
             });
             // Backward compatibility: if same key appears in both addSet and remSet,
             // it means a field in the matchKey was changed (e.g., old M-based matchFields).
             // Convert these to synthetic modifications.
+            // Remove from addItemsList/remItemsList any entries that get converted to modifications
             addSet.forEach(k => {
                 if (remSet.has(k)) {
                     // Both add and remove with same key → synthesize a modification
@@ -4262,9 +4267,13 @@
                     }
                     addSet.delete(k);
                     remSet.delete(k);
+                    const ia = addItemsList.findIndex(x => x.k === k);
+                    if (ia !== -1) addItemsList.splice(ia, 1);
+                    const ir = remItemsList.findIndex(x => x.k === k);
+                    if (ir !== -1) remItemsList.splice(ir, 1);
                 }
             });
-            return { modMap, addSet, remSet };
+            return { modMap, addSet, remSet, addItemsList, remItemsList };
         }
 
         // Formatar valor de célula alterada: mostra valor antigo riscado → valor novo em destaque
@@ -4426,7 +4435,7 @@
                 const labelTabela = tabDef ? tabDef.label : (fallbackLabels[tabelaKey] || tabelaKey);
 
                 // Backward compat: use criarMapaAlteracoes to reconcile add+remove pairs as modifications
-                const { modMap, addSet, remSet } = tabDef ? criarMapaAlteracoes(rawDiffs, tabDef) : { modMap: {}, addSet: new Set(), remSet: new Set() };
+                const { modMap, addSet, remSet, addItemsList, remItemsList } = tabDef ? criarMapaAlteracoes(rawDiffs, tabDef) : { modMap: {}, addSet: new Set(), remSet: new Set(), addItemsList: [], remItemsList: [] };
                 const effectiveAdded = addSet.size;
                 const effectiveRemoved = remSet.size;
                 const effectiveModified = Object.keys(modMap).length;
@@ -4434,9 +4443,29 @@
                 html += `<div style="margin-top:4px;"><span class="aditivo-change-field">${labelTabela}:</span>`;
                 if (effectiveAdded > 0) {
                     html += ` <span class="aditivo-change-badge aditivo-change-new">+${effectiveAdded} novo${effectiveAdded > 1 ? 's' : ''}</span>`;
+                    // Detalhar cada item adicionado
+                    (addItemsList || []).filter(x => addSet.has(x.k)).forEach(({ item }) => {
+                        const cols = tabDef ? tabDef.colunas : [];
+                        const partes = cols.map(col => {
+                            const v = item[col.field];
+                            if (v === undefined || v === null || v === '') return null;
+                            return `<span style="font-size:0.7rem;color:var(--text-muted);">${col.label}:</span> <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(v, col.type || 'text')}</span>`;
+                        }).filter(Boolean);
+                        if (partes.length) html += `<div class="aditivo-change-row" style="margin-left:12px;">${partes.join(' &nbsp; ')}</div>`;
+                    });
                 }
                 if (effectiveRemoved > 0) {
                     html += ` <span class="aditivo-change-badge aditivo-change-old">-${effectiveRemoved} removido${effectiveRemoved > 1 ? 's' : ''}</span>`;
+                    // Detalhar cada item removido
+                    (remItemsList || []).filter(x => remSet.has(x.k)).forEach(({ item }) => {
+                        const cols = tabDef ? tabDef.colunas : [];
+                        const partes = cols.map(col => {
+                            const v = item[col.field];
+                            if (v === undefined || v === null || v === '') return null;
+                            return `<span style="font-size:0.7rem;color:var(--text-muted);">${col.label}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(v, col.type || 'text')}</span>`;
+                        }).filter(Boolean);
+                        if (partes.length) html += `<div class="aditivo-change-row" style="margin-left:12px;">${partes.join(' &nbsp; ')}</div>`;
+                    });
                 }
                 if (effectiveModified > 0) {
                     html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">${effectiveModified} alterado${effectiveModified > 1 ? 's' : ''}</span>`;
