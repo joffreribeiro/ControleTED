@@ -4934,6 +4934,12 @@
                     ADITIVO_TABELAS_CLONE.forEach(t => {
                         if (snap[t.key]) ted[t.key] = JSON.parse(JSON.stringify(snap[t.key]));
                     });
+                    // Restaurar campos de vigência/valor que também são salvos no snapshot
+                    if (snap.valorTed !== undefined) ted.valorTed = snap.valorTed;
+                    if (snap.vigencia !== undefined) ted.vigencia = snap.vigencia;
+                    if (snap.inicioVigencia !== undefined) ted.inicioVigencia = snap.inicioVigencia;
+                    if (snap.fimVigencia !== undefined) ted.fimVigencia = snap.fimVigencia;
+                    if (snap.primeiraDescentralizacao !== undefined) ted.primeiraDescentralizacao = snap.primeiraDescentralizacao;
                 }
                 return;
             }
@@ -4954,6 +4960,12 @@
                         ted[t.key] = JSON.parse(JSON.stringify(primeiroSnapshot[t.key]));
                     }
                 });
+                // Restaurar campos de vigência/valor do snapshot-base
+                if (primeiroSnapshot.valorTed !== undefined) ted.valorTed = primeiroSnapshot.valorTed;
+                if (primeiroSnapshot.vigencia !== undefined) ted.vigencia = primeiroSnapshot.vigencia;
+                if (primeiroSnapshot.inicioVigencia !== undefined) ted.inicioVigencia = primeiroSnapshot.inicioVigencia;
+                if (primeiroSnapshot.fimVigencia !== undefined) ted.fimVigencia = primeiroSnapshot.fimVigencia;
+                if (primeiroSnapshot.primeiraDescentralizacao !== undefined) ted.primeiraDescentralizacao = primeiroSnapshot.primeiraDescentralizacao;
             }
 
             // Reaplicar todas as alterações em ordem
@@ -5085,6 +5097,12 @@
                 ADITIVO_TABELAS_CLONE.forEach(t => {
                     if (snap[t.key]) ted[t.key] = JSON.parse(JSON.stringify(snap[t.key]));
                 });
+                // Restaurar campos relacionados à vigência/valor que também são capturados no snapshot
+                if (snap.valorTed !== undefined) ted.valorTed = snap.valorTed;
+                if (snap.vigencia !== undefined) ted.vigencia = snap.vigencia;
+                if (snap.inicioVigencia !== undefined) ted.inicioVigencia = snap.inicioVigencia;
+                if (snap.fimVigencia !== undefined) ted.fimVigencia = snap.fimVigencia;
+                if (snap.primeiraDescentralizacao !== undefined) ted.primeiraDescentralizacao = snap.primeiraDescentralizacao;
             } else {
                 restaurarDadosAposRemocao(ted, index, removida);
             }
