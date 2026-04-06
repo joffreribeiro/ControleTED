@@ -2209,17 +2209,26 @@
                     badgeClassLocal = 'badge-vigencia-vencida';
                 }
 
-                // ---- Borda lateral por status ----
-                const isFinalizado = /finaliz|finalizado|conclu|denunci|encerr/.test(stNorm);
+                // ---- Borda lateral por status (nova regra solicitada) ----
                 const isVigenciaVencida = vigenciaVencidaFlag || /vigênc.*venc|vigencia.*venc/.test(stNorm);
-                const saldoTedCard = (t.valorTed || 0) - (t.gasto || 0);
-                let cardBorderColor;
-                if (isFinalizado) {
-                    cardBorderColor = '#E24B4A'; // vermelho: finalizado / encerrado / denunciado
-                } else if (isVigenciaVencida) {
-                    cardBorderColor = '#EF9F27'; // laranja: vigência vencida
+                const saldoTedCard = (t.saldoAtual != null ? t.saldoAtual : (t.saldo != null ? t.saldo : ((t.valorTed || 0) - (t.gasto || 0))));
+                const valorTedCalc = (t.valorTed || t.valor || 1);
+                const pct = valorTedCalc ? (Math.abs(saldoTedCard) / Math.abs(valorTedCalc)) : 0;
+                const statusNorm = String(computedStatusLocal || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+                let cardBorderColor = '#888780';
+                if (statusNorm.includes('execu')) {
+                    if (saldoTedCard >= 0)       cardBorderColor = '#639922';
+                    else if (pct < 0.20)         cardBorderColor = '#EF9F27';
+                    else                         cardBorderColor = '#E24B4A';
+                } else if (statusNorm.includes('conclu') || statusNorm.includes('finaliz')) {
+                    cardBorderColor = '#639922';
+                } else if (statusNorm.includes('suspen') || statusNorm.includes('vencid')) {
+                    cardBorderColor = '#E24B4A';
                 } else {
-                    cardBorderColor = '#639922'; // verde: em execução
+                    // fallback para regras de vigência/encerramento antigas
+                    if (isVigenciaVencida) cardBorderColor = '#EF9F27';
+                    else cardBorderColor = '#639922';
                 }
 
                 // ---- Metadados em linha ----
