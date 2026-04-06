@@ -4977,10 +4977,14 @@
             if (tipo === 'aditivo') {
                 altObj.meses = meses;
             }
-            // Registrar valor do TED vigente no momento do save (campo VALOR DO TED na tabela)
-            const valorTedAtual = novosValores['valorTed'] || ted.valorTed;
-            if (valorTedAtual !== undefined && valorTedAtual !== null && valorTedAtual !== '') {
-                altObj.valorTed = valorTedAtual;
+            // Valor do TED ANTES das mudanças (derivado dos objetos do snapshot)
+            const valorTedAntes = Number((snapshot.objetos || []).reduce((s, o) => s + (Number(o.valorTotal) || 0), 0)) || Number(snapshot.valorTed) || 0;
+            // Valor do TED DEPOIS (calculado a partir dos novos objetos já aplicados ao ted)
+            const valorTedDepois = Number((dadosTabelas.objetos || ted.objetos || []).reduce((s, o) => s + (Number(o.valorTotal) || 0), 0)) || 0;
+            // Só registrar valorTed no aditivo se houve mudança real no total do cadastro de objetos
+            if (Math.round(valorTedAntes * 100) !== Math.round(valorTedDepois * 100)) {
+                altObj.prevValorTed = valorTedAntes;
+                altObj.valorTed = valorTedDepois;
             }
             altObj.snapshot = snapshot;
             altObj.camposAlterados = alteracoes;
