@@ -571,7 +571,7 @@
             <button id="tab-novo" class="tab-btn" data-tab="novo" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
             <button class="tab-btn" data-tab="detalhes" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
             <button id="tab-relatorios" class="tab-btn" data-tab="relatorios" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
-            <button id="tab-config" class="tab-btn" data-tab="config" onclick="switchTab('config', this)"><i data-lucide="settings"></i> Configurações</button>
+            <button id="tab-config" class="tab-btn" data-tab="config" onclick="switchTab('config', this)" style="display:none;"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
         <!-- TAB 1: Dashboard -->
@@ -1851,6 +1851,16 @@
 
         // Trocar Abas
         function switchTab(tabName, btnEl) {
+            // Bloquear acesso à aba de configurações quando não for admin
+            try {
+                if (tabName === 'config') {
+                    var isAdmin = (window.currentUserProfile && window.currentUserProfile.role === 'admin');
+                    if (!isAdmin) {
+                        // redirecionar para dashboard se tentativa de acesso não-autorizado
+                        tabName = 'dashboard';
+                    }
+                }
+            } catch(e) {}
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
