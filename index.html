@@ -1748,16 +1748,25 @@
                                     }
                                     arr.push(obj);
                                 });
-                                dados.teds = arr;
-                                dados.proxiId = dados.teds.length ? Math.max(...dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
-                                try { atualizarDashboard(); } catch(e) {}
-                                try { atualizarListaTEDs(); } catch(e) {}
-                                try { atualizarSeletorTED(); } catch(e) {}
-                                try { atualizarGantt(); } catch(e) {}
-                                try { atualizarFiltroTedEntregas(); } catch(e) {}
-                                try { renderEntregasFromFilter(); } catch(e) {}
-                                try { renderResumoFinanceiroFromFilter(); } catch(e) {}
-                                try { popularFiltrosRelatorios(); } catch(e) {}
+                                if (!window._salvandoEmAndamento) {
+                                    dados.teds = arr;
+                                    dados.proxiId = dados.teds.length ? Math.max(...dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
+                                    // Reconectar seleção atual ao novo array (evita objetos soltos após snapshot)
+                                    if (window.tedSelecionado && window.tedSelecionado.id) {
+                                        const reconectado = dados.teds.find(t => t.id == window.tedSelecionado.id);
+                                        if (reconectado) window.tedSelecionado = reconectado;
+                                    }
+                                    try { atualizarDashboard(); } catch(e) {}
+                                    try { atualizarListaTEDs(); } catch(e) {}
+                                    try { atualizarSeletorTED(); } catch(e) {}
+                                    try { atualizarGantt(); } catch(e) {}
+                                    try { atualizarFiltroTedEntregas(); } catch(e) {}
+                                    try { renderEntregasFromFilter(); } catch(e) {}
+                                    try { renderResumoFinanceiroFromFilter(); } catch(e) {}
+                                    try { popularFiltrosRelatorios(); } catch(e) {}
+                                } else {
+                                    console.info('[Firestore] Snapshot ignorado durante salvamento.');
+                                }
                             } catch(err) { console.warn('erro snapshot teds', err); }
                         });
                         window._firestoreTedsUnsub = unsub;
@@ -3040,7 +3049,7 @@
             if (!confirm('Tem certeza que deseja deletar este TED?')) return;
 
             dados.teds = dados.teds.filter(t => t.id !== window.tedAtual);
-            salvarDados();
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             fecharModal();
             atualizarListaTEDs();
             atualizarDashboard();
@@ -3059,7 +3068,7 @@
             }
 
             dados.teds.splice(idx, 1);
-            salvarDados();
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarListaTEDs();
             atualizarSeletorTED();
             atualizarFiltroTedEntregas();
@@ -3876,7 +3885,7 @@
             if (!window.tedSelecionado) return;
             window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
             atualizarValorTedFromObjetos(window.tedSelecionado);
-            salvarDados();
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarTabelasEmCascata('objetos');
         }
 
@@ -5093,7 +5102,7 @@
             // valor TED é derivado do cadastro de objetos
             atualizarValorTedFromObjetos(ted);
 
-            salvarDados();
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             exibirInformacoesTED();
             try { atualizarTabelasEmCascata('ted'); } catch(e) {}
             renderGanttVigencia();
@@ -5341,7 +5350,7 @@
         function removerMeta(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.metas = window.tedSelecionado.metas.filter(m => m.id !== id);
-            salvarDados();
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarTabelasEmCascata('metas');
         }
 
@@ -5735,7 +5744,7 @@
         function removerFisico(id) {
             if (!window.tedSelecionado) return;
             window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(f => f.id !== id);
-            salvarDados();
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarTabelasEmCascata('fisicos');
         }
 
@@ -5989,6 +5998,7 @@
             atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado);
             atualizarTabelaExecFisica();
             try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
         }
 
         function atualizarTabelaExecFisica() {
@@ -6504,7 +6514,7 @@
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
             // Atualizar valor do TED automaticamente
             atualizarValorTedFromFinanceiros(window.tedSelecionado);
-            salvarDados();
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarTabelasEmCascata('financeiros');
             atualizarOpcoesExecFinanceira();
             atualizarOpcoesRecGeral();
@@ -6983,6 +6993,7 @@
             atualizarTabelaExecFinanceira();
             atualizarGantt();
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
         }
 
         // GANTT 60 MESES - resumo anual agora baseado em Recursos Gerais (IMBEL)
@@ -8967,7 +8978,7 @@
             window.tedSelecionado.recursosGerais = (window.tedSelecionado.recursosGerais || []).filter(r =>
                 !(normalizarND(r.nd) === ndNorm && r.data === data)
             );
-            salvarDados();
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarTabelaRecursosGerais();
         }
 
@@ -9393,6 +9404,8 @@
         async function _executarSalvamento() {
             if (_salvandoEmAndamento) return; // evitar duplicação
             _salvandoEmAndamento = true;
+            // sinalizar também em window para que listeners possam checar
+            try { window._salvandoEmAndamento = true; } catch(e) {}
             // Feedback visual: indicador de salvando
             const syncEl = document.getElementById('cloudLastSync');
             if (syncEl) syncEl.textContent = '💾 Salvando...';
@@ -9415,6 +9428,7 @@
                 showToast('Erro ao salvar dados. Tentando novamente em breve...', 'danger');
             } finally {
                 _salvandoEmAndamento = false;
+                try { window._salvandoEmAndamento = false; } catch(e) {}
             }
         }
 
