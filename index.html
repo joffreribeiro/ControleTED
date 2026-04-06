@@ -747,117 +747,144 @@
 
         <!-- TAB 3: Novo TED -->
         <div id="novo" class="tab-content">
-            <div class="card">
-                <h2>Criar Novo TED</h2>
-                <form onsubmit="criarTED(event)">
-                    <div class="grid">
-                        <div class="form-group">
-                            <label>Plano de Trabalho</label>
-                            <input type="text" id="planoTrabalho" placeholder="Ex: 2024">
-                        </div>
-                        <div class="form-group">
-                            <label>TED</label>
-                            <input type="text" id="numTed" placeholder="Ex: 001">
-                        </div>
-                        <div class="form-group">
-                            <label>Objeto</label>
-                            <input type="text" id="objeto" placeholder="Objeto">
-                        </div>
-                        <div class="form-group">
-                            <label>Valor do TED (R$)</label>
-                            <input type="text" id="valorTed" placeholder="0,00" inputmode="numeric" class="mask-moeda" value="0,00" readonly>
-                        </div>
-                        
-                        
-                    </div>
+            <div class="card" style="max-width: 900px; margin: 0 auto;">
+                <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:2px solid var(--border);">
+                    <i data-lucide="file-plus" style="width:22px; height:22px; color:var(--primary);"></i>
+                    <h2 style="margin:0; font-size:1.25rem; font-weight:700;">Criar Novo TED</h2>
+                </div>
+                <form onsubmit="criarTED(event)" autocomplete="off">
 
-                    <div class="grid">
-                        
-                        <div class="form-group">
-                            <label>Código do Plano de Ação</label>
-                            <input type="text" id="codigoPlano" placeholder="Código">
-                        </div>
-                        <div class="form-group">
-                            <label>Nº TED - SIAFI</label>
-                            <input type="text" id="numTedSiafi" placeholder="SIAFI">
-                        </div>
-                        <div class="form-group">
-                            <label>Nota do Sistema do TED</label>
-                            <input type="text" id="notaSistema" placeholder="Nota">
-                        </div>
-                        
-                    </div>
-
-                    <div class="grid">
-                        <div class="form-group">
-                            <label>UP Responsável pela Execução</label>
-                            <input type="text" id="upResponsavel" placeholder="UP">
-                        </div>
-                        <div class="form-group">
-                            <label>UG Executora</label>
-                            <input type="text" id="ugExecutora" placeholder="UG">
-                        </div>
-                        <div class="form-group">
-                            <label>Unidade Descentralizadora</label>
-                            <input type="text" id="unidadeDesc" placeholder="Unidade">
-                        </div>
-                        <div class="form-group">
-                            <label>UG Descentralizadora</label>
-                            <input type="text" id="ugDesc" placeholder="UG">
-                        </div>
-                        
-                        
-                    </div>
-
-                    <div class="grid">
-                        <div class="form-group">
-                            <label>Início de Vigência</label>
-                            <input type="date" id="inicioVigencia" onchange="calcularFimVigencia()">
-                        </div>
-                        <div class="form-group">
-                            <label>Vigência em Meses</label>
-                            <input type="number" id="vigencia" placeholder="Meses" min="0" oninput="calcularFimVigencia()">
-                        </div>
-                        <div class="form-group">
-                            <label>Fim de Vigência</label>
-                            <input type="date" id="fimVigencia" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>1ª Descentralização</label>
-                            <input type="date" id="primeiraDescentralizacao">
-                        </div>
-                        
-                    </div>
-                    
-                    <div class="grid">
-                        <div class="form-group">
-                            <label>Situação TED</label>
-                            <select id="create_situacaoTED" onchange="calcularPrazoRelatorioCreate(); atualizarStatusCreate();">
-                                <option value="">--</option>
-                                <option value="finalizado">TED Finalizado</option>
-                                <option value="denunciado">TED Denunciado</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Data entrega/denúncia</label>
-                            <input type="date" id="create_dataEntregaDenuncia" onchange="calcularPrazoRelatorioCreate(); atualizarStatusCreate();">
-                        </div>
-                        <div class="form-group">
-                            <label>Prazo do Relatório Final</label>
-                            <input type="date" id="create_prazoRelatorio" readonly>
-                            <div id="create_prazo_helper" style="font-size:0.85rem; margin-top:0.25rem; color:var(--text);"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Data da Entrega do Relatório</label>
-                            <input type="date" id="create_dataEntregaRelatorio" onchange="atualizarStatusCreate();">
-                        </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <input type="text" id="create_statusTED" readonly>
+                    <!-- SEÇÃO 1: Identificação -->
+                    <div style="margin-bottom:1.5rem;">
+                        <p style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--primary); margin:0 0 0.75rem 0;">Identificação</p>
+                        <div style="display:grid; grid-template-columns:1fr 160px 2fr; gap:0.75rem; align-items:end;">
+                            <div class="form-group" style="margin:0;">
+                                <label>Plano de Trabalho</label>
+                                <input type="text" id="planoTrabalho" placeholder="Ex: 2024">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Nº TED</label>
+                                <input type="text" id="numTed" placeholder="Ex: 001">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Objeto</label>
+                                <input type="text" id="objetivo" placeholder="Descrição do objeto do TED">
+                            </div>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Criar TED</button>
+                    <hr style="border:none; border-top:1px solid var(--border); margin: 0 0 1.25rem 0;">
+
+                    <!-- SEÇÃO 2: Dados Administrativos -->
+                    <div style="margin-bottom:1.5rem;">
+                        <p style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--primary); margin:0 0 0.75rem 0;">Dados Administrativos</p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label>Código do Plano de Ação</label>
+                                <input type="text" id="codigoPlano" placeholder="Código">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Nº TED - SIAFI</label>
+                                <input type="text" id="numTedSiafi" placeholder="SIAFI">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Nota do Sistema</label>
+                                <input type="text" id="notaSistema" placeholder="Nota">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="border:none; border-top:1px solid var(--border); margin: 0 0 1.25rem 0;">
+
+                    <!-- SEÇÃO 3: Unidades -->
+                    <div style="margin-bottom:1.5rem;">
+                        <p style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--primary); margin:0 0 0.75rem 0;">Unidades Envolvidas</p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label>UP Responsável</label>
+                                <input type="text" id="upResponsavel" placeholder="UP">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>UG Executora</label>
+                                <input type="text" id="ugExecutora" placeholder="UG">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Unidade Descentralizadora</label>
+                                <input type="text" id="unidadeDesc" placeholder="Unidade">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>UG Descentralizadora</label>
+                                <input type="text" id="ugDesc" placeholder="UG">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="border:none; border-top:1px solid var(--border); margin: 0 0 1.25rem 0;">
+
+                    <!-- SEÇÃO 4: Vigência -->
+                    <div style="margin-bottom:1.5rem;">
+                        <p style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--primary); margin:0 0 0.75rem 0;">Vigência</p>
+                        <div style="display:grid; grid-template-columns:1fr 140px 1fr 1fr; gap:0.75rem; align-items:end;">
+                            <div class="form-group" style="margin:0;">
+                                <label>Início de Vigência</label>
+                                <input type="date" id="inicioVigencia" onchange="calcularFimVigencia()">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Vigência (meses)</label>
+                                <input type="number" id="vigencia" placeholder="Meses" min="0" oninput="calcularFimVigencia()">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Fim de Vigência</label>
+                                <input type="date" id="fimVigencia" readonly style="background:var(--surface); color:var(--text-muted);">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>1ª Descentralização</label>
+                                <input type="date" id="primeiraDescentralizacao">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="border:none; border-top:1px solid var(--border); margin: 0 0 1.25rem 0;">
+
+                    <!-- SEÇÃO 5: Situação (opcional) -->
+                    <div style="margin-bottom:1.75rem;">
+                        <p style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--primary); margin:0 0 0.75rem 0;">Situação <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.72rem; color:var(--text-muted);">(opcional)</span></p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:0.75rem; align-items:start;">
+                            <div class="form-group" style="margin:0;">
+                                <label>Situação TED</label>
+                                <select id="create_situacaoTED" onchange="calcularPrazoRelatorioCreate(); atualizarStatusCreate();">
+                                    <option value="">--</option>
+                                    <option value="finalizado">Finalizado</option>
+                                    <option value="denunciado">Denunciado</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Data entrega/denúncia</label>
+                                <input type="date" id="create_dataEntregaDenuncia" onchange="calcularPrazoRelatorioCreate(); atualizarStatusCreate();">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Prazo Relatório Final</label>
+                                <input type="date" id="create_prazoRelatorio" readonly style="background:var(--surface); color:var(--text-muted);">
+                                <div id="create_prazo_helper" style="font-size:0.75rem; margin-top:0.2rem; color:var(--text-muted);"></div>
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Entrega do Relatório</label>
+                                <input type="date" id="create_dataEntregaRelatorio" onchange="atualizarStatusCreate();">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label>Status</label>
+                                <input type="text" id="create_statusTED" readonly placeholder="Em Execução" style="background:var(--surface); color:var(--text-muted);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ações -->
+                    <div style="display:flex; gap:0.75rem; justify-content:flex-end; padding-top:0.5rem; border-top:1px solid var(--border);">
+                        <button type="button" class="btn" onclick="switchTab('teds')" style="min-width:120px;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" style="min-width:160px; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+                            <i data-lucide="save" style="width:16px;height:16px;"></i> Criar TED
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -2037,11 +2064,12 @@
             try { calcularPrazoRelatorioCreate(); } catch(e) {}
             try { atualizarStatusCreate(); } catch(e) {}
 
-            // Allocate a numeric id atomically via Firestore if available
+            // Allocate a numeric id atomically via Firestore if available (with 3s timeout to avoid hanging)
             let allocatedId = null;
             try {
                 if (window && window.firestoreGetNextId) {
-                    allocatedId = await window.firestoreGetNextId('teds');
+                    const _timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
+                    allocatedId = await Promise.race([window.firestoreGetNextId('teds'), _timeout]);
                 }
             } catch (e) {
                 console.warn('Erro alocando id via Firestore, fallback local', e);
@@ -11462,7 +11490,6 @@
             // Todos os seletores de botões que modificam dados
             var selectors = [
                 // TED level
-                '[onclick*="criarTED"]',
                 '[onclick*="editarTED"]',
                 '[onclick*="deletarTED"]',
                 '[onclick*="excluirTED"]',
@@ -11532,19 +11559,7 @@
                 });
             } catch(e) {}
 
-            // Formulários de criação: desabilitar inputs e selects (mas NÃO o submit button, para dar feedback ao usuário)
-            try {
-                var formSelectors = [
-                    '#novo form input', '#novo form select',
-                    '#novo form textarea'
-                ];
-                formSelectors.forEach(function(sel) {
-                    document.querySelectorAll(sel).forEach(function(el) {
-                        el.disabled = !enabled;
-                    });
-                });
-            } catch(e) {}
-
+            // Formulários de criação: não desabilitar (criarTED usa salvarDados que valida role)
             // CSV/JSON imports: desabilitar file inputs
             try {
                 document.querySelectorAll('[onchange*="importar"]').forEach(function(el) {
