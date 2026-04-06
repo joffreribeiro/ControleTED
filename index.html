@@ -688,7 +688,7 @@
                             </div>
                         </div>
                         <div class="entregas-panel" style="flex:1; min-width:320px; order:1;">
-                            <div class="card" style="padding:0.6rem; margin-bottom:0.5rem; width:360px; height:320px; box-sizing:border-box; display:flex; flex-direction:column;">
+                            <div class="card" style="padding:0.6rem; margin-bottom:0.5rem; width:100%; min-width:360px; height:420px; box-sizing:border-box; display:flex; flex-direction:column;">
                                 <h4 class="card-title-blue"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h4>
                                 <div id="entregasChartContainer" style="flex:1; display:flex; align-items:flex-end; overflow:auto;">
                                     <p style="color:var(--text); margin:0;">Selecione um TED para ver o gráfico de entregas (por objeto).</p>
@@ -7675,82 +7675,105 @@
             const container = document.getElementById(containerId);
             if (!container) return;
 
-            // Gather cadastro and execuções for the selected TED (or all TEDs)
+            // Gather cadastro (financeiros) and recursos gerais for the selected TED (or all TEDs)
             let cad = [];
-            let execs = [];
+            let recs = [];
             if (tedId) {
                 const ted = dados.teds.find(t => String(t.id) === String(tedId));
                 if (!ted) { container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>'; return; }
                 cad = ted.financeiros || [];
-                execs = ted.execFinanceiras || [];
+                recs = ted.recursosGerais || [];
             } else {
-                (dados.teds || []).forEach(t => { cad = cad.concat(t.financeiros || []); execs = execs.concat(t.execFinanceiras || []); });
+                (dados.teds || []).forEach(t => { cad = cad.concat(t.financeiros || []); recs = recs.concat(t.recursosGerais || []); });
             }
 
             // apply optional filters (ano and UP)
             if (anoFilter) {
                 cad = cad.filter(f => Number(f.anoDesc) === Number(anoFilter));
-                execs = execs.filter(e => e.data && new Date(e.data + 'T00:00:00').getFullYear() === Number(anoFilter));
+                recs = recs.filter(r => r.data && new Date(r.data + 'T00:00:00').getFullYear() === Number(anoFilter));
             }
             if (upFilter) {
                 cad = cad.filter(f => (f.up || f.ug || '') === upFilter);
-                execs = execs.filter(e => ((e.up || e.ug || '') === upFilter));
+                // try to filter recs by ND associated to cad entries for the UP (if possible)
+                const ndsForUp = new Set((cad || []).map(f => String(f.numero)));
+                if (ndsForUp.size) {
+                    recs = recs.filter(r => ndsForUp.has(String(r.nd)));
+                }
             }
 
             const anosSet = new Set();
             cad.forEach(f => { if (f.anoDesc) anosSet.add(Number(f.anoDesc)); });
-            execs.forEach(e => { if (e.data) anosSet.add(new Date(e.data + 'T00:00:00').getFullYear()); });
-            const anos = Array.from(anosSet).sort((a,b)=>a-b);
+            recs.forEach(r => { if (r.data) anosSet.add(new Date(r.data + 'T00:00:00').getFullYear()); });
+            const anosOrdenados = Array.from(anosSet).map(Number).sort((a,b)=>a-b);
 
-            if (anos.length === 0) { container.innerHTML = '<p style="color:var(--text);">Sem dados para o resumo financeiro.</p>'; return; }
+            if (anosOrdenados.length === 0) { container.innerHTML = '<p style="color:var(--text);">Sem dados para o resumo financeiro.</p>'; return; }
 
-            // Build table with columns: Ano | P Trab | Saldo a receber | Recebido | Empenhado | A Receber
-            let saldoAcumulado = 0;
-            let html = '<div class="table-wrapper" style="max-width:100%; overflow-x:auto;"><table class="tabela-padrao" style="min-width:740px; margin-top:0.5rem;">';
-            html += '<thead><tr>' +
-                '<th class="col-ano">Ano</th>' +
-                '<th class="col-valor">P Trab</th>' +
-                '<th class="col-valor">Saldo a receber</th>' +
-                '<th class="col-valor">Recebido</th>' +
-                '<th class="col-valor">Empenhado</th>' +
-                '<th class="col-valor">A Receber</th>' +
-                '</tr></thead><tbody>';
+            // Construir mapas por ano (previsto, recebido, devolvido) e calcular saldos acumulados
+            const previstoByAno = {};
+            const recebidoByAno = {};
+            const devolvidoByAno = {};
+            const saldoByAno = {};
+            const aReceberAnteriorByAno = {};
 
-            anos.forEach((ano) => {
-                const previsto = cad.filter(f => f.anoDesc === ano).reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
-
-                const recebido = execs.filter(e => {
-                    if (!e.data) return false;
-                    const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
-                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
-                    return anoExec === ano && valor > 0;
-                }).reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
-
-                const devolvido = Math.abs(execs.filter(e => {
-                    if (!e.data) return false;
-                    const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
-                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
-                    return anoExec === ano && valor < 0;
-                }).reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0));
-
-                const aReceberAnterior = saldoAcumulado;
-                const saldoAReceber = previsto + aReceberAnterior;
-                const empenhado = recebido - devolvido;
-                const aReceber = saldoAReceber - empenhado;
-                const saldo = previsto + aReceberAnterior - recebido - devolvido;
-                saldoAcumulado = saldo;
-
-                html += '<tr>';
-                html += `<td class="col-ano" style="font-weight:700">${ano}</td>`;
-                html += `<td class="col-valor">${previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-                html += `<td class="col-valor">${saldoAReceber.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-                html += `<td class="col-valor">${recebido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-                html += `<td class="col-valor">${empenhado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-                html += `<td class="col-valor">${aReceber.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-                html += '</tr>';
+            // Preencher previsto por ano (do cadastro financeiro)
+            (anosOrdenados || []).forEach(ano => {
+                previstoByAno[ano] = (cad || [])
+                    .filter(f => Number(f.anoDesc) === Number(ano))
+                    .reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
             });
 
-            html += '</tbody></table></div>';
+            // Preencher recebido/devolvido por ano (dos recursos gerais)
+            (anosOrdenados || []).forEach(ano => {
+                const recsNoAno = (recs || []).filter(r => r.data && new Date(r.data + 'T00:00:00').getFullYear() === Number(ano));
+                recebidoByAno[ano] = recsNoAno.filter(r => (parseNumber(r.valor) || 0) > 0).reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
+                devolvidoByAno[ano] = Math.abs(recsNoAno.filter(r => (parseNumber(r.valor) || 0) < 0).reduce((s, r) => s + (parseNumber(r.valor) || 0), 0));
+            });
+
+            // Fórmulas: Saldo Anual = Recebido - Devolvido; A Receber (ano anterior) encadeado
+            anosOrdenados.forEach((ano, idx) => {
+                const recebido = recebidoByAno[ano] || 0;
+                const devolvidoAbs = devolvidoByAno[ano] || 0;
+                saldoByAno[ano] = recebido - devolvidoAbs;
+
+                if (idx === 0) {
+                    aReceberAnteriorByAno[ano] = 0;
+                    return;
+                }
+
+                const anoAnterior = anosOrdenados[idx - 1];
+                const previstoAnoAnterior = previstoByAno[anoAnterior] || 0;
+                const aReceberAnoAnterior = aReceberAnteriorByAno[anoAnterior] || 0;
+                const saldoAnoAnterior = saldoByAno[anoAnterior] || 0;
+                aReceberAnteriorByAno[ano] = Math.max(0, previstoAnoAnterior + aReceberAnoAnterior - saldoAnoAnterior);
+            });
+
+            // Helper de formatação
+            const fmt = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            // Renderizar em grid transposto (mesmo formato do Resumo Anual por Ano)
+            const cols = ['200px'].concat(anosOrdenados.map(()=>'1fr')).join(' ');
+            let html = `<div class="resumo-anual-card"><div class="resumo-anual-grid" style="grid-template-columns: ${cols};">`;
+            html += `<div class="resumo-header"></div>`;
+            anosOrdenados.forEach(ano => { html += `<div class="resumo-header">${ano}</div>`; });
+
+            const renderRow = (label, values = {}, options = {}) => {
+                const isSaldo = options.saldo === true;
+                html += `<div class="resumo-label${isSaldo? ' saldo':''}">${label}</div>`;
+                anosOrdenados.forEach(ano => {
+                    const v = values[ano] || 0;
+                    const cls = (options.negative && v > 0) ? 'resumo-value negative' : (isSaldo? 'resumo-value saldo' : 'resumo-value');
+                    const disp = (options.negative && v > 0) ? ('-' + fmt(v)) : fmt(v);
+                    html += `<div class="${cls}">${disp}</div>`;
+                });
+            };
+
+            renderRow('Previsto Anual', previstoByAno);
+            renderRow('A Receber (ano anterior)', aReceberAnteriorByAno);
+            renderRow('Recebido Anual', recebidoByAno);
+            renderRow('Devolvido', devolvidoByAno, { negative: true });
+            renderRow('Saldo Anual', saldoByAno, { saldo: true });
+
+            html += `</div></div>`;
             container.innerHTML = html;
         }
 
