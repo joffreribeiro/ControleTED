@@ -2356,7 +2356,7 @@
         tr.linha-removida-aditivo td { text-decoration: line-through; color: var(--text-muted) !important; opacity: 0.6; }
         /* Entregas - novo layout de cards */
         .entregas-controls { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; }
-        .entregas-cards-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; padding:1.125rem; }
+        .entrega-grid, [class*="entregas-grid"], [class*="entrega-cards"], .entregas-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; width: 100%; padding:1.125rem; }
         .entrega-card { background: var(--color-bg-surface); border-radius:8px; padding:14px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; }
         .entrega-card .entrega-nome { font-size:12px; color:var(--color-text-secondary); }
         .entrega-card .entrega-perc { font-size:20px; font-weight:500; }
@@ -2364,6 +2364,51 @@
         .entrega-card .entrega-fill { height:100%; border-radius:999px; width:0%; transition:width 0.4s ease; }
         .entrega-card .entrega-badge { align-self:flex-start; margin-top:8px; }
         .entrega-card .entrega-badge .badge { color: #fff; font-weight:600; padding:4px 8px; border-radius:999px; font-size:0.8rem; }
+
+        /* Garantir que badges/status não quebrem linha */
+        .entrega-card .badge,
+        .entrega-card [class*="badge"],
+        .entrega-card [class*="status"] {
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        /* Wrapper rolável para o Resumo Financeiro */
+        .resumo-fin-scroll { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
+        .resumo-fin-scroll .resumo-anual-card { min-width: 600px; width: 100%; }
+
+        /* Ajustes de largura/colunas para o grid do Resumo Anual */
+        .resumo-anual-grid .resumo-header {
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b6b6b;
+            text-align: right;
+            padding-bottom: 8px;
+            border-bottom: 0.5px solid rgba(0,0,0,0.08);
+        }
+        .resumo-anual-grid .resumo-label {
+            min-width: 180px;
+            font-size: 13px;
+            color: #6b6b6b;
+            white-space: nowrap;
+            padding-right: 16px;
+            text-align: left;
+        }
+        .resumo-anual-grid .resumo-value {
+            min-width: 130px;
+            text-align: right;
+            font-family: ui-monospace, monospace;
+            font-size: 12px;
+            white-space: nowrap;
+            padding: 8px 12px;
+        }
+        .resumo-anual-grid .resumo-value.negative { color: #A32D2D; }
+        .resumo-anual-grid .resumo-value.saldo {
+            font-weight: 500;
+            color: #1a1a1a;
+            border-top: 0.5px solid rgba(0,0,0,0.10);
+            padding-top: 8px;
+        }
 
         /* Resumo Anual (grid transposto por ano) */
         .resumo-anual-card { background: #ffffff; border-radius:12px; padding:1.125rem; box-sizing:border-box; }

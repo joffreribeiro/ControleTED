@@ -680,7 +680,7 @@
 
                     <div class="entregas-row" style="display:flex; gap:0.5rem; align-items:flex-start; flex-wrap:wrap;">
                         <div class="resumo-panel" style="width:760px; min-width:520px; order:0;">
-                            <div class="card" style="padding:0.6rem; margin-bottom:0.5rem;">
+                            <div class="card" style="padding:0.6rem; margin-bottom:0.5rem; overflow:hidden; border-radius:12px;">
                                 <h4 class="card-title-blue"><i data-lucide="pie-chart" class="inline-icon-sm"></i> Resumo Financeiro</h4>
                                 <div id="resumoFinanceiroChart" style="min-height:160px; padding:0.5rem; background: linear-gradient(#fff, #f7f7f7); border-radius:0.5rem;">
                                     <p style="color:var(--text);">Selecione um TED para ver o resumo financeiro (ou deixe vazio para consolidado).</p>
@@ -688,9 +688,9 @@
                             </div>
                         </div>
                         <div class="entregas-panel" style="flex:1; min-width:320px; order:1;">
-                            <div class="card" style="padding:0.6rem; margin-bottom:0.5rem; width:100%; min-width:360px; height:420px; box-sizing:border-box; display:flex; flex-direction:column;">
+                            <div class="card" style="padding:0.6rem; margin-bottom:0.5rem; width:100%; min-width:360px; box-sizing:border-box; display:flex; flex-direction:column;">
                                 <h4 class="card-title-blue"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h4>
-                                <div id="entregasChartContainer" style="flex:1; display:flex; align-items:flex-end; overflow:auto;">
+                                <div id="entregasChartContainer" style="display:block; overflow-x:auto;">
                                     <p style="color:var(--text); margin:0;">Selecione um TED para ver o gráfico de entregas (por objeto).</p>
                                 </div>
                             </div>
@@ -7049,7 +7049,7 @@
             // Resumo Anual: renderizar em grid transposto (rótulos + colunas por ano)
             // Montamos dinamicamente `grid-template-columns` com 200px + N x 1fr
             const cols = ['200px'].concat(anosOrdenados.map(()=>'1fr')).join(' ');
-            let html = `<div class="resumo-anual-card"><div class="resumo-anual-grid" style="grid-template-columns: ${cols};">`;
+            let html = `<div class="resumo-fin-scroll"><div class="resumo-anual-card"><div class="resumo-anual-grid" style="grid-template-columns: ${cols};">`;
 
             // Cabeçalho
             html += `<div class="resumo-header"></div>`; // espaço para rótulo
@@ -7078,7 +7078,7 @@
             // Saldo Anual (última linha, destaque)
             renderRow('Saldo Anual', saldoAtualByAno, { saldo: true });
 
-            html += `</div></div>`;
+            html += `</div></div></div>`;
             resumoContainer.innerHTML = html;
         }
 
@@ -7777,7 +7777,7 @@
 
             // Renderizar em grid transposto (mesmo formato do Resumo Anual por Ano)
             const cols = ['200px'].concat(anosOrdenados.map(()=>'1fr')).join(' ');
-            let html = `<div class="resumo-anual-card"><div class="resumo-anual-grid" style="grid-template-columns: ${cols};">`;
+            let html = `<div class="resumo-fin-scroll"><div class="resumo-anual-card"><div class="resumo-anual-grid" style="grid-template-columns: ${cols};">`;
             html += `<div class="resumo-header"></div>`;
             anosOrdenados.forEach(ano => { html += `<div class="resumo-header">${ano}</div>`; });
 
@@ -7798,7 +7798,7 @@
             renderRow('Devolvido', devolvidoByAno, { negative: true });
             renderRow('Saldo Anual', saldoByAno, { saldo: true });
 
-            html += `</div></div>`;
+            html += `</div></div></div>`;
             container.innerHTML = html;
         }
 
