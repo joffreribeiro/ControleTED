@@ -860,7 +860,7 @@
             color: white;
         }
         .filter-btn::after {
-            content: '�-�';
+            content: '+';
             font-size: 0.75rem;
             margin-left: 0.35rem;
             opacity: 0.7;
@@ -1834,7 +1834,7 @@
                     background: #F4F4F2;
                 }
 
-        /* �"?�"? Colunas congeladas (sticky-freeze) �"?�"? */
+        /* Colunas congeladas (sticky-freeze) */
         /* Corpo/rodapé: background sólido branco */
         #detalhes #tedsDetalheContainer .tabela-padrao tbody .sticky-freeze,
         #detalhes #tedsDetalheContainer .tabela-padrao tfoot .sticky-freeze {
@@ -1862,7 +1862,7 @@
             box-shadow: 4px 0 8px rgba(0,0,0,0.16);
         }
 
-        /* �"?�"? Linhas do corpo �"?�"? */
+        /* Linhas do corpo */
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(even) {
             background: #f7faff;
         }
@@ -2308,7 +2308,7 @@
         .aditivo-modal-expanded .campo-modificado input,
         .aditivo-modal-expanded .campo-modificado select,
         .aditivo-modal-expanded .campo-modificado textarea { border-color: #f59e0b !important; background: rgba(245,158,11,0.06) !important; }
-        .aditivo-modal-expanded .campo-modificado label::after { content: ' �oZ alterado'; font-size: 0.75rem; color: #f59e0b; font-weight: 400; margin-left: 6px; }
+        .aditivo-modal-expanded .campo-modificado label::after { content: ' (alterado)'; font-size: 0.75rem; color: #f59e0b; font-weight: 400; margin-left: 6px; }
         /* Change display in history table */
         .aditivo-change-badge { display: inline-block; font-size: 0.72rem; padding: 1px 6px; border-radius: 4px; margin: 1px 2px; line-height: 1.4; }
         .aditivo-change-old { background: rgba(239,68,68,0.10); color: #dc2626; text-decoration: line-through; }
@@ -2334,7 +2334,7 @@
         .celula-alterada-aditivo .alter-arrow { color: #9ca3af; margin: 0 6px; font-weight:600; }
         .celula-alterada-aditivo .val-novo { color: #16a34a; font-weight: 700; display: inline-block; }
         tr.linha-adicionada-aditivo { background: rgba(34,197,94,0.08) !important; }
-        tr.linha-adicionada-aditivo td:first-child::before { content: '�<'; color: #16a34a; font-weight: 700; margin-right: 4px; }
+        tr.linha-adicionada-aditivo td:first-child::before { content: '+'; color: #16a34a; font-weight: 700; margin-right: 4px; font-size: 12px; }
         tr.linha-removida-aditivo { background: rgba(239,68,68,0.06) !important; }
         tr.linha-removida-aditivo td { text-decoration: line-through; color: var(--text-muted) !important; opacity: 0.6; }
         /* Entregas - novo layout de cards */
