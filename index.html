@@ -5360,10 +5360,11 @@
                         const digits = txt.replace(/\D/g, '');
                         td.textContent = digits ? formatarNDComPontos(digits) : '';
                     } else {
-                        // para números, manter formatação simples
+                        // para números inteiros: remover separador de milhar PT-BR antes de parsear
                         if (td.dataset.type === 'number') {
-                            const n = Number(txt.replace(/[^0-9\-\.]/g, ''));
-                            td.textContent = isFinite(n) ? formatarMilharesPtBR(n) : (txt || '');
+                            const digitsOnly = txt.replace(/\D/g, '');
+                            const n = digitsOnly ? parseInt(digitsOnly, 10) : 0;
+                            td.textContent = (n || digitsOnly) ? formatarMilharesPtBR(n) : '';
                         } else if (td.dataset.type === 'currency') {
                             // manter como está; aplicar máscara caso já exista
                             td.textContent = txt;
