@@ -2189,7 +2189,9 @@
                 const fimValido = fim && !isNaN(fim.getTime());
                 const emExecucao = inicioValido && fimValido && hoje >= inicio && hoje <= fim;
                 const diasRestantes = fimValido ? Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24)) : 0;
-                const percentualGasto = t.valorTed > 0 ? Math.round((t.gasto / t.valorTed) * 100) : 0;
+                // Execução financeira baseada na tabela Recursos Gerais (IMBEL)
+                const recsRealizados = (t.recursosGerais || []).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+                const percentualGasto = t.valorTed > 0 ? Math.round((recsRealizados / t.valorTed) * 100) : 0;
                 const percentualFisico = (typeof t.progressoFisico !== 'undefined' ? t.progressoFisico : calcularProgressoFisico(t)) || 0;
                 const inicioStr = inicioValido ? inicio.toLocaleDateString('pt-BR') : '-';
                 const fimStr = fimValido ? fim.toLocaleDateString('pt-BR') : '-';
@@ -2221,7 +2223,7 @@
                 // ---- Borda lateral por status ----
                 const isFinalizado = /finaliz|finalizado|conclu|denunci|encerr/.test(stNorm);
                 const isVigenciaVencida = vigenciaVencidaFlag || /vigênc.*venc|vigencia.*venc/.test(stNorm);
-                const saldoTedCard = (t.valorTed || 0) - (t.gasto || 0);
+                const saldoTedCard = (t.valorTed || 0) - (recsRealizados || 0);
                 let cardBorderColor;
                 if (isFinalizado) {
                     cardBorderColor = '#E24B4A'; // vermelho: finalizado / encerrado / denunciado
