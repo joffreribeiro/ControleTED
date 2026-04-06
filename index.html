@@ -3406,8 +3406,8 @@
                 const adCountEl = document.getElementById('aditivosCounter');
                 if (adCountEl) adCountEl.textContent = `${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} · +${totalAditivoMeses} meses`;
 
-                // Montar tabela compacta (colunas: #, Tipo, Meses, Data, Valor do TED, Alterações detalhadas, Ação)
-                let histHtml = '<table class="tabela-aditivos"><thead><tr><th>#</th><th>Tipo</th><th>Meses</th><th>Data</th><th>Valor do TED</th><th>Alterações</th><th>Ação</th></tr></thead><tbody>';
+                // Montar tabela compacta (colunas: #, Tipo, Data, Alterações detalhadas, Ação)
+                let histHtml = '<table class="tabela-aditivos"><thead><tr><th class="col-num">#</th><th class="col-tipo">Tipo</th><th class="col-data">Data</th><th class="col-alteracoes">Alterações</th><th class="col-acao">Ação</th></tr></thead><tbody>';
                 let contAditivo = 0, contApost = 0;
                 alteracoes.forEach((a, idx) => {
                     const isAditivo = a.tipo === 'aditivo';
@@ -3416,15 +3416,13 @@
                     const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
                     const tipoColor = isAditivo ? '#185FA5' : '#2563eb';
                     const dataStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
-                    const mesesStr = isAditivo ? `+${a.meses || 0}` : '-';
-
-                    const valorTedStr = (a.valorTed !== undefined && a.valorTed !== null && a.valorTed !== '')
-                        ? Number(a.valorTed).toLocaleString('pt-BR', {minimumFractionDigits: 2})
-                        : '-';
-
                     // Construir resumo detalhado de alterações (campos simples + tabelas)
                     let changesHtml = '';
-                    if (a.camposAlterados && Object.keys(a.camposAlterados).length) {
+                    const hasFieldChanges = a.camposAlterados && Object.keys(a.camposAlterados).length;
+                    const hasTableChanges = a.tabelasAlteradas && ((Array.isArray(a.tabelasAlteradas) && a.tabelasAlteradas.length) || (typeof a.tabelasAlteradas === 'object' && Object.keys(a.tabelasAlteradas).length));
+                    const hasAnyChanges = Boolean(hasFieldChanges || hasTableChanges);
+
+                    if (hasFieldChanges) {
                         const parts = [];
                         Object.keys(a.camposAlterados).forEach(k => {
                             const ch = a.camposAlterados[k];
@@ -3438,13 +3436,37 @@
                         });
                         changesHtml += parts.join('');
                     }
-                    if (a.tabelasAlteradas) {
-                        // Usar resumo detalhado já existente para mostrar campos alterados dentro das tabelas
+                    if (hasTableChanges) {
                         changesHtml += gerarResumoTabelasAlteradas(a.tabelasAlteradas);
                     }
+
+                    // Incluir informações de Valor e Meses DENTRO da célula de Alterações
+                    // somente quando houver alteração registrada (hasAnyChanges)
+                    const infoParts = [];
+                    if (hasAnyChanges) {
+                        // Valor do TED (mostrar prev → novo quando disponível)
+                        const valorPrev = (typeof a.prevValorTed !== 'undefined' && a.prevValorTed !== null) ? Number(a.prevValorTed) : null;
+                        const valorNovo = (typeof a.valorTed !== 'undefined' && a.valorTed !== null && a.valorTed !== '') ? Number(a.valorTed) : null;
+                        if (valorPrev !== null || valorNovo !== null) {
+                            const prevStr = (valorPrev !== null) ? `R$ ${valorPrev.toLocaleString('pt-BR', {minimumFractionDigits:2})}` : '-';
+                            const novoStr = (valorNovo !== null) ? `R$ ${valorNovo.toLocaleString('pt-BR', {minimumFractionDigits:2})}` : '-';
+                            infoParts.push(`<div class="alt-linha"><strong>Valor:</strong> <span class="alt-de">${prevStr}</span> <span class="alt-arrow">→</span> <span class="alt-para">${novoStr}</span></div>`);
+                        }
+
+                        // Meses (mostrar prev → novo quando possível)
+                        const mesesPrev = (typeof a.prevMeses !== 'undefined' && a.prevMeses !== null) ? Number(a.prevMeses) : null;
+                        const mesesNovo = (typeof a.meses !== 'undefined' && a.meses !== null) ? Number(a.meses) : null;
+                        if (mesesPrev !== null || mesesNovo !== null) {
+                            const prevM = (mesesPrev !== null) ? mesesPrev : '-';
+                            const novoM = (mesesNovo !== null) ? (mesesNovo >= 0 ? `+${mesesNovo}` : `${mesesNovo}`) : '-';
+                            infoParts.push(`<div class="alt-linha"><strong>M:</strong> <span class="alt-de">${prevM}</span> <span class="alt-arrow">→</span> <span class="alt-para">${novoM}</span></div>`);
+                        }
+                    }
+
+                    if (infoParts.length) changesHtml += infoParts.join('');
                     if (!changesHtml) changesHtml = '-';
 
-                    histHtml += `<tr><td>${idx+1}</td><td style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td>${mesesStr}</td><td>${dataStr}</td><td style="text-align:right;">${valorTedStr}</td><td style="max-width:420px;">${changesHtml}</td><td class="ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td></tr>`;
+                    histHtml += `<tr><td class="col-num">${idx+1}</td><td class="col-tipo" style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td class="col-data">${dataStr}</td><td class="col-alteracoes" style="max-width:420px;">${changesHtml}</td><td class="col-acao ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td></tr>`;
                 });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
@@ -3452,7 +3474,10 @@
             } else {
                 document.getElementById('info_alteracoesResumo').textContent = '';
                 document.getElementById('aditivosCounter').textContent = '';
-                document.getElementById('info_alteracoesHistorico').style.display = 'none';
+                // Exibir tabela vazia com colspan=5 conforme especificado
+                const emptyHtml = '<table class="tabela-aditivos"><thead><tr><th class="col-num">#</th><th class="col-tipo">Tipo</th><th class="col-data">Data</th><th class="col-alteracoes">Alterações</th><th class="col-acao">Ação</th></tr></thead><tbody><tr><td colspan="5" style="text-align:center; padding:1rem; color:var(--color-text-secondary);">Nenhum aditivo/apostilamento cadastrado</td></tr></tbody></table>';
+                document.getElementById('info_alteracoesHistorico').innerHTML = emptyHtml;
+                document.getElementById('info_alteracoesHistorico').style.display = 'block';
             }
 
             document.getElementById('info_primeiraDescentralizacao').textContent = formatarData(ted.primeiraDescentralizacao);

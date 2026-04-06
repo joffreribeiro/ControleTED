@@ -327,6 +327,19 @@
             vertical-align: middle;
         }
 
+        /* Tabela de Aditivos / Apostilamentos (coluna lateral) */
+        .tabela-aditivos { width: 100%; border-collapse: collapse; }
+        .tabela-aditivos thead th, .tabela-aditivos tbody td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .tabela-aditivos .col-alteracoes { min-width: 220px; width: auto; }
+        .tabela-aditivos .col-tipo { min-width: 110px; }
+        .tabela-aditivos .col-data { width: 100px; text-align: center; }
+        .tabela-aditivos .col-num { width: 30px; text-align: center; }
+        .tabela-aditivos .col-acao { width: 70px; text-align: center; }
+        .tabela-aditivos .alt-linha { margin-bottom: 0.25rem; font-size: 0.9rem; color: var(--text-secondary); }
+        .tabela-aditivos .alt-linha .alt-de { color: var(--text); margin-right: 0.35rem; }
+        .tabela-aditivos .alt-linha .alt-para { color: var(--primary-dark); font-weight:600; margin-left: 0.35rem; }
+        .tabela-aditivos .alt-linha .alt-arrow { margin: 0 0.35rem; color: var(--text-muted); }
+
         /* Forçar centralização APENAS no cabeçalho do Resumo Financeiro do dashboard */
         #resumoFinanceiroChart .tabela-padrao thead th {
             text-align: center !important;
