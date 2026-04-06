@@ -1064,7 +1064,7 @@
                             <table class="tabela-padrao" style="width: 100%;">
                                 <thead>
                                     <tr>
-                                        <th class="col-objeto">Objeto</th>
+                                        <th class="col-objeto col-texto">Objeto</th>
                                         <th class="col-qtde">Qtde</th>
                                         <th class="col-valor">Valor Unit.</th>
                                         <th class="col-valor">Valor Total</th>
@@ -1095,7 +1095,7 @@
                                 <thead>
                                     <tr>
                                         <th class="col-meta">Meta</th>
-                                        <th class="col-descricao">Descrição</th>
+                                        <th class="col-descricao col-texto">Descrição</th>
                                         <th class="col-m">M Início</th>
                                         <th class="col-m">M Final</th>
                                         <th class="col-mes">Mês Início</th>
@@ -1127,7 +1127,7 @@
                                 <thead>
                                     <tr>
                                         <th class="col-fase">Fase</th>
-                                        <th class="col-objeto">Objeto</th>
+                                        <th class="col-objeto col-texto">Objeto</th>
                                         <th class="col-qtde">Qtde</th>
                                         <th class="col-m">M Início</th>
                                         <th class="col-m">M Final</th>
@@ -1161,7 +1161,7 @@
                             <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 600px;">
                                 <thead>
                                     <tr>
-                                        <th class="col-objeto">Objeto</th>
+                                        <th class="col-objeto col-texto">Objeto</th>
                                         <th class="col-qtde">Qtd Prevista</th>
                                         <th class="col-qtde">Qtd Entregue</th>
                                         <th class="col-saldo">Saldo</th>
@@ -5483,7 +5483,7 @@
             // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
             let headerRow1 = tableElement.querySelector('thead tr');
             let headerHTML = '<th rowspan="2" class="col-meta">Meta</th>';
-            headerHTML += '<th rowspan="2" class="col-descricao">Descrição</th>';
+            headerHTML += '<th rowspan="2" class="col-descricao col-texto">Descrição</th>';
             headerHTML += '<th rowspan="2" class="col-m">M Início</th>';
             headerHTML += '<th rowspan="2" class="col-m">M Final</th>';
             headerHTML += '<th rowspan="2" class="col-mes">Mês Início</th>';
@@ -5790,7 +5790,7 @@
             const mmHideCadFis = monthsExpandedCadFis ? '' : ' display:none;';
 
             let headerHTML = '<th rowspan="2" class="col-fase">Fase</th>';
-            headerHTML += '<th rowspan="2" class="col-objeto">Objeto</th>';
+            headerHTML += '<th rowspan="2" class="col-objeto col-texto">Objeto</th>';
             headerHTML += '<th rowspan="2" class="col-qtde">Qtde</th>';
             headerHTML += '<th rowspan="2" class="col-qtde">Qtde Realizada</th>';
             headerHTML += '<th rowspan="2" class="col-m">M Início</th>';
@@ -6034,7 +6034,7 @@
             const monthsExpandedExecFis = document.getElementById('toggle-months-execFis')?.getAttribute('data-expanded') === '1';
             const mmHideExecFis = monthsExpandedExecFis ? '' : ' display:none;';
 
-            let headerHTML = '<th rowspan="2" class="col-objeto">Objeto</th>';
+            let headerHTML = '<th rowspan="2" class="col-objeto col-texto">Objeto</th>';
             headerHTML += '<th rowspan="2" class="col-qtde">Qtd Prevista</th>';
             headerHTML += '<th rowspan="2" class="col-qtde">Qtd Entregue</th>';
             headerHTML += '<th rowspan="2" class="col-qtde">Saldo</th>';
