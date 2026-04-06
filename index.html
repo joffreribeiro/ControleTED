@@ -3491,33 +3491,23 @@
                         changesHtml += gerarResumoTabelasAlteradas(a.tabelasAlteradas);
                     }
 
-                    // Incluir informações de Valor e Meses DENTRO da célula de Alterações
-                    // somente quando houver alteração registrada (hasAnyChanges)
+                    // Incluir Valor e Vigência sempre que houver mudança (independente de hasAnyChanges)
                     const infoParts = [];
-                    if (hasAnyChanges) {
-                        // Valor do TED: exibir apenas se houve mudança entre anterior e novo
-                        const valorPrevRaw = (typeof a.prevValorTed !== 'undefined' && a.prevValorTed !== null) ? a.prevValorTed : null;
-                        const valorNovoRaw = (typeof a.valorTed !== 'undefined' && a.valorTed !== null && a.valorTed !== '') ? a.valorTed : null;
-                        const valorPrevNum = (valorPrevRaw === null || valorPrevRaw === '') ? null : Number(valorPrevRaw);
-                        const valorNovoNum = (valorNovoRaw === null || valorNovoRaw === '') ? null : Number(valorNovoRaw);
-                        const valorChanged = !((valorPrevNum === null && valorNovoNum === null) || (valorPrevNum !== null && valorNovoNum !== null && !isNaN(valorPrevNum) && !isNaN(valorNovoNum) && valorPrevNum === valorNovoNum));
-                        if (valorChanged) {
-                            const prevStr = (valorPrevNum !== null && !isNaN(valorPrevNum)) ? `R$ ${valorPrevNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}` : '-';
-                            const novoStr = (valorNovoNum !== null && !isNaN(valorNovoNum)) ? `R$ ${valorNovoNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}` : '-';
-                            infoParts.push(`<div class="alt-linha"><strong>Valor:</strong> <span class="alt-de">${prevStr}</span> <span class="alt-arrow">→</span> <span class="alt-para">${novoStr}</span></div>`);
-                        }
-
-                        // Meses: exibir apenas se houve mudança (comparação numérica)
-                        const mesesPrevRaw = (typeof a.prevMeses !== 'undefined' && a.prevMeses !== null) ? a.prevMeses : null;
-                        const mesesNovoRaw = (typeof a.meses !== 'undefined' && a.meses !== null) ? a.meses : null;
-                        const mesesPrevNum = (mesesPrevRaw === null || mesesPrevRaw === '') ? null : Number(mesesPrevRaw);
-                        const mesesNovoNum = (mesesNovoRaw === null || mesesNovoRaw === '') ? null : Number(mesesNovoRaw);
-                        const mesesChanged = !((mesesPrevNum === null && mesesNovoNum === null) || (mesesPrevNum !== null && mesesNovoNum !== null && !isNaN(mesesPrevNum) && !isNaN(mesesNovoNum) && mesesPrevNum === mesesNovoNum));
-                        if (mesesChanged) {
-                            const prevM = (mesesPrevNum !== null && !isNaN(mesesPrevNum)) ? mesesPrevNum : '-';
-                            const novoM = (mesesNovoNum !== null && !isNaN(mesesNovoNum)) ? (mesesNovoNum >= 0 ? `+${mesesNovoNum}` : `${mesesNovoNum}`) : '-';
-                            infoParts.push(`<div class="alt-linha"><strong>M:</strong> <span class="alt-de">${prevM}</span> <span class="alt-arrow">→</span> <span class="alt-para">${novoM}</span></div>`);
-                        }
+                    // Valor do TED: exibir apenas se houve mudança entre prevValorTed e valorTed
+                    const valorPrevRaw = (typeof a.prevValorTed !== 'undefined' && a.prevValorTed !== null) ? a.prevValorTed : null;
+                    const valorNovoRaw = (typeof a.valorTed !== 'undefined' && a.valorTed !== null && a.valorTed !== '') ? a.valorTed : null;
+                    const valorPrevNum = (valorPrevRaw === null || valorPrevRaw === '') ? null : Number(valorPrevRaw);
+                    const valorNovoNum = (valorNovoRaw === null || valorNovoRaw === '') ? null : Number(valorNovoRaw);
+                    const valorChanged = !((valorPrevNum === null && valorNovoNum === null) || (valorPrevNum !== null && valorNovoNum !== null && !isNaN(valorPrevNum) && !isNaN(valorNovoNum) && valorPrevNum === valorNovoNum));
+                    if (valorChanged) {
+                        const prevStr = (valorPrevNum !== null && !isNaN(valorPrevNum)) ? `R$ ${valorPrevNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}` : '-';
+                        const novoStr = (valorNovoNum !== null && !isNaN(valorNovoNum)) ? `R$ ${valorNovoNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}` : '-';
+                        infoParts.push(`<div class="alt-linha"><strong>Valor:</strong> <span class="alt-de">${prevStr}</span> <span class="alt-arrow">→</span> <span class="alt-para">${novoStr}</span></div>`);
+                    }
+                    // Vigência (Meses): para aditivos, sempre mostrar quando meses != 0
+                    if (isAditivo && a.meses) {
+                        const sinalMeses = a.meses >= 0 ? `+${a.meses}` : `${a.meses}`;
+                        infoParts.push(`<div class="alt-linha"><strong>Vigência:</strong> <span class="alt-para">${sinalMeses} meses</span></div>`);
                     }
 
                     if (infoParts.length) changesHtml += infoParts.join('');
@@ -4449,7 +4439,7 @@
                         const partes = cols.map(col => {
                             const v = item[col.field];
                             if (v === undefined || v === null || v === '') return null;
-                            return `<span style="font-size:0.7rem;color:var(--text-muted);">${col.label}:</span> <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(v, col.type || 'text')}</span>`;
+                            return `<span style="font-size:0.62rem;color:var(--text-muted);">${col.label}:</span> <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(v, col.type || 'text')}</span>`;
                         }).filter(Boolean);
                         if (partes.length) html += `<div class="aditivo-change-row" style="margin-left:12px;">${partes.join(' &nbsp; ')}</div>`;
                     });
@@ -4462,7 +4452,7 @@
                         const partes = cols.map(col => {
                             const v = item[col.field];
                             if (v === undefined || v === null || v === '') return null;
-                            return `<span style="font-size:0.7rem;color:var(--text-muted);">${col.label}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(v, col.type || 'text')}</span>`;
+                            return `<span style="font-size:0.62rem;color:var(--text-muted);">${col.label}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(v, col.type || 'text')}</span>`;
                         }).filter(Boolean);
                         if (partes.length) html += `<div class="aditivo-change-row" style="margin-left:12px;">${partes.join(' &nbsp; ')}</div>`;
                     });
@@ -4507,7 +4497,7 @@
                             const deFmt = formatarValorTabela(ch.de, tipo);
                             const paraFmt = formatarValorTabela(ch.para, tipo);
                             if (deFmt === paraFmt) return; // pular se iguais
-                            html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.7rem;color:var(--text-muted);">${ch.label || field}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(ch.de, tipo)}</span> → <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(ch.para, tipo)}</span></div>`;
+                            html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.62rem;color:var(--text-muted);">${ch.label || field}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(ch.de, tipo)}</span> → <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(ch.para, tipo)}</span></div>`;
                         });
                     });
                 }
