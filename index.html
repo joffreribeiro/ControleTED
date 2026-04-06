@@ -4503,7 +4503,12 @@
                     html += `<tr data-tabela="${tabDef.key}" data-idx="${idx}">`;
                     tabDef.colunas.forEach(col => {
                         let val = item[col.field];
-                        if (col.type === 'currency' && val !== undefined && val !== null) {
+
+                        // Sanitizar ND (campo 'numero') para evitar símbolos/garbage vindo dos dados
+                        if (col.field === 'numero' || (col.label && String(col.label).toLowerCase().includes('nd'))) {
+                            const digits = String(val || '').replace(/[^0-9]/g, '');
+                            val = digits ? formatarNDComPontos(digits) : '';
+                        } else if (col.type === 'currency' && val !== undefined && val !== null) {
                             const _n = Number(val), _cents = Math.round(_n * 100), _units = Math.floor(_cents / 100), _rem = _cents % 100;
                             val = formatarMilharesPtBR(_units) + ',' + String(_rem).padStart(2, '0');
                         } else if (col.type === 'number' && val !== undefined && val !== null && val !== '') {
@@ -4511,7 +4516,10 @@
                         } else if (col.type === 'date' && val) {
                             try { val = new Date(val + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
                         }
-                        html += `<td contenteditable="true" data-field="${col.field}" data-type="${col.type || 'text'}" data-orig="${String(item[col.field] || '').replace(/"/g, '&quot;')}">${val !== undefined && val !== null ? val : ''}</td>`;
+
+                        // data-orig também com valor sanitizado para ND
+                        const dataOrig = (col.field === 'numero') ? String(item[col.field] || '').replace(/[^0-9]/g, '') : String(item[col.field] || '').replace(/\"/g, '&quot;');
+                        html += `<td contenteditable="true" data-field="${col.field}" data-type="${col.type || 'text'}" data-orig="${dataOrig}">${val !== undefined && val !== null ? val : ''}</td>`;
                     });
                     html += `<td><button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`;
                     html += '</tr>';
