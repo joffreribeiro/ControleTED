@@ -346,6 +346,15 @@
             vertical-align: middle !important;
         }
 
+        /* Estilo do container Resumo Financeiro (extraído de inline styles) */
+        #resumoFinanceiroChart {
+            min-height: 160px;
+            padding: 0.5rem;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
         /* Entregas / Resumo responsive layout */
         .entregas-row { display:flex; gap:0.5rem; align-items:flex-start; flex-wrap:wrap; }
         .resumo-panel { width:760px; min-width:520px; }
@@ -1440,10 +1449,7 @@
         .fim-vigencia-current { display:flex; align-items:center; gap:0.5rem; font-weight:500; }
         .fim-vigencia-meta { font-size:11px; color:#9b9b9b; margin-top:3px; }
 
-        /* Tabela aditivos */
-        .tabela-aditivos { width:100%; border-collapse:collapse; font-size:0.85rem; }
-        .tabela-aditivos thead th { text-align:left; padding:5px 6px; color:#6b6b6b; font-weight:500; border-bottom:0.5px solid rgba(0,0,0,0.08); font-size:11px; }
-        .tabela-aditivos tbody td { padding:5px 6px; border-bottom:0.5px solid rgba(0,0,0,0.04); }
+        /* Tabela aditivos (bloco duplicado removido; ver definição mais completa acima) */
         .ad-action-cell .btn-icon.delete { width:22px; height:22px; padding:0; border-radius:50%; border:0.5px solid rgba(0,0,0,0.12); display:inline-flex; align-items:center; justify-content:center; background:transparent; cursor:pointer; font-size:13px; }
 
         .aditivos-footer { margin-top:10px; }
