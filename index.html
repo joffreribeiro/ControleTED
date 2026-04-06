@@ -4558,6 +4558,8 @@
             tbody.appendChild(tr);
             // Aplicar máscaras de formatação na nova linha
             aplicarMascarasCelulasClone(tr);
+            // Garantir ícones do Lucide na nova linha
+            try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); }, 30); } catch(e) {}
             // Focar no primeiro campo da nova linha
             const primeiraCelula = tr.querySelector('td[contenteditable]');
             if (primeiraCelula) primeiraCelula.focus();
@@ -4760,6 +4762,9 @@
 
             document.body.appendChild(overlay);
 
+            // Garantir que os ícones do Lucide dentro do modal sejam renderizados e limpar células
+            try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); if (typeof limparConteudoCelulasClone === 'function') limparConteudoCelulasClone(overlay); }, 40); } catch(e) {}
+
             // Armazenar dados no overlay
             overlay.dataset.editIndex = isEdit ? String(editIndex) : '';
             overlay._snapshotOriginal = capturarSnapshotTed(ted);
@@ -4771,6 +4776,8 @@
             }
 
             overlay.classList.add('active');
+            // Re-renderizar ícones após o conteúdo dinâmico ser inserido e limpar células (segunda passagem)
+            try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); if (typeof limparConteudoCelulasClone === 'function') limparConteudoCelulasClone(overlay); }, 60); } catch(e) {}
         }
 
         // Atualizar o conteúdo do formulário baseado no tipo selecionado (aditivo ou apostilamento)
@@ -4870,6 +4877,9 @@
 
             // Aplicar máscaras nas células contenteditable
             aplicarMascarasCelulasClone(overlay);
+            // Garantir limpeza/normalização das células e renderizar ícones
+            try { if (typeof limparConteudoCelulasClone === 'function') limparConteudoCelulasClone(overlay); } catch(e) {}
+            try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); }, 40); } catch(e) {}
 
             // Preencher valores
             const dataInput = document.getElementById('alteracaoDataInput');
@@ -5330,6 +5340,35 @@
                     td.addEventListener('input', function() { formatarCelulaContentEditableNumber(td); });
                     td.addEventListener('paste', function() { setTimeout(function() { formatarCelulaContentEditableNumber(td); }, 0); });
                     td.dataset.maskApplied = '1';
+                }
+            });
+        }
+
+        // Limpar e normalizar o conteúdo das células contenteditable do modal (remover chars estranhos)
+        function limparConteudoCelulasClone(container) {
+            if (!container) return;
+            container.querySelectorAll('td[contenteditable="true"]').forEach(td => {
+                try {
+                    let txt = td.textContent || '';
+                    // remover caracteres de controle e BOMs
+                    txt = String(txt).replace(/[\u0000-\u001F\u007F-\u009F\uFEFF]/g, '').trim();
+                    if (td.dataset.field === 'numero') {
+                        const digits = txt.replace(/\D/g, '');
+                        td.textContent = digits ? formatarNDComPontos(digits) : '';
+                    } else {
+                        // para números, manter formatação simples
+                        if (td.dataset.type === 'number') {
+                            const n = Number(txt.replace(/[^0-9\-\.]/g, ''));
+                            td.textContent = isFinite(n) ? formatarMilharesPtBR(n) : (txt || '');
+                        } else if (td.dataset.type === 'currency') {
+                            // manter como está; aplicar máscara caso já exista
+                            td.textContent = txt;
+                        } else {
+                            td.textContent = txt;
+                        }
+                    }
+                } catch (e) {
+                    // noop
                 }
             });
         }
