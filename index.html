@@ -11237,12 +11237,13 @@
                 if (logoutBtn) logoutBtn.style.display = 'none';
                 if (cloudCtrl) cloudCtrl.style.display = 'none';
                 if (adminPanel) adminPanel.style.display = 'none';
-                if (tabConfig) tabConfig.style.display = '';
+                // Esconder aba Configurações para usuários não-admin
+                if (tabConfig) tabConfig.style.display = 'none';
                 if (tabRelatorios) tabRelatorios.style.display = 'none';
                 // Se está em aba restrita, voltar para dashboard
                 try {
                     var activeTab = document.querySelector('.tab-content.active');
-                    if (activeTab && (activeTab.id === 'relatorios')) {
+                    if (activeTab && (activeTab.id === 'relatorios' || activeTab.id === 'config')) {
                         switchTab('dashboard');
                     }
                 } catch(e) {}
