@@ -3521,7 +3521,7 @@
                         changesHtml += parts.join('');
                     }
                     if (hasTableChanges) {
-                        changesHtml += gerarResumoTabelasAlteradas(a.tabelasAlteradas);
+                        changesHtml += gerarResumoTabelasAlteradas(a.tabelasAlteradas, idx);
                     }
 
                     // Incluir Valor e Vigência sempre que houver mudança (independente de hasAnyChanges)
@@ -4492,119 +4492,135 @@
             return String(val);
         }
 
-        // Gerar HTML resumo das alterações em tabelas para o histórico
-        function gerarResumoTabelasAlteradas(tabelasAlteradas) {
+        // Gerar HTML resumo compacto das alterações em tabelas para o histórico
+        // Retorna apenas badges com contagens e um botão para abrir o detalhe completo
+        function gerarResumoTabelasAlteradas(tabelasAlteradas, altIndex) {
             if (!tabelasAlteradas || Object.keys(tabelasAlteradas).length === 0) return '';
             let html = '';
-            // Labels de fallback para tabelas que foram removidas do ADITIVO_TABELAS_CLONE
             const fallbackLabels = { execFisicas: 'Execução Física', execFinanceiras: 'Execução Financeira', recursosGerais: 'Recursos Gerais' };
-            // Iterar todas as chaves presentes no objeto de alterações
             Object.keys(tabelasAlteradas).forEach(tabelaKey => {
                 const rawDiffs = tabelasAlteradas[tabelaKey];
                 if (!rawDiffs) return;
                 const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
                 const labelTabela = tabDef ? tabDef.label : (fallbackLabels[tabelaKey] || tabelaKey);
 
-                // Backward compat: use criarMapaAlteracoes to reconcile add+remove pairs as modifications
                 const { modMap, modItemsList, addSet, remSet, addItemsList, remItemsList } = tabDef ? criarMapaAlteracoes(rawDiffs, tabDef) : { modMap: {}, modItemsList: [], addSet: new Set(), remSet: new Set(), addItemsList: [], remItemsList: [] };
                 const effectiveAdded = addSet.size;
                 const effectiveRemoved = remSet.size;
                 const effectiveModified = Object.keys(modMap).length;
 
                 html += `<div style="margin-top:4px;"><span class="aditivo-change-field">${labelTabela}:</span>`;
-                if (effectiveAdded > 0) {
-                    html += ` <span class="aditivo-change-badge aditivo-change-new">+${effectiveAdded} novo${effectiveAdded > 1 ? 's' : ''}</span>`;
-                    // Detalhar cada item adicionado
-                    (addItemsList || []).filter(x => addSet.has(x.k)).forEach(({ item }) => {
-                        const cols = tabDef ? tabDef.colunas : [];
-                        const partes = cols.map(col => {
-                            const v = item[col.field];
-                            if (v === undefined || v === null || v === '') return null;
-                            return `<span style="font-size:0.62rem;color:var(--text-muted);">${col.label}:</span> <span class="aditivo-change-badge aditivo-change-new">${formatarValorExibicao(v, col.type || 'text')}</span>`;
-                        }).filter(Boolean);
-                        if (partes.length) html += `<div class="aditivo-change-row" style="margin-left:12px;">${partes.join(' &nbsp; ')}</div>`;
-                    });
-                }
-                if (effectiveRemoved > 0) {
-                    html += ` <span class="aditivo-change-badge aditivo-change-old">-${effectiveRemoved} removido${effectiveRemoved > 1 ? 's' : ''}</span>`;
-                    // Detalhar cada item removido
-                    (remItemsList || []).filter(x => remSet.has(x.k)).forEach(({ item }) => {
-                        const cols = tabDef ? tabDef.colunas : [];
-                        const partes = cols.map(col => {
-                            const v = item[col.field];
-                            if (v === undefined || v === null || v === '') return null;
-                            return `<span style="font-size:0.62rem;color:var(--text-muted);">${col.label}:</span> <span class="aditivo-change-badge aditivo-change-old">${formatarValorExibicao(v, col.type || 'text')}</span>`;
-                        }).filter(Boolean);
-                        if (partes.length) html += `<div class="aditivo-change-row" style="margin-left:12px;">${partes.join(' &nbsp; ')}</div>`;
-                    });
-                }
-                if (effectiveModified > 0) {
-                    html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">${effectiveModified} alterado${effectiveModified > 1 ? 's' : ''}</span>`;
-                    // Detalhes das modificações — agora iteramos sobre os itens modificados
-                    const modItems = modItemsList || [];
-                    modItems.forEach(mi => {
-                        const camposAlterados = Object.assign({}, mi.camposAlterados || {});
-                        const original = mi.original || {};
-                        const atual = mi.atual || {};
-
-                        // Mostrar campos de identificação (matchFields) completos como contexto (ex: ND, UP, M)
-                        const idFields = (tabDef && tabDef.matchFields) ? tabDef.matchFields : [];
-                        if (idFields.length) {
-                            const idParts = idFields.map(f => {
-                                const colDef = tabDef.colunas.find(c => c.field === f) || { label: f, type: 'text' };
-                                const tipo = colDef.type || 'text';
-                                const deVal = original[f];
-                                const paraVal = atual[f];
-                                const deFmt = formatarValorTabela(deVal, tipo);
-                                const paraFmt = formatarValorTabela(paraVal, tipo);
-                                if (deFmt !== paraFmt) {
-                                    return `<span style="font-size:0.62rem;color:var(--text-muted);">${colDef.label}:</span> ${formatarCelulaAlterada(paraVal, deVal, tipo)}`;
-                                }
-                                return `<span style="font-size:0.62rem;color:var(--text-muted);">${colDef.label}:</span> <span class="aditivo-change-badge aditivo-change-current">${formatarValorExibicao(paraVal, tipo)}</span>`;
-                            }).filter(Boolean);
-                            if (idParts.length) html += `<div class="aditivo-change-row" style="margin-left:12px;">${idParts.join('&nbsp;&nbsp;')}</div>`;
-                        }
-
-                        // Agrupar M Início + M Final numa única linha quando ambos existirem e forem diferentes
-                        const mInicio = camposAlterados['mInicio'];
-                        const mFinal = camposAlterados['mFinal'];
-                        const mParts = [];
-                        if (mInicio) {
-                            const deFmt = formatarValorTabela(mInicio.de, 'number');
-                            const paraFmt = formatarValorTabela(mInicio.para, 'number');
-                            if (deFmt !== paraFmt) {
-                                mParts.push(`<span class="aditivo-change-label">M Início:</span> ${formatarCelulaAlterada(mInicio.para, mInicio.de, 'number')}`);
-                            }
-                            delete camposAlterados['mInicio'];
-                        }
-                        if (mFinal) {
-                            const deFmt = formatarValorTabela(mFinal.de, 'number');
-                            const paraFmt = formatarValorTabela(mFinal.para, 'number');
-                            if (deFmt !== paraFmt) {
-                                mParts.push(`<span class="aditivo-change-label">M Final:</span> ${formatarCelulaAlterada(mFinal.para, mFinal.de, 'number')}`);
-                            }
-                            delete camposAlterados['mFinal'];
-                        }
-                        if (mParts.length) {
-                            html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.7rem;color:var(--text-muted);">M:</span> ${mParts.join('&nbsp;&nbsp;')}</div>`;
-                        }
-
-                        // Renderizar demais campos modificados do item, com antigo riscado e novo em destaque
-                        Object.keys(camposAlterados).forEach(field => {
-                            const ch = camposAlterados[field];
-                            if (!ch) return;
-                            const colDef = tabDef ? tabDef.colunas.find(c => c.field === field) : null;
-                            const tipo = colDef ? colDef.type : 'text';
-                            const deFmt = formatarValorTabela(ch.de, tipo);
-                            const paraFmt = formatarValorTabela(ch.para, tipo);
-                            if (deFmt === paraFmt) return; // pular se iguais
-                            html += `<div class="aditivo-change-row" style="margin-left:12px;"><span style="font-size:0.62rem;color:var(--text-muted);">${ch.label || field}:</span> ${formatarCelulaAlterada(ch.para, ch.de, tipo)}</div>`;
-                        });
-                    });
-                }
+                if (effectiveAdded > 0) html += ` <span class="aditivo-change-badge aditivo-change-new">+${effectiveAdded} novo${effectiveAdded > 1 ? 's' : ''}</span>`;
+                if (effectiveModified > 0) html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">${effectiveModified} alterado${effectiveModified > 1 ? 's' : ''}</span>`;
+                if (effectiveRemoved > 0) html += ` <span class="aditivo-change-badge aditivo-change-old">-${effectiveRemoved} removido${effectiveRemoved > 1 ? 's' : ''}</span>`;
+                const callIdx = (typeof altIndex === 'number') ? altIndex : 'null';
+                html += ` <button class="btn btn-sm" onclick="abrirModalAlteracao(${callIdx}, true)" style="margin-left:8px;">Ver alterações</button>`;
                 html += '</div>';
             });
             return html;
+        }
+
+        // Gerar HTML detalhado (modo somente-visualização) contendo apenas os dados alterados
+        function gerarHtmlDetalhesAlteracoes(altObj) {
+            if (!altObj) return '<div>Nenhum detalhe disponível</div>';
+            let html = '';
+
+            // Campos simples alterados (campos do TED)
+            if (altObj.camposAlterados && Object.keys(altObj.camposAlterados).length) {
+                html += `<div class="aditivo-section-title">Campos alterados</div>`;
+                Object.keys(altObj.camposAlterados).forEach(key => {
+                    const ch = altObj.camposAlterados[key];
+                    const def = ADITIVO_CAMPOS_CLONE.find(c => c.key === key);
+                    const label = def ? def.label : (ch && ch.label) ? ch.label : key;
+                    const tipo = def ? def.type : (ch && ch.type ? ch.type : 'text');
+                    html += `<div class="aditivo-change-row" style="margin-left:6px; margin-bottom:6px;"><strong>${label}:</strong> ${formatarCelulaAlterada(ch.para, ch.de, tipo)}</div>`;
+                });
+            }
+
+            // Tabelas alteradas
+            if (altObj.tabelasAlteradas && Object.keys(altObj.tabelasAlteradas).length) {
+                html += `<div class="aditivo-section-title">Tabelas</div>`;
+                const fallbackLabels = { execFisicas: 'Execução Física', execFinanceiras: 'Execução Financeira', recursosGerais: 'Recursos Gerais' };
+                Object.keys(altObj.tabelasAlteradas).forEach(tabelaKey => {
+                    const rawDiffs = altObj.tabelasAlteradas[tabelaKey];
+                    if (!rawDiffs) return;
+                    const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+                    const labelTabela = tabDef ? tabDef.label : (fallbackLabels[tabelaKey] || tabelaKey);
+                    html += `<div style="margin-top:8px;"><strong>${labelTabela}</strong></div>`;
+
+                    const { modMap, modItemsList, addSet, remSet, addItemsList, remItemsList } = tabDef ? criarMapaAlteracoes(rawDiffs, tabDef) : { modMap: {}, modItemsList: [], addSet: new Set(), remSet: new Set(), addItemsList: [], remItemsList: [] };
+
+                    // Itens adicionados
+                    (addItemsList || []).filter(x => addSet.has(x.k)).forEach(({ item }) => {
+                        html += `<div class="aditivo-change-row" style="margin-left:12px; margin-bottom:6px;"><span class="aditivo-change-badge aditivo-change-new">Novo</span> `;
+                        const partes = (tabDef ? tabDef.colunas : []).map(col => {
+                            const v = item[col.field];
+                            if (v === undefined || v === null || v === '') return null;
+                            return `<span style="font-size:0.85rem;color:var(--text-muted);">${col.label}:</span> <span style="font-weight:600;">${formatarValorExibicao(v, col.type)}</span>`;
+                        }).filter(Boolean);
+                        html += partes.join(' &nbsp; ');
+                        html += `</div>`;
+                    });
+
+                    // Itens removidos
+                    (remItemsList || []).filter(x => remSet.has(x.k)).forEach(({ item }) => {
+                        html += `<div class="aditivo-change-row" style="margin-left:12px; margin-bottom:6px;"><span class="aditivo-change-badge aditivo-change-old">Removido</span> `;
+                        const partes = (tabDef ? tabDef.colunas : []).map(col => {
+                            const v = item[col.field];
+                            if (v === undefined || v === null || v === '') return null;
+                            return `<span style="font-size:0.85rem;color:var(--text-muted);">${col.label}:</span> <span style="font-weight:600;">${formatarValorExibicao(v, col.type)}</span>`;
+                        }).filter(Boolean);
+                        html += partes.join(' &nbsp; ');
+                        html += `</div>`;
+                    });
+
+                    // Itens modificados
+                    (modItemsList || []).forEach(mi => {
+                        const original = mi.original || {};
+                        const atual = mi.atual || {};
+                        html += `<div class="aditivo-change-row" style="margin-left:12px; padding:6px 0; border-top:1px solid rgba(0,0,0,0.04);">`;
+
+                        // Identificação: preferir 'numero','up','m' (ND, UP, M) quando presentes, senão usar matchFields (sem exibir 'id')
+                        let idFields = [];
+                        if (tabDef && tabDef.colunas) {
+                            const prefer = ['numero','up','m'];
+                            idFields = prefer.filter(f => tabDef.colunas.some(c => c.field === f));
+                        }
+                        if (!idFields.length && tabDef && tabDef.matchFields) {
+                            idFields = tabDef.matchFields.filter(f => f !== 'id' && tabDef.colunas.some(c => c.field === f));
+                        }
+
+                        if (idFields.length) {
+                            const idParts = idFields.map(f => {
+                                const colDef = tabDef.colunas.find(c => c.field === f);
+                                const tipo = colDef ? colDef.type : 'text';
+                                const deVal = original[f];
+                                const paraVal = atual[f];
+                                if (mi.camposAlterados && mi.camposAlterados[f]) {
+                                    return `<span style="font-size:0.85rem;color:var(--text-muted);margin-right:10px;"><strong>${colDef.label}:</strong> ${formatarCelulaAlterada(paraVal, deVal, tipo)}</span>`;
+                                }
+                                return `<span style="font-size:0.85rem;color:var(--text-muted);margin-right:10px;"><strong>${colDef.label}:</strong> <span style="font-weight:600;">${formatarValorExibicao(paraVal, tipo)}</span></span>`;
+                            }).filter(Boolean);
+                            if (idParts.length) html += `<div style="margin-bottom:6px;">${idParts.join('')}</div>`;
+                        }
+
+                        // Outros campos alterados do item
+                        Object.keys(mi.camposAlterados || {}).forEach(field => {
+                            const ch = mi.camposAlterados[field];
+                            if (!ch) return;
+                            // pular campos já exibidos como identificação
+                            if (idFields && idFields.indexOf(field) !== -1) return;
+                            const colDef = tabDef ? tabDef.colunas.find(c => c.field === field) : null;
+                            const tipo = colDef ? colDef.type : 'text';
+                            html += `<div style="margin-bottom:6px;"><span style="font-size:0.82rem;color:var(--text-muted);">${ch.label || field}:</span> ${formatarCelulaAlterada(ch.para, ch.de, tipo)}</div>`;
+                        });
+
+                        html += `</div>`;
+                    });
+                });
+            }
+
+            return html || '<div>Nenhuma alteração detalhada</div>';
         }
 
         // Gerar HTML das tabelas clonadas para o modal (somente leitura, editável inline)
@@ -4848,8 +4864,8 @@
 
         // ========== MODAL UNIFICADO: ADITIVO / APOSTILAMENTO ==========
 
-        // Abrir modal unificado para adicionar ou editar aditivo/apostilamento
-        function abrirModalAlteracao(editIndex) {
+        // Abrir modal unificado para adicionar, editar ou visualizar aditivo/apostilamento
+        function abrirModalAlteracao(editIndex, viewOnly) {
             if (!window.tedSelecionado) return alert('Selecione um TED primeiro.');
             let overlay = document.getElementById('alteracaoModalOverlay');
             if (overlay) overlay.remove();
@@ -4902,6 +4918,7 @@
 
             // Armazenar dados no overlay
             overlay.dataset.editIndex = isEdit ? String(editIndex) : '';
+            overlay.dataset.viewOnly = viewOnly ? '1' : '0';
             // (d) Ao editar, usar o snapshot original do registro (estado antes deste aditivo)
             // para que a comparação seja feita em relação ao estado correto, mesmo que outros
             // aditivos posteriores já tenham sido aplicados ao TED
@@ -5003,17 +5020,28 @@
             }
 
             const conteudo = overlay.querySelector('#alteracaoFormConteudo');
-            conteudo.innerHTML = `
-                ${dadosEspecificosHtml}
+            // Se for modo somente-visualização, renderizar somente os detalhes das alterações
+            if (overlay.dataset.viewOnly === '1') {
+                const detalheHtml = gerarHtmlDetalhesAlteracoes(existente || overlay._existente || {});
+                conteudo.innerHTML = detalheHtml;
+                conteudo.style.display = 'block';
+                // ocultar botão de confirmação em modo viewOnly
+                try { if (btn) btn.style.display = 'none'; } catch(e) {}
+                // ajustar título
+                try { titulo.textContent = `🔎 Detalhes: ${isEdit ? 'Editar' : 'Visualizar'} ${tipo === 'aditivo' ? 'Aditivo' : 'Apostilamento'}`; } catch(e) {}
+            } else {
+                conteudo.innerHTML = `
+                    ${dadosEspecificosHtml}
 
-                <div class="aditivo-section-title">Informações Gerais do TED</div>
-                <div class="aditivo-clone-grid">
-                    ${camposCloneHtml}
-                </div>
+                    <div class="aditivo-section-title">Informações Gerais do TED</div>
+                    <div class="aditivo-clone-grid">
+                        ${camposCloneHtml}
+                    </div>
 
-                ${tabelasCloneHtml}
-            `;
-            conteudo.style.display = 'block';
+                    ${tabelasCloneHtml}
+                `;
+                conteudo.style.display = 'block';
+            }
 
             // Aplicar máscaras nas células contenteditable
             aplicarMascarasCelulasClone(overlay);
