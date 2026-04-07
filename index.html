@@ -4366,8 +4366,49 @@
         // Comparar dois arrays de itens de uma tabela e retornar diferenças
         function compararArrayTabela(arrOrig, arrNovo, tabDef) {
             const result = { adicionados: [], removidos: [], modificados: [] };
-            const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+            const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] === null || item[f] === undefined ? '' : item[f])).join('||');
+            const getId = (item) => (item && item.id !== undefined && item.id !== null && String(item.id) !== '') ? String(item.id) : null;
 
+            // Priorizar matching por ID quando todos os itens originais têm ID
+            // (evita falsos positivos causados por diferenças de sanitização nos campos texto)
+            const allOrigHaveId = arrOrig.length > 0 && arrOrig.every(item => getId(item) !== null);
+            if (allOrigHaveId) {
+                const origMapById = {};
+                arrOrig.forEach((item, idx) => { origMapById[String(item.id)] = { item, idx }; });
+                const novoMapById = {};
+                arrNovo.forEach((item, idx) => { if (getId(item)) novoMapById[String(item.id)] = { item, idx }; });
+
+                arrOrig.forEach((origItem, origIdx) => {
+                    const id = String(origItem.id);
+                    const novoEntry = novoMapById[id];
+                    if (!novoEntry) {
+                        result.removidos.push({ item: origItem, index: origIdx });
+                    } else {
+                        const camposAlterados = {};
+                        tabDef.colunas.forEach(col => {
+                            const vOrig = formatarValorTabela(origItem[col.field], col.type);
+                            const vNovo = formatarValorTabela(novoEntry.item[col.field], col.type);
+                            if (vOrig !== vNovo) {
+                                camposAlterados[col.field] = { de: origItem[col.field], para: novoEntry.item[col.field], label: col.label };
+                            }
+                        });
+                        if (Object.keys(camposAlterados).length > 0) {
+                            result.modificados.push({ original: origItem, atual: novoEntry.item, camposAlterados, index: origIdx });
+                        }
+                    }
+                });
+
+                arrNovo.forEach(novoItem => {
+                    const id = getId(novoItem);
+                    if (!id || !origMapById[id]) {
+                        result.adicionados.push({ item: novoItem });
+                    }
+                });
+
+                return result;
+            }
+
+            // Fallback: matching por matchKey (para dados sem IDs)
             const origMap = {};
             arrOrig.forEach((item, idx) => {
                 const k = matchKey(item);
@@ -4690,6 +4731,16 @@
                             const parts = val.split('/');
                             if (parts.length === 3) {
                                 val = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                            }
+                        } else {
+                            // Campo texto: restaurar valor original se o usuário não editou a célula.
+                            // Evita falso-positivo causado por sanitização na exibição
+                            // (ex.: NBSP removido no display, mas não no dado original).
+                            if (!isNewRow && arrOrig[idx] && arrOrig[idx][col.field] !== undefined) {
+                                const origRaw = arrOrig[idx][col.field];
+                                if (sanitizeString(val) === sanitizeString(String(origRaw === null || origRaw === undefined ? '' : origRaw))) {
+                                    val = origRaw;
+                                }
                             }
                         }
                         item[col.field] = val;
