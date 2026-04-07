@@ -1639,7 +1639,7 @@
                     letter-spacing: 0.03em;
                     position: sticky;
                     top: 0;
-                    z-index: 20;
+                    z-index: 120;
                 }
 
                 /* Auxiliar para colunas com texto longo / descrição: alinhar à esquerda */
@@ -1654,18 +1654,18 @@
         /* Colunas congeladas (aplicadas dinamicamente via JS) */
         .tabela-padrao .sticky-freeze {
             position: sticky;
-            z-index: 24;
+            z-index: 130;
             background-clip: padding-box;
             background: var(--surface, #ffffff);
             isolation: isolate;
         }
         .tabela-padrao tbody .sticky-freeze,
         .tabela-padrao tfoot .sticky-freeze {
-            z-index: 24;
+            z-index: 130;
             background: var(--surface, #ffffff);
         }
         .tabela-padrao thead .sticky-freeze {
-            z-index: 40;
+            z-index: 140;
             background: var(--color-bg-surface) !important;
             color: var(--color-text-primary);
         }
@@ -2140,6 +2140,13 @@
             border-collapse: separate;
             border-spacing: 0;
             font-size: 0.8rem;
+            position: relative;
+            z-index: 1;
+        }
+        #ganttVigencia,
+        #ganttVigencia .gantt-wrap {
+            position: relative;
+            z-index: 1;
         }
         .gantt-table thead tr {
             background: var(--color-bg-surface);
@@ -2178,18 +2185,16 @@
         .gantt-table .sticky-ted {
             position: sticky;
         }
-        /* Ajuste: manter cabeçalhos das tabelas (sticky) sobre o cabeçalho do Gantt
-           reduzindo o z-index do Gantt para evitar sobreposição visual dos headers
-        */
+        /* Gantt deve ficar abaixo dos cabeçalhos congelados das demais tabelas */
         .gantt-table th.sticky-up,
         .gantt-table th.sticky-ted {
-            z-index: 5; /* abaixo de .tabela-padrao thead th (z-index:10) */
+            z-index: 4;
             background: var(--color-bg-surface);
             color: var(--color-text-primary);
         }
         .gantt-table td.sticky-up,
         .gantt-table td.sticky-ted {
-            z-index: 3;
+            z-index: 2;
             background: #fff;
         }
         .gantt-table tbody tr:nth-child(even) td.sticky-up,
