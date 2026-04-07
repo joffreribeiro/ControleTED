@@ -51,7 +51,10 @@
             const errEl = document.getElementById('modalMarcarRealizadaError');
             if (objEl) objEl.textContent = 'Objeto: ' + (f.objeto || '');
             if (dataEl) dataEl.value = f.dataRealizada || '';
-            if (qtdEl) qtdEl.value = (f.qtdeRealizada != null && f.qtdeRealizada !== '') ? formatarMilharesPtBR(Number(f.qtdeRealizada)) : '';
+            if (qtdEl) {
+                const sumEnt = (Array.isArray(f.entregas) ? f.entregas.reduce((s,e) => s + (parseNumber(e.quantidade || e.qtde || 0)||0), 0) : 0);
+                qtdEl.value = sumEnt ? formatarMilharesPtBR(Number(sumEnt)) : '';
+            }
             if (nfEl) nfEl.value = f.nfRealizada || f.nf || '';
             if (errEl) { errEl.textContent = ''; errEl.classList.remove('open'); }
 
@@ -109,6 +112,109 @@
             document.addEventListener('keydown', window._modalTrapHandler);
         }
 
+        // ===== Entregas (sub-registros do Cadastro Físico) =====
+        function entregas_toggleExpand(faseId) {
+            try {
+                const row = document.querySelector(`tr[data-fisico-id="${faseId}"]`);
+                if (!row) return;
+                const existing = document.getElementById(`subentregas-${faseId}`);
+                if (existing) { existing.remove(); return; }
+
+                const tr = document.createElement('tr');
+                tr.id = `subentregas-${faseId}`;
+                tr.className = 'subentregas-row';
+                const td = document.createElement('td');
+                td.colSpan = 999;
+
+                const f = (window.tedSelecionado.fisicos || []).find(x => x.id == faseId);
+                const entregas = f && Array.isArray(f.entregas) ? f.entregas : [];
+
+                let html = `<div class="subentregas-panel"><div class="subentregas-list">`;
+                if (!entregas.length) html += '<div class="subentregas-empty">Nenhuma entrega registrada</div>';
+                entregas.forEach(e => {
+                    html += `<div class="subentrega-item"><div class="subentrega-meta"><strong>${e.data || ''}</strong> · Qtd: ${formatNumber(e.quantidade || e.qtde || 0)}${e.nf ? ' · NF: ' + e.nf : ''}</div><div class="subentrega-actions"><button class="btn-small" onclick="entregas_remover(${faseId}, '${e.id}')">Remover</button></div></div>`;
+                });
+                html += `</div><div class="subentregas-actions"><button class="btn" onclick="entregas_promptAdd(${faseId})">+ Adicionar Nova Entrega</button> <button class="btn btn-ghost" onclick="document.getElementById('subentregas-${faseId}')?.remove()">Fechar</button></div></div>`;
+
+                td.innerHTML = html;
+                tr.appendChild(td);
+                row.parentNode.insertBefore(tr, row.nextSibling);
+            } catch(e) { console.warn('entregas_toggleExpand erro', e); }
+        }
+
+        function entregas_promptAdd(faseId) {
+            // Prompt simples inline (pode ser substituído pelo mini-form posteriormente)
+            const data = prompt('Data da entrega (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+            if (data === null) return;
+            const qtdRaw = prompt('Quantidade entregada:', '1');
+            if (qtdRaw === null) return;
+            const nf = prompt('Número da NF (opcional):', '') || '';
+            const qtd = parseNumber(qtdRaw);
+            if (!data || isNaN(new Date(data + 'T00:00:00').getTime())) { alert('Data inválida'); return; }
+            if (isNaN(qtd) || qtd < 0) { alert('Quantidade inválida'); return; }
+            entregas_adicionar(faseId, { data: data, quantidade: qtd, nf: nf });
+        }
+
+        function entregas_adicionar(faseId, entrega) {
+            if (!window.tedSelecionado) return;
+            const f = (window.tedSelecionado.fisicos || []).find(x => x.id == faseId);
+            if (!f) return;
+            f.entregas = Array.isArray(f.entregas) ? f.entregas : [];
+            const e = { id: entrega.id || (Date.now() + Math.floor(Math.random()*9999)), data: entrega.data || '', quantidade: entrega.quantidade || parseNumber(f.qtde) || 0, nf: entrega.nf || '' };
+            f.entregas.push(e);
+            adicionarRegistroAuditoria(window.tedSelecionado.id, 'adicionar_entrega', f.id, { objeto: f.objeto, data: e.data, quantidade: e.quantidade, nf: e.nf });
+            try { sincronizarExecucaoFisica(); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { try { salvarDados(); } catch(_) {} }
+            try { atualizarTabelaFisicos(); } catch(e) {}
+        }
+
+        function entregas_remover(faseId, entregaId) {
+            if (!window.tedSelecionado) return;
+            const f = (window.tedSelecionado.fisicos || []).find(x => x.id == faseId);
+            if (!f || !Array.isArray(f.entregas)) return;
+            const before = f.entregas.length;
+            f.entregas = f.entregas.filter(e => String(e.id) !== String(entregaId));
+            if (f.entregas.length === before) return; // nada removido
+            adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_entrega', f.id, { entregaId });
+            try { sincronizarExecucaoFisica(); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { try { salvarDados(); } catch(_) {} }
+            try { atualizarTabelaFisicos(); } catch(e) {}
+            const sub = document.getElementById(`subentregas-${faseId}`);
+            if (sub) { sub.remove(); entregas_toggleExpand(faseId); }
+        }
+
+        function entregas_getQtdEntregue(f) {
+            if (!f) return 0;
+            const arr = Array.isArray(f.entregas) ? f.entregas : [];
+            return arr.reduce((s, e) => s + (parseNumber(e.quantidade || e.qtde || 0) || 0), 0);
+        }
+
+        function entregas_getStatus(f) {
+            const previsto = parseNumber(f.qtde) || 0;
+            const entregue = entregas_getQtdEntregue(f) || 0;
+            if (entregue === 0) return 'vazio';
+            if (entregue < previsto) return 'parcial';
+            return 'concluido';
+        }
+
+        function sincronizarExecucaoFisica() {
+            if (!window.tedSelecionado) return;
+            const execs = [];
+            const fis = window.tedSelecionado.fisicos || [];
+            fis.forEach(f => {
+                const arr = Array.isArray(f.entregas) ? f.entregas : [];
+                arr.forEach(ent => {
+                    if (!ent || !ent.data) return;
+                    execs.push({ id: ent.id || (Date.now() + Math.floor(Math.random()*9999)), objeto: f.objeto, qtde: parseNumber(ent.quantidade || ent.qtde || 0), data: ent.data, nf: ent.nf || '' });
+                });
+            });
+            window.tedSelecionado.execFisicas = execs;
+            try { atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado); } catch(e) {}
+            try { atualizarTabelaExecFisica(); } catch(e) {}
+            try { atualizarTabelaFisicos(); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { try { salvarDados(); } catch(_) {} }
+        }
+
         function fecharModalMarcarRealizada() {
             const backdrop = document.getElementById('modalMarcarRealizadaBackdrop');
             if (backdrop) { backdrop.classList.remove('open'); backdrop.setAttribute('aria-hidden','true'); }
@@ -128,60 +234,48 @@
             const errEl = document.getElementById('modalMarcarRealizadaError');
             if (errEl) { errEl.textContent=''; errEl.classList.remove('open'); }
             if (!window.tedSelecionado) return;
-            const id = window._modalFisicoId;
-            if (!id) return fecharModalMarcarRealizada();
-            const fisicos = window.tedSelecionado.fisicos || [];
-            const f = fisicos.find(x => x.id == id);
-            if (!f) return fecharModalMarcarRealizada();
 
+            // Support single or multi selection mode (window._modalFisicoIds may contain multiple ids)
             const dataEl = document.getElementById('modalDataRealizada');
             const qtdEl = document.getElementById('modalQtdRealizada');
             const nfEl = document.getElementById('modalNfRealizada');
             const dt = dataEl ? (dataEl.value || '').trim() : '';
-            const qtd = qtdEl ? parseNumber(qtdEl.value) : 0;
+            const qtdRaw = qtdEl ? (qtdEl.value || '').trim() : '';
+            const qtdParsed = (qtdRaw === '' ? null : parseNumber(qtdRaw));
             const nf = nfEl ? (nfEl.value || '').trim() : '';
 
-            // validate inline
             if (!dt) { if (errEl) { errEl.textContent='Informe a data de realização.'; errEl.classList.add('open'); dataEl.focus(); } return; }
             if (isNaN(new Date(dt + 'T00:00:00').getTime())) { if (errEl) { errEl.textContent='Data inválida.'; errEl.classList.add('open'); dataEl.focus(); } return; }
-            if (isNaN(qtd) || qtd < 0) { if (errEl) { errEl.textContent='Quantidade inválida.'; errEl.classList.add('open'); qtdEl.focus(); } return; }
+            if (qtdParsed !== null && (isNaN(qtdParsed) || qtdParsed < 0)) { if (errEl) { errEl.textContent='Quantidade inválida.'; errEl.classList.add('open'); qtdEl.focus(); } return; }
 
-            // salvar na fase
-            f.realizada = true;
-            f.dataRealizada = dt;
-            f.qtdeRealizada = qtd;
-            f.nfRealizada = nf || '';
+            const fisicos = window.tedSelecionado.fisicos || [];
+            const ids = Array.isArray(window._modalFisicoIds) && window._modalFisicoIds.length ? window._modalFisicoIds : (window._modalFisicoId ? [window._modalFisicoId] : []);
+            if (!ids.length) return fecharModalMarcarRealizada();
 
-            // calcular se realizada antes do previsto
-            try {
-                let baseDate;
-                if (window.tedSelecionado.primeiraDescentralizacao) baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
-                else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-                else baseDate = new Date();
-                const scheduled = new Date(baseDate);
-                scheduled.setMonth(scheduled.getMonth() + (isNaN(f.mFinal) ? 0 : Number(f.mFinal)));
-                f.realizadaAntes = (new Date(dt + 'T00:00:00') <= scheduled);
-            } catch(e) { f.realizadaAntes = false; }
+            ids.forEach((fid, idx) => {
+                const f = fisicos.find(x => x.id == fid);
+                if (!f) return;
+                // garantir array de entregas
+                f.entregas = Array.isArray(f.entregas) ? f.entregas : [];
+                const quantidade = (qtdParsed === null) ? (parseNumber(f.qtde) || 0) : qtdParsed;
+                const entrada = { id: Date.now() + idx, data: dt, quantidade: quantidade, nf: nf || '', criadoEm: new Date().toISOString() };
+                f.entregas.push(entrada);
 
-            // adicionar execução física correspondente (remover entradas antigas na mesma data/objeto para evitar duplicação)
-            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas || [];
-            // remove existing execFisicas with same objeto and date
-            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas.filter(e => !(e.objeto === f.objeto && e.data === dt));
-            window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto: f.objeto, qtde: qtd, data: dt, nf: nf });
-
-            // registrar auditoria
-            const jaRealizado = f.realizada; // se era true antes, é edição
-            adicionarRegistroAuditoria(window.tedSelecionado.id, jaRealizado ? 'editar_realizado' : 'marcar_realizado', f.id, {
-                objeto: f.objeto,
-                data: dt,
-                quantidade: qtd,
-                nf: nf
+                // registrar auditoria por fase
+                adicionarRegistroAuditoria(window.tedSelecionado.id, 'marcar_realizada_entrega', f.id, {
+                    objeto: f.objeto,
+                    data: dt,
+                    quantidade: quantidade,
+                    nf: nf
+                });
             });
 
+            // Atualizar execuções derivadas e persistir
+            try { sincronizarExecucaoFisica(); } catch(e) {}
             try { salvarDados(); } catch(e) {}
             try { atualizarTabelasEmCascata('fisicos'); } catch(e) {}
             fecharModalMarcarRealizada();
-            showToast('Fase marcada como realizada e execução adicionada.', 'success');
+            showToast('Entrega(s) registrada(s) no Cadastro Físico e Execução sincronizada.', 'success');
         }
 
         function desmarcarModalRealizada() {
@@ -192,18 +286,16 @@
             const f = fisicos.find(x => x.id == id);
             if (!f) return fecharModalMarcarRealizada();
 
-            // remover flags e campos de realizada
+            // Remover entregas que correspondam à data atual marcada (compatibilidade com modal)
             const removedDate = f.dataRealizada || '';
-            delete f.realizada;
-            delete f.dataRealizada;
-            delete f.qtdeRealizada;
-            delete f.nfRealizada;
-            delete f.realizadaAntes;
+            if (removedDate) {
+                f.entregas = (Array.isArray(f.entregas) ? f.entregas : []).filter(e => (e.data || '') !== removedDate);
+            }
+            // Remover campos legados, caso existam
+            delete f.realizada; delete f.dataRealizada; delete f.qtdeRealizada; delete f.nfRealizada; delete f.realizadaAntes;
 
-            // remover execFisicas correspondentes com mesma objeto e dataRealizada (se existirem)
-            window.tedSelecionado.execFisicas = (window.tedSelecionado.execFisicas || []).filter(e => {
-                return !(e.objeto === f.objeto && e.data === removedDate);
-            });
+            // Re-sincronizar execuções derivadas
+            try { sincronizarExecucaoFisica(); } catch(e) {}
 
             // registrar auditoria
             adicionarRegistroAuditoria(window.tedSelecionado.id, 'desmarcar_realizado', f.id, {
@@ -1739,85 +1831,12 @@
 
         // Inicializar
         function inicializar() {
-            // Initialize from Firestore `teds` collection and attach real-time listener
+            // Inicialização simplificada — placeholder sem listener Firestore
             (async function() {
-                const waitFor = (fnName, timeout = 5000) => new Promise(resolve => {
-                    const start = Date.now();
-                    (function check(){
-                        if (window[fnName]) return resolve(true);
-                        if (Date.now() - start > timeout) return resolve(false);
-                        setTimeout(check, 200);
-                    })();
-                });
-
-                const ok = await waitFor('firestoreGetCollection', 5000);
-                if (!ok) {
-                    console.info('Firestore helpers not available; running with empty local state.');
-                    return;
-                }
-
                 try {
-                    const items = await window.firestoreGetCollection('teds');
-                    const normalized = (items || []).map(d => {
-                        const copy = Object.assign({}, d);
-                        if (!copy.id) {
-                            if (copy._docId) {
-                                const n = Number(copy._docId);
-                                copy.id = isFinite(n) ? n : copy._docId;
-                            }
-                        }
-                        try { delete copy._docId; } catch(e) {}
-                        return copy;
-                    });
-                    dados.teds = normalized;
-                    dados.proxiId = dados.teds.length ? Math.max(...dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
-                    console.info('Dados teds carregados do Firestore. Count:', dados.teds.length);
-
-                    // Garantir que filtros e gráficos relacionados sejam atualizados
-                    try { atualizarFiltroTedEntregas(); } catch(e) {}
-                    try { renderEntregasFromFilter(); } catch(e) {}
-                    try { renderResumoFinanceiroFromFilter(); } catch(e) {}
-                    try { popularFiltrosRelatorios(); } catch(e) {}
-
-                    // Attach real-time listener to the collection
-                    try {
-                        const unsub = window.firestoreOnCollectionSnapshot('teds', snap => {
-                            try {
-                                const arr = [];
-                                snap.forEach(d => {
-                                    const obj = Object.assign({}, d.data());
-                                    if (!obj.id) {
-                                        const docId = d.id;
-                                        const n = Number(docId);
-                                        obj.id = isFinite(n) ? n : docId;
-                                    }
-                                    arr.push(obj);
-                                });
-                                if (!window._salvandoEmAndamento) {
-                                    dados.teds = arr;
-                                    dados.proxiId = dados.teds.length ? Math.max(...dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
-                                    // Reconectar seleção atual ao novo array (evita objetos soltos após snapshot)
-                                    if (window.tedSelecionado && window.tedSelecionado.id) {
-                                        const reconectado = dados.teds.find(t => t.id == window.tedSelecionado.id);
-                                        if (reconectado) window.tedSelecionado = reconectado;
-                                    }
-                                    try { atualizarDashboard(); } catch(e) {}
-                                    try { atualizarListaTEDs(); } catch(e) {}
-                                    try { atualizarSeletorTED(); } catch(e) {}
-                                    try { atualizarGantt(); } catch(e) {}
-                                    try { atualizarFiltroTedEntregas(); } catch(e) {}
-                                    try { renderEntregasFromFilter(); } catch(e) {}
-                                    try { renderResumoFinanceiroFromFilter(); } catch(e) {}
-                                    try { popularFiltrosRelatorios(); } catch(e) {}
-                                } else {
-                                    console.info('[Firestore] Snapshot ignorado durante salvamento.');
-                                }
-                            } catch(err) { console.warn('erro snapshot teds', err); }
-                        });
-                        window._firestoreTedsUnsub = unsub;
-                    } catch(e) { console.warn('Não foi possível ativar listener Firestore (teds):', e); }
+                    // Placeholder: se houver lógica de carregamento assíncrono, inserir aqui.
                 } catch (e) {
-                    console.warn('Erro carregando coleção teds do Firestore:', e);
+                    console.warn('Erro inicializando aplicação (placeholder):', e);
                 }
             })();
 
@@ -1929,70 +1948,8 @@
 
             // Mostrar aba selecionada
             const tabEl = document.getElementById(tabName);
-            if (tabEl) tabEl.classList.add('active');
-
-            // Forçar visibilidade do conteúdo ativo para evitar estados de opacidade/residual
-            if (tabEl) {
-                tabEl.style.setProperty('display', 'block', 'important');
-                tabEl.style.setProperty('visibility', 'visible', 'important');
-                tabEl.style.setProperty('opacity', '1', 'important');
-                tabEl.style.setProperty('transform', 'none', 'important');
-
-                // Hard-fix para tabs que estavam abrindo em branco
-                if (tabName === 'relatorios' || tabName === 'config') {
-                    const card = tabEl.querySelector('.card');
-                    if (card) {
-                        card.style.setProperty('display', 'block', 'important');
-                        card.style.setProperty('visibility', 'visible', 'important');
-                        card.style.setProperty('opacity', '1', 'important');
-                    }
-                }
-            }
-
-            // Marcar botão ativo (btnEl pode ser o botão ou um filho como <i>)
-            let activeBtn = btnEl ? btnEl.closest('.tab-btn') || btnEl : null;
-            if (!activeBtn) {
-                activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
-            }
-            if (activeBtn) activeBtn.classList.add('active');
-            try {
-                const wrap = document.getElementById('filterFullWrap');
-                if (wrap) wrap.style.display = (tabName === 'detalhes') ? 'none' : 'flex';
-            } catch(e) {}
-            try {
-                if (tabName === 'relatorios') popularFiltrosRelatorios();
-            } catch(e) {}
-        }
-
-        // Calcula soma dos valores do cadastro financeiro de um TED
-        function calcularTotalFinanceiro(ted) {
-            if (!ted || !ted.financeiros || !ted.financeiros.length) return 0;
-            return ted.financeiros.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
-        }
-
-        // Calcula soma dos valores realizados (execução financeira) de um TED
-        function calcularTotalExecFinanceira(ted) {
-            if (!ted || !ted.execFinanceiras || !ted.execFinanceiras.length) return 0;
-            return ted.execFinanceiras.reduce((s, e) => s + (parseNumber(e.valor) || 0), 0);
-        }
-
-        // Atualiza o campo 'gasto' do TED a partir das execFinanceiras (valor realizado)
-        function atualizarGastoFromExecFinanceiras(ted) {
-            if (!ted) return;
-            const total = calcularTotalExecFinanceira(ted);
-            ted.gasto = total;
-            try { salvarDados(); } catch(e) {}
-            // Atualizar UI se TED selecionado
-            if (window.tedSelecionado && window.tedSelecionado.id === ted.id) {
-                // Atualizar exibição de info
-                try { document.querySelectorAll('#tedsDetalheContainer .percentual-gasto, #tedsDetalheContainer .gasto-valor').forEach(()=>{}); } catch(e) {}
-                // Re-render detalhes/dashboard elements that dependem de gasto
-                try { exibirInformacoesTED(); } catch(e) {}
-                try { atualizarListaTEDs(); } catch(e) {}
-                try { atualizarDashboard(); } catch(e) {}
-            }
-        }
-
+                // Execução Física é derivada do Cadastro Físico; editar aqui não é permitido.
+                showToast('Edição desabilitada: para registrar entregas use o Cadastro Físico.', 'info');
         // Calcula valor total de objetos (qtde * valorUnitario)
         function calcularTotalObjetosValor(ted) {
             if (!ted || !ted.objetos || !ted.objetos.length) return 0;
@@ -3166,6 +3123,25 @@
             window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
             // Migrar aditivos/apostilamentos para lista unificada
             migrarParaAlteracoesUnificadas(window.tedSelecionado);
+
+            // Migrar entregas antigas para novo campo `entregas` em cada item do cadastro físico
+            try {
+                (window.tedSelecionado.fisicos || []).forEach((f, idx) => {
+                    if (!f) return;
+                    if (!Array.isArray(f.entregas)) {
+                        f.entregas = [];
+                        // Se existirem campos legados (qtdeRealizada / dataRealizada), migrar para entregas[]
+                        const qtdLeg = (f.qtdeRealizada != null && String(f.qtdeRealizada).trim() !== '') ? parseNumber(f.qtdeRealizada) : 0;
+                        if (qtdLeg && qtdLeg > 0) {
+                            const migrated = { id: `migrado-${f.id || idx}-${Date.now()}`, data: (f.dataRealizada || ''), quantidade: qtdLeg, nf: (f.nfRealizada || f.nf || '(migrado)'), criadoEm: new Date().toISOString() };
+                            f.entregas.push(migrated);
+                        }
+                    }
+                });
+            } catch(e) { console.warn('Erro ao migrar entregas legadas:', e); }
+
+            // Garantir sincronização inicial da execução física a partir das sub-entregas
+            try { if (typeof sincronizarExecucaoFisica === 'function') sincronizarExecucaoFisica(); } catch(e) {}
 
             document.getElementById('tedsDetalheContainer').style.display = 'block';
             
@@ -6294,13 +6270,15 @@
 
                 // Preparar valores de qtde e qtde entregue e destacar em verde quando iguais
                 const tdQtdeRaw = mods && mods.qtde ? formatarCelulaAlterada((f.qtde ?? ''), mods.qtde.de, 'number') : formatNumber(f.qtde ?? '');
-                const tdQtdeEntRaw = formatNumber(f.qtdeRealizada ?? '');
+                // calcular quantidade entregue a partir de f.entregas[]
+                const entregasArr = Array.isArray(f.entregas) ? f.entregas : [];
+                const entNum = entregasArr.reduce((s, e) => s + (parseNumber(e.quantidade || e.qtde || 0) || 0), 0);
+                const tdQtdeEntRaw = formatNumber(entNum || '');
                 const prevNum = (f.qtde !== undefined && f.qtde !== null && String(f.qtde).trim() !== '') ? parseNumber(f.qtde) : null;
-                const entNum = (f.qtdeRealizada !== undefined && f.qtdeRealizada !== null && String(f.qtdeRealizada).trim() !== '') ? parseNumber(f.qtdeRealizada) : null;
                 const numsEqual = (prevNum !== null && entNum !== null && Math.abs(prevNum - entNum) < 1e-9);
                 const equalClass = numsEqual ? ' equal-qtde' : '';
 
-                let html = `<tr${trClass}>
+                let html = `<tr${trClass} data-fisico-id="${f.id}">
                     <td class="col-fase">${f.fase}</td>
                     <td class="col-objeto">${f.objeto}</td>
                         <td class="col-qtde${equalClass}">${tdQtdeRaw}</td>
@@ -6312,34 +6290,35 @@
                     <td class="col-acao">
                         <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
                         <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
-                        <button class="btn-icon-action done-action" onclick="abrirModalMarcarRealizada(${f.id})" title="Marcar realizada"><i data-lucide="check-check" class="inline-icon-sm"></i></button>
+                        <button class="btn-icon-action done-action" onclick="entregas_toggleExpand(${f.id})" title="Detalhar entregas"><i data-lucide="check-check" class="inline-icon-sm"></i></button>
                     </td>`;
                 
-                // Adicionar células do Gantt - destacar período mInicio até mFinal
-                // destaque do período planejado e do mês de realização (se houver)
-                let realizedIdx = null;
-                if (f.dataRealizada) {
+                // Adicionar células do Gantt - destacar período mInicio até mFinal e renderizar entregas por mês (empilhadas)
+                const entregaMesMap = new Map();
+                entregasArr.forEach(e => {
+                    if (!e || !e.data) return;
                     try {
-                        const rd = new Date(f.dataRealizada + 'T00:00:00');
-                        realizedIdx = Math.floor((rd.getFullYear() - baseDate.getFullYear()) * 12 + (rd.getMonth() - baseDate.getMonth()));
-                    } catch(e) { realizedIdx = null; }
-                }
+                        const rd = new Date(e.data + 'T00:00:00');
+                        const idx = Math.floor((rd.getFullYear() - baseDate.getFullYear()) * 12 + (rd.getMonth() - baseDate.getMonth()));
+                        if (idx >= 0 && idx < meses.length) {
+                            if (!entregaMesMap.has(idx)) entregaMesMap.set(idx, []);
+                            entregaMesMap.get(idx).push(e);
+                        }
+                    } catch(e) {}
+                });
 
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoPeriodo = mesIdx >= f.mInicio && mesIdx <= f.mFinal;
-                    const isRealizedMonth = (realizedIdx !== null && realizedIdx === mesIdx);
+                    const deliveries = entregaMesMap.get(mesIdx) || [];
                     let cor = 'transparent';
-                    if (isRealizedMonth) cor = '#bbf7d0'; // verde claro para realização
-                    else if (estaNoPeriodo) cor = '#e0f2fe'; // azul claro para período planejado
+                    if (deliveries.length) cor = 'transparent';
+                    else if (estaNoPeriodo) cor = '#e0f2fe';
 
-                    // tooltip e conteúdo para mês realizado
                     let tdTitle = '';
                     let cellContent = '';
-                    if (isRealizedMonth) {
-                        const nfTxt = f.nfRealizada || f.nf || '';
-                        tdTitle = `Realizada em ${f.dataRealizada || ''} → Qtd: ${formatNumber(f.qtdeRealizada ?? f.qtde ?? '')} → ${nfTxt ? ('NF: ' + nfTxt) : 'NF: -'}`;
-                        const qText = formatNumber(f.qtdeRealizada ?? f.qtde ?? '');
-                        cellContent = `${qText}${nfTxt ? '<br><small style="color:var(--text-muted);font-size:0.75rem">NF: ' + nfTxt + '</small>' : ''}`;
+                    if (deliveries.length) {
+                        tdTitle = deliveries.map(d => `${d.data} → Qtd: ${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? ' → NF: ' + d.nf : ''}`).join('\n');
+                        cellContent = deliveries.map(d => `<div class="entrega-mini" title="${d.data} • Qtd: ${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? ' • NF: ' + d.nf : ''}">${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? '<br><small style="opacity:.8">' + d.nf + '</small>' : ''}</div>`).join('');
                     }
 
                     html += `<td class="month-col-cadFis" style="background: ${cor}; ${mmHideCadFis}" title="${tdTitle}">${cellContent}</td>`;
@@ -6363,18 +6342,9 @@
         // EXECU→fO FÍSICA
         //"?"? Modal Execução Física"?"?
         function abrirModalExecFisica() {
-            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
-            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
-            const backdrop = document.getElementById('modalExecFisicaBackdrop');
-            const errEl = document.getElementById('modalExecFisicaError');
-            errEl.textContent = ''; errEl.classList.remove('open');
-            _popularSelectObjetosModal('modalExecFisicaObjeto');
-            document.getElementById('modalExecFisicaObjeto').value = '';
-            document.getElementById('modalExecFisicaQtde').value = '';
-            document.getElementById('modalExecFisicaData').value = '';
-            document.getElementById('modalExecFisicaNf').value = '';
-            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
-            setTimeout(() => document.getElementById('modalExecFisicaObjeto').focus(), 80);
+            // Execução Física é derivada do Cadastro Físico. Direcionar o usuário ao cadastro.
+            showToast('Para registrar entregas, use o Cadastro Físico.', 'info');
+            return;
         }
 
         function fecharModalExecFisica() {
@@ -6383,21 +6353,9 @@
         }
 
         function salvarModalExecFisica() {
-            const errEl = document.getElementById('modalExecFisicaError');
-            const objeto = document.getElementById('modalExecFisicaObjeto').value;
-            const qtde = parseNumber(document.getElementById('modalExecFisicaQtde').value);
-            const data = document.getElementById('modalExecFisicaData').value;
-            const nf = document.getElementById('modalExecFisicaNf').value || '';
-
-            if (!objeto || isNaN(qtde) || qtde < 0 || !data) {
-                errEl.textContent = '⚠️ Preencha todos os campos da execução física'; errEl.classList.add('open'); return;
-            }
-
-            window.tedSelecionado.execFisicas.push({ id: Date.now(), objeto, qtde, data, nf });
-            atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado);
-            atualizarTabelaExecFisica();
-            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
-            fecharModalExecFisica();
+            // Não permitir salvar execuções manualmente — Execução Física é sincronizada a partir do Cadastro Físico.
+            showToast('Salvar execução física manual não permitido. Use o Cadastro Físico.', 'info');
+            return;
         }
 
         function adicionarExecFisica() { abrirModalExecFisica(); }
@@ -6415,6 +6373,20 @@
         function atualizarTabelaExecFisica() {
             const tbody = document.getElementById('tabelaExecFisica');
             const tableElement = tbody.closest('table');
+            // Inserir banner informativo sobre modo leitura/sincronização
+            try {
+                const wrapper = tableElement ? tableElement.parentElement : null;
+                if (wrapper) {
+                    let banner = document.getElementById('execFisicaSyncBanner');
+                    if (!banner) {
+                        banner = document.createElement('div');
+                        banner.id = 'execFisicaSyncBanner';
+                        banner.className = 'entrega-sincronizacao-banner';
+                        banner.textContent = 'Execução Física — somente leitura. Os lançamentos são sincronizados a partir do Cadastro Físico.';
+                        wrapper.parentNode.insertBefore(banner, wrapper);
+                    }
+                }
+            } catch(e) {}
 
             if (!window.tedSelecionado) {
                 tbody.innerHTML = '<tr><td colspan="67" style="padding: 1rem; text-align: center; color: var(--text);">Selecione um TED</td></tr>';
@@ -10056,21 +10028,23 @@
                         });
                     }
                 });
-                // Buscar em fisicos (nfRealizada)
+                // Buscar NFs nas entregas do Cadastro Físico
                 (ted.fisicos || []).forEach(f => {
-                    if ((f.nfRealizada || '').toUpperCase().includes(nfQuery) && f.realizada) {
-                        resultados.push({
-                            tipo: 'fisicoRealizado',
-                            tedId: ted.id,
-                            numTed: ted.numTed,
-                            tedTitulo: ted.objetivo || ted.planoTrabalho || 'Sem título',
-                            objeto: f.objeto,
-                            data: f.dataRealizada,
-                            qtde: f.qtdeRealizada,
-                            nf: f.nfRealizada,
-                            fisicoId: f.id
-                        });
-                    }
+                    (f.entregas || []).forEach(ent => {
+                        if ((ent.nf || '').toUpperCase().includes(nfQuery)) {
+                            resultados.push({
+                                tipo: 'entrega',
+                                tedId: ted.id,
+                                numTed: ted.numTed,
+                                tedTitulo: ted.objetivo || ted.planoTrabalho || 'Sem título',
+                                objeto: f.objeto,
+                                data: ent.data,
+                                qtde: ent.quantidade || ent.qtde,
+                                nf: ent.nf || '',
+                                fisicoId: f.id
+                            });
+                        }
+                    });
                 });
             });
 

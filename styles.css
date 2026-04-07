@@ -399,6 +399,45 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ===== Estilos para Entregas / Subentregas (Cadastro Físico) ===== */
+        .subentregas-row .subentregas-panel,
+        .subentregas-panel {
+            padding: 0.75rem;
+            background: var(--color-bg-card);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .subentregas-list { display:flex; flex-direction:column; gap:0.5rem; }
+        .subentrega-item { display:flex; justify-content:space-between; gap:1rem; align-items:center; padding:0.45rem; border-radius:6px; background: rgba(0,0,0,0.02); }
+        .subentrega-meta { font-size:0.9rem; color:var(--text); }
+        .subentrega-actions { display:flex; gap:0.5rem; }
+        .subentregas-actions { display:flex; gap:0.5rem; align-items:center; }
+        .subentregas-empty { color:var(--text-muted); padding:0.5rem; }
+        .btn-small { font-size:0.8rem; padding:4px 8px; border-radius:6px; border:1px solid var(--border); background:transparent; cursor:pointer; }
+        .btn { padding:6px 10px; border-radius:8px; border:none; background:var(--primary); color:#fff; cursor:pointer; }
+        .btn-ghost { padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:transparent; cursor:pointer; }
+
+        /* Mini bloco de entrega dentro do Gantt */
+        .entrega-mini { display:inline-block; padding:2px 6px; margin:2px 0; border-radius:6px; background:#C0DD97; color:#08303A; font-size:0.75rem; line-height:1; }
+
+        /* Status icon pequeno para colunas */
+        .status-icon { width:12px; height:12px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle; }
+        .status-icon.vazio { background:#e5e7eb; }
+        .status-icon.parcial { background:#f59e0b; }
+        .status-icon.concluido { background:#10b981; }
+
+        /* Barra de progresso compacta usada inline */
+        .progress-inline { width:60px; height:6px; background:#f1f5f9; border-radius:999px; overflow:hidden; display:inline-block; vertical-align:middle; margin-right:6px; }
+        .progress-inline > .fill { height:100%; background:var(--success); }
+
+        /* Banner informativo de Execução Física sincronizada */
+        .entrega-sincronizacao-banner { padding:0.5rem 0.75rem; background:linear-gradient(90deg, rgba(59,130,246,0.08), rgba(59,130,246,0.04)); border-radius:8px; color:var(--text-secondary); font-size:0.9rem; margin-bottom:0.5rem; }
+
+
         .tab-content.active {
             display: block;
             animation: fadeIn 0.25s ease;
