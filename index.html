@@ -192,11 +192,24 @@
         function entregas_getStatus(item) {
             const previsto = Math.max(0, parseNumber(item && item.qtde) || 0);
             const totalEntregue = Math.max(0, entregas_getQtdEntregue(item) || 0);
-            const percentual = previsto > 0 ? (totalEntregue / previsto) * 100 : 0;
+
+            let percentual = 0;
+            if (previsto > 0) {
+                percentual = (totalEntregue / previsto) * 100;
+            } else if (totalEntregue > 0) {
+                // quando não há quantidade prevista mas existem entregas, mostrar barra preenchida
+                percentual = 100;
+            }
+            percentual = Math.max(0, Math.min(100, percentual));
 
             let estado = 'vazio';
-            if (totalEntregue > 0 && totalEntregue < previsto) estado = 'parcial';
-            if (previsto > 0 && totalEntregue >= previsto) estado = 'concluido';
+            if (totalEntregue > 0) {
+                if (previsto > 0) {
+                    estado = totalEntregue >= previsto ? 'concluido' : 'parcial';
+                } else {
+                    estado = 'parcial';
+                }
+            }
 
             return {
                 estado,
