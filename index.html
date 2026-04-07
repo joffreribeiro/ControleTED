@@ -4520,127 +4520,46 @@
             return html;
         }
 
-        // Gerar HTML detalhado (modo somente-visualização) contendo apenas os dados alterados
+        // Gerar HTML detalhado (modo somente-visualização)
+        // Exibe apenas o título ordinal (ex.: "1º Aditivo" / "1º Apostilamento") e a data
         function gerarHtmlDetalhesAlteracoes(altObj) {
             if (!altObj) return '<div>Nenhum detalhe disponível</div>';
-            let html = '';
+            let ordinalLabel = '';
+            try {
+                const overlay = document.getElementById('alteracaoModalOverlay');
+                const ted = window.tedSelecionado || {};
+                const idx = overlay && overlay.dataset && overlay.dataset.editIndex !== '' ? parseInt(overlay.dataset.editIndex, 10) : null;
+                const tipo = altObj.tipo || (idx !== null && ted.alteracoes && ted.alteracoes[idx] && ted.alteracoes[idx].tipo) || 'aditivo';
 
-            // Campos simples alterados (campos do TED)
-            if (altObj.camposAlterados && Object.keys(altObj.camposAlterados).length) {
-                html += `<div class="aditivo-section-title">Campos alterados</div>`;
-                Object.keys(altObj.camposAlterados).forEach(key => {
-                    const ch = altObj.camposAlterados[key];
-                    const def = ADITIVO_CAMPOS_CLONE.find(c => c.key === key);
-                    const label = def ? def.label : (ch && ch.label) ? ch.label : key;
-                    const tipo = def ? def.type : (ch && ch.type ? ch.type : 'text');
-                    html += `<div class="aditivo-change-row" style="margin-left:6px; margin-bottom:6px;"><strong>${label}:</strong> ${formatarCelulaAlterada(ch.para, ch.de, tipo)}</div>`;
-                });
+                if (idx !== null && Array.isArray(ted.alteracoes)) {
+                    let cont = 0;
+                    for (let i = 0; i <= idx && i < ted.alteracoes.length; i++) {
+                        if (ted.alteracoes[i] && ted.alteracoes[i].tipo === tipo) cont++;
+                    }
+                    ordinalLabel = tipo === 'aditivo' ? `${cont}º Aditivo` : `${cont}º Apostilamento`;
+                } else if (Array.isArray(ted.alteracoes)) {
+                    // fallback: tentar localizar pelo conteúdo
+                    let cont = 0, found = false;
+                    for (let i = 0; i < ted.alteracoes.length; i++) {
+                        if (ted.alteracoes[i] && ted.alteracoes[i].tipo === tipo) cont++;
+                        try { if (!found && JSON.stringify(ted.alteracoes[i]) === JSON.stringify(altObj)) { ordinalLabel = tipo === 'aditivo' ? `${cont}º Aditivo` : `${cont}º Apostilamento`; found = true; break; } } catch(e) {}
+                    }
+                    if (!found) ordinalLabel = tipo === 'aditivo' ? 'Aditivo' : 'Apostilamento';
+                } else {
+                    ordinalLabel = tipo === 'aditivo' ? 'Aditivo' : 'Apostilamento';
+                }
+            } catch (e) {
+                ordinalLabel = (altObj && altObj.tipo === 'apostilamento') ? 'Apostilamento' : 'Aditivo';
             }
 
-            // Tabelas alteradas
-            if (altObj.tabelasAlteradas && Object.keys(altObj.tabelasAlteradas).length) {
-                html += `<div class="aditivo-section-title">Tabelas</div>`;
-                const fallbackLabels = { execFisicas: 'Execução Física', execFinanceiras: 'Execução Financeira', recursosGerais: 'Recursos Gerais' };
-                Object.keys(altObj.tabelasAlteradas).forEach(tabelaKey => {
-                    const rawDiffs = altObj.tabelasAlteradas[tabelaKey];
-                    if (!rawDiffs) return;
-                    const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
-                    const labelTabela = tabDef ? tabDef.label : (fallbackLabels[tabelaKey] || tabelaKey);
-                    html += `<div style="margin-top:8px;"><strong>${labelTabela}</strong></div>`;
-
-                    const { modMap, modItemsList, addSet, remSet, addItemsList, remItemsList } = tabDef ? criarMapaAlteracoes(rawDiffs, tabDef) : { modMap: {}, modItemsList: [], addSet: new Set(), remSet: new Set(), addItemsList: [], remItemsList: [] };
-
-                    // Itens adicionados
-                    (addItemsList || []).filter(x => addSet.has(x.k)).forEach(({ item }) => {
-                        html += `<div class="aditivo-change-row" style="margin-left:12px; margin-bottom:6px;"><span class="aditivo-change-badge aditivo-change-new">Novo</span> `;
-                        const partes = (tabDef ? tabDef.colunas : []).map(col => {
-                            const v = item[col.field];
-                            if (v === undefined || v === null || v === '') return null;
-                            return `<span style="font-size:0.85rem;color:var(--text-muted);">${col.label}:</span> <span style="font-weight:600;">${formatarValorExibicao(v, col.type)}</span>`;
-                        }).filter(Boolean);
-                        html += partes.join(' &nbsp; ');
-                        html += `</div>`;
-                    });
-
-                    // Itens removidos
-                    (remItemsList || []).filter(x => remSet.has(x.k)).forEach(({ item }) => {
-                        html += `<div class="aditivo-change-row" style="margin-left:12px; margin-bottom:6px;"><span class="aditivo-change-badge aditivo-change-old">Removido</span> `;
-                        const partes = (tabDef ? tabDef.colunas : []).map(col => {
-                            const v = item[col.field];
-                            if (v === undefined || v === null || v === '') return null;
-                            return `<span style="font-size:0.85rem;color:var(--text-muted);">${col.label}:</span> <span style="font-weight:600;">${formatarValorExibicao(v, col.type)}</span>`;
-                        }).filter(Boolean);
-                        html += partes.join(' &nbsp; ');
-                        html += `</div>`;
-                    });
-
-                    // Itens modificados
-                    (modItemsList || []).forEach(mi => {
-                        const original = mi.original || {};
-                        const atual = mi.atual || {};
-                        html += `<div class="aditivo-change-row" style="margin-left:12px; padding:6px 0; border-top:1px solid rgba(0,0,0,0.04);">`;
-
-                        // Identificação: preferir 'numero','up','m' (ND, UP, M) quando presentes, senão usar matchFields (sem exibir 'id')
-                        let idFields = [];
-                        if (tabDef && tabDef.colunas) {
-                            const prefer = ['numero','up','m'];
-                            idFields = prefer.filter(f => tabDef.colunas.some(c => c.field === f));
-                        }
-                        if (!idFields.length && tabDef && tabDef.matchFields) {
-                            idFields = tabDef.matchFields.filter(f => f !== 'id' && tabDef.colunas.some(c => c.field === f));
-                        }
-
-                        if (idFields.length) {
-                            const idParts = idFields.map(f => {
-                                const colDef = tabDef.colunas.find(c => c.field === f);
-                                const tipo = colDef ? colDef.type : 'text';
-                                const deVal = original[f];
-                                const paraVal = atual[f];
-                                if (mi.camposAlterados && mi.camposAlterados[f]) {
-                                    return `<span style="font-size:0.85rem;color:var(--text-muted);margin-right:10px;"><strong>${colDef.label}:</strong> ${formatarCelulaAlterada(paraVal, deVal, tipo)}</span>`;
-                                }
-                                return `<span style="font-size:0.85rem;color:var(--text-muted);margin-right:10px;"><strong>${colDef.label}:</strong> <span style="font-weight:600;">${formatarValorExibicao(paraVal, tipo)}</span></span>`;
-                            }).filter(Boolean);
-                                if (idParts.length) html += `<div style="margin-bottom:6px;">${idParts.join('')}</div>`;
-
-                            // Mostrar valores principais da linha (ex: Valor, Valor Total, Valor Unit.) mesmo
-                            // quando apenas outro campo foi alterado. Preferir colunas do tipo 'currency' ou
-                            // campos conhecidos como 'valor', 'valorTotal', 'valorUnitario', 'valorPrevisto', 'valorRealizado'.
-                            const valueFieldNames = ['valor','valorTotal','valorUnitario','valorPrevisto','valorRealizado'];
-                            const valueCols = (tabDef && tabDef.colunas) ? tabDef.colunas.filter(c => (c.type === 'currency') || valueFieldNames.indexOf(c.field) !== -1) : [];
-                            if (valueCols && valueCols.length) {
-                                const valueParts = valueCols.map(col => {
-                                    const f = col.field;
-                                    const tipo = col.type || 'currency';
-                                    // se o campo foi alterado, mostrar antigo→novo; caso contrário, mostrar valor atual
-                                    if (mi.camposAlterados && mi.camposAlterados[f]) {
-                                        return `<span style="font-size:0.85rem;color:var(--text-muted);margin-right:10px;"><strong>${col.label}:</strong> ${formatarCelulaAlterada(atual[f], original[f], tipo)}</span>`;
-                                    }
-                                    const v = atual[f];
-                                    if (v === undefined || v === null || v === '') return null;
-                                    return `<span style="font-size:0.85rem;color:var(--text-muted);margin-right:10px;"><strong>${col.label}:</strong> <span style="font-weight:600;">${formatarValorExibicao(v, tipo)}</span></span>`;
-                                }).filter(Boolean);
-                                if (valueParts.length) html += `<div style="margin-bottom:6px;">${valueParts.join('')}</div>`;
-                            }
-                        }
-
-                        // Outros campos alterados do item
-                        Object.keys(mi.camposAlterados || {}).forEach(field => {
-                            const ch = mi.camposAlterados[field];
-                            if (!ch) return;
-                            // pular campos já exibidos como identificação
-                            if (idFields && idFields.indexOf(field) !== -1) return;
-                            const colDef = tabDef ? tabDef.colunas.find(c => c.field === field) : null;
-                            const tipo = colDef ? colDef.type : 'text';
-                            html += `<div style="margin-bottom:6px;"><span style="font-size:0.82rem;color:var(--text-muted);">${ch.label || field}:</span> ${formatarCelulaAlterada(ch.para, ch.de, tipo)}</div>`;
-                        });
-
-                        html += `</div>`;
-                    });
-                });
-            }
-
-            return html || '<div>Nenhuma alteração detalhada</div>';
+            const dataStr = altObj && altObj.data ? new Date(altObj.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+            const html = `
+                <div style="padding:8px 0;">
+                    <div style="font-weight:700; font-size:1rem; margin-bottom:6px;">${ordinalLabel}</div>
+                    <div style="color:var(--text-muted);">Data: <strong>${dataStr}</strong></div>
+                </div>
+            `;
+            return html;
         }
 
         // Gerar HTML das tabelas clonadas para o modal (somente leitura, editável inline)
