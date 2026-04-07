@@ -4667,8 +4667,42 @@
                     html += `<th>${col.label}</th>`;
                 });
                 html += '<th style="width:32px;"></th></tr></thead><tbody>';
-                arr.forEach((item, idx) => {
-                    html += `<tr data-tabela="${tabDef.key}" data-idx="${idx}">`;
+                // Mostrar linhas em ordem desejada, mas preservar data-idx para mapear ao índice original
+                const indices = arr.map((_, i) => i);
+                if (tabDef.key === 'fisicos') {
+                    indices.sort((i, j) => {
+                        const a = arr[i] || {};
+                        const b = arr[j] || {};
+                        const af = Number(a.fase);
+                        const bf = Number(b.fase);
+                        if (!isNaN(af) && !isNaN(bf)) return af - bf;
+                        return String(a.fase || '').localeCompare(String(b.fase || ''), 'pt-BR', {numeric: true});
+                    });
+                } else if (tabDef.key === 'financeiros') {
+                    const getNum = v => { const s = String(v || '').replace(/[^0-9]/g, ''); return s ? parseInt(s, 10) : Number.POSITIVE_INFINITY; };
+                    indices.sort((i, j) => {
+                        const a = arr[i] || {};
+                        const b = arr[j] || {};
+                        const ma = Number(a.m);
+                        const mb = Number(b.m);
+                        const maVal = !isNaN(ma) ? ma : Number.POSITIVE_INFINITY;
+                        const mbVal = !isNaN(mb) ? mb : Number.POSITIVE_INFINITY;
+                        if (maVal !== mbVal) return maVal - mbVal;
+                        return getNum(a.numero) - getNum(b.numero);
+                    });
+                } else if (tabDef.key === 'metas') {
+                    indices.sort((i, j) => {
+                        const aMeta = arr[i] ? arr[i].meta : '';
+                        const bMeta = arr[j] ? arr[j].meta : '';
+                        const na = parseFloat(String(aMeta || '').replace(',', '.'));
+                        const nb = parseFloat(String(bMeta || '').replace(',', '.'));
+                        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+                        return String(aMeta || '').localeCompare(String(bMeta || ''), 'pt-BR', {numeric: true});
+                    });
+                }
+                indices.forEach(kidx => {
+                    const item = arr[kidx];
+                    html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}">`;
                     tabDef.colunas.forEach(col => {
                         let rawVal = item[col.field];
                         // sanitizar entrada textual primeiro
@@ -4917,19 +4951,23 @@
             // Construir HTML do seletor de tipo + conteúdo dinâmico
             overlay.innerHTML = `
                 <div class="aditivo-modal aditivo-modal-expanded">
-                    <h3 id="alteracaoModalTitulo">✏️ ${isEdit ? 'Editar' : 'Novo'} Aditivo / Apostilamento</h3>
-                    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Selecione o tipo e altere campos e tabelas conforme necessário → as mudanças serão rastreadas automaticamente.</p>
+                    <h3 id="alteracaoModalTitulo" style="display:none;"></h3>
 
-                    <div class="aditivo-section-title">Tipo da Alteração</div>
-                    <div style="display:flex; gap:1.5rem; margin-bottom:1rem; padding:0.75rem; background:var(--bg-secondary,#f8fafc); border-radius:8px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
-                            <input type="radio" name="alteracaoTipo" value="aditivo" ${tipoInicial === 'aditivo' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#16a34a; width:18px; height:18px;">
-                            <span style="color:#16a34a;">Aditivo</span>
-                        </label>
-                        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
-                            <input type="radio" name="alteracaoTipo" value="apostilamento" ${tipoInicial === 'apostilamento' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#2563eb; width:18px; height:18px;">
-                            <span style="color:#2563eb;">📋 Apostilamento</span>
-                        </label>
+                    <div style="display:flex; gap:1rem; align-items:center; margin-bottom:1rem;">
+                        <div style="display:flex; gap:1.5rem; padding:0.75rem; background:var(--bg-secondary,#f8fafc); border-radius:8px; border:1px solid var(--border);">
+                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
+                                <input type="radio" name="alteracaoTipo" value="aditivo" ${tipoInicial === 'aditivo' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#16a34a; width:18px; height:18px;">
+                                <span style="color:#16a34a;">Aditivo</span>
+                            </label>
+                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
+                                <input type="radio" name="alteracaoTipo" value="apostilamento" ${tipoInicial === 'apostilamento' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#2563eb; width:18px; height:18px;">
+                                <span style="color:#2563eb;">📋 Apostilamento</span>
+                            </label>
+                        </div>
+                        <div style="margin-left:8px; display:flex; flex-direction:column; gap:4px;">
+                            <label style="font-weight:600; font-size:0.9rem;">Data</label>
+                            <input type="date" id="alteracaoDataInput" style="padding:6px 8px; border-radius:6px; border:1px solid var(--border);">
+                        </div>
                     </div>
 
                     <div id="alteracaoFormConteudo" style="display:none;">
@@ -5017,16 +5055,12 @@
             // Gerar tabelas clonadas
             const tabelasCloneHtml = gerarHtmlTabelasClone(ted, 'alt', existente);
 
-            // Campos específicos do aditivo
+            // Campos específicos do aditivo (data movida para o topo do modal para ficar próxima do tipo)
             let dadosEspecificosHtml = '';
             if (tipo === 'aditivo') {
                 dadosEspecificosHtml = `
                     <div class="aditivo-section-title">Dados do Aditivo</div>
                     <div class="aditivo-clone-grid">
-                        <div class="form-group">
-                            <label>Data do aditivo *</label>
-                            <input type="date" id="alteracaoDataInput">
-                        </div>
                         <div class="form-group">
                             <label>Quantidade de meses a acrescentar *</label>
                             <input type="number" id="alteracaoMesesInput" min="0" placeholder="Ex: 12">
@@ -5040,10 +5074,6 @@
                 dadosEspecificosHtml = `
                     <div class="aditivo-section-title">Dados do Apostilamento</div>
                     <div class="aditivo-clone-grid">
-                        <div class="form-group">
-                            <label>Data do Apostilamento *</label>
-                            <input type="date" id="alteracaoDataInput">
-                        </div>
                         <div class="form-group">
                             <label>Observação</label>
                             <input type="text" id="alteracaoObsInput" placeholder="Ex: Ajuste de texto/campo">
