@@ -4169,7 +4169,7 @@
 
         // Campos do TED que são clonados no aditivo
         const ADITIVO_CAMPOS_CLONE = [
-            { key: 'planoTrabalho', label: 'Plano de Trabalho', type: 'text', readonly: true },
+            { key: 'planoTrabalho', label: 'Plano de Trabalho', type: 'text' },
             { key: 'numTed', label: 'Nº do TED', type: 'text', readonly: true },
             { key: 'codigoPlano', label: 'Código do Plano', type: 'text', readonly: true },
             { key: 'numTedSiafi', label: 'Nº TED - SIAFI', type: 'text', readonly: true },
@@ -4601,7 +4601,27 @@
                                 }
                                 return `<span style="font-size:0.85rem;color:var(--text-muted);margin-right:10px;"><strong>${colDef.label}:</strong> <span style="font-weight:600;">${formatarValorExibicao(paraVal, tipo)}</span></span>`;
                             }).filter(Boolean);
-                            if (idParts.length) html += `<div style="margin-bottom:6px;">${idParts.join('')}</div>`;
+                                if (idParts.length) html += `<div style="margin-bottom:6px;">${idParts.join('')}</div>`;
+
+                            // Mostrar valores principais da linha (ex: Valor, Valor Total, Valor Unit.) mesmo
+                            // quando apenas outro campo foi alterado. Preferir colunas do tipo 'currency' ou
+                            // campos conhecidos como 'valor', 'valorTotal', 'valorUnitario', 'valorPrevisto', 'valorRealizado'.
+                            const valueFieldNames = ['valor','valorTotal','valorUnitario','valorPrevisto','valorRealizado'];
+                            const valueCols = (tabDef && tabDef.colunas) ? tabDef.colunas.filter(c => (c.type === 'currency') || valueFieldNames.indexOf(c.field) !== -1) : [];
+                            if (valueCols && valueCols.length) {
+                                const valueParts = valueCols.map(col => {
+                                    const f = col.field;
+                                    const tipo = col.type || 'currency';
+                                    // se o campo foi alterado, mostrar antigo→novo; caso contrário, mostrar valor atual
+                                    if (mi.camposAlterados && mi.camposAlterados[f]) {
+                                        return `<span style="font-size:0.85rem;color:var(--text-muted);margin-right:10px;"><strong>${col.label}:</strong> ${formatarCelulaAlterada(atual[f], original[f], tipo)}</span>`;
+                                    }
+                                    const v = atual[f];
+                                    if (v === undefined || v === null || v === '') return null;
+                                    return `<span style="font-size:0.85rem;color:var(--text-muted);margin-right:10px;"><strong>${col.label}:</strong> <span style="font-weight:600;">${formatarValorExibicao(v, tipo)}</span></span>`;
+                                }).filter(Boolean);
+                                if (valueParts.length) html += `<div style="margin-bottom:6px;">${valueParts.join('')}</div>`;
+                            }
                         }
 
                         // Outros campos alterados do item
