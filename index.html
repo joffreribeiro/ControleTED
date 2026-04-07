@@ -6213,7 +6213,7 @@
             let headerHTML = '<th rowspan="2" class="col-fase">Fase</th>';
             headerHTML += '<th rowspan="2" class="col-objeto col-texto">Objeto</th>';
             headerHTML += '<th rowspan="2" class="col-qtde">Qtde</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde">Qtde Realizada</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde">Qtde Entregue</th>';
             headerHTML += '<th rowspan="2" class="col-m">M Início</th>';
             headerHTML += '<th rowspan="2" class="col-m">M Final</th>';
             headerHTML += '<th rowspan="2" class="col-mes">Mês Início</th>';
@@ -6285,31 +6285,35 @@
                     finalStr = f.mesFinal && f.anoFinal ? `${mesesNomes[(f.mesFinal || 1) - 1]}/${f.anoFinal}` : '-';
                 }
 
-                let realizadoBadge = '';
-                if (f.realizada) {
-                    const antesTxt = f.realizadaAntes ? ' (antes do previsto)' : '';
-                    realizadoBadge = `<span class="badge done" title="Realizada em ${f.dataRealizada || ''}${antesTxt}">o"</span>`;
-                }
-
                 const mKey = matchKeyFis(f);
                 const mods = modMapFis[mKey];
                 const isAdded = addSetFis.has(mKey);
                 const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
-                const tdQtde = mods && mods.qtde ? formatarCelulaAlterada((f.qtde ?? ''), mods.qtde.de, 'number') : formatNumber(f.qtde ?? '');
                 const tdMInicio = mods && mods.mInicio ? formatarCelulaAlterada(f.mInicio, mods.mInicio.de, 'number') : f.mInicio;
                 const tdMFinal = mods && mods.mFinal ? formatarCelulaAlterada(f.mFinal, mods.mFinal.de, 'number') : f.mFinal;
+
+                // Preparar valores de qtde e qtde entregue e destacar em verde quando iguais
+                const tdQtdeRaw = mods && mods.qtde ? formatarCelulaAlterada((f.qtde ?? ''), mods.qtde.de, 'number') : formatNumber(f.qtde ?? '');
+                const tdQtdeEntRaw = formatNumber(f.qtdeRealizada ?? '');
+                const prevNum = (f.qtde !== undefined && f.qtde !== null && String(f.qtde).trim() !== '') ? parseNumber(f.qtde) : null;
+                const entNum = (f.qtdeRealizada !== undefined && f.qtdeRealizada !== null && String(f.qtdeRealizada).trim() !== '') ? parseNumber(f.qtdeRealizada) : null;
+                let tdQtde = tdQtdeRaw;
+                let tdQtdeEnt = tdQtdeEntRaw;
+                if (prevNum !== null && entNum !== null && prevNum === entNum) {
+                    tdQtde = `<span style="color:#16a34a;font-weight:600">${tdQtdeRaw}</span>`;
+                    tdQtdeEnt = `<span style="color:#16a34a;font-weight:600">${tdQtdeEntRaw}</span>`;
+                }
 
                 let html = `<tr${trClass}>
                     <td class="col-fase">${f.fase}</td>
                     <td class="col-objeto">${f.objeto}</td>
                         <td class="col-qtde">${tdQtde}</td>
-                        <td class="col-qtde">${formatNumber(f.qtdeRealizada ?? '')}</td>
+                        <td class="col-qtde">${tdQtdeEnt}</td>
                     <td class="col-m">${tdMInicio}</td>
                     <td class="col-m">${tdMFinal}</td>
                     <td class="col-mes">${inicioStr}</td>
                     <td class="col-mes">${finalStr}</td>
                     <td class="col-acao">
-                        ${realizadoBadge}
                         <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
                         <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
                         <button class="btn-icon-action done-action" onclick="abrirModalMarcarRealizada(${f.id})" title="Marcar realizada"><i data-lucide="check-check" class="inline-icon-sm"></i></button>
