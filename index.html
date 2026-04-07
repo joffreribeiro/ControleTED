@@ -3481,9 +3481,14 @@
                 if (nApost > 0) resumoParts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
                 document.getElementById('info_alteracoesResumo').textContent = `Total: ${resumoParts.join(', ')}`;
 
-                // Atualizar contador lateral
+                // (f) Atualizar contador lateral — incluir aditivos E apostilamentos
                 const adCountEl = document.getElementById('aditivosCounter');
-                if (adCountEl) adCountEl.textContent = `${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} · +${totalAditivoMeses} meses`;
+                if (adCountEl) {
+                    const _cParts = [];
+                    if (nAditivos > 0) _cParts.push(`${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} (+${totalAditivoMeses}m)`);
+                    if (nApost > 0) _cParts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
+                    adCountEl.textContent = _cParts.join(' · ');
+                }
 
                 // Montar tabela compacta (colunas: #, Tipo, Data, Alterações detalhadas, Ação)
                 let histHtml = '<table class="tabela-aditivos"><thead><tr><th class="col-num">#</th><th class="col-tipo">Tipo</th><th class="col-data">Data</th><th class="col-alteracoes">Alterações</th><th class="col-acao">Ação</th></tr></thead><tbody>';
@@ -4126,7 +4131,11 @@
         // Migração: unificar ted.aditivos e ted.apostilamentos em ted.alteracoes
         function migrarParaAlteracoesUnificadas(ted) {
             if (!ted) return;
-            if (ted.alteracoes && ted.alteracoes.length) return; // já migrado
+            // (e) Pular se já há alterações migradas; mas NÃO pular se alteracoes existe mas
+            // está vazio e há dados legados (evita perda silenciosa ao salvar [] manualmente)
+            const _temAlteracoesMigradas = ted.alteracoes && ted.alteracoes.length > 0;
+            const _temDadosLegados = (ted.aditivos && ted.aditivos.length > 0) || (ted.apostilamentos && ted.apostilamentos.length > 0);
+            if (_temAlteracoesMigradas || !_temDadosLegados) return;
             const alteracoes = [];
             (ted.aditivos || []).forEach(a => {
                 alteracoes.push(Object.assign({}, a, { tipo: 'aditivo' }));
@@ -4869,7 +4878,12 @@
 
             // Armazenar dados no overlay
             overlay.dataset.editIndex = isEdit ? String(editIndex) : '';
-            overlay._snapshotOriginal = capturarSnapshotTed(ted);
+            // (d) Ao editar, usar o snapshot original do registro (estado antes deste aditivo)
+            // para que a comparação seja feita em relação ao estado correto, mesmo que outros
+            // aditivos posteriores já tenham sido aplicados ao TED
+            overlay._snapshotOriginal = (isEdit && existente && existente.snapshot)
+                ? JSON.parse(JSON.stringify(existente.snapshot))
+                : capturarSnapshotTed(ted);
             overlay._existente = existente;
 
             // Se editando, preencher automaticamente o formulário
@@ -4994,8 +5008,11 @@
                 if (mesesInput) mesesInput.value = existente ? (existente.meses || '') : '';
             }
 
-            // Atualizar snapshot
-            overlay._snapshotOriginal = capturarSnapshotTed(ted);
+            // (d) Atualizar snapshot apenas para novas alterações; ao editar, preservar
+            // o snapshot original do registro para comparação correta
+            if (!isEdit) {
+                overlay._snapshotOriginal = capturarSnapshotTed(ted);
+            }
 
             // Listener para destacar campos alterados em tempo real
             overlay.querySelectorAll('[data-campo]').forEach(el => {
@@ -5056,6 +5073,30 @@
 
             // Detectar alterações de campos simples
             const alteracoes = detectarAlteracoesAditivo(snapshot, novosValores);
+
+            // (b) Detectar alterações de vigência feitas fora do modal (edição direta dos dados
+            // cadastrais entre dois aditivos). Compara snapshot anterior com snapshot atual.
+            const _camposVig = [
+                { key: 'vigencia', label: 'Vigência (meses)' },
+                { key: 'inicioVigencia', label: 'Início de Vigência' },
+                { key: 'fimVigencia', label: 'Fim de Vigência' },
+                { key: 'primeiraDescentralizacao', label: '1ª Descentralização' }
+            ];
+            const _altsExist = ted.alteracoes || [];
+            const _idxRef = (editIndex !== null && !isNaN(editIndex)) ? editIndex : _altsExist.length;
+            let _snapAnt = null;
+            for (let _i = _idxRef - 1; _i >= 0; _i--) {
+                if (_altsExist[_i] && _altsExist[_i].snapshot) { _snapAnt = _altsExist[_i].snapshot; break; }
+            }
+            if (_snapAnt) {
+                _camposVig.forEach(c => {
+                    const origVal = String(_snapAnt[c.key] === null || _snapAnt[c.key] === undefined ? '' : _snapAnt[c.key]);
+                    const novaVal = String(snapshot[c.key] === null || snapshot[c.key] === undefined ? '' : snapshot[c.key]);
+                    if (origVal !== novaVal && !alteracoes[c.key]) {
+                        alteracoes[c.key] = { de: _snapAnt[c.key], para: snapshot[c.key], label: c.label };
+                    }
+                });
+            }
 
             // Coletar dados das tabelas editadas no modal
             const dadosTabelas = coletarDadosTabelasModal('alt');
