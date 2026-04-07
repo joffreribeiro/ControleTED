@@ -1330,10 +1330,14 @@
                             <h3 class="detalhe-secao-titulo"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física <span class="section-count-badge" id="count-execfis">0</span></h3>
                             <div class="detalhe-secao-actions">
                                 <button type="button" class="btn-toggle-months" id="toggle-months-execFis" data-expanded="0" onclick="toggleMonthCols('execFis', this)">Ver detalhes mensais</button>
-                                <button type="button" class="section-add-btn" onclick="abrirModalExecFisica()">+ Adicionar</button>
+                                                                <button type="button" class="section-add-btn" onclick="showToast('Para registrar entregas, use o Cadastro Físico ↑', 'info')">+ Adicionar</button>
                             </div>
                         </div>
                         <div class="detalhe-secao-body">
+
+                                                <div class="entrega-sincronizacao-banner">
+                                                    ℹ️ <span>Sincronização Ativa: dados atualizados automaticamente a partir do Cadastro Físico. Edições são feitas apenas no Cadastro.</span>
+                                                </div>
 
                         <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem;">
                             <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 600px;">
@@ -6425,7 +6429,7 @@
         //"?"? Modal Execução Física"?"?
         function abrirModalExecFisica() {
             // Execução Física é derivada do Cadastro Físico. Direcionar o usuário ao cadastro.
-            showToast('Para registrar entregas, use o Cadastro Físico.', 'info');
+            showToast('Para registrar entregas, use o Cadastro Físico ↑', 'info');
             return;
         }
 
@@ -6455,20 +6459,6 @@
         function atualizarTabelaExecFisica() {
             const tbody = document.getElementById('tabelaExecFisica');
             const tableElement = tbody.closest('table');
-            // Inserir banner informativo sobre modo leitura/sincronização
-            try {
-                const wrapper = tableElement ? tableElement.parentElement : null;
-                if (wrapper) {
-                    let banner = document.getElementById('execFisicaSyncBanner');
-                    if (!banner) {
-                        banner = document.createElement('div');
-                        banner.id = 'execFisicaSyncBanner';
-                        banner.className = 'entrega-sincronizacao-banner';
-                        banner.textContent = 'Execução Física — somente leitura. Os lançamentos são sincronizados a partir do Cadastro Físico.';
-                        wrapper.parentNode.insertBefore(banner, wrapper);
-                    }
-                }
-            } catch(e) {}
 
             if (!window.tedSelecionado) {
                 tbody.innerHTML = '<tr><td colspan="67" style="padding: 1rem; text-align: center; color: var(--text);">Selecione um TED</td></tr>';
@@ -6577,15 +6567,13 @@
                 }
                 const fillColor = execPercActual >= 100 ? '#C0DD97' : (execPercActual > 0 ? '#FBBF24' : '#E5E7EB');
 
-                // Mapa mês->quantidade entregue e detalhes (data, nf, qtde)
-                const mapaMes = new Map();
+                // Mapa mês -> entregas individuais (para renderizar blocos por entrega)
                 const mapaDetails = new Map();
                 entregasObj.forEach(e => {
                     if (!e.data) return;
                     const d = new Date(e.data + 'T00:00:00');
                     const diffMonths = (d.getFullYear() - startDate.getFullYear()) * 12 + (d.getMonth() - startDate.getMonth());
                     if (diffMonths >= 0 && diffMonths < 60) {
-                        mapaMes.set(diffMonths, (mapaMes.get(diffMonths) || 0) + (parseNumber(e.qtde) || 0));
                         if (!mapaDetails.has(diffMonths)) mapaDetails.set(diffMonths, []);
                         mapaDetails.get(diffMonths).push({ data: e.data, nf: e.nf || '', qtde: e.qtde });
                     }
@@ -6609,10 +6597,9 @@
                     </td>`;
 
                 meses.forEach((_, idx) => {
-                    const val = mapaMes.get(idx) || '';
-                    const bg = val ? '#e0f2fe' : 'transparent';
-                    let title = 'Clique para editar';
                     const details = mapaDetails.get(idx) || [];
+                    let cellContent = '';
+                    let title = '';
                     if (details.length) {
                         const parts = details.map(d => {
                             const date = d.data || '';
@@ -6621,8 +6608,14 @@
                             return [date, nfText, qt].filter(Boolean).join(' → ');
                         });
                         title = parts.join('\n');
+                        cellContent = details.map(d => {
+                            const qtd = formatNumber(d.qtde || 0);
+                            const nfLinha = d.nf ? '<br><small style="opacity:.8">' + d.nf + '</small>' : '';
+                            const tt = `${d.data || ''} • Qtd: ${qtd}${d.nf ? ' • NF: ' + d.nf : ''}`;
+                            return `<div class="entrega-mini" title="${tt}">${qtd}${nfLinha}</div>`;
+                        }).join('');
                     }
-                    html += `<td class="month-col-execFis col-mes" style="background: ${bg}; cursor: pointer; ${mmHideExecFis}" onclick="editarValorExecFisica('${obj}', ${idx})" title="${title}">${val ? formatNumber(val) : ''}</td>`;
+                    html += `<td class="month-col-execFis col-mes" style="${mmHideExecFis}" title="${title}">${cellContent}</td>`;
                 });
                 html += '</tr>';
                 return html;
