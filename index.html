@@ -132,9 +132,10 @@
                 let html = `<div class="subentregas-panel"><div class="subentregas-list">`;
                 if (!entregas.length) html += '<div class="subentregas-empty">Nenhuma entrega registrada</div>';
                 entregas.forEach(e => {
-                    html += `<div class="subentrega-item"><div class="subentrega-meta"><strong>${e.data || ''}</strong> · Qtd: ${formatNumber(e.quantidade || e.qtde || 0)}${e.nf ? ' · NF: ' + e.nf : ''}</div><div class="subentrega-actions"><button class="btn-small" onclick="entregas_remover(${faseId}, '${e.id}')">Remover</button></div></div>`;
+                    const ddisp = (e && e.data) ? (new Date(normalizarData(e.data) + 'T00:00:00').toLocaleDateString('pt-BR')) : '';
+                    html += `<div class="subentrega-item"><div class="subentrega-meta"><strong>${ddisp}</strong> · Qtd: ${formatNumber(e.quantidade || e.qtde || 0)}${e.nf ? ' · NF: ' + e.nf : ''}</div><div class="subentrega-actions"><button class="btn-small" onclick="entregas_remover(${faseId}, '${e.id}')">Remover</button></div></div>`;
                 });
-                html += `</div><div class="subentregas-actions"><button class="btn" onclick="entregas_promptAdd(${faseId})">+ Adicionar Nova Entrega</button> <button class="btn btn-ghost" onclick="document.getElementById('subentregas-${faseId}')?.remove()">Fechar</button></div></div>`;
+                html += `</div><div class="subentregas-actions"><button class="btn" onclick="abrirModalAdicionarEntrega(${faseId})">+ Adicionar Nova Entrega</button> <button class="btn btn-ghost" onclick="document.getElementById('subentregas-${faseId}')?.remove()">Fechar</button></div></div>`;
 
                 td.innerHTML = html;
                 tr.appendChild(td);
@@ -142,18 +143,72 @@
             } catch(e) { console.warn('entregas_toggleExpand erro', e); }
         }
 
-        function entregas_promptAdd(faseId) {
-            // Prompt simples inline (pode ser substituído pelo mini-form posteriormente)
-            const data = prompt('Data da entrega (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
-            if (data === null) return;
-            const qtdRaw = prompt('Quantidade entregada:', '1');
-            if (qtdRaw === null) return;
-            const nf = prompt('Número da NF (opcional):', '') || '';
-            const qtd = parseNumber(qtdRaw);
-            if (!data || isNaN(new Date(data + 'T00:00:00').getTime())) { alert('Data inválida'); return; }
-            if (isNaN(qtd) || qtd < 0) { alert('Quantidade inválida'); return; }
-            entregas_adicionar(faseId, { data: data, quantidade: qtd, nf: nf });
+        // Abre modal/form para adicionar uma nova entrega (data mostrada em DD/MM/AAAA)
+        function abrirModalAdicionarEntrega(faseId) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            window._modalAddEntregaFaseId = faseId;
+            const backdrop = document.getElementById('modalAddEntregaBackdrop');
+            const dateEl = document.getElementById('modalAddEntregaDate');
+            const qtdEl = document.getElementById('modalAddEntregaQtd');
+            const nfEl = document.getElementById('modalAddEntregaNf');
+            const errEl = document.getElementById('modalAddEntregaError');
+            if (errEl) { errEl.textContent = ''; errEl.classList.remove('open'); }
+            // preencher valores padrão (data exibida em DD/MM/AAAA)
+            const todayIso = new Date().toISOString().split('T')[0];
+            if (dateEl) dateEl.value = (typeof formatarData === 'function') ? formatarData(todayIso) : (new Date(todayIso + 'T00:00:00')).toLocaleDateString('pt-BR');
+            if (qtdEl) qtdEl.value = '1';
+            if (nfEl) nfEl.value = '';
+            if (backdrop) { backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden','false'); }
+            window._prevFocus = document.activeElement;
+            setTimeout(() => { if (dateEl) try { dateEl.focus(); } catch(e) {} }, 50);
+
+            window._modalAddEntregaKeyHandler = function(e) {
+                if (!document.getElementById('modalAddEntregaBackdrop') || !document.getElementById('modalAddEntregaBackdrop').classList.contains('open')) return;
+                if (e.key === 'Escape') { e.preventDefault(); fecharModalAdicionarEntrega(); }
+                if (e.key === 'Enter') {
+                    const tag = (document.activeElement || {}).tagName || '';
+                    if (tag.toLowerCase() === 'input' || tag.toLowerCase() === 'textarea' || tag.toLowerCase() === 'select') {
+                        e.preventDefault(); salvarModalAdicionarEntrega();
+                    }
+                }
+            };
+            document.addEventListener('keydown', window._modalAddEntregaKeyHandler);
         }
+
+        function fecharModalAdicionarEntrega() {
+            const backdrop = document.getElementById('modalAddEntregaBackdrop');
+            if (backdrop) { backdrop.classList.remove('open'); backdrop.setAttribute('aria-hidden','true'); }
+            try { document.removeEventListener('keydown', window._modalAddEntregaKeyHandler); } catch(e) {}
+            window._modalAddEntregaKeyHandler = null;
+            try { if (window._prevFocus && window._prevFocus.focus) window._prevFocus.focus(); } catch(e) {}
+            window._prevFocus = null;
+            window._modalAddEntregaFaseId = null;
+        }
+
+        function salvarModalAdicionarEntrega() {
+            const errEl = document.getElementById('modalAddEntregaError'); if (errEl) { errEl.textContent=''; errEl.classList.remove('open'); }
+            const dateEl = document.getElementById('modalAddEntregaDate');
+            const qtdEl = document.getElementById('modalAddEntregaQtd');
+            const nfEl = document.getElementById('modalAddEntregaNf');
+            const dataPt = dateEl ? (dateEl.value || '').trim() : '';
+            const qtdRaw = qtdEl ? (qtdEl.value || '').trim() : '';
+            const nf = nfEl ? (nfEl.value || '').trim() : '';
+
+            // parse DD/MM/YYYY -> YYYY-MM-DD
+            const iso = (function parsePtBRToISO(s){ if(!s) return null; const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if(!m) return null; const d=m[1], mo=m[2], y=m[3]; const iso = `${y}-${mo}-${d}`; if(isNaN(new Date(iso + 'T00:00:00').getTime())) return null; return iso; })(dataPt);
+            if (!iso) { if (errEl) { errEl.textContent='Data inválida. Use DD/MM/AAAA.'; errEl.classList.add('open'); dateEl.focus(); } return; }
+            const qtd = parseNumber(qtdRaw);
+            if (isNaN(qtd) || qtd < 0) { if (errEl) { errEl.textContent='Quantidade inválida.'; errEl.classList.add('open'); qtdEl.focus(); } return; }
+            const faseId = window._modalAddEntregaFaseId;
+            if (!faseId) { fecharModalAdicionarEntrega(); return; }
+
+            entregas_adicionar(faseId, { data: iso, quantidade: qtd, nf: nf });
+            fecharModalAdicionarEntrega();
+            showToast('Entrega adicionada.', 'success');
+        }
+
+        // Compatibilidade: manter função antiga chamando o modal
+        function entregas_promptAdd(faseId) { abrirModalAdicionarEntrega(faseId); }
 
         function entregas_adicionar(faseId, entrega) {
             if (!window.tedSelecionado) return;
@@ -459,6 +514,32 @@
                     <span class="ted-status-dot" aria-hidden="true"></span>
                     <span class="ted-chip-text" id="selectedTedText">Selecionar TED</span>
                     <i data-lucide="chevron-down" class="lucide"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Adicionar Entrega (formulário com data DD/MM/AAAA) -->
+        <div id="modalAddEntregaBackdrop" class="modal-backdrop" aria-hidden="true">
+            <div class="modal-realizada" role="dialog" aria-modal="true" aria-labelledby="modalAddEntregaTitle" aria-describedby="modalAddEntregaError" tabindex="-1">
+                <h3 id="modalAddEntregaTitle">Adicionar nova entrega</h3>
+                <div id="modalAddEntregaError" class="error" role="alert" aria-live="assertive"></div>
+                <div class="form-row">
+                    <div style="flex:1;">
+                        <label>Data (DD/MM/AAAA)</label>
+                        <input type="text" id="modalAddEntregaDate" placeholder="DD/MM/AAAA">
+                    </div>
+                    <div style="width:110px;">
+                        <label>Qtd</label>
+                        <input type="text" id="modalAddEntregaQtd" inputmode="numeric" class="mask-numero">
+                    </div>
+                </div>
+                <div style="margin-bottom:0.5rem;">
+                    <label>Nº NF</label>
+                    <input type="text" id="modalAddEntregaNf">
+                </div>
+                <div class="actions">
+                    <button class="btn" onclick="fecharModalAdicionarEntrega()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarModalAdicionarEntrega()">Salvar</button>
                 </div>
             </div>
         </div>
