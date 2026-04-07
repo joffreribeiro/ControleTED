@@ -4721,6 +4721,10 @@
                 linhas.forEach(tr => {
                     if (tr.dataset.removido === '1') return; // linha removida
                     const item = {};
+                    // Declarar antes do loop de colunas para evitar Temporal Dead Zone
+                    const idx = parseInt(tr.dataset.idx);
+                    const isNewRow = isNaN(idx) || tr.dataset.idx === 'new';
+                    const arrOrig = window.tedSelecionado[tabDef.key] || [];
                     tabDef.colunas.forEach(col => {
                         const td = tr.querySelector(`td[data-field="${col.field}"]`);
                         if (!td) return;
@@ -4754,10 +4758,7 @@
                         }
                         item[col.field] = val;
                     });
-                    // Preservar id original se existir, ou gerar novo para linhas adicionadas
-                    const idx = parseInt(tr.dataset.idx);
-                    const isNewRow = isNaN(idx) || tr.dataset.idx === 'new';
-                    const arrOrig = window.tedSelecionado[tabDef.key] || [];
+                    // (idx, isNewRow, arrOrig já declarados acima)
                     if (!isNewRow && arrOrig[idx] && arrOrig[idx].id) {
                         item.id = arrOrig[idx].id;
                     } else if (isNewRow) {
