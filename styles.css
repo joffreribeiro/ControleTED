@@ -2827,3 +2827,75 @@
 .progress-inline { display: inline-flex; align-items: center; gap: 6px; }
 .progress-inline .progress-bar { width: 60px; height: 4px; margin: 0; display: inline-block; }
 .entrega-sincronizacao-banner { background: #E6F1FB; border: 1px solid #85B7EB; border-radius: 8px; padding: 10px 14px; margin-bottom: 0.75rem; font-size: 12px; color: #0C447C; display: flex; align-items: center; gap: 8px; }
+
+/* ============================================================
+   GANTT-TABLE: Correção definitiva de z-index para colunas
+   congeladas vs cabeçalho (sticky top) do Gantt de Vigência
+   Hierarquia: thead th.sticky-* (50) > th.sticky-* (40) >
+               thead th geral (30) > td.sticky-* (20)
+   ============================================================ */
+
+/* Remover isolamento do wrapper imediato — stacking context
+   não deve ser criado no wrapper direto da tabela */
+.gantt-wrap { isolation: auto !important; }
+
+/* 1. Cabeçalhos de ano/mês (sticky top) — base da hierarquia */
+.gantt-table thead th {
+    z-index: 30 !important;
+    position: sticky;
+    top: 0;
+    background: var(--color-bg-surface, #F4F4F2) !important;
+}
+
+/* 2. Colunas congeladas em th (cabeçalho de coluna fixa) */
+.gantt-table th.sticky-up,
+.gantt-table th.sticky-ted {
+    z-index: 40 !important;
+    background: var(--color-bg-surface, #F4F4F2) !important;
+}
+
+/* 3. Colunas congeladas em td (corpo da tabela) */
+.gantt-table td.sticky-up,
+.gantt-table td.sticky-ted {
+    z-index: 20 !important;
+    background: #ffffff !important;
+}
+
+/* 4. Células de canto: frozen + header — prioridade máxima */
+.gantt-table thead th.sticky-up,
+.gantt-table thead th.sticky-ted {
+    z-index: 50 !important;
+    background: var(--color-bg-surface, #F4F4F2) !important;
+}
+
+/* 5. Linhas alternadas: fundo opaco nas colunas congeladas */
+.gantt-table tbody tr:nth-child(even) td.sticky-up,
+.gantt-table tbody tr:nth-child(even) td.sticky-ted {
+    background: #f9f9f9 !important;
+}
+
+/* 6. Hover nas linhas: fundo opaco nas colunas congeladas */
+.gantt-table tbody tr:hover td.sticky-up,
+.gantt-table tbody tr:hover td.sticky-ted {
+    background: #f1f5f9 !important;
+}
+
+/* ============================================================
+   DARK MODE: backgrounds opacos nas colunas congeladas do Gantt
+   ============================================================ */
+[data-theme="dark"] .gantt-table th.sticky-up,
+[data-theme="dark"] .gantt-table th.sticky-ted {
+    background: #1a2f55 !important;
+}
+[data-theme="dark"] .gantt-table td.sticky-up,
+[data-theme="dark"] .gantt-table td.sticky-ted {
+    background: #0b172c !important;
+}
+[data-theme="dark"] .gantt-table tbody tr:nth-child(even) td.sticky-up,
+[data-theme="dark"] .gantt-table tbody tr:nth-child(even) td.sticky-ted {
+    background: #0e1c33 !important;
+}
+[data-theme="dark"] .gantt-table tbody tr:hover td.sticky-up,
+[data-theme="dark"] .gantt-table tbody tr:hover td.sticky-ted {
+    background: #123057 !important;
+}
