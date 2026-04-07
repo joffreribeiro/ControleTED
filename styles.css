@@ -2178,15 +2178,18 @@
         .gantt-table .sticky-ted {
             position: sticky;
         }
+        /* Ajuste: manter cabeçalhos das tabelas (sticky) sobre o cabeçalho do Gantt
+           reduzindo o z-index do Gantt para evitar sobreposição visual dos headers
+        */
         .gantt-table th.sticky-up,
         .gantt-table th.sticky-ted {
-            z-index: 30;
+            z-index: 5; /* abaixo de .tabela-padrao thead th (z-index:10) */
             background: var(--color-bg-surface);
             color: var(--color-text-primary);
         }
         .gantt-table td.sticky-up,
         .gantt-table td.sticky-ted {
-            z-index: 20;
+            z-index: 3;
             background: #fff;
         }
         .gantt-table tbody tr:nth-child(even) td.sticky-up,
