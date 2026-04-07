@@ -189,12 +189,43 @@
             return arr.reduce((s, e) => s + (parseNumber(e.quantidade || e.qtde || 0) || 0), 0);
         }
 
-        function entregas_getStatus(f) {
-            const previsto = parseNumber(f.qtde) || 0;
-            const entregue = entregas_getQtdEntregue(f) || 0;
-            if (entregue === 0) return 'vazio';
-            if (entregue < previsto) return 'parcial';
-            return 'concluido';
+        function entregas_getStatus(item) {
+            const previsto = Math.max(0, parseNumber(item && item.qtde) || 0);
+            const totalEntregue = Math.max(0, entregas_getQtdEntregue(item) || 0);
+            const percentual = previsto > 0 ? (totalEntregue / previsto) * 100 : 0;
+
+            let estado = 'vazio';
+            if (totalEntregue > 0 && totalEntregue < previsto) estado = 'parcial';
+            if (previsto > 0 && totalEntregue >= previsto) estado = 'concluido';
+
+            return {
+                estado,
+                totalEntregue,
+                percentual
+            };
+        }
+
+        function entregas_toggleExpandir(event, faseId) {
+            if (event && event.preventDefault) event.preventDefault();
+            if (event && event.stopPropagation) event.stopPropagation();
+            entregas_toggleExpand(faseId);
+        }
+
+        function entregas_renderIconeStatus(item) {
+            const s = entregas_getStatus(item);
+            const itemId = String(item && item.id != null ? item.id : '');
+            const total = formatNumber(s.totalEntregue || 0);
+            const previsto = formatNumber(parseNumber(item && item.qtde) || 0);
+
+            if (s.estado === 'vazio') {
+                return `<button class="btn-icon-action done-action" onclick="entregas_toggleExpandir(event, '${itemId}')" title="Sem entrega" style="color:#9ca3af;">⬜</button>`;
+            }
+
+            if (s.estado === 'parcial') {
+                return `<button class="btn-icon-action done-action" onclick="entregas_toggleExpandir(event, '${itemId}')" title="${total}/${previsto} un" style="color:#ca8a04;">🟡 <span style="font-size:10px; font-weight:600; vertical-align:middle;">${total}/${previsto} un</span></button>`;
+            }
+
+            return `<button class="btn-icon-action done-action" onclick="entregas_toggleExpandir(event, '${itemId}')" title="Concluido" style="color:#16a34a;">✅</button>`;
         }
 
         function sincronizarExecucaoFisica() {
@@ -6301,6 +6332,9 @@
                 const entregasArr = Array.isArray(f.entregas) ? f.entregas : [];
                 const entNum = entregasArr.reduce((s, e) => s + (parseNumber(e.quantidade || e.qtde || 0) || 0), 0);
                 const tdQtdeEntRaw = formatNumber(entNum || '');
+                const statusEntrega = entregas_getStatus(f);
+                const percEntrega = Math.max(0, Math.min(100, Number(statusEntrega.percentual || 0)));
+                const percEntregaLabel = `${Math.round(percEntrega)}%`;
                 const prevNum = (f.qtde !== undefined && f.qtde !== null && String(f.qtde).trim() !== '') ? parseNumber(f.qtde) : null;
                 const numsEqual = (prevNum !== null && entNum !== null && Math.abs(prevNum - entNum) < 1e-9);
                 const equalClass = numsEqual ? ' equal-qtde' : '';
@@ -6309,7 +6343,10 @@
                     <td class="col-fase">${f.fase}</td>
                     <td class="col-objeto">${f.objeto}</td>
                         <td class="col-qtde${equalClass}">${tdQtdeRaw}</td>
-                        <td class="col-qtde${equalClass}">${tdQtdeEntRaw}</td>
+                        <td class="col-qtde${equalClass}">
+                            <div>${tdQtdeEntRaw}</div>
+                            <div class="progress-inline"><div class="progress-bar" style="width:60px;height:4px;display:inline-block;background:#e5e7eb;border-radius:999px;overflow:hidden;vertical-align:middle;"><div class="progress-fill" style="display:block;height:100%;background:${statusEntrega.estado === 'concluido' ? '#16a34a' : (statusEntrega.estado === 'parcial' ? '#eab308' : '#9ca3af')};width: ${percEntrega.toFixed(2)}%"></div></div><span class="exec-perc" style="margin-left:6px; font-size:11px; color:#64748b;">${percEntregaLabel}</span></div>
+                        </td>
                     <td class="col-m">${tdMInicio}</td>
                     <td class="col-m">${tdMFinal}</td>
                     <td class="col-mes">${inicioStr}</td>
@@ -6317,7 +6354,7 @@
                     <td class="col-acao">
                         <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
                         <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
-                        <button class="btn-icon-action done-action" onclick="entregas_toggleExpand(${f.id})" title="Detalhar entregas"><i data-lucide="check-check" class="inline-icon-sm"></i></button>
+                        ${entregas_renderIconeStatus(f)}
                     </td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal e renderizar entregas por mês (empilhadas)
