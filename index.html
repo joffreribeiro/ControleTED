@@ -1934,6 +1934,7 @@
                     }
                 }
             } catch(e) {}
+
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -1942,14 +1943,40 @@
                 tab.style.setProperty('opacity', '0', 'important');
                 tab.style.setProperty('transform', 'none', 'important');
             });
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
             // Mostrar aba selecionada
-            const tabEl = document.getElementById(tabName);
-                // Execução Física é derivada do Cadastro Físico; editar aqui não é permitido.
-                showToast('Edição desabilitada: para registrar entregas use o Cadastro Físico.', 'info');
+            try {
+                var tabEl = document.getElementById(tabName);
+                if (tabEl) {
+                    tabEl.classList.add('active');
+                    // Remover display:none aplicado acima; deixar CSS controlar a exibição
+                    tabEl.style.removeProperty('display');
+                    tabEl.style.visibility = 'visible';
+                    tabEl.style.opacity = '1';
+                }
+                var btnToActivate = btnEl || document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+                if (btnToActivate) btnToActivate.classList.add('active');
+            } catch(e) { /* ignore */ }
+
+            // Ações específicas ao trocar de aba
+            try {
+                // Reaplicar ajustes visuais
+                try { refreshFrozenColumnsAllTables(); } catch(e) {}
+
+                if (tabName === 'detalhes') {
+                    try { exibirInformacoesTED(); } catch(e) {}
+                }
+                if (tabName === 'dashboard') { try { atualizarDashboard(); } catch(e) {} }
+                if (tabName === 'teds') { try { atualizarListaTEDs(); } catch(e) {} }
+
+                // Execução Física é derivada do Cadastro Físico; avisar sobre edição
+                if (tabName === 'execFis') {
+                    showToast('Edição desabilitada: para registrar entregas use o Cadastro Físico.', 'info');
+                }
+            } catch(e) { /* ignore */ }
+        }
+
         // Calcula valor total de objetos (qtde * valorUnitario)
         function calcularTotalObjetosValor(ted) {
             if (!ted || !ted.objetos || !ted.objetos.length) return 0;
