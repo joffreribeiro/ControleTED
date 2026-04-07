@@ -1083,6 +1083,9 @@
             background: white;
             width: 100%;
             max-width: 100%;
+            /* Isolar stacking context para evitar que elementos externos (ex.: Gantt) fiquem por cima dos cabeçalhos sticky */
+            isolation: isolate;
+            z-index: 300; /* acima de dropdowns/menus (260), abaixo de modais (1000) */
         }
 
         /* Indicador de scroll horizontal */
@@ -1596,6 +1599,9 @@
             max-width: 100%;
             overflow-x: auto;
             position: relative;
+            /* Isolar stacking context para que cabeçalhos sticky fiquem acima de elementos externos (ex.: Gantt) */
+            isolation: isolate;
+            z-index: 300; /* maior que dropdowns/menus (260) mas abaixo de modais (1000) */
         }
 
         .table-freeze-wrapper table {
