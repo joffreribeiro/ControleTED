@@ -1083,9 +1083,6 @@
             background: white;
             width: 100%;
             max-width: 100%;
-            /* Isolar stacking context para evitar que elementos externos (ex.: Gantt) fiquem por cima dos cabeçalhos sticky */
-            isolation: isolate;
-            z-index: 300; /* acima de dropdowns/menus (260), abaixo de modais (1000) */
         }
 
         /* Indicador de scroll horizontal */
@@ -1599,9 +1596,6 @@
             max-width: 100%;
             overflow-x: auto;
             position: relative;
-            /* Isolar stacking context para que cabeçalhos sticky fiquem acima de elementos externos (ex.: Gantt) */
-            isolation: isolate;
-            z-index: 300; /* maior que dropdowns/menus (260) mas abaixo de modais (1000) */
         }
 
         .table-freeze-wrapper table {
@@ -1645,7 +1639,7 @@
                     letter-spacing: 0.03em;
                     position: sticky;
                     top: 0;
-                    z-index: 10;
+                    z-index: 20;
                 }
 
                 /* Auxiliar para colunas com texto longo / descrição: alinhar à esquerda */
@@ -1660,18 +1654,18 @@
         /* Colunas congeladas (aplicadas dinamicamente via JS) */
         .tabela-padrao .sticky-freeze {
             position: sticky;
-            z-index: 2;
+            z-index: 24;
             background-clip: padding-box;
             background: var(--surface, #ffffff);
             isolation: isolate;
         }
         .tabela-padrao tbody .sticky-freeze,
         .tabela-padrao tfoot .sticky-freeze {
-            z-index: 2;
+            z-index: 24;
             background: var(--surface, #ffffff);
         }
         .tabela-padrao thead .sticky-freeze {
-            z-index: 4;
+            z-index: 40;
             background: var(--color-bg-surface) !important;
             color: var(--color-text-primary);
         }
@@ -1875,7 +1869,7 @@
 
                 /* Override para o contexto de Detalhes TED: z-index maior para cabeçalhos congelados */
                 #detalhes #tedsDetalheContainer .tabela-padrao thead th {
-                    z-index: 15;
+                    z-index: 20;
                     background: #F4F4F2;
                 }
 
@@ -1898,7 +1892,7 @@
         /* Cabeçalho congelado: mesmo background opaco, z-index mais alto */
         #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze {
             position: sticky;
-            z-index: 15;
+            z-index: 40;
             background: var(--color-bg-surface) !important;
             color: var(--color-text-primary);
         }
