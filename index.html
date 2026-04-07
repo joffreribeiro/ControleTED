@@ -6299,7 +6299,8 @@
                 const entNum = (f.qtdeRealizada !== undefined && f.qtdeRealizada !== null && String(f.qtdeRealizada).trim() !== '') ? parseNumber(f.qtdeRealizada) : null;
                 let tdQtde = tdQtdeRaw;
                 let tdQtdeEnt = tdQtdeEntRaw;
-                if (prevNum !== null && entNum !== null && prevNum === entNum) {
+                const numsEqual = (prevNum !== null && entNum !== null && Math.abs(prevNum - entNum) < 1e-9);
+                if (numsEqual) {
                     tdQtde = `<span style="color:#16a34a;font-weight:600">${tdQtdeRaw}</span>`;
                     tdQtdeEnt = `<span style="color:#16a34a;font-weight:600">${tdQtdeEntRaw}</span>`;
                 }
