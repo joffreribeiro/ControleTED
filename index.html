@@ -1186,9 +1186,6 @@
                                 </tbody>
                             </table>
                         </div>
-                        <!-- Gantt compacto embutido no rodapé do card -->
-                        <div class="gantt-compact" id="ganttCompactFisico" style="margin-top:0.85rem; overflow-x:auto;"></div>
-                        </div>
                     </div>
 
                     <!-- EXECU→fO FÍSICA -->
@@ -1670,6 +1667,9 @@
 
                 /* Center only the Saldo header in Execução Financeira (table id added below) */
                 #tabelaExecFinanceiraTable thead th.col-saldo { text-align: center; }
+
+                /* Highlight equal quantities in Cadastro Físico */
+                .tabela-padrao td.equal-qtde { color: #16a34a; font-weight: 600; }
             `;
             const s = document.createElement('style');
             s.setAttribute('data-auto','center-specific-headers');
@@ -6297,19 +6297,14 @@
                 const tdQtdeEntRaw = formatNumber(f.qtdeRealizada ?? '');
                 const prevNum = (f.qtde !== undefined && f.qtde !== null && String(f.qtde).trim() !== '') ? parseNumber(f.qtde) : null;
                 const entNum = (f.qtdeRealizada !== undefined && f.qtdeRealizada !== null && String(f.qtdeRealizada).trim() !== '') ? parseNumber(f.qtdeRealizada) : null;
-                let tdQtde = tdQtdeRaw;
-                let tdQtdeEnt = tdQtdeEntRaw;
                 const numsEqual = (prevNum !== null && entNum !== null && Math.abs(prevNum - entNum) < 1e-9);
-                if (numsEqual) {
-                    tdQtde = `<span style="color:#16a34a;font-weight:600">${tdQtdeRaw}</span>`;
-                    tdQtdeEnt = `<span style="color:#16a34a;font-weight:600">${tdQtdeEntRaw}</span>`;
-                }
+                const equalClass = numsEqual ? ' equal-qtde' : '';
 
                 let html = `<tr${trClass}>
                     <td class="col-fase">${f.fase}</td>
                     <td class="col-objeto">${f.objeto}</td>
-                        <td class="col-qtde">${tdQtde}</td>
-                        <td class="col-qtde">${tdQtdeEnt}</td>
+                        <td class="col-qtde${equalClass}">${tdQtdeRaw}</td>
+                        <td class="col-qtde${equalClass}">${tdQtdeEntRaw}</td>
                     <td class="col-m">${tdMInicio}</td>
                     <td class="col-m">${tdMFinal}</td>
                     <td class="col-mes">${inicioStr}</td>
@@ -6363,7 +6358,6 @@
             try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = String(window.tedSelecionado.fisicos.length); } catch(e) {}
             // Atualizar contador da seção (badge)
             try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = String(window.tedSelecionado.fisicos.length); } catch(e) {}
-            try { renderCompactGanttFisico(); } catch(e) {}
         }
 
         // EXECU→fO FÍSICA
