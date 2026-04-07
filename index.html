@@ -5485,8 +5485,8 @@
             if (s === undefined || s === null) return '';
             try {
                 let t = String(s);
-                // Normalizar e remover caracteres de controle, NBSP, marcas de direção e zero-width
-                t = t.normalize ? t.normalize('NFKC') : t;
+                // Remover apenas caracteres de controle, NBSP, marcas de direção e zero-width
+                // NÃO aplicar normalize('NFKC') pois converte º (U+00BA ordinal) para 'o'
                 t = t.replace(/[\u0000-\u001F\u007F-\u009F\u00A0\u2000-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g, '');
                 return t.trim();
             } catch (e) { return String(s); }
