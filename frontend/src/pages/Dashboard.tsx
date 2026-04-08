@@ -56,14 +56,13 @@ export default function Dashboard() {
       value: `R$ ${totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       sub: 'Soma de todos os TEDs',
       color: '#0C447C',
-      bg: '#E6F1FB',
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="8" y="16" width="48" height="32" rx="5" stroke="currentColor" strokeWidth="3.5" fill="none"/>
-          <circle cx="32" cy="32" r="8" stroke="currentColor" strokeWidth="3" fill="none"/>
+      iconPaths: (
+        <>
+          <rect x="8" y="16" width="48" height="32" rx="5" stroke="currentColor" strokeWidth="3.5"/>
+          <circle cx="32" cy="32" r="8" stroke="currentColor" strokeWidth="3"/>
           <line x1="8" y1="24" x2="56" y2="24" stroke="currentColor" strokeWidth="2.5"/>
           <line x1="8" y1="40" x2="56" y2="40" stroke="currentColor" strokeWidth="2.5"/>
-        </svg>
+        </>
       ),
     },
     {
@@ -71,12 +70,11 @@ export default function Dashboard() {
       value: `R$ ${totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       sub: `${totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(1) : '0'}% do orçamento`,
       color: '#639922',
-      bg: '#EAF3DE',
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polyline points="8,48 22,30 32,38 44,20 56,28" stroke="currentColor" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" fill="none"/>
+      iconPaths: (
+        <>
+          <polyline points="8,48 22,30 32,38 44,20 56,28" stroke="currentColor" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round"/>
           <circle cx="56" cy="28" r="4" fill="currentColor"/>
-        </svg>
+        </>
       ),
     },
     {
@@ -84,12 +82,11 @@ export default function Dashboard() {
       value: String(tedsAtivos),
       sub: `de ${teds.length} total`,
       color: '#185FA5',
-      bg: '#E6F1FB',
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="32" cy="32" r="22" stroke="currentColor" strokeWidth="3.5" fill="none"/>
+      iconPaths: (
+        <>
+          <circle cx="32" cy="32" r="22" stroke="currentColor" strokeWidth="3.5"/>
           <polyline points="20,32 29,41 46,24" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+        </>
       ),
     },
     {
@@ -97,14 +94,13 @@ export default function Dashboard() {
       value: String(tedsConcluidos),
       sub: `de ${teds.length} total`,
       color: '#854F0B',
-      bg: '#FAEEDA',
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="12" y="8" width="40" height="48" rx="5" stroke="currentColor" strokeWidth="3.5" fill="none"/>
+      iconPaths: (
+        <>
+          <rect x="12" y="8" width="40" height="48" rx="5" stroke="currentColor" strokeWidth="3.5"/>
           <line x1="20" y1="22" x2="44" y2="22" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
           <line x1="20" y1="30" x2="44" y2="30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
           <line x1="20" y1="38" x2="36" y2="38" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-        </svg>
+        </>
       ),
     },
   ];
@@ -152,15 +148,27 @@ export default function Dashboard() {
                 {/* Ícone marca d'água */}
                 <div style={{
                   position: 'absolute',
-                  right: '-8px',
-                  bottom: '-8px',
-                  width: '90px',
-                  height: '90px',
-                  color: card.color,
-                  opacity: 0.08,
+                  right: '-4px',
+                  bottom: '-4px',
+                  width: '96px',
+                  height: '96px',
+                  opacity: 0.13,
                   pointerEvents: 'none',
+                  color: card.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}>
-                  {card.icon}
+                  <svg
+                    viewBox="0 0 64 64"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="96"
+                    height="96"
+                    style={{ display: 'block', color: card.color }}
+                  >
+                    {card.iconPaths}
+                  </svg>
                 </div>
                 <p style={{ fontSize: '12px', fontWeight: 600, color: card.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                   {card.label}
