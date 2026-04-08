@@ -128,14 +128,21 @@
 
                 const f = (window.tedSelecionado.fisicos || []).find(x => x.id == faseId);
                 const entregas = f && Array.isArray(f.entregas) ? f.entregas : [];
+                const canEditEntregas = !window._readOnlyMode;
 
                 let html = `<div class="subentregas-panel"><div class="subentregas-list">`;
                 if (!entregas.length) html += '<div class="subentregas-empty">Nenhuma entrega registrada</div>';
                 entregas.forEach(e => {
                     const ddisp = (e && e.data) ? (new Date(normalizarData(e.data) + 'T00:00:00').toLocaleDateString('pt-BR')) : '';
-                    html += `<div class="subentrega-item"><div class="subentrega-meta"><strong>${ddisp}</strong> · Qtd: ${formatNumber(e.quantidade || e.qtde || 0)}${e.nf ? ' · NF: ' + e.nf : ''}</div><div class="subentrega-actions"><button class="btn-small" onclick="entregas_remover(${faseId}, '${e.id}')">Remover</button></div></div>`;
+                    const removeBtn = canEditEntregas
+                        ? `<button class="btn-small" onclick="entregas_remover(${faseId}, '${e.id}')">Remover</button>`
+                        : `<button class="btn-small" disabled style="opacity:.45;cursor:not-allowed;" title="Faça login como Admin para remover entrega">Remover</button>`;
+                    html += `<div class="subentrega-item"><div class="subentrega-meta"><strong>${ddisp}</strong> · Qtd: ${formatNumber(e.quantidade || e.qtde || 0)}${e.nf ? ' · NF: ' + e.nf : ''}</div><div class="subentrega-actions">${removeBtn}</div></div>`;
                 });
-                html += `</div><div class="subentregas-actions"><button class="btn" onclick="abrirModalAdicionarEntrega(${faseId})">+ Adicionar Nova Entrega</button> <button class="btn btn-ghost" onclick="document.getElementById('subentregas-${faseId}')?.remove()">Fechar</button></div></div>`;
+                const addBtn = canEditEntregas
+                    ? `<button class="btn" onclick="abrirModalAdicionarEntrega(${faseId})">+ Adicionar Nova Entrega</button>`
+                    : `<button class="btn" disabled style="opacity:.45;cursor:not-allowed;" title="Faça login como Admin para adicionar entrega">+ Adicionar Nova Entrega</button>`;
+                html += `</div><div class="subentregas-actions">${addBtn} <button class="btn btn-ghost" onclick="document.getElementById('subentregas-${faseId}')?.remove()">Fechar</button></div></div>`;
 
                 td.innerHTML = html;
                 tr.appendChild(td);
@@ -224,6 +231,7 @@
         }
 
         function entregas_remover(faseId, entregaId) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para remover entrega.', 'warning'); return; }
             if (!window.tedSelecionado) return;
             const f = (window.tedSelecionado.fisicos || []).find(x => x.id == faseId);
             if (!f || !Array.isArray(f.entregas)) return;
@@ -899,7 +907,7 @@
                     <div class="graficos-filters" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; margin-bottom:0.75rem;">
                         <div style="display:flex; align-items:center; gap:0.5rem;">
                             <label style="font-weight:600;">Filtrar TED:</label>
-                            <select id="filterTedEntregas" onchange="(function(){ renderEntregasFromFilter(); renderResumoFinanceiroFromFilter(); })()">
+                            <select id="filterTedEntregas" onchange="(function(){ renderEntregasFromFilter(); renderResumoFinanceiroFromFilter(); })()" style="min-width:320px; font-size:0.86rem;">
                                 <option value="">-- Selecione um TED --</option>
                             </select>
                         </div>
@@ -1588,7 +1596,7 @@
                         <div class="detalhe-secao-body">
                         <div id="filterFullWrap" style="display:flex; gap:1rem; align-items:center; margin-bottom:0.5rem;">
                             <label style="font-weight:600; margin-right:0.5rem;">Filtrar TED:</label>
-                            <select id="filterTedEntregasFull" onchange="(function(v){ renderEntregasChart(v,'entregasChartFull'); })(this.value)"> 
+                            <select id="filterTedEntregasFull" onchange="(function(v){ renderEntregasChart(v,'entregasChartFull'); })(this.value)" style="min-width:320px; font-size:0.86rem;"> 
                                 <option value="">-- Selecione um TED --</option>
                             </select>
                         </div>
@@ -2300,6 +2308,9 @@
             try { renderGanttVigencia(); } catch(e) { console.warn('renderGanttVigencia error', e); }
             // Atualizar resumo geral (assinados/encerrados por mês e por UP)
             try { renderResumoGeralAssinadosEncerrados(); } catch(e) { console.warn('renderResumoGeralAssinadosEncerrados error', e); }
+            // Garantir atualização dos gráficos do dashboard
+            try { renderEntregasFromFilter(); } catch(e) { console.warn('renderEntregasFromFilter error', e); }
+            try { renderResumoFinanceiroFromFilter(); } catch(e) { console.warn('renderResumoFinanceiroFromFilter error', e); }
         }
 
         // Atualizar Lista de TEDs
@@ -3264,7 +3275,10 @@
             teds.forEach(ted => {
                 const option = document.createElement('option');
                 option.value = ted.id;
-                option.textContent = `TED ${ted.numTed} - ${ted.objetivo || ''}`;
+                const encerrado = !!(isTedFinalizado && typeof isTedFinalizado === 'function' && isTedFinalizado(ted));
+                option.textContent = encerrado
+                    ? `TED ${ted.numTed} - ${ted.objetivo || ''} (Encerrado)`
+                    : `TED ${ted.numTed} - ${ted.objetivo || ''}`;
                 if (isTedFinalizado && typeof isTedFinalizado === 'function' && isTedFinalizado(ted)) {
                     option.style.color = '#ef4444';
                 }
@@ -3320,6 +3334,7 @@
             dd.style.boxShadow = '0 8px 24px rgba(15,23,42,0.12)';
             dd.style.borderRadius = '8px';
             dd.style.padding = '6px';
+            dd.style.fontSize = '0.9rem';
 
             if (!teds || teds.length === 0) {
                 const p = document.createElement('div');
@@ -3337,6 +3352,7 @@
                     a.style.textDecoration = 'none';
                     a.style.color = 'inherit';
                     a.style.borderRadius = '6px';
+                    a.style.fontSize = '0.86rem';
                     a.style.whiteSpace = 'nowrap';
                     a.style.textOverflow = 'ellipsis';
                     a.style.overflow = 'hidden';
@@ -3344,11 +3360,15 @@
                     a.onmouseout = () => a.style.background = 'transparent';
 
                     const txt = document.createElement('div');
-                    txt.textContent = `TED ${t.numTed} - ${t.objetivo || ''}`;
+                    const encerrado = !!(isTedFinalizado && typeof isTedFinalizado === 'function' && isTedFinalizado(t));
+                    txt.textContent = encerrado
+                        ? `TED ${t.numTed} - ${t.objetivo || ''} (Encerrado)`
+                        : `TED ${t.numTed} - ${t.objetivo || ''}`;
                     txt.style.flex = '1 1 auto';
                     txt.style.overflow = 'hidden';
                     txt.style.textOverflow = 'ellipsis';
                     txt.style.whiteSpace = 'nowrap';
+                    if (encerrado) txt.style.color = '#b91c1c';
 
                     a.appendChild(txt);
                     a.onclick = function(ev) {
@@ -3368,7 +3388,7 @@
             // Posicionar abaixo do chip com largura limitada e ajuste de overflow
             const rect = chip.getBoundingClientRect();
             const viewportPad = 12;
-            const prefWidth = Math.min(520, Math.max(240, Math.round(rect.width * 1.6)));
+            const prefWidth = Math.min(680, Math.max(320, Math.round(rect.width * 1.85)));
             const allowedWidth = Math.min(prefWidth, window.innerWidth - viewportPad * 2);
             dd.style.width = allowedWidth + 'px';
 
@@ -3846,7 +3866,11 @@
                     if (infoParts.length) changesHtml += infoParts.join('');
                     if (!changesHtml) changesHtml = '-';
 
-                    histHtml += `<tr><td class="col-num">${idx+1}</td><td class="col-tipo" style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td class="col-data">${dataStr}</td><td class="col-alteracoes" style="max-width:420px;">${changesHtml}</td><td class="col-acao ad-action-cell"><button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button> <button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td></tr>`;
+                    const viewBtn = `<button class="btn-icon" onclick="abrirModalAlteracao(${idx}, true)" title="Ver alterações"><i data-lucide="eye" class="inline-icon-sm"></i></button>`;
+                    const editBtn = `<button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>`;
+                    const delBtn = `<button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
+                    const actionBtns = window._readOnlyMode ? viewBtn : `${viewBtn} ${editBtn} ${delBtn}`;
+                    histHtml += `<tr><td class="col-num">${idx+1}</td><td class="col-tipo" style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td class="col-data">${dataStr}</td><td class="col-alteracoes" style="max-width:420px;">${changesHtml}</td><td class="col-acao ad-action-cell">${actionBtns}</td></tr>`;
                 });
                 histHtml += '</tbody></table>';
                 document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
@@ -3880,6 +3904,16 @@
             document.getElementById('edit_vigencia').value = ted.vigencia || '';
             document.getElementById('edit_fimVigencia').value = formatarDataInput(ted.fimVigencia);
             document.getElementById('edit_primeiraDescentralizacao').value = formatarDataInput(ted.primeiraDescentralizacao);
+            // Permissão no card de Aditivos/Apostilamentos: em leitura pode ver, mas não adicionar
+            try {
+                const btnAddAlt = document.querySelector('.btn-add-aditivo');
+                if (btnAddAlt) {
+                    btnAddAlt.disabled = !!window._readOnlyMode;
+                    btnAddAlt.style.opacity = window._readOnlyMode ? '0.5' : '1';
+                    btnAddAlt.style.pointerEvents = window._readOnlyMode ? 'none' : 'auto';
+                    btnAddAlt.title = window._readOnlyMode ? 'Faça login como Admin para adicionar aditivo/apostilamento' : '';
+                }
+            } catch(e) {}
             // Novos campos: situação, data entrega/denúncia, prazo do relatório, data entrega do relatório, status
             document.getElementById('info_situacaoTED').textContent = ted.situacaoTED === 'finalizado' ? 'TED Finalizado' : (ted.situacaoTED === 'denunciado' ? 'TED Denunciado' : '-');
             document.getElementById('info_dataEntregaDenuncia').textContent = formatarData(ted.dataEntregaDenuncia);
@@ -5226,6 +5260,11 @@
         // Abrir modal unificado para adicionar, editar ou visualizar aditivo/apostilamento
         function abrirModalAlteracao(editIndex, viewOnly) {
             if (!window.tedSelecionado) return alert('Selecione um TED primeiro.');
+            if (window._readOnlyMode && !viewOnly) {
+                // Em modo leitura, permite somente visualização das alterações existentes.
+                if (typeof editIndex === 'number') viewOnly = true;
+                else { showToast('Modo leitura: você pode apenas ver alterações.', 'warning'); return; }
+            }
             let overlay = document.getElementById('alteracaoModalOverlay');
             if (overlay) overlay.remove();
 
@@ -7720,7 +7759,33 @@
                 }
             });
 
-            const anosOrdenados = Array.from(anosSet).map(Number).sort((a,b)=>a-b);
+            // Regra: sempre exibir até o ano seguinte ao ano atual,
+            // mesmo sem recebimentos/devoluções no período.
+            const anoAtual = new Date().getFullYear();
+            const anoSeguinte = anoAtual + 1;
+            anosSet.add(anoSeguinte);
+
+            // Garantir ponto inicial coerente (início de vigência/1ª descentralização quando disponível)
+            let anoInicial = null;
+            const anoInicioVig = window.tedSelecionado && window.tedSelecionado.inicioVigencia
+                ? new Date(normalizarData(window.tedSelecionado.inicioVigencia) + 'T00:00:00').getFullYear()
+                : null;
+            const anoPrimeiraDesc = window.tedSelecionado && window.tedSelecionado.primeiraDescentralizacao
+                ? new Date(normalizarData(window.tedSelecionado.primeiraDescentralizacao) + 'T00:00:00').getFullYear()
+                : null;
+            if (!isNaN(anoInicioVig)) anoInicial = anoInicioVig;
+            if (!isNaN(anoPrimeiraDesc)) anoInicial = (anoInicial === null) ? anoPrimeiraDesc : Math.min(anoInicial, anoPrimeiraDesc);
+
+            let anosOrdenados = Array.from(anosSet).map(Number).filter(n => !isNaN(n)).sort((a,b)=>a-b);
+            if (!anosOrdenados.length) {
+                anosOrdenados = [anoAtual, anoSeguinte];
+            } else {
+                const minAno = (anoInicial !== null && !isNaN(anoInicial)) ? Math.min(anoInicial, anosOrdenados[0]) : anosOrdenados[0];
+                const maxAno = Math.max(anoSeguinte, anosOrdenados[anosOrdenados.length - 1]);
+                const completos = [];
+                for (let y = minAno; y <= maxAno; y++) completos.push(y);
+                anosOrdenados = completos;
+            }
             if (anosOrdenados.length === 0) { resumoContainer.innerHTML = ''; return; }
 
             // Construir mapas por ano (previsto, recebido, devolvido) e calcular saldos acumulados
@@ -7812,17 +7877,33 @@
             dados.teds.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.id;
-                opt.textContent = `TED ${t.numTed} - ${t.objetivo}`;
-                if (isTedFinalizado(t)) opt.style.color = '#ef4444';
+                const encerrado = isTedFinalizado(t);
+                opt.textContent = encerrado
+                    ? `TED ${t.numTed} - ${t.objetivo} (Encerrado)`
+                    : `TED ${t.numTed} - ${t.objetivo}`;
+                if (encerrado) opt.style.color = '#ef4444';
                 sel.appendChild(opt);
             });
+
+            // Se não houver TED selecionado no dashboard, selecionar o primeiro em execução;
+            // fallback: primeiro da lista.
+            if ((!sel.value || sel.value === '') && Array.isArray(dados.teds) && dados.teds.length) {
+                const primeiroEmExecucao = dados.teds.find(t => !isTedFinalizado(t)) || dados.teds[0];
+                if (primeiroEmExecucao && primeiroEmExecucao.id != null) sel.value = String(primeiroEmExecucao.id);
+            }
+
             // Atualizar também o seletor full (se existir)
             const selFull = document.getElementById('filterTedEntregasFull');
             if (selFull) {
                 selFull.innerHTML = sel.innerHTML;
+                if (sel.value) selFull.value = sel.value;
             }
             // Atualizar filtros auxiliares (ano e UP)
             try { atualizarFiltrosGrafico(); } catch(e) {}
+
+            // Re-renderizar gráficos ao atualizar opções/filtro
+            try { renderEntregasFromFilter(); } catch(e) {}
+            try { renderResumoFinanceiroFromFilter(); } catch(e) {}
         }
 
         function atualizarFiltrosGrafico() {
@@ -8313,7 +8394,14 @@
         function renderEntregasFromFilter() {
             const sel = document.getElementById('filterTedEntregas');
             if (!sel) return;
-            const id = sel.value;
+            let id = sel.value;
+            if (!id && Array.isArray(dados.teds) && dados.teds.length) {
+                const primeiroEmExecucao = dados.teds.find(t => !isTedFinalizado(t)) || dados.teds[0];
+                if (primeiroEmExecucao && primeiroEmExecucao.id != null) {
+                    id = String(primeiroEmExecucao.id);
+                    sel.value = id;
+                }
+            }
             const ano = (document.getElementById('filterAnoEntregas') || {}).value || null;
             const up = (document.getElementById('filterUpEntregas') || {}).value || null;
             renderEntregasChart(id, 'entregasChartContainer', ano, up);
@@ -11994,7 +12082,7 @@
                 '[onclick*="toggleEditarInfo"]',
                 '[onclick*="salvarEdicaoInfo"]',
                 // Aditivos / Apostilamentos (unificado)
-                '[onclick*="abrirModalAlteracao"]',
+                '.btn-add-aditivo',
                 '[onclick*="confirmarAlteracao"]',
                 '[onclick*="removerAlteracao"]',
                 '[onclick*="abrirModalAditivo"]',
@@ -12015,6 +12103,7 @@
                 '[onclick*="adicionarFisico"]',
                 '[onclick*="editarFisico"]',
                 '[onclick*="removerFisico"]',
+                '[onclick*="entregas_remover"]',
                 // Exec Física
                 '[onclick*="adicionarExecFisica"]',
                 '[onclick*="removerExecFisica"]',
