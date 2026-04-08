@@ -3292,15 +3292,29 @@
             const dd = document.createElement('div');
             dd.id = 'tedDropdownMenu';
             dd.className = 'ted-dropdown-menu';
-            dd.style.position = 'absolute';
-            dd.style.zIndex = 9999;
-            dd.style.minWidth = '240px';
-            dd.style.maxHeight = '320px';
+            dd.style.position = 'fixed';
+            dd.style.zIndex = 2147483647;
+            dd.style.boxSizing = 'border-box';
+            dd.style.maxHeight = '60vh';
             dd.style.overflowY = 'auto';
-            dd.style.background = 'var(--bg)';
-            dd.style.border = '1px solid var(--border)';
-            dd.style.boxShadow = '0 6px 18px rgba(0,0,0,0.08)';
-            dd.style.borderRadius = '6px';
+
+            // Use as variáveis de tema quando disponíveis, com fallback
+            try {
+                const docStyle = getComputedStyle(document.documentElement);
+                const bg = (docStyle.getPropertyValue('--bg') || '#ffffff').trim();
+                const border = (docStyle.getPropertyValue('--border') || '#e5e7eb').trim();
+                const text = (docStyle.getPropertyValue('--text') || '#0f172a').trim();
+                dd.style.background = bg || '#ffffff';
+                dd.style.border = `1px solid ${border || '#e5e7eb'}`;
+                dd.style.color = text || '#0f172a';
+            } catch(e) {
+                dd.style.background = '#ffffff';
+                dd.style.border = '1px solid #e5e7eb';
+                dd.style.color = '#0f172a';
+            }
+
+            dd.style.boxShadow = '0 8px 24px rgba(15,23,42,0.12)';
+            dd.style.borderRadius = '8px';
             dd.style.padding = '6px';
 
             if (!teds || teds.length === 0) {
@@ -3312,14 +3326,27 @@
                 teds.forEach(t => {
                     const a = document.createElement('a');
                     a.href = '#';
-                    a.style.display = 'block';
+                    a.style.display = 'flex';
+                    a.style.alignItems = 'center';
+                    a.style.gap = '8px';
                     a.style.padding = '8px 10px';
                     a.style.textDecoration = 'none';
-                    a.style.color = 'var(--text)';
-                    a.style.borderRadius = '4px';
-                    a.onmouseover = () => a.style.background = 'rgba(0,0,0,0.03)';
+                    a.style.color = 'inherit';
+                    a.style.borderRadius = '6px';
+                    a.style.whiteSpace = 'nowrap';
+                    a.style.textOverflow = 'ellipsis';
+                    a.style.overflow = 'hidden';
+                    a.onmouseover = () => a.style.background = 'rgba(0,0,0,0.04)';
                     a.onmouseout = () => a.style.background = 'transparent';
-                    a.textContent = `TED ${t.numTed} - ${t.objetivo || ''}`;
+
+                    const txt = document.createElement('div');
+                    txt.textContent = `TED ${t.numTed} - ${t.objetivo || ''}`;
+                    txt.style.flex = '1 1 auto';
+                    txt.style.overflow = 'hidden';
+                    txt.style.textOverflow = 'ellipsis';
+                    txt.style.whiteSpace = 'nowrap';
+
+                    a.appendChild(txt);
                     a.onclick = function(ev) {
                         ev.preventDefault();
                         try { carregarDetalhes(t.id); } catch(e) {}
@@ -3334,22 +3361,52 @@
                 });
             }
 
-            // Posicionar abaixo do chip
+            // Posicionar abaixo do chip com largura limitada e ajuste de overflow
             const rect = chip.getBoundingClientRect();
-            dd.style.left = (rect.left + window.scrollX) + 'px';
-            dd.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+            const viewportPad = 12;
+            const prefWidth = Math.min(520, Math.max(240, Math.round(rect.width * 1.6)));
+            const allowedWidth = Math.min(prefWidth, window.innerWidth - viewportPad * 2);
+            dd.style.width = allowedWidth + 'px';
+
+            let left = rect.left + window.scrollX;
+            if (left + allowedWidth > window.scrollX + window.innerWidth - viewportPad) {
+                left = window.scrollX + window.innerWidth - viewportPad - allowedWidth;
+            }
+            if (left < window.scrollX + viewportPad) left = window.scrollX + viewportPad;
+
+            // Tentar abrir abaixo; se pouco espaço, abrir acima
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            const openBelow = spaceBelow > 160 || spaceBelow >= spaceAbove;
+            if (openBelow) {
+                dd.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+            } else {
+                // abrir acima
+                const estHeight = Math.min(window.innerHeight - viewportPad * 2, 320);
+                dd.style.top = Math.max(window.scrollY + viewportPad, (rect.top + window.scrollY) - 8 - estHeight) + 'px';
+            }
+            dd.style.left = left + 'px';
 
             document.body.appendChild(dd);
 
-            // Fechar ao clicar fora
+            // Fechar ao clicar fora ou pressionar Escape
             setTimeout(() => {
                 function onDocClick(e) {
                     if (!dd.contains(e.target) && e.target !== chip && !chip.contains(e.target)) {
                         dd.remove();
                         document.removeEventListener('click', onDocClick);
+                        document.removeEventListener('keydown', onKeyDown);
+                    }
+                }
+                function onKeyDown(e) {
+                    if (e.key === 'Escape') {
+                        dd.remove();
+                        document.removeEventListener('click', onDocClick);
+                        document.removeEventListener('keydown', onKeyDown);
                     }
                 }
                 document.addEventListener('click', onDocClick);
+                document.addEventListener('keydown', onKeyDown);
             }, 10);
         }
 
