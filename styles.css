@@ -2064,6 +2064,9 @@
             flex-direction: column;
             gap: 0.35rem;
             min-height: 72px;
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
         }
         #dashboard .stat-card .label {
             font-size: 0.78rem;
@@ -2071,11 +2074,42 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.03em;
+            position: relative;
+            z-index: 1;
         }
         #dashboard .stat-card .value {
             font-size: 1.5rem;
             font-weight: 800;
             color: #0f172a;
+            position: relative;
+            z-index: 1;
+        }
+
+        #dashboard .stat-card .stat-watermark {
+            position: absolute;
+            right: 0.7rem;
+            bottom: 0.6rem;
+            width: 3.1rem;
+            height: 3.1rem;
+            stroke-width: 1.7;
+            opacity: 0.09;
+            pointer-events: none;
+            z-index: 0;
+            color: #0f172a;
+        }
+
+        #dashboard .stat-card.wm-blue .stat-watermark { color: #1d4ed8; opacity: 0.12; }
+        #dashboard .stat-card.wm-amber .stat-watermark { color: #b45309; opacity: 0.12; }
+        #dashboard .stat-card.wm-indigo .stat-watermark { color: #4338ca; opacity: 0.11; }
+        #dashboard .stat-card.wm-green .stat-watermark { color: #166534; opacity: 0.12; }
+
+        @media (max-width: 640px) {
+            #dashboard .stat-card .stat-watermark {
+                width: 2.5rem;
+                height: 2.5rem;
+                right: 0.55rem;
+                bottom: 0.5rem;
+            }
         }
 
         #dashboard .proximas-acoes-grid {
@@ -2122,6 +2156,10 @@
             border-color: rgba(99,102,241,0.12);
             box-shadow: 0 6px 18px rgba(0,0,0,0.45);
             color: #e6eefc;
+        }
+        [data-theme="dark"] #dashboard .stat-card .stat-watermark {
+            color: #e2e8f0;
+            opacity: 0.12;
         }
         /* Linha de total */
         .tabela-padrao .linha-total {
