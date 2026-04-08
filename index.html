@@ -3242,17 +3242,115 @@
         // Carregar seletor de TEDs na aba detalhes
         function atualizarSeletorTED() {
             const seletor = document.getElementById('seletorTED');
+            const teds = (typeof dados !== 'undefined' && Array.isArray(dados.teds)) ? dados.teds : [];
+
+            // Se o elemento select ainda não estiver presente (por exemplo em páginas/parciais),
+            // atualizar apenas o chip de seleção e retornar sem lançar erro.
+            if (!seletor) {
+                const st = document.getElementById('selectedTedText');
+                if (st) {
+                    if (window.tedSelecionado && window.tedSelecionado.numTed) st.textContent = `TED ${window.tedSelecionado.numTed}`;
+                    else st.textContent = 'Selecionar TED';
+                }
+                return;
+            }
+
             seletor.innerHTML = '<option value="">-- Escolha um TED --</option>';
-            
-            dados.teds.forEach(ted => {
+
+            teds.forEach(ted => {
                 const option = document.createElement('option');
                 option.value = ted.id;
-                option.textContent = `TED ${ted.numTed} - ${ted.objetivo}`;
-                if (isTedFinalizado(ted)) {
+                option.textContent = `TED ${ted.numTed} - ${ted.objetivo || ''}`;
+                if (isTedFinalizado && typeof isTedFinalizado === 'function' && isTedFinalizado(ted)) {
                     option.style.color = '#ef4444';
                 }
+                // Marcar como selecionado se for o TED atualmente ativo
+                try {
+                    if (window.tedSelecionado && String(window.tedSelecionado.id) === String(ted.id)) option.selected = true;
+                } catch(e) {}
                 seletor.appendChild(option);
             });
+
+            // Sincronizar label do chip superior com seleção atual
+            const st = document.getElementById('selectedTedText');
+            if (st) {
+                if (window.tedSelecionado && window.tedSelecionado.numTed) st.textContent = `TED ${window.tedSelecionado.numTed}`;
+                else st.textContent = 'Selecionar TED';
+            }
+        }
+
+        // Toggle do dropdown rápido de TED no topo (abre uma lista flutuante)
+        function toggleTedDropdown() {
+            const chip = document.getElementById('selectedTedChip');
+            if (!chip) return;
+
+            // Se já existe o menu, fechar
+            const existing = document.getElementById('tedDropdownMenu');
+            if (existing) { existing.remove(); return; }
+
+            const teds = (typeof dados !== 'undefined' && Array.isArray(dados.teds)) ? dados.teds : [];
+            const dd = document.createElement('div');
+            dd.id = 'tedDropdownMenu';
+            dd.className = 'ted-dropdown-menu';
+            dd.style.position = 'absolute';
+            dd.style.zIndex = 9999;
+            dd.style.minWidth = '240px';
+            dd.style.maxHeight = '320px';
+            dd.style.overflowY = 'auto';
+            dd.style.background = 'var(--bg)';
+            dd.style.border = '1px solid var(--border)';
+            dd.style.boxShadow = '0 6px 18px rgba(0,0,0,0.08)';
+            dd.style.borderRadius = '6px';
+            dd.style.padding = '6px';
+
+            if (!teds || teds.length === 0) {
+                const p = document.createElement('div');
+                p.textContent = 'Nenhum TED cadastrado';
+                p.style.padding = '8px';
+                dd.appendChild(p);
+            } else {
+                teds.forEach(t => {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.style.display = 'block';
+                    a.style.padding = '8px 10px';
+                    a.style.textDecoration = 'none';
+                    a.style.color = 'var(--text)';
+                    a.style.borderRadius = '4px';
+                    a.onmouseover = () => a.style.background = 'rgba(0,0,0,0.03)';
+                    a.onmouseout = () => a.style.background = 'transparent';
+                    a.textContent = `TED ${t.numTed} - ${t.objetivo || ''}`;
+                    a.onclick = function(ev) {
+                        ev.preventDefault();
+                        try { carregarDetalhes(t.id); } catch(e) {}
+                        // Atualizar chip
+                        const st = document.getElementById('selectedTedText');
+                        if (st) st.textContent = `TED ${t.numTed}`;
+                        // Fechar menu e ir para aba detalhes
+                        dd.remove();
+                        try { switchTab('detalhes'); } catch(e) {}
+                    };
+                    dd.appendChild(a);
+                });
+            }
+
+            // Posicionar abaixo do chip
+            const rect = chip.getBoundingClientRect();
+            dd.style.left = (rect.left + window.scrollX) + 'px';
+            dd.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+
+            document.body.appendChild(dd);
+
+            // Fechar ao clicar fora
+            setTimeout(() => {
+                function onDocClick(e) {
+                    if (!dd.contains(e.target) && e.target !== chip && !chip.contains(e.target)) {
+                        dd.remove();
+                        document.removeEventListener('click', onDocClick);
+                    }
+                }
+                document.addEventListener('click', onDocClick);
+            }, 10);
         }
 
         // Carregar detalhes do TED selecionado
@@ -3264,6 +3362,12 @@
 
             window.tedSelecionado = dados.teds.find(t => t.id == tedId);
             if (!window.tedSelecionado) return;
+
+            // Sincronizar label do chip superior com o TED selecionado
+            try {
+                const st = document.getElementById('selectedTedText');
+                if (st) st.textContent = `TED ${window.tedSelecionado.numTed || ''}`;
+            } catch(e) {}
 
             // Garantir arrays
             window.tedSelecionado.objetos = window.tedSelecionado.objetos || [];
