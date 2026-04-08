@@ -165,6 +165,8 @@
             if (dateEl) dateEl.value = (typeof formatarData === 'function') ? formatarData(todayIso) : (new Date(todayIso + 'T00:00:00')).toLocaleDateString('pt-BR');
             if (qtdEl) qtdEl.value = '1';
             if (nfEl) nfEl.value = '';
+            if (dateEl) applyDateMaskToInput(dateEl);
+            if (nfEl) applyNumberMaskToInput(nfEl);
             if (backdrop) { backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden','false'); }
             window._prevFocus = document.activeElement;
             setTimeout(() => { if (dateEl) try { dateEl.focus(); } catch(e) {} }, 50);
@@ -534,7 +536,7 @@
                 <div class="form-row">
                     <div style="flex:1;">
                         <label>Data (DD/MM/AAAA)</label>
-                        <input type="text" id="modalAddEntregaDate" placeholder="DD/MM/AAAA">
+                        <input type="text" id="modalAddEntregaDate" class="mask-data" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10">
                     </div>
                     <div style="width:110px;">
                         <label>Qtd</label>
@@ -543,7 +545,7 @@
                 </div>
                 <div style="margin-bottom:0.5rem;">
                     <label>Nº NF</label>
-                    <input type="text" id="modalAddEntregaNf">
+                    <input type="text" id="modalAddEntregaNf" class="mask-numero" inputmode="numeric">
                 </div>
                 <div class="actions">
                     <button class="btn" onclick="fecharModalAdicionarEntrega()">Cancelar</button>
@@ -5863,6 +5865,32 @@
             input.addEventListener('input', onInput);
             input.addEventListener('paste', function() { setTimeout(onInput, 0); });
             input.dataset.maskNumber = '1';
+        }
+
+        // Máscara de data DD/MM/AAAA enquanto digita
+        function applyDateMaskToInput(input) {
+            if (!input) return;
+            if (input.dataset.maskDate === '1') return;
+
+            const onInput = function () {
+                const raw = input.value || '';
+                const digits = raw.replace(/\D/g, '').slice(0, 8);
+                if (!digits) { input.value = ''; return; }
+
+                let out = '';
+                if (digits.length <= 2) {
+                    out = digits;
+                } else if (digits.length <= 4) {
+                    out = digits.slice(0, 2) + '/' + digits.slice(2);
+                } else {
+                    out = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+                }
+                input.value = out;
+            };
+
+            input.addEventListener('input', onInput);
+            input.addEventListener('paste', function() { setTimeout(onInput, 0); });
+            input.dataset.maskDate = '1';
         }
 
         // Formatar conteúdo de célula contenteditable como moeda pt-BR (centavos)
@@ -12183,6 +12211,7 @@
             // Aplicar máscaras de formatação nos inputs do formulário
             document.querySelectorAll('input.mask-numero').forEach(applyNumberMaskToInput);
             document.querySelectorAll('input.mask-moeda').forEach(applyCurrencyMaskToInput);
+            document.querySelectorAll('input.mask-data').forEach(applyDateMaskToInput);
 
             window.addEventListener('resize', function() {
                 try { refreshFrozenColumnsAllTables(); } catch(e) {}
