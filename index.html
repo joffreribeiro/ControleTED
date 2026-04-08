@@ -1129,13 +1129,6 @@
         <div id="detalhes" class="tab-content">
             <div class="card">
                 <h2>Detalhes do TED</h2>
-                
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Selecione um TED:</label>
-                    <select id="seletorTED" onchange="carregarDetalhes(this.value)" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; width: 100%;">
-                        <option value="">-- Escolha um TED --</option>
-                    </select>
-                </div>
 
                 <!-- Busca por NF removida conforme solicitado -->
 
@@ -1594,12 +1587,6 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h3>
                         <div class="detalhe-secao-body">
-                        <div id="filterFullWrap" style="display:flex; gap:1rem; align-items:center; margin-bottom:0.5rem;">
-                            <label style="font-weight:600; margin-right:0.5rem;">Filtrar TED:</label>
-                            <select id="filterTedEntregasFull" onchange="(function(v){ renderEntregasChart(v,'entregasChartFull'); })(this.value)" style="min-width:320px; font-size:0.86rem;"> 
-                                <option value="">-- Selecione um TED --</option>
-                            </select>
-                        </div>
                         <div id="entregasChartFull" style="min-height:160px; padding:0.5rem; background: linear-gradient(#fff, #f7f7f7); border-radius:0.5rem;">
                             <p style="color:var(--text);">Selecione um TED para ver o gráfico de entregas (visão completa).</p>
                         </div>
