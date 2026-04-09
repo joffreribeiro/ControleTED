@@ -6692,9 +6692,8 @@
                 meses.forEach((mesInfo, mesIdx) => {
                     const estaNoPeriodo = mesIdx >= f.mInicio && mesIdx <= f.mFinal;
                     const deliveries = entregaMesMap.get(mesIdx) || [];
-                    let cor = 'transparent';
-                    if (deliveries.length) cor = 'transparent';
-                    else if (estaNoPeriodo) cor = '#e0f2fe';
+                    // Manter o fundo do período (azul) mesmo quando houver entregas na célula
+                    let cor = estaNoPeriodo ? '#e0f2fe' : 'transparent';
 
                     let tdTitle = '';
                     let cellContent = '';
