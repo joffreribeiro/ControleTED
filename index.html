@@ -6699,8 +6699,16 @@
                     let tdTitle = '';
                     let cellContent = '';
                     if (deliveries.length) {
-                        tdTitle = deliveries.map(d => `${d.data} → Qtd: ${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? ' → NF: ' + d.nf : ''}`).join('\n');
-                        cellContent = deliveries.map(d => `<div class="entrega-mini" title="${d.data} • Qtd: ${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? ' • NF: ' + d.nf : ''}">${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? '<br><small style="opacity:.8">' + d.nf + '</small>' : ''}</div>`).join('');
+                        tdTitle = deliveries.map(d => {
+                            let dFmt = '';
+                            try { dFmt = new Date(normalizarData(d.data) + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) { dFmt = d.data || ''; }
+                            return `${dFmt} → Qtd: ${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? ' → NF: ' + d.nf : ''}`;
+                        }).join('\n');
+                        cellContent = deliveries.map(d => {
+                            let dFmt = '';
+                            try { dFmt = new Date(normalizarData(d.data) + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) { dFmt = d.data || ''; }
+                            return `<div class="entrega-mini" title="${dFmt} • Qtd: ${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? ' • NF: ' + d.nf : ''}">${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? '<br><small style="opacity:.8">' + d.nf + '</small>' : ''}</div>`;
+                        }).join('');
                     }
 
                     html += `<td class="month-col-cadFis" style="background: ${cor}; ${mmHideCadFis}" title="${tdTitle}">${cellContent}</td>`;
@@ -6898,16 +6906,19 @@
                     let title = '';
                     if (details.length) {
                         const parts = details.map(d => {
-                            const date = d.data || '';
+                            let dateFmt = '';
+                            try { dateFmt = d.data ? new Date(normalizarData(d.data) + 'T00:00:00').toLocaleDateString('pt-BR') : ''; } catch(e) { dateFmt = d.data || ''; }
                             const nfText = d.nf ? `NF: ${d.nf}` : 'NF: -';
                             const qt = d.qtde != null ? `Qtd: ${formatNumber(d.qtde)}` : '';
-                            return [date, nfText, qt].filter(Boolean).join(' → ');
+                            return [dateFmt, nfText, qt].filter(Boolean).join(' → ');
                         });
                         title = parts.join('\n');
                         cellContent = details.map(d => {
                             const qtd = formatNumber(d.qtde || 0);
                             const nfLinha = d.nf ? '<br><small style="opacity:.8">' + d.nf + '</small>' : '';
-                            const tt = `${d.data || ''} • Qtd: ${qtd}${d.nf ? ' • NF: ' + d.nf : ''}`;
+                            let dFmt = '';
+                            try { dFmt = d.data ? new Date(normalizarData(d.data) + 'T00:00:00').toLocaleDateString('pt-BR') : ''; } catch(e) { dFmt = d.data || ''; }
+                            const tt = `${dFmt} • Qtd: ${qtd}${d.nf ? ' • NF: ' + d.nf : ''}`;
                             return `<div class="entrega-mini" title="${tt}">${qtd}${nfLinha}</div>`;
                         }).join('');
                     }
