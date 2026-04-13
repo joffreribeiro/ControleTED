@@ -12211,9 +12211,52 @@
         // Modo leitura ativado por padrão
         window._readOnlyMode = true;
 
+        // Carregar dados locais/endpoint antes de inicializar a aplicação
+        async function tryLoadAppData() {
+            try {
+                // 1) Tentar arquivo local relativo (./dados/ted-sistema.json)
+                try {
+                    const resp = await fetch('./dados/ted-sistema.json', { cache: 'no-store' });
+                    if (resp && resp.ok) {
+                        const json = await resp.json();
+                        if (json && (Array.isArray(json.teds) || json.proxiId)) {
+                            window.dados = json;
+                            try { if (typeof dados !== 'undefined') dados = window.dados; } catch(e) {}
+                            console.log('[Init] carregado dados locais ./dados/ted-sistema.json', (json.teds || []).length);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[Init] falha ao buscar ./dados/ted-sistema.json', e);
+                }
+
+                // 2) Tentar endpoint do servidor (quando estiver rodando node servidor.js)
+                try {
+                    const resp2 = await fetch('/api/storage/app-data', { cache: 'no-store' });
+                    if (resp2 && resp2.ok) {
+                        const json2 = await resp2.json();
+                        if (json2 && (Array.isArray(json2.teds) || json2.proxiId)) {
+                            window.dados = json2;
+                            try { if (typeof dados !== 'undefined') dados = window.dados; } catch(e) {}
+                            console.log('[Init] carregado dados via /api/storage/app-data', (json2.teds || []).length);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[Init] falha ao buscar /api/storage/app-data', e);
+                }
+
+                // 3) Fallback: garantir que window.dados exista
+                try { window.dados = window.dados || (typeof dados !== 'undefined' ? dados : { teds: [], proxiId: 1 }); } catch (e) { window.dados = window.dados || { teds: [], proxiId: 1 }; }
+            } catch (e) {
+                console.warn('[Init] tryLoadAppData error', e);
+            }
+        }
+
         // Iniciar ao carregar a página
-        window.onload = function() {
+        window.onload = async function() {
             initTheme();
+            await tryLoadAppData();
             inicializar();
             checkTableScrolls();
             initLucideIcons();
