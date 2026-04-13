@@ -2983,3 +2983,32 @@
 [data-theme="dark"] .gantt-table tbody tr:hover td.sticky-ted {
     background: #123057 !important;
 }
+
+/* ============================================================
+   CORREÇÃO DE VISIBILIDADE PARA ABAS ADMIN (FORÇAR)
+   ============================================================ */
+#relatorios,
+#configuracoes {
+    /* Garantir que a div da aba esteja visível e ocupe espaço */
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important; /* Para garantir que não saia do fluxo */
+    z-index: 1 !important; /* Para garantir que não esteja atrás de algo */
+    min-height: 100px !important; /* Garantir altura mínima */
+    min-width: 100px !important; /* Garantir largura mínima */
+    overflow: auto !important; /* Permitir scroll se o conteúdo for grande */
+}
+
+/* Forçar visibilidade para o conteúdo interno das abas admin */
+#relatorios * {
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: inherit !important; /* Garantir que a cor do texto não seja transparente */
+}
+
+#configuracoes * {
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: inherit !important; /* Garantir que a cor do texto não seja transparente */
+}
