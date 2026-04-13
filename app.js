@@ -549,3 +549,20 @@ window.forceCreateAdmin = async function() {
     showToast('Erro forçando criação de admin: ' + (e.message || e), 'error');
   }
 };
+
+// Diagnóstico de carregamento do Firebase (movido de index.html)
+setTimeout(function() {
+  if (!window.firebaseApp) {
+    console.error('[Diag] firebase-init.js não carregou após 5s.');
+    console.error('[Diag] window.firebaseApp=', window.firebaseApp);
+    console.error('[Diag] window.authSignIn=', window.authSignIn);
+    console.error('[Diag] location.protocol=', location.protocol);
+    try {
+      var status = document.getElementById('loginStatus');
+      if (status) {
+        status.style.color = '#dc2626';
+        status.innerHTML = 'Firebase não carregou. <br><small>Abra o console do navegador (F12) para ver o erro.</small>';
+      }
+    } catch(e) { /* ignore */ }
+  }
+}, 5000);
