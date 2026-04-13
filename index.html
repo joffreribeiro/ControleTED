@@ -2050,17 +2050,18 @@
 
         // Trocar Abas
         function switchTab(tabName, btnEl) {
-            // Bloquear acesso à aba de configurações quando não for admin
-            try {
-                // Bloquear acesso à aba de configurações quando não for admin
-                if (tabName === 'config' || tabName === 'configuracoes') {
-                    var isAdmin = (window.currentUserProfile && window.currentUserProfile.role === 'admin');
-                    if (!isAdmin) {
-                        // redirecionar para dashboard se tentativa de acesso não-autorizado
-                        tabName = 'dashboard';
+                // Bloquear acesso a abas administrativas quando não for admin
+                try {
+                    if (tabName === 'config' || tabName === 'configuracoes' || tabName === 'relatorios') {
+                        var isAdmin = false;
+                        try { isAdmin = !!(window.currentUserProfile && String(window.currentUserProfile.role).toLowerCase() === 'admin'); } catch(e) {}
+                        try { if (!isAdmin && document.body && document.body.dataset && document.body.dataset.role) isAdmin = String(document.body.dataset.role).toLowerCase() === 'admin'; } catch(e) {}
+                        if (!isAdmin) {
+                            // redirecionar para dashboard se tentativa de acesso não-autorizado
+                            tabName = 'dashboard';
+                        }
                     }
-                }
-            } catch(e) {}
+                } catch(e) {}
 
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -2081,6 +2082,15 @@
                     tabEl.style.removeProperty('display');
                     tabEl.style.visibility = 'visible';
                     tabEl.style.opacity = '1';
+                    // Forçar exibição para abas administrativas quando o usuário for admin
+                    try {
+                        const isAdminFromBody = document.body && document.body.dataset && String(document.body.dataset.role).toLowerCase() === 'admin';
+                        const isAdminFromProfile = !!(window.currentUserProfile && String(window.currentUserProfile.role).toLowerCase() === 'admin');
+                        const isAdminNow = isAdminFromBody || isAdminFromProfile;
+                        if (isAdminNow && (tabEl.id === 'relatorios' || tabEl.id === 'configuracoes')) {
+                            tabEl.style.setProperty('display', 'block', 'important');
+                        }
+                    } catch(e) { /* ignore */ }
                 }
                 var btnToActivate = btnEl || document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
                 if (btnToActivate) btnToActivate.classList.add('active');
@@ -12089,13 +12099,24 @@
 
                     // 1. Botões de aba no menu (class="tab-admin-only")
                     document.querySelectorAll('.tab-admin-only').forEach(el => {
-                        el.style.display = isAdmin ? '' : 'none';
+                        try {
+                            if (isAdmin) el.style.setProperty('display', 'inline-flex', 'important');
+                            else el.style.setProperty('display', 'none', 'important');
+                        } catch (e) {
+                            el.style.display = isAdmin ? '' : 'none';
+                        }
                     });
 
                     // 2. Painéis de conteúdo das abas
                     ['configuracoes', 'relatorios'].forEach(id => {
                         const el = document.getElementById(id);
-                        if (el) el.style.display = isAdmin ? '' : 'none';
+                        if (!el) return;
+                        try {
+                            if (isAdmin) el.style.setProperty('display', 'block', 'important');
+                            else el.style.setProperty('display', 'none', 'important');
+                        } catch (e) {
+                            el.style.display = isAdmin ? '' : 'none';
+                        }
                     });
 
                     // 3. Botões de edição / exclusão
