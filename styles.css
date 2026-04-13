@@ -399,66 +399,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Admin tabs visibility control (adicionado para controle de role) */
-        /* Esconde abas de admin por padrão */
-        .tab-admin-only {
-            display: none !important;
-        }
-
-        /* Mostra abas de admin quando o body tem o atributo data-role="admin" */
-        body[data-role="admin"] .tab-admin-only {
-            display: inline-flex !important;
-        }
-
-        /* Garante que o conteúdo das abas de admin esteja escondido por padrão */
-        #relatorios,
-        #configuracoes {
-            display: none;
-        }
-
-        /* Força a exibição do conteúdo da aba ativa */
-        .tab-content.active {
-            display: block !important;
-            animation: fadeIn 0.25s ease; /* Mantém sua animação existente */
-        }
-
-        /* Override agressivo para garantir que nada esconda o conteúdo */
-        #relatorios * {
-            visibility: visible !important;
-            opacity: 1 !important;
-            color: inherit !important;
-        }
-        #configuracoes * {
-            visibility: visible !important;
-            opacity: 1 !important;
-            color: inherit !important;
-        }
-
-        /* ===== Controle de visibilidade por role (admin) ===== */
-
-        /* Abas admin: ocultas por padrão via CSS puro.
-             O JS as exibe após confirmar role=admin no Firebase.
-             Evita flash de conteúdo antes da autenticação resolver. */
-        #configuracoes,
-        #relatorios {
-            display: none;
-        }
-
-        .tab-admin-only {
-            display: none;
-        }
-
-        /* Fallback CSS: quando body recebe data-role="admin",
-             as abas são reveladas mesmo sem JS de permissão. */
-        body[data-role="admin"] #configuracoes,
-        body[data-role="admin"] #relatorios {
-            display: block;
-        }
-
-        body[data-role="admin"] .tab-admin-only {
-            display: inline-flex;
-        }
-
         /* ===== Estilos para Entregas / Subentregas (Cadastro Físico) ===== */
         .subentregas-row .subentregas-panel,
         .subentregas-panel {
@@ -3017,33 +2957,4 @@
 [data-theme="dark"] .gantt-table tbody tr:hover td.sticky-up,
 [data-theme="dark"] .gantt-table tbody tr:hover td.sticky-ted {
     background: #123057 !important;
-}
-
-/* ============================================================
-   CORREÇÃO DE VISIBILIDADE PARA ABAS ADMIN (FORÇAR)
-   ============================================================ */
-#relatorios,
-#configuracoes {
-    /* Garantir que a div da aba esteja visível e ocupe espaço */
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: relative !important; /* Para garantir que não saia do fluxo */
-    z-index: 1 !important; /* Para garantir que não esteja atrás de algo */
-    min-height: 100px !important; /* Garantir altura mínima */
-    min-width: 100px !important; /* Garantir largura mínima */
-    overflow: auto !important; /* Permitir scroll se o conteúdo for grande */
-}
-
-/* Forçar visibilidade para o conteúdo interno das abas admin */
-#relatorios * {
-    visibility: visible !important;
-    opacity: 1 !important;
-    color: inherit !important; /* Garantir que a cor do texto não seja transparente */
-}
-
-#configuracoes * {
-    visibility: visible !important;
-    opacity: 1 !important;
-    color: inherit !important; /* Garantir que a cor do texto não seja transparente */
 }

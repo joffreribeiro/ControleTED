@@ -228,97 +228,17 @@ window.testFirestoreConnection = async function() {
   // Apply role-based UI permissions (admin vs user)
   function isCurrentUserAdmin() {
     try {
-      const role = window.currentUserProfile && window.currentUserProfile.role;
-      return Boolean(role && String(role).toLowerCase() === 'admin');
+      return window.currentUserProfile && window.currentUserProfile.role === 'admin';
     } catch (e) { return false; }
   }
 
   function applyRolePermissions() {
     const admin = isCurrentUserAdmin();
-    try { document.body.dataset.role = admin ? 'admin' : 'user'; } catch(e) {}
+    // Delegate to the inline updateAdminUI function for UI updates
     if (window.updateAdminUI) {
-      try { window.updateAdminUI(admin); } catch(e) { console.warn('updateAdminUI error', e); }
+      window.updateAdminUI(admin);
     }
   }
-
-  // Renderiza e inicializa o conteúdo das abas administrativas quando o usuário for admin
-  function renderizarConteudoAbasAdmin() {
-    const admin = isCurrentUserAdmin();
-    console.log('[Permissões] isAdmin =', admin);
-
-    const mapaAbas = {
-      configuracoes: 'tab-configuracoes',
-      relatorios:    'tab-relatorios'
-    };
-
-    Object.entries(mapaAbas).forEach(([abaId, btnId]) => {
-      const aba = document.getElementById(abaId);
-      const btn = document.getElementById(btnId)
-                || document.querySelector(`[data-tab="${abaId}"]`)
-                || document.querySelector(`button[onclick*="${abaId}"]`);
-
-      if (!aba) {
-        console.warn('[Permissões] Aba não encontrada no DOM:', abaId);
-        return;
-      }
-
-      if (admin) {
-        aba.style.display = '';
-        if (btn) btn.style.display = '';
-
-        if (!aba.dataset.rendered || aba.dataset.rendered === 'false') {
-          console.log('[Permissões] Renderizando conteúdo da aba:', abaId);
-          try { dispararRenderAba(abaId); } catch(e) { console.warn('dispararRenderAba error', e); }
-          aba.dataset.rendered = 'true';
-        }
-      } else {
-        aba.style.display = 'none';
-        if (btn) btn.style.display = 'none';
-        if (aba) aba.dataset.rendered = 'false';
-      }
-    });
-  }
-
-  function dispararRenderAba(abaId) {
-    switch (abaId) {
-      case 'configuracoes':
-        try { if (typeof renderConfiguracoes    === 'function') renderConfiguracoes();    } catch(e){}
-        try { if (typeof inicializarConfiguracoes === 'function') inicializarConfiguracoes(); } catch(e){}
-        try { if (typeof carregarConfiguracoes  === 'function') carregarConfiguracoes();  } catch(e){}
-        try {
-          const btn = document.querySelector(`button[onclick*="configuracoes"]`) || document.getElementById('tab-configuracoes');
-          if (btn && typeof btn.click === 'function') {
-            const evt = new CustomEvent('tab-init', { detail: { tabId: 'configuracoes' } });
-            document.dispatchEvent(evt);
-          }
-        } catch(e){}
-        break;
-
-      case 'relatorios':
-        // garantir que os filtros estejam populados antes de renderizar os relatórios
-        try { if (typeof popularFiltrosRelatorios === 'function') popularFiltrosRelatorios(); } catch(e){}
-        try { if (typeof atualizarSeletorTED === 'function') atualizarSeletorTED(); } catch(e){}
-        try { if (typeof renderRelatorios      === 'function') renderRelatorios();      } catch(e){}
-        try { if (typeof inicializarRelatorios === 'function') inicializarRelatorios(); } catch(e){}
-        try { if (typeof carregarRelatorios    === 'function') carregarRelatorios();    } catch(e){}
-        try {
-          const evt = new CustomEvent('tab-init', { detail: { tabId: 'relatorios' } });
-          document.dispatchEvent(evt);
-        } catch(e){}
-        break;
-
-      default:
-        console.warn('[dispararRenderAba] Aba desconhecida:', abaId);
-    }
-  }
-
-  window.renderizarConteudoAbasAdmin = renderizarConteudoAbasAdmin;
-  window.dispararRenderAba = dispararRenderAba;
-
-  // Expose helpers globally so they can be used from the console
-  // and by inline scripts that are not module-scoped.
-  window.isCurrentUserAdmin = isCurrentUserAdmin;
-  window.applyRolePermissions = applyRolePermissions;
 
   // Sign-in handler
   window.handleSignIn = async function() {
@@ -415,69 +335,37 @@ window.testFirestoreConnection = async function() {
     } catch (e) { console.warn('deleteUser', e); showToast('Erro ao remover usuário', 'error'); }
   };
 
-  // Listen to auth state and load profile (improved: retry + render admin tabs)
+  // Listen to auth state and load profile
   ;(async function(){
     await waitForHelper('authOnStateChanged', 5000);
-    if (!window.authOnStateChanged) {
-      console.warn('[Auth] authOnStateChanged não disponível');
-      return;
-    }
-
-    window.authOnStateChanged(async (user) => {
-      try {
-        if (user) {
-          window.currentUser = user;
-
-          // Busca perfil com retry (até 3 tentativas com backoff)
-          let profile = null;
-          for (let attempt = 0; attempt < 3; attempt++) {
+    if (window.authOnStateChanged) {
+      window.authOnStateChanged(async (user) => {
+        try {
+          if (user) {
+            window.currentUser = user;
+            // fetch profile
+            let profile = null;
             try {
-              if (window.firestoreGetDoc) {
-                profile = await window.firestoreGetDoc('users/' + user.uid);
-                if (profile) break;
-              }
-            } catch (e) {
-              console.warn(`[Auth] Tentativa ${attempt + 1} de carregar perfil falhou`, e);
-              await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
-            }
+              if (window.firestoreGetDoc) profile = await window.firestoreGetDoc('users/' + user.uid);
+            } catch (e) { console.warn('error loading user profile', e); }
+            window.currentUserProfile = profile || { uid: user.uid, email: user.email, role: 'user', displayName: user.displayName || '' };
+            showToast('Conectado como ' + (window.currentUserProfile.displayName || window.currentUserProfile.email), 'info');
+            // Hide login screen if it was open
+            try { if (window.hideLoginModal) window.hideLoginModal(); } catch(e){}
+          } else {
+            window.currentUser = null;
+            window.currentUserProfile = null;
+            // DO NOT show login screen — read mode is the default
+            // User can click the admin login button if they want
           }
-
-          window.currentUserProfile = profile || {
-            uid: user.uid,
-            email: user.email,
-            role: 'user',
-            displayName: user.displayName || ''
-          };
-
-          console.log('[Auth] Perfil carregado:', window.currentUserProfile);
-          showToast(
-            'Conectado como ' + (window.currentUserProfile.displayName || window.currentUserProfile.email),
-            'info'
-          );
-          try { if (window.hideLoginModal) window.hideLoginModal(); } catch(e){}
-
-        } else {
-          window.currentUser = null;
-          window.currentUserProfile = null;
-        }
-      } catch (e) {
-        console.warn('[Auth] Erro no handler de estado', e);
-      }
-
-      // Aguarda o DOM estar pronto antes de aplicar permissões
-      await new Promise(r => setTimeout(r, 150));
-
-      try {
-        applyRolePermissions();
-        if (typeof window.renderizarConteudoAbasAdmin === 'function') {
-          window.renderizarConteudoAbasAdmin();
-        }
-      } catch(e) {
-        console.warn('[Auth] Erro aplicando permissões', e);
-      }
-    });
-
-    try { await createBootstrapAdminIfNeeded(); } catch(e) {}
+        } catch (e) { console.warn('auth state handler', e); }
+        try { applyRolePermissions(); } catch(e) {}
+      });
+    }
+    // After setting auth listener, ensure bootstrap admin exists if no users
+    try {
+      await createBootstrapAdminIfNeeded();
+    } catch(e) {}
   })();
 
 // showLoginModal / hideLoginModal are now defined in index.html inline script
@@ -549,20 +437,3 @@ window.forceCreateAdmin = async function() {
     showToast('Erro forçando criação de admin: ' + (e.message || e), 'error');
   }
 };
-
-// Diagnóstico de carregamento do Firebase (movido de index.html)
-setTimeout(function() {
-  if (!window.firebaseApp) {
-    console.error('[Diag] firebase-init.js não carregou após 5s.');
-    console.error('[Diag] window.firebaseApp=', window.firebaseApp);
-    console.error('[Diag] window.authSignIn=', window.authSignIn);
-    console.error('[Diag] location.protocol=', location.protocol);
-    try {
-      var status = document.getElementById('loginStatus');
-      if (status) {
-        status.style.color = '#dc2626';
-        status.innerHTML = 'Firebase não carregou. <br><small>Abra o console do navegador (F12) para ver o erro.</small>';
-      }
-    } catch(e) { /* ignore */ }
-  }
-}, 5000);

@@ -809,15 +809,15 @@
 
     <!-- Container Principal -->
     <div class="container">
-                <!-- Abas -->
-                <div class="tabs">
-                    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
-                    <button class="tab-btn" data-tab="teds">TED</button>
-                    <button class="tab-btn" data-tab="novoTed">Novo TED</button>
-                    <button class="tab-btn" data-tab="detalhes">Detalhes TED</button>
-                    <button class="tab-btn tab-admin-only" data-tab="relatorios">Relatórios</button>
-                    <button class="tab-btn tab-admin-only" data-tab="configuracoes">Configurações</button>
-                </div>
+        <!-- Abas -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)"><i data-lucide="layout-dashboard"></i> Dashboard</button>
+            <button class="tab-btn" data-tab="teds" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
+            <button id="tab-novo" class="tab-btn" data-tab="novo" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
+            <button class="tab-btn" data-tab="detalhes" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
+            <button id="tab-relatorios" class="tab-btn" data-tab="relatorios" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <button id="tab-config" class="tab-btn" data-tab="config" onclick="switchTab('config', this)" style="display:none;"><i data-lucide="settings"></i> Configurações</button>
+        </div>
 
         <!-- TAB 1: Dashboard -->
         <div id="dashboard" class="tab-content active">
@@ -954,7 +954,7 @@
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                     <h2 style="margin:0;">Termos de Execução Descentralizada</h2>
-                    <button class="btn btn-primary" onclick="showTab('novoTed', this)">+ Novo TED</button>
+                    <button class="btn btn-primary" onclick="switchTab('novo', this)">+ Novo TED</button>
                 </div>
                 <!-- Barra de filtros horizontal -->
                 <div class="teds-filter-bar">
@@ -977,14 +977,14 @@
                 <div id="listaTeds">
                     <div class="empty-state">
                         <p>Nenhum TED cadastrado</p>
-                        <button class="btn btn-primary" onclick="showTab('novoTed')">Criar Primeiro TED</button>
+                        <button class="btn btn-primary" onclick="switchTab('novo')">Criar Primeiro TED</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- TAB 3: Novo TED -->
-        <div id="novoTed" class="tab-content">
+        <div id="novo" class="tab-content">
             <div class="card" style="max-width: 900px; margin: 0 auto;">
                 <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:2px solid var(--border);">
                     <i data-lucide="file-plus" style="width:22px; height:22px; color:var(--primary);"></i>
@@ -1667,7 +1667,7 @@
         </div>
 
         <!-- TAB 6: Configurações -->
-        <div id="configuracoes" class="tab-content">
+        <div id="config" class="tab-content">
             <div class="card">
                 <h2><i data-lucide="settings" class="inline-icon"></i> Configurações</h2>
                 <p style="color: var(--text); margin-bottom: 1.5rem;">Exporte e importe seus dados em formato Excel (CSV).</p>
@@ -2050,18 +2050,16 @@
 
         // Trocar Abas
         function switchTab(tabName, btnEl) {
-                // Bloquear acesso a abas administrativas quando não for admin
-                try {
-                    if (tabName === 'config' || tabName === 'configuracoes' || tabName === 'relatorios') {
-                        var isAdmin = false;
-                        try { isAdmin = !!(window.currentUserProfile && String(window.currentUserProfile.role).toLowerCase() === 'admin'); } catch(e) {}
-                        try { if (!isAdmin && document.body && document.body.dataset && document.body.dataset.role) isAdmin = String(document.body.dataset.role).toLowerCase() === 'admin'; } catch(e) {}
-                        if (!isAdmin) {
-                            // redirecionar para dashboard se tentativa de acesso não-autorizado
-                            tabName = 'dashboard';
-                        }
+            // Bloquear acesso à aba de configurações quando não for admin
+            try {
+                if (tabName === 'config') {
+                    var isAdmin = (window.currentUserProfile && window.currentUserProfile.role === 'admin');
+                    if (!isAdmin) {
+                        // redirecionar para dashboard se tentativa de acesso não-autorizado
+                        tabName = 'dashboard';
                     }
-                } catch(e) {}
+                }
+            } catch(e) {}
 
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -2082,15 +2080,6 @@
                     tabEl.style.removeProperty('display');
                     tabEl.style.visibility = 'visible';
                     tabEl.style.opacity = '1';
-                    // Forçar exibição para abas administrativas quando o usuário for admin
-                    try {
-                        const isAdminFromBody = document.body && document.body.dataset && String(document.body.dataset.role).toLowerCase() === 'admin';
-                        const isAdminFromProfile = !!(window.currentUserProfile && String(window.currentUserProfile.role).toLowerCase() === 'admin');
-                        const isAdminNow = isAdminFromBody || isAdminFromProfile;
-                        if (isAdminNow && (tabEl.id === 'relatorios' || tabEl.id === 'configuracoes')) {
-                            tabEl.style.setProperty('display', 'block', 'important');
-                        }
-                    } catch(e) { /* ignore */ }
                 }
                 var btnToActivate = btnEl || document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
                 if (btnToActivate) btnToActivate.classList.add('active');
@@ -2107,67 +2096,12 @@
                 if (tabName === 'dashboard') { try { atualizarDashboard(); } catch(e) {} }
                 if (tabName === 'teds') { try { atualizarListaTEDs(); } catch(e) {} }
 
-                // Ao ativar abas administrativas, garantir inicialização/refresh do conteúdo
-                if (tabName === 'relatorios') {
-                    try { if (typeof popularFiltrosRelatorios === 'function') popularFiltrosRelatorios(); } catch(e) {}
-                    try { if (typeof renderRelatorios === 'function') renderRelatorios(); } catch(e) {}
-                    try { if (typeof dispararRenderAba === 'function') dispararRenderAba('relatorios'); } catch(e) {}
-                }
-                if (tabName === 'configuracoes') {
-                    try { if (typeof renderConfiguracoes === 'function') renderConfiguracoes(); } catch(e) {}
-                    try { if (typeof inicializarConfiguracoes === 'function') inicializarConfiguracoes(); } catch(e) {}
-                    try { if (typeof carregarConfiguracoes === 'function') carregarConfiguracoes(); } catch(e) {}
-                    try { if (typeof dispararRenderAba === 'function') dispararRenderAba('configuracoes'); } catch(e) {}
-                }
-
                 // Execução Física é derivada do Cadastro Físico; avisar sobre edição
                 if (tabName === 'execFis') {
                     showToast('Edição desabilitada: para registrar entregas use o Cadastro Físico.', 'info');
                 }
             } catch(e) { /* ignore */ }
         }
-
-        // Compatibilidade: wrapper robusto `showTab(tabId)` que força exibição
-        window.showTab = function(tabId) {
-            try {
-                // 1. Ocultar TODOS os painéis com força total
-                document.querySelectorAll('.tab-content').forEach(function(panel) {
-                    panel.classList.remove('active');
-                    panel.style.setProperty('display', 'none', 'important');
-                    panel.style.setProperty('visibility', 'hidden', 'important');
-                    panel.style.setProperty('opacity', '0', 'important');
-                });
-
-                // 2. Desativar todos os botões
-                document.querySelectorAll('.tab-btn').forEach(function(btn) {
-                    btn.classList.remove('active');
-                });
-
-                // 3. Exibir o painel correto com força total
-                var panel = document.getElementById(tabId);
-                if (panel) {
-                    panel.classList.add('active');
-                    panel.style.removeProperty('display');
-                    panel.style.removeProperty('visibility');
-                    panel.style.removeProperty('opacity');
-                    panel.style.setProperty('display', 'block', 'important');
-                    panel.style.setProperty('visibility', 'visible', 'important');
-                    panel.style.setProperty('opacity', '1', 'important');
-                    panel.style.setProperty('transform', 'none', 'important');
-                } else {
-                    console.warn('[showTab] Painel não encontrado:', tabId);
-                }
-
-                // 4. Ativar botão correspondente
-                var btn = document.querySelector('.tab-btn[onclick*="' + tabId + '"]') || document.getElementById('tab-' + tabId);
-                if (btn) btn.classList.add('active');
-            } catch (e) { console.warn('showTab error', e); }
-        };
-
-        // Inicializar: mostrar dashboard ao carregar a página
-        document.addEventListener('DOMContentLoaded', function() {
-            window.showTab('dashboard');
-        });
 
         // Calcula valor total de objetos (qtde * valorUnitario)
         function calcularTotalObjetosValor(ted) {
@@ -12114,58 +12048,51 @@
         }
         window.doLogout = doLogout;
 
-                // Atualizar UI de admin/leitura
-                window.updateAdminUI = function(isAdmin) {
-                    console.log('[updateAdminUI] isAdmin =', isAdmin);
+        // Atualizar UI de admin/leitura
+        function updateAdminUI(isAdmin) {
+            var modeEl = document.getElementById('modeIndicator');
+            var loginBtn = document.getElementById('btnAdminLogin');
+            var logoutBtn = document.getElementById('btnAdminLogout');
+            var cloudCtrl = document.getElementById('adminCloudControls');
+            var adminPanel = document.getElementById('adminPanel');
+            var adminLoggedAs = document.getElementById('adminLoggedAs');
+            var tabConfig = document.getElementById('tab-config');
+            var tabRelatorios = document.getElementById('tab-relatorios');
 
-                    // Botões das abas admin
-                    document.querySelectorAll('.tab-admin-only').forEach(function(el) {
-                        if (isAdmin) {
-                            el.style.removeProperty('display');
-                            el.style.setProperty('display', 'inline-flex', 'important');
-                        } else {
-                            el.style.setProperty('display', 'none', 'important');
-                        }
-                    });
-
-                    // Painéis das abas admin: apenas controla visibilidade
-                    // (display é controlado por showTab)
-                    // Quando não é admin, garantir que não ficam visíveis
-                    if (!isAdmin) {
-                        ['relatorios', 'configuracoes'].forEach(function(id) {
-                            var p = document.getElementById(id);
-                            if (p) {
-                                p.classList.remove('active');
-                                p.style.setProperty('display', 'none', 'important');
-                                p.style.setProperty('visibility', 'hidden', 'important');
-                                p.style.setProperty('opacity', '0', 'important');
-                            }
-                        });
-                        // Se estiver em aba admin, voltar para dashboard
-                        var activePanel = document.querySelector('.tab-content.active');
-                        if (!activePanel || activePanel.id === 'relatorios' || activePanel.id === 'configuracoes') {
-                            window.showTab('dashboard');
-                        }
+            if (isAdmin) {
+                if (modeEl) { modeEl.textContent = '🔑 Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+                if (cloudCtrl) cloudCtrl.style.display = 'flex';
+                if (adminPanel) adminPanel.style.display = 'block';
+                if (tabConfig) tabConfig.style.display = '';
+                if (tabRelatorios) tabRelatorios.style.display = '';
+                if (adminLoggedAs && window.currentUserProfile) {
+                    adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '→');
+                }
+                // Habilitar botões de edição
+                enableEditButtons(true);
+            } else {
+                if (modeEl) { modeEl.textContent = '📖 Leitura'; modeEl.style.background = '#e0e7ff'; modeEl.style.color = '#3730a3'; }
+                if (loginBtn) loginBtn.style.display = 'inline-block';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+                if (cloudCtrl) cloudCtrl.style.display = 'none';
+                if (adminPanel) adminPanel.style.display = 'none';
+                // Esconder aba Configurações para usuários não-admin
+                if (tabConfig) tabConfig.style.display = 'none';
+                if (tabRelatorios) tabRelatorios.style.display = 'none';
+                // Se está em aba restrita, voltar para dashboard
+                try {
+                    var activeTab = document.querySelector('.tab-content.active');
+                    if (activeTab && (activeTab.id === 'relatorios' || activeTab.id === 'config')) {
+                        switchTab('dashboard');
                     }
-
-                    // Demais elementos (botões editar, badge modo, etc.)
-                    document.querySelectorAll('.btn-edit, .btn-save, .btn-cancel').forEach(function(btn) {
-                        btn.disabled = !isAdmin;
-                        btn.style.opacity = isAdmin ? '1' : '0.3';
-                        btn.style.pointerEvents = isAdmin ? '' : 'none';
-                    });
-
-                    var modeEl = document.querySelector('.topbar-mode');
-                    if (modeEl) {
-                        modeEl.textContent = isAdmin ? '🔓 Admin' : '📖 Leitura';
-                    }
-
-                    var logoffBtn = document.querySelector('.topbar-btn-logoff');
-                    if (logoffBtn) logoffBtn.style.display = isAdmin ? '' : 'none';
-
-                    var loginBtn = document.querySelector('.topbar-btn-admin-login');
-                    if (loginBtn) loginBtn.style.display = isAdmin ? 'none' : '';
-                };
+                } catch(e) {}
+                // Desabilitar botões de edição
+                enableEditButtons(false);
+            }
+        }
+        window.updateAdminUI = updateAdminUI;
 
         // Habilitar/desabilitar TODOS os botões e formulários de edição
         function enableEditButtons(enabled) {
@@ -12175,7 +12102,7 @@
                 '[onclick*="editarTED"]',
                 '[onclick*="deletarTED"]',
                 '[onclick*="excluirTED"]',
-                '#tab-novoTed',
+                '#tab-novo',
                 // Info edit
                 '[onclick*="toggleEditarInfo"]',
                 '[onclick*="salvarEdicaoInfo"]',
@@ -12284,52 +12211,9 @@
         // Modo leitura ativado por padrão
         window._readOnlyMode = true;
 
-        // Carregar dados locais/endpoint antes de inicializar a aplicação
-        async function tryLoadAppData() {
-            try {
-                // 1) Tentar arquivo local relativo (./dados/ted-sistema.json)
-                try {
-                    const resp = await fetch('./dados/ted-sistema.json', { cache: 'no-store' });
-                    if (resp && resp.ok) {
-                        const json = await resp.json();
-                        if (json && (Array.isArray(json.teds) || json.proxiId)) {
-                            window.dados = json;
-                            try { if (typeof dados !== 'undefined') dados = window.dados; } catch(e) {}
-                            console.log('[Init] carregado dados locais ./dados/ted-sistema.json', (json.teds || []).length);
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('[Init] falha ao buscar ./dados/ted-sistema.json', e);
-                }
-
-                // 2) Tentar endpoint do servidor (quando estiver rodando node servidor.js)
-                try {
-                    const resp2 = await fetch('/api/storage/app-data', { cache: 'no-store' });
-                    if (resp2 && resp2.ok) {
-                        const json2 = await resp2.json();
-                        if (json2 && (Array.isArray(json2.teds) || json2.proxiId)) {
-                            window.dados = json2;
-                            try { if (typeof dados !== 'undefined') dados = window.dados; } catch(e) {}
-                            console.log('[Init] carregado dados via /api/storage/app-data', (json2.teds || []).length);
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('[Init] falha ao buscar /api/storage/app-data', e);
-                }
-
-                // 3) Fallback: garantir que window.dados exista
-                try { window.dados = window.dados || (typeof dados !== 'undefined' ? dados : { teds: [], proxiId: 1 }); } catch (e) { window.dados = window.dados || { teds: [], proxiId: 1 }; }
-            } catch (e) {
-                console.warn('[Init] tryLoadAppData error', e);
-            }
-        }
-
         // Iniciar ao carregar a página
-        window.onload = async function() {
+        window.onload = function() {
             initTheme();
-            await tryLoadAppData();
             inicializar();
             checkTableScrolls();
             initLucideIcons();
@@ -12357,356 +12241,24 @@
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js"></script>
     <script type="module" src="./app.js"></script>
-        <script>
-        // ============================================================
-        // CORREÇÃO DEFINITIVA: Injetar conteúdo nas abas admin
-        // Roda após o DOM estar completo
-        // ============================================================
-        document.addEventListener('DOMContentLoaded', function() {
-
-            // ---- RELATÓRIOS ----
-            var abaRelatorios = document.getElementById('relatorios');
-            if (abaRelatorios && abaRelatorios.innerHTML.trim().length < 100) {
-                abaRelatorios.innerHTML = `
-                    <div class="card">
-                        <h2>📊 Relatórios</h2>
-
-                        <!-- Filtros -->
-                        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem;align-items:flex-end;">
-                            <div class="form-group" style="margin:0;min-width:180px;">
-                                <label>TED</label>
-                                <select id="rel-filtro-ted" multiple style="height:80px;width:100%;">
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin:0;min-width:120px;">
-                                <label>UP</label>
-                                <select id="rel-filtro-up" multiple style="height:80px;width:100%;">
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin:0;min-width:100px;">
-                                <label>Ano</label>
-                                <select id="rel-filtro-ano" multiple style="height:80px;width:100%;">
-                                </select>
-                            </div>
-                            <div style="display:flex;gap:8px;align-items:flex-end;">
-                                <button class="btn btn-secondary btn-sm" onclick="popularFiltrosRelatoriosAba()">
-                                    Atualizar filtros
-                                </button>
-                                <button class="btn btn-primary btn-sm" onclick="gerarRelatorioAba()">
-                                    Gerar Relatório
-                                </button>
-                                <button class="btn btn-secondary btn-sm" onclick="window.print()">
-                                    Exportar PDF
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Resultados -->
-                        <div id="rel-resultado-cadastro" class="card" style="margin-bottom:1rem;">
-                            <h3>📋 Cadastro do TED</h3>
-                            <div id="rel-tabela-cadastro">
-                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
-                            </div>
-                        </div>
-
-                        <div id="rel-resultado-objetos" class="card" style="margin-bottom:1rem;">
-                            <h3>📋 Objetos</h3>
-                            <div id="rel-tabela-objetos">
-                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
-                            </div>
-                        </div>
-
-                        <div id="rel-resultado-metas" class="card" style="margin-bottom:1rem;">
-                            <h3>🎯 Metas</h3>
-                            <div id="rel-tabela-metas">
-                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
-                            </div>
-                        </div>
-
-                        <div id="rel-resultado-fisico" class="card" style="margin-bottom:1rem;">
-                            <h3>📦 Cadastro Físico</h3>
-                            <div id="rel-tabela-fisico">
-                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
-                            </div>
-                        </div>
-
-                        <div id="rel-resultado-execfisica" class="card" style="margin-bottom:1rem;">
-                            <h3>✅ Execução Física</h3>
-                            <div id="rel-tabela-execfisica">
-                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
-                            </div>
-                        </div>
-
-                        <div id="rel-resultado-financeiro" class="card" style="margin-bottom:1rem;">
-                            <h3>💰 Cadastro Financeiro</h3>
-                            <div id="rel-tabela-financeiro">
-                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
-                            </div>
-                        </div>
-
-                        <div id="rel-resultado-execfinanceira" class="card" style="margin-bottom:1rem;">
-                            <h3>💸 Execução Financeira</h3>
-                            <div id="rel-tabela-execfinanceira">
-                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                console.log('[Fix] Conteúdo de Relatórios injetado.');
+    <!-- Fallback: detect if modules failed to load -->
+    <script>
+        // After 5s check if firebase loaded; if not, show diagnostic
+        setTimeout(function() {
+            if (!window.firebaseApp) {
+                console.error('[Diag] firebase-init.js não carregou após 5s.');
+                console.error('[Diag] window.firebaseApp=', window.firebaseApp);
+                console.error('[Diag] window.authSignIn=', window.authSignIn);
+                console.error('[Diag] location.protocol=', location.protocol);
+                // Try to give user actionable info
+                var status = document.getElementById('loginStatus');
+                if (status) {
+                    status.style.color = '#dc2626';
+                    status.innerHTML = 'Firebase não carregou. <br><small>Abra o console do navegador (F12) para ver o erro.</small>';
+                }
             }
-
-            // ---- CONFIGURAÇÕES ----
-            var abaConfig = document.getElementById('configuracoes');
-            if (abaConfig && abaConfig.innerHTML.trim().length < 100) {
-                abaConfig.innerHTML = `
-                    <div class="card">
-                        <h2>⚙️ Configurações</h2>
-                        <p style="color:#64748b;margin-bottom:1.5rem;">
-                            Exporte e importe seus dados em formato Excel (CSV).
-                        </p>
-
-                        <!-- Exportar -->
-                        <div class="card" style="margin-bottom:1rem;">
-                            <h3>📋 Exportar Dados</h3>
-                            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:0.75rem;">
-                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('teds')">Exportar TEDs</button>
-                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('objetos')">Exportar Objetos</button>
-                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('metas')">Exportar Metas</button>
-                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('fisico')">Exportar Físico</button>
-                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('execFisica')">Exportar Exec. Física</button>
-                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('financeiro')">Exportar Financeiro</button>
-                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('execFinanceira')">Exportar Exec. Financeira</button>
-                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('recursosGerais')">Exportar Recursos Gerais</button>
-                                <button class="btn btn-primary btn-sm" onclick="exportarTudoZip && exportarTudoZip()">📋 Exportar Tudo (ZIP)</button>
-                            </div>
-                        </div>
-
-                        <!-- Importar -->
-                        <div class="card" style="margin-bottom:1rem;">
-                            <h3>📋 Importar Dados</h3>
-                            <div style="display:flex;flex-direction:column;gap:12px;margin-top:0.75rem;">
-                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar TEDs</label>
-                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'teds')"></div>
-                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Objetos</label>
-                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'objetos')"></div>
-                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Metas</label>
-                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'metas')"></div>
-                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Físico</label>
-                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'fisico')"></div>
-                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Exec. Física</label>
-                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'execFisica')"></div>
-                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Financeiro</label>
-                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'financeiro')"></div>
-                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Exec. Financeira (CSV/Tesouro)</label>
-                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'execFinanceira')"></div>
-                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Recursos Gerais (CSV/Tesouro)</label>
-                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'recursosGerais')"></div>
-                            </div>
-                        </div>
-
-                        <!-- Backup -->
-                        <div class="card" style="margin-bottom:1rem;">
-                            <h3>💾 Backup Completo</h3>
-                            <p style="font-size:13px;color:#64748b;margin-bottom:0.75rem;">
-                                Exporte ou importe todos os dados de uma vez em formato JSON.
-                            </p>
-                            <div style="display:flex;gap:8px;">
-                                <button class="btn btn-secondary btn-sm" onclick="exportarBackupJSON && exportarBackupJSON()">
-                                    📋 Exportar Backup JSON
-                                </button>
-                                <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
-                                    📋 Importar Backup JSON
-                                    <input type="file" accept=".json" style="display:none"
-                                        onchange="importarBackupJSON && importarBackupJSON(event)">
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Administração -->
-                        <div class="card" style="margin-bottom:1rem;">
-                            <h3>📋 Administração</h3>
-                            <p style="font-size:13px;color:#64748b;margin-bottom:0.75rem;">
-                                Logado como: <strong id="config-user-email">—</strong>
-                            </p>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                <button class="btn btn-secondary btn-sm" onclick="window.testFirestoreConnection && window.testFirestoreConnection()">
-                                    🔌 Testar Conexão
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="window.handleSignOut && window.handleSignOut()">
-                                    Sair do modo Admin
-                                </button>
-                            </div>
-                            <div id="usersListContainer" style="margin-top:1rem;"></div>
-                        </div>
-                    </div>
-                `;
-
-                // Preencher email do admin logado
-                setTimeout(function() {
-                    var emailEl = document.getElementById('config-user-email');
-                    if (emailEl && window.currentUserProfile) {
-                        emailEl.textContent =
-                            window.currentUserProfile.displayName ||
-                            window.currentUserProfile.email || '—';
-                    }
-                    // Carregar lista de usuários
-                    if (typeof window.loadUsersList === 'function') window.loadUsersList();
-                }, 300);
-
-                console.log('[Fix] Conteúdo de Configurações injetado.');
-            }
-
-            // ---- FUNÇÕES DE FILTRO DE RELATÓRIO ----
-            window.popularFiltrosRelatoriosAba = function() {
-                var teds = (window.dados && window.dados.teds) || [];
-                var selTed = document.getElementById('rel-filtro-ted');
-                var selUp  = document.getElementById('rel-filtro-up');
-                var selAno = document.getElementById('rel-filtro-ano');
-                if (!selTed) return;
-
-                var ups = [...new Set(teds.map(t => t.upResponsavel || t.up || '').filter(Boolean))];
-                var anos = [...new Set(teds.flatMap(t => {
-                    var a = [];
-                    if (t.inicioVigencia) a.push(new Date(t.inicioVigencia).getFullYear());
-                    if (t.fimVigencia)    a.push(new Date(t.fimVigencia).getFullYear());
-                    return a;
-                }).filter(Boolean))].sort();
-
-                selTed.innerHTML = teds.map(t =>
-                    `<option value="${t.id}">${t.numeroTed || t.id} — ${(t.objeto||'').substring(0,40)}</option>`
-                ).join('');
-                selUp.innerHTML  = ups.map(u  => `<option value="${u}">${u}</option>`).join('');
-                selAno.innerHTML = anos.map(a => `<option value="${a}">${a}</option>`).join('');
-
-                if (typeof window.showToast === 'function')
-                    window.showToast('Filtros atualizados', 'success');
-            };
-
-            window.gerarRelatorioAba = function() {
-                var teds = (window.dados && window.dados.teds) || [];
-                if (!teds.length) {
-                    if (typeof window.showToast === 'function')
-                        window.showToast('Nenhum TED cadastrado', 'warning');
-                    return;
-                }
-
-                // IDs selecionados
-                var selTed = document.getElementById('rel-filtro-ted');
-                var idsSel = selTed
-                    ? [...selTed.selectedOptions].map(o => String(o.value))
-                    : [];
-                var filtrados = idsSel.length
-                    ? teds.filter(t => idsSel.includes(String(t.id)))
-                    : teds;
-
-                // Renderizar tabela de cadastro
-                var cont = document.getElementById('rel-tabela-cadastro');
-                if (cont) {
-                    if (!filtrados.length) {
-                        cont.innerHTML = '<p style="color:#94a3b8;">Nenhum TED encontrado com os filtros selecionados.</p>';
-                    } else {
-                        cont.innerHTML = `
-                            <div class="table-wrapper">
-                                <table class="tabela-padrao">
-                                    <thead><tr>
-                                        <th>Nº TED</th>
-                                        <th>Objeto</th>
-                                        <th>UP</th>
-                                        <th>Início Vigência</th>
-                                        <th>Fim Vigência</th>
-                                        <th>Status</th>
-                                        <th>Valor (R$)</th>
-                                    </tr></thead>
-                                    <tbody>
-                                        ${filtrados.map(t => `<tr>
-                                            <td>${t.numeroTed || t.id}</td>
-                                            <td>${t.objeto || '—'}</td>
-                                            <td>${t.upResponsavel || t.up || '—'}</td>
-                                            <td>${t.inicioVigencia || '—'}</td>
-                                            <td>${t.fimVigencia || '—'}</td>
-                                            <td>${t.situacao || 'Em Execução'}</td>
-                                            <td style="text-align:right">${
-                                                typeof t.valorTed === 'number'
-                                                    ? t.valorTed.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
-                                                    : (t.valorTed || '—')
-                                            }</td>
-                                        </tr>`).join('')}
-                                    </tbody>
-                                </table>
-                            </div>`;
-                    }
-                }
-
-                if (typeof window.showToast === 'function')
-                    window.showToast('Relatório gerado com ' + filtrados.length + ' TED(s)', 'success');
-            };
-
-                }); // fim DOMContentLoaded
-                </script>
-
-                <script>
-    // Função para mostrar/esconder abas
-    window.showTab = function(tabId) {
-        // Esconde todos os conteúdos de aba
-        document.querySelectorAll('.tab-content').forEach(function(tabContent) {
-            tabContent.classList.remove('active');
-            tabContent.style.display = 'none'; // Garante que esteja escondido
-        });
-
-        // Desativa todos os botões de aba
-        document.querySelectorAll('.tab-btn').forEach(function(tabBtn) {
-            tabBtn.classList.remove('active');
-        });
-
-        // Mostra o conteúdo da aba selecionada
-        var selectedTabContent = document.getElementById(tabId);
-        if (selectedTabContent) {
-            selectedTabContent.classList.add('active');
-            selectedTabContent.style.display = 'block'; // Garante que esteja visível
-            // Dispara evento de inicialização se a aba ainda não foi renderizada
-            if (selectedTabContent.dataset.rendered !== 'true') {
-                if (typeof window.dispararRenderAba === 'function') {
-                    window.dispararRenderAba(tabId);
-                }
-                selectedTabContent.dataset.rendered = 'true';
-            }
-        }
-
-        // Ativa o botão da aba selecionada
-        var selectedTabButton = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
-        if (selectedTabButton) {
-            selectedTabButton.classList.add('active');
-        }
-    };
-
-    // Adiciona listeners de clique aos botões das abas
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.tab-btn').forEach(function(button) {
-            button.addEventListener('click', function() {
-                window.showTab(this.dataset.tab);
-            });
-        });
-
-        // updateAdminUI já é definido em outro trecho; fallback somente se ausente
-        if (typeof window.updateAdminUI !== 'function') {
-            window.updateAdminUI = function(isAdmin) {
-                document.querySelectorAll('.tab-admin-only').forEach(function(el) {
-                    el.style.display = isAdmin ? 'inline-flex' : 'none';
-                });
-                if (!isAdmin) {
-                    var activeTab = document.querySelector('.tab-content.active');
-                    if (activeTab && (activeTab.id === 'relatorios' || activeTab.id === 'configuracoes')) {
-                        window.showTab('dashboard');
-                    }
-                }
-            };
-        }
-
-        // Inicializa a primeira aba (Dashboard) ao carregar a página
-        window.showTab('dashboard');
-    });
-</script>
-
+        }, 5000);
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             initLucideIcons();
