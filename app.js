@@ -298,6 +298,9 @@ window.testFirestoreConnection = async function() {
         break;
 
       case 'relatorios':
+        // garantir que os filtros estejam populados antes de renderizar os relatórios
+        try { if (typeof popularFiltrosRelatorios === 'function') popularFiltrosRelatorios(); } catch(e){}
+        try { if (typeof atualizarSeletorTED === 'function') atualizarSeletorTED(); } catch(e){}
         try { if (typeof renderRelatorios      === 'function') renderRelatorios();      } catch(e){}
         try { if (typeof inicializarRelatorios === 'function') inicializarRelatorios(); } catch(e){}
         try { if (typeof carregarRelatorios    === 'function') carregarRelatorios();    } catch(e){}
