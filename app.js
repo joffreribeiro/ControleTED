@@ -228,7 +228,8 @@ window.testFirestoreConnection = async function() {
   // Apply role-based UI permissions (admin vs user)
   function isCurrentUserAdmin() {
     try {
-      return window.currentUserProfile && window.currentUserProfile.role === 'admin';
+      const role = window.currentUserProfile && window.currentUserProfile.role;
+      return Boolean(role && String(role).toLowerCase() === 'admin');
     } catch (e) { return false; }
   }
 
@@ -239,6 +240,11 @@ window.testFirestoreConnection = async function() {
       window.updateAdminUI(admin);
     }
   }
+
+  // Expose helpers globally so they can be used from the console
+  // and by inline scripts that are not module-scoped.
+  window.isCurrentUserAdmin = isCurrentUserAdmin;
+  window.applyRolePermissions = applyRolePermissions;
 
   // Sign-in handler
   window.handleSignIn = async function() {
