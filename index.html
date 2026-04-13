@@ -811,12 +811,12 @@
     <div class="container">
         <!-- Abas -->
         <div class="tabs">
-            <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)"><i data-lucide="layout-dashboard"></i> Dashboard</button>
-            <button class="tab-btn" data-tab="teds" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
-            <button id="tab-novo" class="tab-btn" data-tab="novo" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
-            <button class="tab-btn" data-tab="detalhes" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
-            <button id="tab-relatorios" class="tab-btn tab-admin-only" data-tab="relatorios" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
-            <button id="tab-configuracoes" class="tab-btn tab-admin-only" data-tab="configuracoes" onclick="switchTab('configuracoes', this)" style="display:none;"><i data-lucide="settings"></i> Configurações</button>
+            <button class="tab-btn active" data-tab="dashboard" onclick="showTab('dashboard')"><i data-lucide="layout-dashboard"></i> Dashboard</button>
+            <button class="tab-btn" data-tab="teds" onclick="showTab('teds')"><i data-lucide="file-text"></i> TED</button>
+            <button id="tab-novoTed" class="tab-btn" data-tab="novoTed" onclick="showTab('novoTed')" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
+            <button class="tab-btn" data-tab="detalhes" onclick="showTab('detalhes')"><i data-lucide="search"></i> Detalhes TED</button>
+            <button id="tab-relatorios" class="tab-btn tab-admin-only" data-tab="relatorios" onclick="showTab('relatorios')"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <button id="tab-configuracoes" class="tab-btn tab-admin-only" data-tab="configuracoes" onclick="showTab('configuracoes')" style="display:none;"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
         <!-- TAB 1: Dashboard -->
@@ -954,7 +954,7 @@
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                     <h2 style="margin:0;">Termos de Execução Descentralizada</h2>
-                    <button class="btn btn-primary" onclick="switchTab('novo', this)">+ Novo TED</button>
+                    <button class="btn btn-primary" onclick="showTab('novoTed', this)">+ Novo TED</button>
                 </div>
                 <!-- Barra de filtros horizontal -->
                 <div class="teds-filter-bar">
@@ -977,14 +977,14 @@
                 <div id="listaTeds">
                     <div class="empty-state">
                         <p>Nenhum TED cadastrado</p>
-                        <button class="btn btn-primary" onclick="switchTab('novo')">Criar Primeiro TED</button>
+                        <button class="btn btn-primary" onclick="showTab('novoTed')">Criar Primeiro TED</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- TAB 3: Novo TED -->
-        <div id="novo" class="tab-content">
+        <div id="novoTed" class="tab-content">
             <div class="card" style="max-width: 900px; margin: 0 auto;">
                 <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:2px solid var(--border);">
                     <i data-lucide="file-plus" style="width:22px; height:22px; color:var(--primary);"></i>
@@ -12132,7 +12132,7 @@
                 '[onclick*="editarTED"]',
                 '[onclick*="deletarTED"]',
                 '[onclick*="excluirTED"]',
-                '#tab-novo',
+                '#tab-novoTed',
                 // Info edit
                 '[onclick*="toggleEditarInfo"]',
                 '[onclick*="salvarEdicaoInfo"]',

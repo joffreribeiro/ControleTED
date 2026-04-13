@@ -239,9 +239,6 @@ window.testFirestoreConnection = async function() {
     if (window.updateAdminUI) {
       try { window.updateAdminUI(admin); } catch(e) { console.warn('updateAdminUI error', e); }
     }
-    if (typeof renderizarConteudoAbasAdmin === 'function') {
-      try { renderizarConteudoAbasAdmin(); } catch(e) { console.warn('renderizarConteudoAbasAdmin error', e); }
-    }
   }
 
   // Renderiza e inicializa o conteúdo das abas administrativas quando o usuário for admin
