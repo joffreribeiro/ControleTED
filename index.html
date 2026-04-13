@@ -2052,7 +2052,8 @@
         function switchTab(tabName, btnEl) {
             // Bloquear acesso à aba de configurações quando não for admin
             try {
-                if (tabName === 'config') {
+                // Bloquear acesso à aba de configurações quando não for admin
+                if (tabName === 'config' || tabName === 'configuracoes') {
                     var isAdmin = (window.currentUserProfile && window.currentUserProfile.role === 'admin');
                     if (!isAdmin) {
                         // redirecionar para dashboard se tentativa de acesso não-autorizado
@@ -2095,6 +2096,19 @@
                 }
                 if (tabName === 'dashboard') { try { atualizarDashboard(); } catch(e) {} }
                 if (tabName === 'teds') { try { atualizarListaTEDs(); } catch(e) {} }
+
+                // Ao ativar abas administrativas, garantir inicialização/refresh do conteúdo
+                if (tabName === 'relatorios') {
+                    try { if (typeof popularFiltrosRelatorios === 'function') popularFiltrosRelatorios(); } catch(e) {}
+                    try { if (typeof renderRelatorios === 'function') renderRelatorios(); } catch(e) {}
+                    try { if (typeof dispararRenderAba === 'function') dispararRenderAba('relatorios'); } catch(e) {}
+                }
+                if (tabName === 'configuracoes') {
+                    try { if (typeof renderConfiguracoes === 'function') renderConfiguracoes(); } catch(e) {}
+                    try { if (typeof inicializarConfiguracoes === 'function') inicializarConfiguracoes(); } catch(e) {}
+                    try { if (typeof carregarConfiguracoes === 'function') carregarConfiguracoes(); } catch(e) {}
+                    try { if (typeof dispararRenderAba === 'function') dispararRenderAba('configuracoes'); } catch(e) {}
+                }
 
                 // Execução Física é derivada do Cadastro Físico; avisar sobre edição
                 if (tabName === 'execFis') {
