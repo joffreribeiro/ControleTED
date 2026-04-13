@@ -2127,26 +2127,47 @@
             } catch(e) { /* ignore */ }
         }
 
-        // Compatibilidade: wrapper mínimo `showTab(tabId)` que delega para `switchTab`.
-        // Mantém compatibilidade com chamadas externas que usem `showTab`.
+        // Compatibilidade: wrapper robusto `showTab(tabId)` que força exibição
         window.showTab = function(tabId) {
             try {
-                if (typeof switchTab === 'function') {
-                    return switchTab(tabId);
+                // 1. Ocultar TODOS os painéis com força total
+                document.querySelectorAll('.tab-content').forEach(function(panel) {
+                    panel.classList.remove('active');
+                    panel.style.setProperty('display', 'none', 'important');
+                    panel.style.setProperty('visibility', 'hidden', 'important');
+                    panel.style.setProperty('opacity', '0', 'important');
+                });
+
+                // 2. Desativar todos os botões
+                document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                    btn.classList.remove('active');
+                });
+
+                // 3. Exibir o painel correto com força total
+                var panel = document.getElementById(tabId);
+                if (panel) {
+                    panel.classList.add('active');
+                    panel.style.removeProperty('display');
+                    panel.style.removeProperty('visibility');
+                    panel.style.removeProperty('opacity');
+                    panel.style.setProperty('display', 'block', 'important');
+                    panel.style.setProperty('visibility', 'visible', 'important');
+                    panel.style.setProperty('opacity', '1', 'important');
+                    panel.style.setProperty('transform', 'none', 'important');
+                } else {
+                    console.warn('[showTab] Painel não encontrado:', tabId);
                 }
 
-                // Fallback: ativar botão correspondente (se existir)
-                var btn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]') || document.getElementById('tab-' + tabId);
-                if (btn && typeof btn.click === 'function') { btn.click(); return; }
-
-                // Último recurso: manipular classes diretamente
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(p => p.classList.remove('active'));
-                var panel = document.getElementById(tabId);
-                if (panel) panel.classList.add('active');
+                // 4. Ativar botão correspondente
+                var btn = document.querySelector('.tab-btn[onclick*="' + tabId + '"]') || document.getElementById('tab-' + tabId);
                 if (btn) btn.classList.add('active');
             } catch (e) { console.warn('showTab error', e); }
         };
+
+        // Inicializar: mostrar dashboard ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            window.showTab('dashboard');
+        });
 
         // Calcula valor total de objetos (qtde * valorUnitario)
         function calcularTotalObjetosValor(ted) {
@@ -12097,51 +12118,52 @@
                 window.updateAdminUI = function(isAdmin) {
                     console.log('[updateAdminUI] isAdmin =', isAdmin);
 
-                    // 1. Botões de aba no menu (class="tab-admin-only")
-                    document.querySelectorAll('.tab-admin-only').forEach(el => {
-                        try {
-                            if (isAdmin) el.style.setProperty('display', 'inline-flex', 'important');
-                            else el.style.setProperty('display', 'none', 'important');
-                        } catch (e) {
-                            el.style.display = isAdmin ? '' : 'none';
+                    // Botões das abas admin
+                    document.querySelectorAll('.tab-admin-only').forEach(function(el) {
+                        if (isAdmin) {
+                            el.style.removeProperty('display');
+                            el.style.setProperty('display', 'inline-flex', 'important');
+                        } else {
+                            el.style.setProperty('display', 'none', 'important');
                         }
                     });
 
-                    // 2. Painéis de conteúdo das abas
-                    ['configuracoes', 'relatorios'].forEach(id => {
-                        const el = document.getElementById(id);
-                        if (!el) return;
-                        try {
-                            if (isAdmin) el.style.setProperty('display', 'block', 'important');
-                            else el.style.setProperty('display', 'none', 'important');
-                        } catch (e) {
-                            el.style.display = isAdmin ? '' : 'none';
+                    // Painéis das abas admin: apenas controla visibilidade
+                    // (display é controlado por showTab)
+                    // Quando não é admin, garantir que não ficam visíveis
+                    if (!isAdmin) {
+                        ['relatorios', 'configuracoes'].forEach(function(id) {
+                            var p = document.getElementById(id);
+                            if (p) {
+                                p.classList.remove('active');
+                                p.style.setProperty('display', 'none', 'important');
+                                p.style.setProperty('visibility', 'hidden', 'important');
+                                p.style.setProperty('opacity', '0', 'important');
+                            }
+                        });
+                        // Se estiver em aba admin, voltar para dashboard
+                        var activePanel = document.querySelector('.tab-content.active');
+                        if (!activePanel || activePanel.id === 'relatorios' || activePanel.id === 'configuracoes') {
+                            window.showTab('dashboard');
                         }
-                    });
-
-                    // 3. Botões de edição / exclusão
-                    document.querySelectorAll(
-                        '.btn-edit, .btn-save, .btn-cancel, .btn-icon-action.delete, .btn-icon-action.edit'
-                    ).forEach(btn => {
-                        btn.disabled          = !isAdmin;
-                        btn.style.opacity     = isAdmin ? '1'  : '0.3';
-                        btn.style.pointerEvents = isAdmin ? '' : 'none';
-                        btn.title             = isAdmin ? ''  : 'Apenas administradores podem editar';
-                    });
-
-                    // 4. Badge de modo no topbar
-                    const modeEl = document.querySelector('.topbar-mode');
-                    if (modeEl) {
-                        modeEl.textContent = isAdmin ? '🔓 Admin' : '📖 Leitura';
-                        modeEl.style.color = isAdmin ? '#90EE90' : 'rgba(255,255,255,0.75)';
                     }
 
-                    // 5. Botão Sair: visível apenas se logado
-                    const logoffBtn = document.querySelector('.topbar-btn-logoff');
+                    // Demais elementos (botões editar, badge modo, etc.)
+                    document.querySelectorAll('.btn-edit, .btn-save, .btn-cancel').forEach(function(btn) {
+                        btn.disabled = !isAdmin;
+                        btn.style.opacity = isAdmin ? '1' : '0.3';
+                        btn.style.pointerEvents = isAdmin ? '' : 'none';
+                    });
+
+                    var modeEl = document.querySelector('.topbar-mode');
+                    if (modeEl) {
+                        modeEl.textContent = isAdmin ? '🔓 Admin' : '📖 Leitura';
+                    }
+
+                    var logoffBtn = document.querySelector('.topbar-btn-logoff');
                     if (logoffBtn) logoffBtn.style.display = isAdmin ? '' : 'none';
 
-                    // 6. Botão Login Admin: visível apenas se não logado
-                    const loginBtn = document.querySelector('.topbar-btn-admin-login');
+                    var loginBtn = document.querySelector('.topbar-btn-admin-login');
                     if (loginBtn) loginBtn.style.display = isAdmin ? 'none' : '';
                 };
 
