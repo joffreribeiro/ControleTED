@@ -815,8 +815,8 @@
             <button class="tab-btn" data-tab="teds" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
             <button id="tab-novo" class="tab-btn" data-tab="novo" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
             <button class="tab-btn" data-tab="detalhes" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
-            <button id="tab-relatorios" class="tab-btn" data-tab="relatorios" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
-            <button id="tab-config" class="tab-btn" data-tab="config" onclick="switchTab('config', this)" style="display:none;"><i data-lucide="settings"></i> Configurações</button>
+            <button id="tab-relatorios" class="tab-btn tab-admin-only" data-tab="relatorios" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <button id="tab-configuracoes" class="tab-btn tab-admin-only" data-tab="configuracoes" onclick="switchTab('configuracoes', this)" style="display:none;"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
         <!-- TAB 1: Dashboard -->
@@ -1667,7 +1667,7 @@
         </div>
 
         <!-- TAB 6: Configurações -->
-        <div id="config" class="tab-content">
+        <div id="configuracoes" class="tab-content">
             <div class="card">
                 <h2><i data-lucide="settings" class="inline-icon"></i> Configurações</h2>
                 <p style="color: var(--text); margin-bottom: 1.5rem;">Exporte e importe seus dados em formato Excel (CSV).</p>
@@ -12048,51 +12048,46 @@
         }
         window.doLogout = doLogout;
 
-        // Atualizar UI de admin/leitura
-        function updateAdminUI(isAdmin) {
-            var modeEl = document.getElementById('modeIndicator');
-            var loginBtn = document.getElementById('btnAdminLogin');
-            var logoutBtn = document.getElementById('btnAdminLogout');
-            var cloudCtrl = document.getElementById('adminCloudControls');
-            var adminPanel = document.getElementById('adminPanel');
-            var adminLoggedAs = document.getElementById('adminLoggedAs');
-            var tabConfig = document.getElementById('tab-config');
-            var tabRelatorios = document.getElementById('tab-relatorios');
+                // Atualizar UI de admin/leitura
+                window.updateAdminUI = function(isAdmin) {
+                    console.log('[updateAdminUI] isAdmin =', isAdmin);
 
-            if (isAdmin) {
-                if (modeEl) { modeEl.textContent = '🔑 Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
-                if (loginBtn) loginBtn.style.display = 'none';
-                if (logoutBtn) logoutBtn.style.display = 'inline-block';
-                if (cloudCtrl) cloudCtrl.style.display = 'flex';
-                if (adminPanel) adminPanel.style.display = 'block';
-                if (tabConfig) tabConfig.style.display = '';
-                if (tabRelatorios) tabRelatorios.style.display = '';
-                if (adminLoggedAs && window.currentUserProfile) {
-                    adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '→');
-                }
-                // Habilitar botões de edição
-                enableEditButtons(true);
-            } else {
-                if (modeEl) { modeEl.textContent = '📖 Leitura'; modeEl.style.background = '#e0e7ff'; modeEl.style.color = '#3730a3'; }
-                if (loginBtn) loginBtn.style.display = 'inline-block';
-                if (logoutBtn) logoutBtn.style.display = 'none';
-                if (cloudCtrl) cloudCtrl.style.display = 'none';
-                if (adminPanel) adminPanel.style.display = 'none';
-                // Esconder aba Configurações para usuários não-admin
-                if (tabConfig) tabConfig.style.display = 'none';
-                if (tabRelatorios) tabRelatorios.style.display = 'none';
-                // Se está em aba restrita, voltar para dashboard
-                try {
-                    var activeTab = document.querySelector('.tab-content.active');
-                    if (activeTab && (activeTab.id === 'relatorios' || activeTab.id === 'config')) {
-                        switchTab('dashboard');
+                    // 1. Botões de aba no menu (class="tab-admin-only")
+                    document.querySelectorAll('.tab-admin-only').forEach(el => {
+                        el.style.display = isAdmin ? '' : 'none';
+                    });
+
+                    // 2. Painéis de conteúdo das abas
+                    ['configuracoes', 'relatorios'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.style.display = isAdmin ? '' : 'none';
+                    });
+
+                    // 3. Botões de edição / exclusão
+                    document.querySelectorAll(
+                        '.btn-edit, .btn-save, .btn-cancel, .btn-icon-action.delete, .btn-icon-action.edit'
+                    ).forEach(btn => {
+                        btn.disabled          = !isAdmin;
+                        btn.style.opacity     = isAdmin ? '1'  : '0.3';
+                        btn.style.pointerEvents = isAdmin ? '' : 'none';
+                        btn.title             = isAdmin ? ''  : 'Apenas administradores podem editar';
+                    });
+
+                    // 4. Badge de modo no topbar
+                    const modeEl = document.querySelector('.topbar-mode');
+                    if (modeEl) {
+                        modeEl.textContent = isAdmin ? '🔓 Admin' : '📖 Leitura';
+                        modeEl.style.color = isAdmin ? '#90EE90' : 'rgba(255,255,255,0.75)';
                     }
-                } catch(e) {}
-                // Desabilitar botões de edição
-                enableEditButtons(false);
-            }
-        }
-        window.updateAdminUI = updateAdminUI;
+
+                    // 5. Botão Sair: visível apenas se logado
+                    const logoffBtn = document.querySelector('.topbar-btn-logoff');
+                    if (logoffBtn) logoffBtn.style.display = isAdmin ? '' : 'none';
+
+                    // 6. Botão Login Admin: visível apenas se não logado
+                    const loginBtn = document.querySelector('.topbar-btn-admin-login');
+                    if (loginBtn) loginBtn.style.display = isAdmin ? 'none' : '';
+                };
 
         // Habilitar/desabilitar TODOS os botões e formulários de edição
         function enableEditButtons(enabled) {

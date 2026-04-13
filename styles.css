@@ -399,6 +399,31 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ===== Controle de visibilidade por role (admin) ===== */
+
+        /* Abas admin: ocultas por padrão via CSS puro.
+             O JS as exibe após confirmar role=admin no Firebase.
+             Evita flash de conteúdo antes da autenticação resolver. */
+        #configuracoes,
+        #relatorios {
+            display: none;
+        }
+
+        .tab-admin-only {
+            display: none;
+        }
+
+        /* Fallback CSS: quando body recebe data-role="admin",
+             as abas são reveladas mesmo sem JS de permissão. */
+        body[data-role="admin"] #configuracoes,
+        body[data-role="admin"] #relatorios {
+            display: block;
+        }
+
+        body[data-role="admin"] .tab-admin-only {
+            display: inline-flex;
+        }
+
         /* ===== Estilos para Entregas / Subentregas (Cadastro Físico) ===== */
         .subentregas-row .subentregas-panel,
         .subentregas-panel {
