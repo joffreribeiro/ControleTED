@@ -12357,28 +12357,314 @@
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js"></script>
     <script type="module" src="./app.js"></script>
-    <!-- Fallback: detect if modules failed to load -->
-    <script>
-        // After 5s check if firebase loaded; if not, show diagnostic
-        setTimeout(function() {
-            if (!window.firebaseApp) {
-                console.error('[Diag] firebase-init.js não carregou após 5s.');
-                console.error('[Diag] window.firebaseApp=', window.firebaseApp);
-                console.error('[Diag] window.authSignIn=', window.authSignIn);
-                console.error('[Diag] location.protocol=', location.protocol);
-                // Try to give user actionable info
-                var status = document.getElementById('loginStatus');
-                if (status) {
-                    status.style.color = '#dc2626';
-                    status.innerHTML = 'Firebase não carregou. <br><small>Abra o console do navegador (F12) para ver o erro.</small>';
-                }
-            }
-        }, 5000);
-    </script>
-    <script>
+        <script>
+        // ============================================================
+        // CORREÇÃO DEFINITIVA: Injetar conteúdo nas abas admin
+        // Roda após o DOM estar completo
+        // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            initLucideIcons();
-        });
-    </script>
+
+            // ---- RELATÓRIOS ----
+            var abaRelatorios = document.getElementById('relatorios');
+            if (abaRelatorios && abaRelatorios.innerHTML.trim().length < 100) {
+                abaRelatorios.innerHTML = `
+                    <div class="card">
+                        <h2>📊 Relatórios</h2>
+
+                        <!-- Filtros -->
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem;align-items:flex-end;">
+                            <div class="form-group" style="margin:0;min-width:180px;">
+                                <label>TED</label>
+                                <select id="rel-filtro-ted" multiple style="height:80px;width:100%;">
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin:0;min-width:120px;">
+                                <label>UP</label>
+                                <select id="rel-filtro-up" multiple style="height:80px;width:100%;">
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin:0;min-width:100px;">
+                                <label>Ano</label>
+                                <select id="rel-filtro-ano" multiple style="height:80px;width:100%;">
+                                </select>
+                            </div>
+                            <div style="display:flex;gap:8px;align-items:flex-end;">
+                                <button class="btn btn-secondary btn-sm" onclick="popularFiltrosRelatoriosAba()">
+                                    Atualizar filtros
+                                </button>
+                                <button class="btn btn-primary btn-sm" onclick="gerarRelatorioAba()">
+                                    Gerar Relatório
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                                    Exportar PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Resultados -->
+                        <div id="rel-resultado-cadastro" class="card" style="margin-bottom:1rem;">
+                            <h3>📋 Cadastro do TED</h3>
+                            <div id="rel-tabela-cadastro">
+                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
+                            </div>
+                        </div>
+
+                        <div id="rel-resultado-objetos" class="card" style="margin-bottom:1rem;">
+                            <h3>📋 Objetos</h3>
+                            <div id="rel-tabela-objetos">
+                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
+                            </div>
+                        </div>
+
+                        <div id="rel-resultado-metas" class="card" style="margin-bottom:1rem;">
+                            <h3>🎯 Metas</h3>
+                            <div id="rel-tabela-metas">
+                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
+                            </div>
+                        </div>
+
+                        <div id="rel-resultado-fisico" class="card" style="margin-bottom:1rem;">
+                            <h3>📦 Cadastro Físico</h3>
+                            <div id="rel-tabela-fisico">
+                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
+                            </div>
+                        </div>
+
+                        <div id="rel-resultado-execfisica" class="card" style="margin-bottom:1rem;">
+                            <h3>✅ Execução Física</h3>
+                            <div id="rel-tabela-execfisica">
+                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
+                            </div>
+                        </div>
+
+                        <div id="rel-resultado-financeiro" class="card" style="margin-bottom:1rem;">
+                            <h3>💰 Cadastro Financeiro</h3>
+                            <div id="rel-tabela-financeiro">
+                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
+                            </div>
+                        </div>
+
+                        <div id="rel-resultado-execfinanceira" class="card" style="margin-bottom:1rem;">
+                            <h3>💸 Execução Financeira</h3>
+                            <div id="rel-tabela-execfinanceira">
+                                <p style="color:#94a3b8;">Selecione filtros para exibir.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                console.log('[Fix] Conteúdo de Relatórios injetado.');
+            }
+
+            // ---- CONFIGURAÇÕES ----
+            var abaConfig = document.getElementById('configuracoes');
+            if (abaConfig && abaConfig.innerHTML.trim().length < 100) {
+                abaConfig.innerHTML = `
+                    <div class="card">
+                        <h2>⚙️ Configurações</h2>
+                        <p style="color:#64748b;margin-bottom:1.5rem;">
+                            Exporte e importe seus dados em formato Excel (CSV).
+                        </p>
+
+                        <!-- Exportar -->
+                        <div class="card" style="margin-bottom:1rem;">
+                            <h3>📋 Exportar Dados</h3>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:0.75rem;">
+                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('teds')">Exportar TEDs</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('objetos')">Exportar Objetos</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('metas')">Exportar Metas</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('fisico')">Exportar Físico</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('execFisica')">Exportar Exec. Física</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('financeiro')">Exportar Financeiro</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('execFinanceira')">Exportar Exec. Financeira</button>
+                                <button class="btn btn-secondary btn-sm" onclick="exportarCSV && exportarCSV('recursosGerais')">Exportar Recursos Gerais</button>
+                                <button class="btn btn-primary btn-sm" onclick="exportarTudoZip && exportarTudoZip()">📋 Exportar Tudo (ZIP)</button>
+                            </div>
+                        </div>
+
+                        <!-- Importar -->
+                        <div class="card" style="margin-bottom:1rem;">
+                            <h3>📋 Importar Dados</h3>
+                            <div style="display:flex;flex-direction:column;gap:12px;margin-top:0.75rem;">
+                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar TEDs</label>
+                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'teds')"></div>
+                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Objetos</label>
+                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'objetos')"></div>
+                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Metas</label>
+                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'metas')"></div>
+                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Físico</label>
+                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'fisico')"></div>
+                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Exec. Física</label>
+                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'execFisica')"></div>
+                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Financeiro</label>
+                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'financeiro')"></div>
+                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Exec. Financeira (CSV/Tesouro)</label>
+                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'execFinanceira')"></div>
+                                <div><label style="font-size:13px;font-weight:600;margin-right:8px;">Importar Recursos Gerais (CSV/Tesouro)</label>
+                                    <input type="file" accept=".csv" onchange="importarCSV && importarCSV(event,'recursosGerais')"></div>
+                            </div>
+                        </div>
+
+                        <!-- Backup -->
+                        <div class="card" style="margin-bottom:1rem;">
+                            <h3>💾 Backup Completo</h3>
+                            <p style="font-size:13px;color:#64748b;margin-bottom:0.75rem;">
+                                Exporte ou importe todos os dados de uma vez em formato JSON.
+                            </p>
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="exportarBackupJSON && exportarBackupJSON()">
+                                    📋 Exportar Backup JSON
+                                </button>
+                                <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                                    📋 Importar Backup JSON
+                                    <input type="file" accept=".json" style="display:none"
+                                        onchange="importarBackupJSON && importarBackupJSON(event)">
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Administração -->
+                        <div class="card" style="margin-bottom:1rem;">
+                            <h3>📋 Administração</h3>
+                            <p style="font-size:13px;color:#64748b;margin-bottom:0.75rem;">
+                                Logado como: <strong id="config-user-email">—</strong>
+                            </p>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button class="btn btn-secondary btn-sm" onclick="window.testFirestoreConnection && window.testFirestoreConnection()">
+                                    🔌 Testar Conexão
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="window.handleSignOut && window.handleSignOut()">
+                                    Sair do modo Admin
+                                </button>
+                            </div>
+                            <div id="usersListContainer" style="margin-top:1rem;"></div>
+                        </div>
+                    </div>
+                `;
+
+                // Preencher email do admin logado
+                setTimeout(function() {
+                    var emailEl = document.getElementById('config-user-email');
+                    if (emailEl && window.currentUserProfile) {
+                        emailEl.textContent =
+                            window.currentUserProfile.displayName ||
+                            window.currentUserProfile.email || '—';
+                    }
+                    // Carregar lista de usuários
+                    if (typeof window.loadUsersList === 'function') window.loadUsersList();
+                }, 300);
+
+                console.log('[Fix] Conteúdo de Configurações injetado.');
+            }
+
+            // ---- FUNÇÕES DE FILTRO DE RELATÓRIO ----
+            window.popularFiltrosRelatoriosAba = function() {
+                var teds = (window.dados && window.dados.teds) || [];
+                var selTed = document.getElementById('rel-filtro-ted');
+                var selUp  = document.getElementById('rel-filtro-up');
+                var selAno = document.getElementById('rel-filtro-ano');
+                if (!selTed) return;
+
+                var ups = [...new Set(teds.map(t => t.upResponsavel || t.up || '').filter(Boolean))];
+                var anos = [...new Set(teds.flatMap(t => {
+                    var a = [];
+                    if (t.inicioVigencia) a.push(new Date(t.inicioVigencia).getFullYear());
+                    if (t.fimVigencia)    a.push(new Date(t.fimVigencia).getFullYear());
+                    return a;
+                }).filter(Boolean))].sort();
+
+                selTed.innerHTML = teds.map(t =>
+                    `<option value="${t.id}">${t.numeroTed || t.id} — ${(t.objeto||'').substring(0,40)}</option>`
+                ).join('');
+                selUp.innerHTML  = ups.map(u  => `<option value="${u}">${u}</option>`).join('');
+                selAno.innerHTML = anos.map(a => `<option value="${a}">${a}</option>`).join('');
+
+                if (typeof window.showToast === 'function')
+                    window.showToast('Filtros atualizados', 'success');
+            };
+
+            window.gerarRelatorioAba = function() {
+                var teds = (window.dados && window.dados.teds) || [];
+                if (!teds.length) {
+                    if (typeof window.showToast === 'function')
+                        window.showToast('Nenhum TED cadastrado', 'warning');
+                    return;
+                }
+
+                // IDs selecionados
+                var selTed = document.getElementById('rel-filtro-ted');
+                var idsSel = selTed
+                    ? [...selTed.selectedOptions].map(o => String(o.value))
+                    : [];
+                var filtrados = idsSel.length
+                    ? teds.filter(t => idsSel.includes(String(t.id)))
+                    : teds;
+
+                // Renderizar tabela de cadastro
+                var cont = document.getElementById('rel-tabela-cadastro');
+                if (cont) {
+                    if (!filtrados.length) {
+                        cont.innerHTML = '<p style="color:#94a3b8;">Nenhum TED encontrado com os filtros selecionados.</p>';
+                    } else {
+                        cont.innerHTML = `
+                            <div class="table-wrapper">
+                                <table class="tabela-padrao">
+                                    <thead><tr>
+                                        <th>Nº TED</th>
+                                        <th>Objeto</th>
+                                        <th>UP</th>
+                                        <th>Início Vigência</th>
+                                        <th>Fim Vigência</th>
+                                        <th>Status</th>
+                                        <th>Valor (R$)</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        ${filtrados.map(t => `<tr>
+                                            <td>${t.numeroTed || t.id}</td>
+                                            <td>${t.objeto || '—'}</td>
+                                            <td>${t.upResponsavel || t.up || '—'}</td>
+                                            <td>${t.inicioVigencia || '—'}</td>
+                                            <td>${t.fimVigencia || '—'}</td>
+                                            <td>${t.situacao || 'Em Execução'}</td>
+                                            <td style="text-align:right">${
+                                                typeof t.valorTed === 'number'
+                                                    ? t.valorTed.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
+                                                    : (t.valorTed || '—')
+                                            }</td>
+                                        </tr>`).join('')}
+                                    </tbody>
+                                </table>
+                            </div>`;
+                    }
+                }
+
+                if (typeof window.showToast === 'function')
+                    window.showToast('Relatório gerado com ' + filtrados.length + ' TED(s)', 'success');
+            };
+
+        }); // fim DOMContentLoaded
+        </script>
+        <!-- Fallback: detect if modules failed to load -->
+        <script>
+                // After 5s check if firebase loaded; if not, show diagnostic
+                setTimeout(function() {
+                        if (!window.firebaseApp) {
+                                console.error('[Diag] firebase-init.js não carregou após 5s.');
+                                console.error('[Diag] window.firebaseApp=', window.firebaseApp);
+                                console.error('[Diag] window.authSignIn=', window.authSignIn);
+                                console.error('[Diag] location.protocol=', location.protocol);
+                                // Try to give user actionable info
+                                var status = document.getElementById('loginStatus');
+                                if (status) {
+                                        status.style.color = '#dc2626';
+                                        status.innerHTML = 'Firebase não carregou. <br><small>Abra o console do navegador (F12) para ver o erro.</small>';
+                                }
+                        }
+                }, 5000);
+        </script>
+        <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                        initLucideIcons();
+                });
+        </script>
 </body>
 </html>
