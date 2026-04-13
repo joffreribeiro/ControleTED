@@ -469,7 +469,9 @@ window.testFirestoreConnection = async function() {
 
       try {
         applyRolePermissions();
-        renderizarConteudoAbasAdmin();
+        if (typeof window.renderizarConteudoAbasAdmin === 'function') {
+          window.renderizarConteudoAbasAdmin();
+        }
       } catch(e) {
         console.warn('[Auth] Erro aplicando permissões', e);
       }

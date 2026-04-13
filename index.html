@@ -809,15 +809,15 @@
 
     <!-- Container Principal -->
     <div class="container">
-        <!-- Abas -->
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="dashboard" onclick="showTab('dashboard')"><i data-lucide="layout-dashboard"></i> Dashboard</button>
-            <button class="tab-btn" data-tab="teds" onclick="showTab('teds')"><i data-lucide="file-text"></i> TED</button>
-            <button id="tab-novoTed" class="tab-btn" data-tab="novoTed" onclick="showTab('novoTed')" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
-            <button class="tab-btn" data-tab="detalhes" onclick="showTab('detalhes')"><i data-lucide="search"></i> Detalhes TED</button>
-            <button id="tab-relatorios" class="tab-btn tab-admin-only" data-tab="relatorios" onclick="showTab('relatorios')"><i data-lucide="file-bar-chart"></i> Relatórios</button>
-            <button id="tab-configuracoes" class="tab-btn tab-admin-only" data-tab="configuracoes" onclick="showTab('configuracoes')" style="display:none;"><i data-lucide="settings"></i> Configurações</button>
-        </div>
+                <!-- Abas -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+                    <button class="tab-btn" data-tab="teds">TED</button>
+                    <button class="tab-btn" data-tab="novoTed">Novo TED</button>
+                    <button class="tab-btn" data-tab="detalhes">Detalhes TED</button>
+                    <button class="tab-btn tab-admin-only" data-tab="relatorios">Relatórios</button>
+                    <button class="tab-btn tab-admin-only" data-tab="configuracoes">Configurações</button>
+                </div>
 
         <!-- TAB 1: Dashboard -->
         <div id="dashboard" class="tab-content active">
@@ -12641,11 +12641,73 @@
                     window.showToast('Relatório gerado com ' + filtrados.length + ' TED(s)', 'success');
             };
 
-        }); // fim DOMContentLoaded
-        </script>
-        <!-- Fallback: detect if modules failed to load -->
-        <script>
-                // After 5s check if firebase loaded; if not, show diagnostic
+                }); // fim DOMContentLoaded
+                </script>
+
+                <script>
+    // Função para mostrar/esconder abas
+    window.showTab = function(tabId) {
+        // Esconde todos os conteúdos de aba
+        document.querySelectorAll('.tab-content').forEach(function(tabContent) {
+            tabContent.classList.remove('active');
+            tabContent.style.display = 'none'; // Garante que esteja escondido
+        });
+
+        // Desativa todos os botões de aba
+        document.querySelectorAll('.tab-btn').forEach(function(tabBtn) {
+            tabBtn.classList.remove('active');
+        });
+
+        // Mostra o conteúdo da aba selecionada
+        var selectedTabContent = document.getElementById(tabId);
+        if (selectedTabContent) {
+            selectedTabContent.classList.add('active');
+            selectedTabContent.style.display = 'block'; // Garante que esteja visível
+            // Dispara evento de inicialização se a aba ainda não foi renderizada
+            if (selectedTabContent.dataset.rendered !== 'true') {
+                if (typeof window.dispararRenderAba === 'function') {
+                    window.dispararRenderAba(tabId);
+                }
+                selectedTabContent.dataset.rendered = 'true';
+            }
+        }
+
+        // Ativa o botão da aba selecionada
+        var selectedTabButton = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+        if (selectedTabButton) {
+            selectedTabButton.classList.add('active');
+        }
+    };
+
+    // Adiciona listeners de clique aos botões das abas
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.tab-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                window.showTab(this.dataset.tab);
+            });
+        });
+
+        // Função para atualizar a UI de admin (visibilidade das abas)
+        window.updateAdminUI = function(isAdmin) {
+            document.querySelectorAll('.tab-admin-only').forEach(function(el) {
+                el.style.display = isAdmin ? 'inline-flex' : 'none';
+            });
+
+            // Se o usuário não for admin e a aba ativa for de admin, redireciona para dashboard
+            if (!isAdmin) {
+                var activeTab = document.querySelector('.tab-content.active');
+                if (activeTab && (activeTab.id === 'relatorios' || activeTab.id === 'configuracoes')) {
+                    window.showTab('dashboard');
+                }
+            }
+        };
+
+        // Inicializa a primeira aba (Dashboard) ao carregar a página
+        window.showTab('dashboard');
+    });
+</script>
+
+                <!-- Fallback: detect if modules failed to load -->
                 setTimeout(function() {
                         if (!window.firebaseApp) {
                                 console.error('[Diag] firebase-init.js não carregou após 5s.');
