@@ -1,4 +1,47 @@
 {
-  "teds": [],
-  "proxiId": 1
+  "teds": [
+    {
+      "id": 1,
+      "planoTrabalho": "2024",
+      "numTed": "001",
+      "objetivo": "Reforma do auditório principal",
+      "up": "UP-01",
+      "ano": 2024,
+      "inicioVigencia": "2024-01-01",
+      "vigencia": 12,
+      "fimVigencia": "2024-12-31",
+      "situacao": "Em Execução",
+      "valorContratado": 150000.00,
+      "totalRecebido": 35000.00
+    },
+    {
+      "id": 2,
+      "planoTrabalho": "2024",
+      "numTed": "002",
+      "objetivo": "Aquisição de equipamentos de segurança",
+      "up": "UP-02",
+      "ano": 2024,
+      "inicioVigencia": "2024-03-01",
+      "vigencia": 6,
+      "fimVigencia": "2024-08-31",
+      "situacao": "Em Execução",
+      "valorContratado": 80000.00,
+      "totalRecebido": 40000.00
+    },
+    {
+      "id": 3,
+      "planoTrabalho": "2024",
+      "numTed": "003",
+      "objetivo": "Serviços de manutenção preventiva",
+      "up": "UP-01",
+      "ano": 2024,
+      "inicioVigencia": "2024-02-15",
+      "vigencia": 9,
+      "fimVigencia": "2024-11-15",
+      "situacao": "Em Execução",
+      "valorContratado": 50000.00,
+      "totalRecebido": 5000.00
+    }
+  ],
+  "proxiId": 4
 }
