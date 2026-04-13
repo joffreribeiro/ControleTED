@@ -12687,20 +12687,20 @@
             });
         });
 
-        // Função para atualizar a UI de admin (visibilidade das abas)
-        window.updateAdminUI = function(isAdmin) {
-            document.querySelectorAll('.tab-admin-only').forEach(function(el) {
-                el.style.display = isAdmin ? 'inline-flex' : 'none';
-            });
-
-            // Se o usuário não for admin e a aba ativa for de admin, redireciona para dashboard
-            if (!isAdmin) {
-                var activeTab = document.querySelector('.tab-content.active');
-                if (activeTab && (activeTab.id === 'relatorios' || activeTab.id === 'configuracoes')) {
-                    window.showTab('dashboard');
+        // updateAdminUI já é definido em outro trecho; fallback somente se ausente
+        if (typeof window.updateAdminUI !== 'function') {
+            window.updateAdminUI = function(isAdmin) {
+                document.querySelectorAll('.tab-admin-only').forEach(function(el) {
+                    el.style.display = isAdmin ? 'inline-flex' : 'none';
+                });
+                if (!isAdmin) {
+                    var activeTab = document.querySelector('.tab-content.active');
+                    if (activeTab && (activeTab.id === 'relatorios' || activeTab.id === 'configuracoes')) {
+                        window.showTab('dashboard');
+                    }
                 }
-            }
-        };
+            };
+        }
 
         // Inicializa a primeira aba (Dashboard) ao carregar a página
         window.showTab('dashboard');
