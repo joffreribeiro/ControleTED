@@ -1601,83 +1601,19 @@
         <!-- TAB 5: Relatórios -->
         <div id="relatorios" class="tab-content">
             <div class="card">
-                <h2><i data-lucide="file-bar-chart" class="inline-icon"></i> Relatórios</h2>
-                <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:1rem;">
-                    <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                        <label style="font-weight:600;">TED (multi)</label>
-                        <select id="relatorioTed" multiple size="6" style="min-width:220px;">
-                        </select>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                        <label style="font-weight:600;">UP (multi)</label>
-                        <select id="relatorioUp" multiple size="6" style="min-width:160px;">
-                        </select>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                        <label style="font-weight:600;">Ano (multi)</label>
-                        <select id="relatorioAno" multiple size="6" style="min-width:140px;">
-                        </select>
-                    </div>
-                    <div style="display:flex; gap:0.5rem; align-items:center;">
-                        <button class="btn btn-primary" style="height:38px;" onclick="(function(){ popularFiltrosRelatorios(); })()">Atualizar filtros</button>
-                        <button class="btn btn-primary" style="height:38px;" onclick="renderRelatorios()">Gerar Relatório</button>
-                        <button class="btn btn-secondary" style="height:38px;" onclick="exportarRelatoriosPDF()">Exportar PDF</button>
-                    </div>
+                <h2>Relatórios</h2>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <button class="btn btn-primary" onclick="renderRelatoriosSimples()">
+                        Gerar Relatório Completo
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportarRelatoriosPDF()">
+                        Exportar PDF
+                    </button>
                 </div>
-
-                <div style="display:flex; flex-direction:column; gap:0.75rem;">
-                                                <div class="card" style="padding:0.75rem; width:100%; box-sizing:border-box;">
-                                                <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="file-text" class="inline-icon-sm"></i> Cadastro do TED</h4>
-                                                <div id="relatorioCadastroTed">
-                                                    <p style="color:#6b6b6b; font-size:13px; padding:1rem 0;">
-                                                        Carregando relatório...
-                                                    </p>
-                                                </div>
-                                        </div>
-                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-                                                        <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                                                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">📋 Objetos</h4>
-                                                        <div id="relatorioObjetos">
-                                                            <p style="color:#6b6b6b; font-size:13px; padding:1rem 0;">Carregando relatório...</p>
-                                                        </div>
-                                                </div>
-                                                        <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                                                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">🎯 Metas</h4>
-                                                        <div id="relatorioMetas">
-                                                            <p style="color:#6b6b6b; font-size:13px; padding:1rem 0;">Carregando relatório...</p>
-                                                        </div>
-                                                </div>
-                    </div>
-
-                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-                                                        <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                                                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Cadastro Físico</h4>
-                                                        <div id="relatorioCadastroFisico">
-                                                            <p style="color:#6b6b6b; font-size:13px; padding:1rem 0;">Carregando relatório...</p>
-                                                        </div>
-                                                </div>
-                                                        <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                                                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física</h4>
-                                                        <div id="relatorioExecFisica">
-                                                            <p style="color:#6b6b6b; font-size:13px; padding:1rem 0;">Carregando relatório...</p>
-                                                        </div>
-                                                </div>
-                    </div>
-
-                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-                                                        <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                                                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro</h4>
-                                                        <div id="relatorioCadastroFinanceiro">
-                                                            <p style="color:#6b6b6b; font-size:13px; padding:1rem 0;">Carregando relatório...</p>
-                                                        </div>
-                                                </div>
-                                                        <div class="card" style="padding:0.75rem; flex:1 1 48%; min-width:300px; box-sizing:border-box;">
-                                                        <h4 style="margin:0 0 0.5rem 0; color:var(--primary);">Execução Financeira</h4>
-                                                        <div id="relatorioExecFinanceira">
-                                                            <p style="color:#6b6b6b; font-size:13px; padding:1rem 0;">Carregando relatório...</p>
-                                                        </div>
-                                                </div>
-                    </div>
+                <div id="relatoriosContainer">
+                    <p style="color:var(--color-text-secondary);font-size:13px;">
+                        Clique em "Gerar Relatório Completo" para visualizar os dados.
+                    </p>
                 </div>
             </div>
         </div>
@@ -1685,13 +1621,13 @@
         <!-- TAB 6: Configurações -->
         <div id="config" class="tab-content">
             <div class="card">
-                <h2><i data-lucide="settings" class="inline-icon"></i> Configurações</h2>
-                <p style="color: var(--text); margin-bottom: 1.5rem;">Exporte e importe seus dados em formato Excel (CSV).</p>
-                
-                <!-- Exportar -->
-                <div style="margin-bottom: 2rem;">
-                    <h3 style="margin-bottom: 1rem; color: var(--color-primary);">📋 Exportar Dados</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+                <h2>Configurações</h2>
+
+                <div style="margin-bottom:2rem;">
+                    <h3 style="margin-bottom:1rem;color:var(--color-primary);">
+                        Exportar Dados
+                    </h3>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;">
                         <button class="btn btn-primary" onclick="exportarTEDs()">Exportar TEDs</button>
                         <button class="btn btn-primary" onclick="exportarObjetos()">Exportar Objetos</button>
                         <button class="btn btn-primary" onclick="exportarMetas()">Exportar Metas</button>
@@ -1700,71 +1636,80 @@
                         <button class="btn btn-primary" onclick="exportarFinanceiros()">Exportar Financeiro</button>
                         <button class="btn btn-primary" onclick="exportarExecFinanceira()">Exportar Exec. Financeira</button>
                         <button class="btn btn-primary" onclick="exportarRecursosGerais()">Exportar Recursos Gerais</button>
-                        <button class="btn btn-secondary" onclick="exportarTudo()">📋 Exportar Tudo (ZIP)</button>
+                        <button class="btn btn-secondary" onclick="exportarTudo()">Exportar Tudo (ZIP)</button>
                     </div>
                 </div>
-                
-                <!-- Importar -->
-                <div style="margin-bottom: 2rem;">
-                    <h3 style="margin-bottom: 1rem; color: var(--color-primary);">📋 Importar Dados</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
-                        <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
-                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar TEDs</label>
-                            <input type="file" accept=".csv" onchange="importarTEDs(this.files[0])" style="width: 100%;">
+
+                <div style="margin-bottom:2rem;">
+                    <h3 style="margin-bottom:1rem;color:var(--color-primary);">
+                        Importar Dados
+                    </h3>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;">
+                        <div style="padding:1rem;background:var(--color-bg-surface);border-radius:8px;border:0.5px solid var(--color-border);">
+                            <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Importar TEDs</label>
+                            <input type="file" accept=".csv" onchange="importarTEDs(this.files[0])" style="width:100%;">
                         </div>
-                        <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
-                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Objetos</label>
-                            <input type="file" accept=".csv" onchange="importarObjetos(this.files[0])" style="width: 100%;">
+                        <div style="padding:1rem;background:var(--color-bg-surface);border-radius:8px;border:0.5px solid var(--color-border);">
+                            <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Importar Objetos</label>
+                            <input type="file" accept=".csv" onchange="importarObjetos(this.files[0])" style="width:100%;">
                         </div>
-                        <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
-                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Metas</label>
-                            <input type="file" accept=".csv" onchange="importarMetas(this.files[0])" style="width: 100%;">
+                        <div style="padding:1rem;background:var(--color-bg-surface);border-radius:8px;border:0.5px solid var(--color-border);">
+                            <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Importar Físico</label>
+                            <input type="file" accept=".csv" onchange="importarFisicos(this.files[0])" style="width:100%;">
                         </div>
-                        <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
-                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Físico</label>
-                            <input type="file" accept=".csv" onchange="importarFisicos(this.files[0])" style="width: 100%;">
+                        <div style="padding:1rem;background:var(--color-bg-surface);border-radius:8px;border:0.5px solid var(--color-border);">
+                            <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Importar Exec. Física</label>
+                            <input type="file" accept=".csv" onchange="importarExecFisica(this.files[0])" style="width:100%;">
                         </div>
-                        <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
-                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Exec. Física</label>
-                            <input type="file" accept=".csv" onchange="importarExecFisica(this.files[0])" style="width: 100%;">
+                        <div style="padding:1rem;background:var(--color-bg-surface);border-radius:8px;border:0.5px solid var(--color-border);">
+                            <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Importar Financeiro</label>
+                            <input type="file" accept=".csv" onchange="importarFinanceiros(this.files[0])" style="width:100%;">
                         </div>
-                        <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
-                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Financeiro</label>
-                            <input type="file" accept=".csv" onchange="importarFinanceiros(this.files[0])" style="width: 100%;">
-                        </div>
-                        <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
-                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Exec. Financeira (CSV/Tesouro Gerencial)</label>
-                            <input type="file" accept=".csv" onchange="importarExecFinanceira(this.files[0])" style="width: 100%;">
-                        </div>
-                        <div style="padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem; border: 1px solid var(--border);">
-                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Importar Recursos Gerais (CSV/Tesouro Gerencial)</label>
-                            <input type="file" accept=".csv" onchange="importarRecursosGerais(this.files[0])" style="width: 100%;">
+                        <div style="padding:1rem;background:var(--color-bg-surface);border-radius:8px;border:0.5px solid var(--color-border);">
+                            <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Importar Exec. Financeira</label>
+                            <input type="file" accept=".csv" onchange="importarExecFinanceira(this.files[0])" style="width:100%;">
                         </div>
                     </div>
                 </div>
-                
-                <!-- Backup Completo -->
-                <div style="padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 0.5rem; color: white;">
-                    <h3 style="margin: 0 0 1rem 0;">💾 Backup Completo</h3>
-                    <p style="margin: 0 0 1rem 0; opacity: 0.9;">Exporte ou importe todos os dados de uma vez em formato JSON.</p>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <button class="btn" style="background: white; color: #667eea;" onclick="exportarBackupJSON()">📋 Exportar Backup JSON</button>
-                        <label class="btn" style="background: rgba(255,255,255,0.2); color: white; cursor: pointer;">
-                            📋 Importar Backup JSON
-                            <input type="file" accept=".json" onchange="importarBackupJSON(this.files[0])" style="display: none;">
+
+                <div style="margin-bottom:2rem;padding:1.5rem;background:#0C447C;border-radius:8px;color:#fff;">
+                    <h3 style="margin:0 0 0.75rem;">Backup Completo</h3>
+                    <p style="margin:0 0 1rem;opacity:0.85;font-size:0.9rem;">
+                        Exporte ou importe todos os dados de uma vez em formato JSON.
+                    </p>
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <button class="btn" 
+                            style="background:#fff;color:#0C447C;font-weight:600;"
+                            onclick="exportarBackupJSON()">
+                            Exportar Backup JSON
+                        </button>
+                        <label class="btn" 
+                            style="background:rgba(255,255,255,0.15);color:#fff;cursor:pointer;">
+                            Importar Backup JSON
+                            <input type="file" accept=".json" 
+                                onchange="importarBackupJSON(this.files[0])" 
+                                style="display:none;">
                         </label>
                     </div>
                 </div>
 
-                <!-- Administração (visível apenas para admin logado) -->
-                <div id="adminPanel" style="margin-top:1.5rem; display:none;">
-                    <h3 style="margin-bottom: 1rem; color: var(--color-primary);">📋 Administração</h3>
-                    <div style="background:var(--bg-alt); padding:1rem; border-radius:0.5rem; border:1px solid var(--border);">
-                        <p style="margin:0 0 0.5rem; font-size:0.9rem; color:var(--text-muted);">Logado como: <strong id="adminLoggedAs">→</strong></p>
-                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                            <button class="btn" onclick="testFirestoreConnection()" title="Testar conexão com Firestore">🔌 Testar Conexão</button>
-                            <button class="btn" onclick="doLogout()" style="background:#fee2e2; color:#dc2626;">Sair do modo Admin</button>
-                        </div>
+                <div id="adminPanel" style="display:none;padding:1rem;background:var(--color-bg-surface);border-radius:8px;border:0.5px solid var(--color-border);">
+                    <h3 style="margin-bottom:0.75rem;color:var(--color-primary);">Administração</h3>
+                    <p style="margin:0 0 0.75rem;font-size:0.875rem;color:var(--color-text-secondary);">
+                        Logado como: <strong id="adminLoggedAs">-</strong>
+                    </p>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                        <button class="btn" onclick="testFirestoreConnection()">
+                            Testar Conexão
+                        </button>
+                        <button class="btn" 
+                            style="background:#fee2e2;color:#dc2626;" 
+                            onclick="doLogout()">
+                            Sair do modo Admin
+                        </button>
+                    </div>
+                    <div id="usersListContainer" 
+                        style="margin-top:0.75rem;font-size:0.875rem;">
                     </div>
                 </div>
             </div>
@@ -2095,28 +2040,11 @@
 
             // Inicializar conteúdo específico da aba
             if (tabName === 'relatorios') {
-                try {
-                    popularFiltrosRelatorios();
-                    // Selecionar todos os itens dos selects
-                    setTimeout(function() {
-                        var selTed = document.getElementById('relatorioTed');
-                        var selUp = document.getElementById('relatorioUp');
-                        var selAno = document.getElementById('relatorioAno');
-                        if (selTed) {
-                            Array.from(selTed.options).forEach(o => o.selected = true);
-                        }
-                        if (selUp) {
-                            Array.from(selUp.options).forEach(o => o.selected = true);
-                        }
-                        if (selAno) {
-                            Array.from(selAno.options).forEach(o => o.selected = true);
-                        }
-                        // Gerar relatórios automaticamente
-                        try { renderRelatorios(); } catch(e) {
-                            console.warn('renderRelatorios error', e);
-                        }
-                    }, 200);
-                } catch(e) {}
+                setTimeout(function() {
+                    try { renderRelatoriosSimples(); } catch(e) {
+                        console.warn('renderRelatoriosSimples error', e);
+                    }
+                }, 100);
             }
             if (tabName === 'config') {
                 try {
@@ -2151,7 +2079,11 @@
                 if (tabName === 'teds') { try { atualizarListaTEDs(); } catch(e) {} }
 
                 if (tabName === 'relatorios') {
-                    try { popularFiltrosRelatorios(); } catch(e) {}
+                    setTimeout(function() {
+                        try { renderRelatoriosSimples(); } catch(e) {
+                            console.warn('renderRelatoriosSimples error', e);
+                        }
+                    }, 100);
                 }
 
                 if (tabName === 'config') {
@@ -12286,6 +12218,69 @@
                 }
             });
         })();
+
+        function renderRelatoriosSimples() {
+            const container = document.getElementById('relatoriosContainer');
+            if (!container) return;
+            const teds = (dados && dados.teds) ? dados.teds : [];
+            if (!teds.length) {
+                container.innerHTML = '<p style="color:var(--color-text-secondary);">Nenhum TED encontrado.</p>';
+                return;
+            }
+
+            const fmtVal = v => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const fmtDate = d => {
+                if (!d) return '';
+                try {
+                    return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
+                } catch(e) { return d; }
+            };
+
+            let html = '<h3 style="margin:0 0 0.75rem;font-size:14px;color:var(--color-text-secondary);">' +
+                teds.length + ' TEDs</h3>';
+            html += '<div style="overflow-x:auto;">';
+            html += '<table class="tabela-padrao" style="width:100%;">';
+            html += '<thead><tr>' +
+                '<th>TED</th><th>Objeto</th><th>UP</th><th>Status</th>' +
+                '<th>Valor TED</th><th>Recebido</th><th>Saldo</th>' +
+                '<th>Exec. Financeira</th><th>Exec. Física</th>' +
+                '<th>Início Vigência</th><th>Fim Vigência</th>' +
+                '</tr></thead><tbody>';
+
+            teds.forEach(t => {
+                const status = (getDisplayStatus ? (getDisplayStatus(t) || {}).text : t.situacaoTED) || '';
+                const valorTed = t.valorTed || 0;
+                const recebido = t.gasto || 0;
+                const saldo = recebido - valorTed;
+                const saldoStr = saldo < 0
+                    ? '<span style="color:#A32D2D;">− R$ ' + fmtVal(Math.abs(saldo)) + '</span>'
+                    : '<span style="color:#3B6D11;">R$ ' + fmtVal(saldo) + '</span>';
+
+                const totalFin = (t.execFinanceiras || []).reduce((s, e) => s + (Number(e.valor) || 0), 0);
+                const pctFin = valorTed > 0 ? Math.round(totalFin / valorTed * 100) : 0;
+
+                const totalFisPlan = (t.fisicos || []).reduce((s, f) => s + (Number(f.qtde) || 0), 0);
+                const totalFisReal = (t.execFisicas || []).reduce((s, e) => s + (Number(e.qtde) || 0), 0);
+                const pctFis = totalFisPlan > 0 ? Math.round(totalFisReal / totalFisPlan * 100) : 0;
+
+                html += '<tr>' +
+                    '<td style="white-space:nowrap;">' + (t.numTed || '') + '</td>' +
+                    '<td>' + (t.objetivo || t.objeto || '') + '</td>' +
+                    '<td>' + (t.upResponsavel || t.up || '') + '</td>' +
+                    '<td><span style="font-size:11px;padding:2px 8px;border-radius:999px;background:#E6F1FB;color:#0C447C;">' + status + '</span></td>' +
+                    '<td style="text-align:right;font-family:monospace;">R$ ' + fmtVal(valorTed) + '</td>' +
+                    '<td style="text-align:right;font-family:monospace;color:#3B6D11;">R$ ' + fmtVal(recebido) + '</td>' +
+                    '<td style="text-align:right;">' + saldoStr + '</td>' +
+                    '<td style="text-align:center;">' + pctFin + '%</td>' +
+                    '<td style="text-align:center;">' + pctFis + '%</td>' +
+                    '<td style="white-space:nowrap;">' + fmtDate(t.inicioVigencia) + '</td>' +
+                    '<td style="white-space:nowrap;">' + fmtDate(t.fimVigencia) + '</td>' +
+                    '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
 
         // Modo leitura ativado por padrão
         window._readOnlyMode = true;
