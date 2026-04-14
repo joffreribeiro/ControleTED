@@ -1746,7 +1746,6 @@
             <label style="display:block; margin-bottom:0.25rem; font-weight:600; color:#374151;">Senha</label>
             <input id="modal_login_password" type="password" placeholder="Senha" style="width:100%; padding:0.6rem 0.75rem; margin-bottom:1rem; border:1px solid #d1d5db; border-radius:0.5rem; font-size:1rem;" onkeydown="if(event.key==='Enter') doLogin()" />
             <button onclick="doLogin()" style="width:100%; padding:0.75rem; background:linear-gradient(135deg,#185FA5,#0C447C); color:white; border:none; border-radius:0.5rem; font-size:1rem; font-weight:600; cursor:pointer; margin-bottom:0.5rem;">Entrar</button>
-            <button onclick="doForceCreateAdmin()" style="width:100%; padding:0.6rem; background:#f59e0b; color:white; border:none; border-radius:0.5rem; font-size:0.875rem; font-weight:600; cursor:pointer;">⚠️ Criar Admin e Entrar</button>
             <p id="loginStatus" style="text-align:center; margin-top:0.75rem; font-size:0.8rem; color:#94a3b8;">Aguardando conexão com Firebase...</p>
         </div>
     </div>
@@ -11994,43 +11993,10 @@
         }
         window.doLogin = doLogin;
 
-        // Force create admin (inline)
-        async function doForceCreateAdmin() {
-            setLoginError('');
-            setLoginSuccess('');
-            setLoginStatus('Criando administrador...');
-            // Credenciais removidas deste backup para segurança. Use a aba Configurações para criar o admin.
-            var email = '';
-            var password = '';
-            var ok = await waitForGlobal('authCreateUser', 8000);
-            if (!ok) { setLoginError('Firebase não carregou. Verifique sua conexão.'); setLoginStatus(''); return; }
-            try {
-                await window.authCreateUser(email, password, { displayName: 'Joffre Ribeiro', role: 'admin' });
-                setLoginSuccess('Admin criado! Entrando...');
-            } catch (e) {
-                console.warn('doForceCreateAdmin create error', e);
-                if (e && e.code === 'auth/email-already-in-use') {
-                    setLoginSuccess('Admin já existe. Entrando...');
-                } else {
-                    setLoginError('Erro criando admin: ' + (e.message || e));
-                    setLoginStatus('');
-                    return;
-                }
-            }
-            // sign in
-            try {
-                var okSign = await waitForGlobal('authSignIn', 3000);
-                if (okSign) {
-                    await window.authSignIn(email, password);
-                    setLoginSuccess('Logado como admin!');
-                    hideLoginScreen();
-                    // authOnStateChanged in app.js will update admin UI
-                }
-            } catch (e) {
-                console.warn('doForceCreateAdmin signin error', e);
-                setLoginError('Admin criado mas não foi possível entrar: ' + (e.message || e));
-            }
-            setLoginStatus('');
+        // Force create admin (inline) — disabled in this backup
+        function doForceCreateAdmin() {
+            showToast('Operação não permitida.', 'warning');
+            return;
         }
         window.doForceCreateAdmin = doForceCreateAdmin;
 

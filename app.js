@@ -394,23 +394,16 @@ window.testFirestoreConnection = async function() {
 // showLoginModal / hideLoginModal are now defined in index.html inline script
 // and exposed on window. Use window.showLoginModal() / window.hideLoginModal().
 
-// Bootstrap admin check: only detect absence of users (do not create accounts)
+// Bootstrap admin check: creation disabled for safety
 async function createBootstrapAdminIfNeeded() {
-  try {
-    await waitForHelper('firestoreGetCollection', 3000);
-    const users = await window.firestoreGetCollection('users');
-    if (users && users.length > 0) return false;
-    console.info('[Bootstrap] Nenhum usuário encontrado.');
-    // Do NOT create accounts automatically from hardcoded credentials.
-    return false;
-  } catch(e) {
-    console.warn('createBootstrapAdminIfNeeded error', e);
-    return false;
-  }
+  // Prevent automatic creation of admin accounts from code.
+  return false;
 }
 
 // Force create the admin account and sign in (used by UI button)
 window.forceCreateAdmin = async function() {
-  // Deprecated: do not create admin from hardcoded creds.
-  showToast('Use o formulário de criação de usuário na aba Configurações para criar o admin.', 'info');
+  if (typeof showToast === 'function') {
+    showToast('Operação não permitida.', 'warning');
+  }
+  return;
 };

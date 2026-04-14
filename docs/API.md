@@ -20,7 +20,7 @@ Authorization: Bearer {token}
 ```json
 {
   "email": "usuario@example.com",
-  "password": "senha123",
+  "password": "<senha_exemplo>",
   "name": "João Silva"
 }
 ```
@@ -46,7 +46,7 @@ Authorization: Bearer {token}
 ```json
 {
   "email": "usuario@example.com",
-  "password": "senha123"
+  "password": "<senha_exemplo>"
 }
 ```
 

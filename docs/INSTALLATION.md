@@ -46,7 +46,7 @@ DB_USER=postgres
 DB_PASSWORD=sua_senha_postgres
 DB_NAME=ted_controle
 PORT=5000
-JWT_SECRET=uma_chave_secreta_super_segura_123456
+JWT_SECRET=<defina_sua_chave_aqui>
 CORS_ORIGIN=http://localhost:3000
 NODE_ENV=development
 ```

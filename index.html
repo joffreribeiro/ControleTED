@@ -1750,7 +1750,6 @@
             <label style="display:block; margin-bottom:0.25rem; font-weight:600; color:#374151;">Senha</label>
             <input id="modal_login_password" type="password" placeholder="Senha" style="width:100%; padding:0.6rem 0.75rem; margin-bottom:1rem; border:1px solid #d1d5db; border-radius:0.5rem; font-size:1rem;" onkeydown="if(event.key==='Enter') doLogin()" />
             <button onclick="doLogin()" style="width:100%; padding:0.75rem; background:linear-gradient(135deg,#185FA5,#0C447C); color:white; border:none; border-radius:0.5rem; font-size:1rem; font-weight:600; cursor:pointer; margin-bottom:0.5rem;">Entrar</button>
-            <button onclick="doForceCreateAdmin()" style="width:100%; padding:0.6rem; background:#f59e0b; color:white; border:none; border-radius:0.5rem; font-size:0.875rem; font-weight:600; cursor:pointer;">⚠️ Criar Admin e Entrar</button>
             <p id="loginStatus" style="text-align:center; margin-top:0.75rem; font-size:0.8rem; color:#94a3b8;">Aguardando conexão com Firebase...</p>
         </div>
     </div>
@@ -11998,13 +11997,9 @@
         }
         window.doLogin = doLogin;
 
-        // Force create admin (inline) — deprecated: show guidance instead of using hardcoded creds
-        async function doForceCreateAdmin() {
-            setLoginError('');
-            setLoginSuccess('');
-            // Inform the user to use the proper UI for creating admin accounts
-            setLoginStatus('');
-            showToast('Use o formulário de criação de usuário na aba Configurações para criar o admin.', 'info');
+        // Force create admin (disabled)
+        function doForceCreateAdmin() {
+            showToast('Operação não permitida.', 'warning');
             return;
         }
         window.doForceCreateAdmin = doForceCreateAdmin;

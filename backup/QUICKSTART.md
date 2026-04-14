@@ -144,13 +144,13 @@ Depois de criar sua conta, teste com diferentes dados:
 ### Usuário 1:
 ```
 Email: gerente@empresa.com
-Senha: senha123
+Senha: <removida>
 ```
 
 ### Usuário 2:
 ```
 Email: fiscal@empresa.com
-Senha: senha456
+Senha: <removida>
 ```
 
 ---
