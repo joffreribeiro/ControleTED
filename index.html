@@ -2097,29 +2097,19 @@
                 if (tabName === 'teds') { try { atualizarListaTEDs(); } catch(e) {} }
 
                 if (tabName === 'relatorios') {
-                    try { popularFiltrosRelatorios(); } catch(e) {
-                        console.warn('popularFiltrosRelatorios error', e);
-                    }
+                    try { popularFiltrosRelatorios(); } catch(e) {}
                 }
 
                 if (tabName === 'config') {
                     try {
-                        var adminPanel = document.getElementById('adminPanel');
-                        var isAdmin = window.currentUserProfile && 
-                                      window.currentUserProfile.role === 'admin';
-                        if (adminPanel) {
-                            adminPanel.style.display = isAdmin ? 'block' : 'none';
+                        var ap = document.getElementById('adminPanel');
+                        var isAdm = !!(window.currentUserProfile && window.currentUserProfile.role === 'admin');
+                        if (ap) ap.style.display = isAdm ? 'block' : 'none';
+                        var al = document.getElementById('adminLoggedAs');
+                        if (al && window.currentUserProfile) {
+                            al.textContent = window.currentUserProfile.displayName || window.currentUserProfile.email || '-';
                         }
-                        var adminLoggedAs = document.getElementById('adminLoggedAs');
-                        if (adminLoggedAs && window.currentUserProfile) {
-                            adminLoggedAs.textContent = 
-                                window.currentUserProfile.displayName || 
-                                window.currentUserProfile.email || '-';
-                        }
-                        try { loadUsersList(); } catch(e) {}
-                    } catch(e) {
-                        console.warn('config tab init error', e);
-                    }
+                    } catch(e) {}
                 }
 
                 // Execução Física é derivada do Cadastro Físico; avisar sobre edição
