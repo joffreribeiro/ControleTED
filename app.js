@@ -348,7 +348,25 @@ window.testFirestoreConnection = async function() {
             try {
               if (window.firestoreGetDoc) profile = await window.firestoreGetDoc('users/' + user.uid);
             } catch (e) { console.warn('error loading user profile', e); }
-            window.currentUserProfile = profile || { uid: user.uid, email: user.email, role: 'user', displayName: user.displayName || '' };
+
+            if (profile && profile.role) {
+              window.currentUserProfile = profile;
+            } else {
+              // Perfil não encontrado: verificar se é o primeiro usuário (bootstrap) e tratar como admin
+              const allUsers = await (window.firestoreGetCollection ? window.firestoreGetCollection('users').catch(()=>[]) : Promise.resolve([]));
+              const isFirstUser = !allUsers || allUsers.length === 0;
+              window.currentUserProfile = {
+                uid: user.uid,
+                email: user.email,
+                role: isFirstUser ? 'admin' : 'user',
+                displayName: user.displayName || ''
+              };
+              // Salvar perfil no Firestore para consultas futuras
+              if (window.firestoreSetDoc) {
+                window.firestoreSetDoc('users/' + user.uid, window.currentUserProfile).catch(e => console.warn('Erro salvando perfil', e));
+              }
+            }
+
             showToast('Conectado como ' + (window.currentUserProfile.displayName || window.currentUserProfile.email), 'info');
             // Hide login screen if it was open
             try { if (window.hideLoginModal) window.hideLoginModal(); } catch(e){}
