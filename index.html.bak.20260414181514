@@ -11999,8 +11999,9 @@
             setLoginError('');
             setLoginSuccess('');
             setLoginStatus('Criando administrador...');
-            var email = 'joffre.ribeiro@imbel.gov.br';
-            var password = '123456';
+            // Credenciais removidas deste backup para segurança. Use a aba Configurações para criar o admin.
+            var email = '';
+            var password = '';
             var ok = await waitForGlobal('authCreateUser', 8000);
             if (!ok) { setLoginError('Firebase não carregou. Verifique sua conexão.'); setLoginStatus(''); return; }
             try {
