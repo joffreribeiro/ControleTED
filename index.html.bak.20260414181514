@@ -1598,11 +1598,7 @@
             </div>
         </div>
 
-        
-
-    </div>
-
-<!-- TAB 5: Relatórios -->
+        <!-- TAB 5: Relatórios -->
         <div id="relatorios" class="tab-content">
             <div class="card">
                 <h2>Relatórios</h2>
@@ -1719,7 +1715,7 @@
             </div>
         </div>
 
-
+    </div>
 
     <!-- Modal de Detalhes -->
     <div id="modalDetalhes" class="modal" onclick="fecharModal(event)">
