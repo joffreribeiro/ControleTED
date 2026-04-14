@@ -377,7 +377,12 @@ window.testFirestoreConnection = async function() {
             // User can click the admin login button if they want
           }
         } catch (e) { console.warn('auth state handler', e); }
-        try { applyRolePermissions(); } catch(e) {}
+        // Só aplicar permissões após o perfil estar definido
+        try {
+          if (window.currentUser) {
+            applyRolePermissions();
+          }
+        } catch(e) {}
       });
     }
     // After setting auth listener, ensure bootstrap admin exists if no users

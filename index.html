@@ -815,7 +815,7 @@
             <button class="tab-btn" data-tab="teds" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
             <button id="tab-novo" class="tab-btn" data-tab="novo" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
             <button class="tab-btn" data-tab="detalhes" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
-            <button id="tab-relatorios" class="tab-btn" data-tab="relatorios" onclick="switchTab('relatorios', this)" style="display:none;"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <button id="tab-relatorios" class="tab-btn" data-tab="relatorios" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
             <button id="tab-config" class="tab-btn" data-tab="config" onclick="switchTab('config', this)" style="display:none;"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
@@ -1954,6 +1954,11 @@
             } catch(e) {}
             // ensure resumo anual headers (e.g., 'Devolvido') are centered on init
             try { if (window.centerResumoAnualDevolvidoHeader) window.centerResumoAnualDevolvidoHeader(); } catch(e) {}
+
+            // Pré-popular aba de relatórios em background
+            setTimeout(function() {
+                try { renderRelatoriosSimples(); } catch(e) {}
+            }, 3000);
         }
 
         // Retorna o status a ser exibido para um TED e sua origem.
@@ -12087,18 +12092,7 @@
                 if (adminPanel) adminPanel.style.display = 'none';
                 // Esconder aba Configurações para usuários não-admin
                 if (tabConfig) tabConfig.style.display = 'none';
-                if (tabRelatorios) tabRelatorios.style.display = 'none';
-                // Se está em aba restrita, voltar para dashboard
-                try {
-                    // Só redirecionar se tiver certeza que não é admin
-                    // (perfil undefined significa ainda carregando)
-                    if (window.currentUserProfile !== undefined) {
-                        var activeTab = document.querySelector('.tab-content.active');
-                        if (activeTab && (activeTab.id === 'relatorios' || activeTab.id === 'config')) {
-                            switchTab('dashboard');
-                        }
-                    }
-                } catch(e) {}
+                if (tabRelatorios) tabRelatorios.style.display = '';
                 // Desabilitar botões de edição
                 enableEditButtons(false);
             }
