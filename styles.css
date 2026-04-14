@@ -1471,6 +1471,23 @@
         .aditivos-footer { margin-top:10px; }
         .btn-add-aditivo { width:100%; padding:8px; border:0.5px dashed #85B7EB; background:transparent; color:#185FA5; border-radius:6px; font-size:12px; cursor:pointer; }
 
+        /* Aditivos: compactar linhas e destacar valores alterados (movido de index.html) */
+        .aditivo-change-row { margin-left: 12px; margin-bottom: 2px; font-size:0.68rem; }
+        .aditivo-change-badge { font-size:0.68rem; padding:1px 5px; border-radius:5px; display:inline-block; margin:0 3px; background:transparent; }
+        .aditivo-change-old, .val-antigo, .alt-de { text-decoration: line-through; color:#ef4444; background: rgba(239,68,68,0.06); padding:1px 5px; border-radius:5px; display:inline-block; font-size:0.68rem; }
+        .aditivo-change-new, .val-novo, .alt-para { color:#16a34a; background: rgba(34,197,94,0.06); padding:1px 5px; border-radius:5px; display:inline-block; font-weight:600; font-size:0.68rem; }
+        .alt-linha { display:inline-block; margin-right:6px; vertical-align:middle; font-size:0.68rem; }
+        .alt-arrow, .alter-arrow { margin: 0 4px; color: var(--text-muted); font-size:0.68rem; }
+        .celula-alterada-aditivo .val-antigo { text-decoration: line-through; color:#ef4444; margin-right:6px; }
+        .celula-alterada-aditivo .val-novo { color:#16a34a; margin-left:6px; font-weight:600; }
+        /* Tabela de detalhes do aditivo/apostilamento */
+        .aditivo-detalhe-table { width:100%; border-collapse:collapse; margin-bottom:8px; font-size:0.92rem; }
+        .aditivo-detalhe-table th { text-align:left; padding:6px 8px; font-size:0.86rem; color:var(--text-muted); border-bottom:1px solid rgba(0,0,0,0.06); }
+        .aditivo-detalhe-table td { padding:6px 8px; vertical-align:middle; border-bottom:1px dashed rgba(0,0,0,0.04); }
+        .aditivo-row-new td { background: rgba(34,197,94,0.04); color: #166534; font-weight:600; }
+        .aditivo-row-removed td { background: rgba(239,68,68,0.04); color: #7f1d1d; text-decoration:line-through; }
+        .aditivo-section-title { font-weight:700; margin-top:8px; margin-bottom:6px; }
+
         /* Gantt compacto (rodapé dos cards de cadastro) */
         .gantt-compact { background: var(--color-bg-surface); padding: 10px 12px; border-radius: 8px; }
         .gantt-compact .gantt-anos { display:flex; gap:0.25rem; margin-bottom:6px; font-size:11px; color:var(--color-text-secondary); }
