@@ -8113,11 +8113,16 @@
 
             const matchUp = (t) => {
                 if (!selectedUps || selectedUps.length === 0) return true;
-                const campos = [t.upResponsavel, t.unidadeDesc, t.ugDesc, (t.ugExecutora || t.egExecutora)];
+                const toStr = (v) => {
+                    if (v == null) return '';
+                    if (Array.isArray(v)) return v.join(' ').toLowerCase();
+                    return String(v).toLowerCase();
+                };
+                const campos = [t.upResponsavel, t.unidadeDesc, t.ugDesc, t.ugExecutora, t.egExecutora, t.up, t.ug];
                 for (const up of selectedUps) {
-                    if (campos.some(v => (v || '').toLowerCase() === up)) return true;
-                    if ((t.financeiros || []).some(f => ((f.up || f.ug || '') + '').toLowerCase() === up)) return true;
-                    if ((t.execFinanceiras || []).some(e => ((e.up || e.ug || '') + '').toLowerCase() === up)) return true;
+                    if (campos.some(v => toStr(v) === up)) return true;
+                    if ((t.financeiros || []).some(f => toStr(f.up || f.ug) === up)) return true;
+                    if ((t.execFinanceiras || []).some(e => toStr(e.up || e.ug) === up)) return true;
                 }
                 return false;
             };
