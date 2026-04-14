@@ -1691,11 +1691,11 @@
         }
         /* Divisão visual de anos (linha preta) */
         .tabela-padrao .year-divider-cell {
-            border-left: 2px solid #000 !important;
+            border-left: 2px solid #000;
             box-shadow: inset 2px 0 0 #000;
         }
         .tabela-padrao thead .year-divider-group {
-            border-left: 2px solid #000 !important;
+            border-left: 2px solid #000;
             box-shadow: inset 2px 0 0 #000;
         }
         .tabela-padrao th {
@@ -1728,7 +1728,7 @@
 
         /* Linha de total (sempre em tfoot) */
         .tabela-padrao .linha-total {
-            background: var(--color-bg-surface) !important;
+            background: var(--color-bg-surface);
             font-weight: 500;
             border-top: 0.5px solid rgba(0,0,0,0.15);
         }
@@ -1954,7 +1954,7 @@
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao tbody td[colspan] {
-            color: #5b6b86 !important;
+            color: #5b6b86;
             font-style: italic;
             background: #f8fbff;
         }
@@ -2201,7 +2201,7 @@
         }
         /* Linha de total */
         .tabela-padrao .linha-total {
-            background: #e8f4f8 !important;
+            background: #e8f4f8;
             font-weight: bold;
         }
         /* Cabeçalho secundário (meses Gantt) */
@@ -2763,7 +2763,7 @@
         .table-freeze-wrapper tbody td {
             font-size: 13px;
             font-weight: 400;
-            color: #1a1a1a !important;
+            color: #1a1a1a;
             padding: 9px 12px;
             vertical-align: middle;
             border-bottom: 1px solid rgba(0,0,0,0.06);
