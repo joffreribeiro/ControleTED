@@ -2061,29 +2061,39 @@
                 }
             } catch(e) {}
 
-            // Ocultar todas as abas (remover propriedades inline para deixar o CSS controlar a visibilidade)
+            // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
-                tab.style.removeProperty('display');
-                tab.style.removeProperty('visibility');
-                tab.style.removeProperty('opacity');
-                tab.style.removeProperty('transform');
+                tab.style.display = 'none';
             });
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
             // Mostrar aba selecionada
-            try {
-                var tabEl = document.getElementById(tabName);
-                if (tabEl) {
-                    tabEl.classList.add('active');
-                    tabEl.style.removeProperty('display');
-                    tabEl.style.removeProperty('visibility');
-                    tabEl.style.removeProperty('opacity');
-                    tabEl.style.removeProperty('transform');
-                }
-                var btnToActivate = btnEl || document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
-                if (btnToActivate) btnToActivate.classList.add('active');
-            } catch(e) { /* ignore */ }
+            var tabEl = document.getElementById(tabName);
+            if (tabEl) {
+                tabEl.classList.add('active');
+                tabEl.style.display = 'block';
+            }
+            var btnToActivate = btnEl || document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+            if (btnToActivate) btnToActivate.classList.add('active');
+
+            // Inicializar conteúdo específico da aba
+            if (tabName === 'relatorios') {
+                try { popularFiltrosRelatorios(); } catch(e) {}
+            }
+            if (tabName === 'config') {
+                try {
+                    var ap = document.getElementById('adminPanel');
+                    var isAdm = !!(window.currentUserProfile && 
+                                   window.currentUserProfile.role === 'admin');
+                    if (ap) ap.style.display = isAdm ? 'block' : 'none';
+                    var al = document.getElementById('adminLoggedAs');
+                    if (al && window.currentUserProfile) {
+                        al.textContent = window.currentUserProfile.displayName || 
+                                         window.currentUserProfile.email || '-';
+                    }
+                } catch(e) {}
+            }
 
             // Ações específicas ao trocar de aba
             try {

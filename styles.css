@@ -439,7 +439,7 @@
 
 
         .tab-content.active {
-            display: block;
+            display: block !important;
             animation: fadeIn 0.25s ease;
         }
 
