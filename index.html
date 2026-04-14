@@ -815,7 +815,7 @@
             <button class="tab-btn" data-tab="teds" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
             <button id="tab-novo" class="tab-btn" data-tab="novo" onclick="switchTab('novo', this)" style="display:none;"><i data-lucide="plus-circle"></i> Novo TED</button>
             <button class="tab-btn" data-tab="detalhes" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
-            <button id="tab-relatorios" class="tab-btn" data-tab="relatorios" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
+            <button id="tab-relatorios" class="tab-btn" data-tab="relatorios" onclick="switchTab('relatorios', this)" style="display:none;"><i data-lucide="file-bar-chart"></i> Relatórios</button>
             <button id="tab-config" class="tab-btn" data-tab="config" onclick="switchTab('config', this)" style="display:none;"><i data-lucide="settings"></i> Configurações</button>
         </div>
 
@@ -2061,13 +2061,13 @@
                 }
             } catch(e) {}
 
-            // Ocultar todas as abas
+            // Ocultar todas as abas (remover propriedades inline para deixar o CSS controlar a visibilidade)
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
-                tab.style.setProperty('display', 'none', 'important');
-                tab.style.setProperty('visibility', 'hidden', 'important');
-                tab.style.setProperty('opacity', '0', 'important');
-                tab.style.setProperty('transform', 'none', 'important');
+                tab.style.removeProperty('display');
+                tab.style.removeProperty('visibility');
+                tab.style.removeProperty('opacity');
+                tab.style.removeProperty('transform');
             });
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
@@ -2076,10 +2076,10 @@
                 var tabEl = document.getElementById(tabName);
                 if (tabEl) {
                     tabEl.classList.add('active');
-                    // Remover display:none aplicado acima; deixar CSS controlar a exibição
                     tabEl.style.removeProperty('display');
-                    tabEl.style.visibility = 'visible';
-                    tabEl.style.opacity = '1';
+                    tabEl.style.removeProperty('visibility');
+                    tabEl.style.removeProperty('opacity');
+                    tabEl.style.removeProperty('transform');
                 }
                 var btnToActivate = btnEl || document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
                 if (btnToActivate) btnToActivate.classList.add('active');
@@ -2095,6 +2095,32 @@
                 }
                 if (tabName === 'dashboard') { try { atualizarDashboard(); } catch(e) {} }
                 if (tabName === 'teds') { try { atualizarListaTEDs(); } catch(e) {} }
+
+                if (tabName === 'relatorios') {
+                    try { popularFiltrosRelatorios(); } catch(e) {
+                        console.warn('popularFiltrosRelatorios error', e);
+                    }
+                }
+
+                if (tabName === 'config') {
+                    try {
+                        var adminPanel = document.getElementById('adminPanel');
+                        var isAdmin = window.currentUserProfile && 
+                                      window.currentUserProfile.role === 'admin';
+                        if (adminPanel) {
+                            adminPanel.style.display = isAdmin ? 'block' : 'none';
+                        }
+                        var adminLoggedAs = document.getElementById('adminLoggedAs');
+                        if (adminLoggedAs && window.currentUserProfile) {
+                            adminLoggedAs.textContent = 
+                                window.currentUserProfile.displayName || 
+                                window.currentUserProfile.email || '-';
+                        }
+                        try { loadUsersList(); } catch(e) {}
+                    } catch(e) {
+                        console.warn('config tab init error', e);
+                    }
+                }
 
                 // Execução Física é derivada do Cadastro Físico; avisar sobre edição
                 if (tabName === 'execFis') {
