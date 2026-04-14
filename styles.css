@@ -119,7 +119,7 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--bg-secondary);
-            color: var(--text);
+            color: var(--color-text-primary);
             font-size: 0.925rem;
             line-height: 1.6;
             min-height: 100vh;
@@ -325,15 +325,15 @@
 
         /* Tabela de Aditivos / Apostilamentos (coluna lateral) */
         .tabela-aditivos { width: 100%; border-collapse: collapse; }
-        .tabela-aditivos thead th, .tabela-aditivos tbody td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .tabela-aditivos thead th, .tabela-aditivos tbody td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
         .tabela-aditivos .col-alteracoes { min-width: 220px; width: auto; }
         .tabela-aditivos .col-tipo { min-width: 110px; }
         .tabela-aditivos .col-data { width: 100px; text-align: center; }
         .tabela-aditivos .col-num { width: 30px; text-align: center; }
         .tabela-aditivos .col-acao { width: 70px; text-align: center; }
-        .tabela-aditivos .alt-linha { margin-bottom: 0.15rem; font-size: 0.75rem; color: var(--text-secondary); }
-        .tabela-aditivos .alt-linha .alt-de { color: var(--text); margin-right: 0.35rem; }
-        .tabela-aditivos .alt-linha .alt-para { color: var(--primary-dark); font-weight:600; margin-left: 0.35rem; }
+        .tabela-aditivos .alt-linha { margin-bottom: 0.15rem; font-size: 0.75rem; color: var(--color-text-secondary); }
+        .tabela-aditivos .alt-linha .alt-de { color: var(--color-text-primary); margin-right: 0.35rem; }
+        .tabela-aditivos .alt-linha .alt-para { color: #185FA5; font-weight:600; margin-left: 0.35rem; }
         .tabela-aditivos .alt-linha .alt-arrow { margin: 0 0.35rem; color: var(--text-muted); }
 
         /* Resumo Financeiro: alinhamento segue a regra base de cabeçalhos */
@@ -370,7 +370,7 @@
             padding: 0.5rem 1rem;
             font-size: 0.95rem;
             cursor: pointer;
-            color: var(--text-secondary);
+            color: var(--color-text-secondary);
             border-radius: 999px;
             display: inline-flex;
             align-items: center;
@@ -386,8 +386,8 @@
         }
 
         .tab-btn:hover {
-            background: var(--light);
-            color: var(--primary-dark);
+            background: var(--color-bg-surface);
+            color: #185FA5;
         }
 
         .tab-content {
@@ -413,13 +413,13 @@
         }
         .subentregas-list { display:flex; flex-direction:column; gap:0.5rem; }
         .subentrega-item { display:flex; justify-content:space-between; gap:1rem; align-items:center; padding:0.45rem; border-radius:6px; background: rgba(0,0,0,0.02); }
-        .subentrega-meta { font-size:0.9rem; color:var(--text); }
+        .subentrega-meta { font-size:0.9rem; color:var(--color-text-primary); }
         .subentrega-actions { display:flex; gap:0.5rem; }
         .subentregas-actions { display:flex; gap:0.5rem; align-items:center; }
         .subentregas-empty { color:var(--text-muted); padding:0.5rem; }
-        .btn-small { font-size:0.8rem; padding:4px 8px; border-radius:6px; border:1px solid var(--border); background:transparent; cursor:pointer; }
+        .btn-small { font-size:0.8rem; padding:4px 8px; border-radius:6px; border:1px solid var(--color-border); background:transparent; cursor:pointer; }
         .btn { padding:6px 10px; border-radius:8px; border:none; background:var(--primary); color:#fff; cursor:pointer; }
-        .btn-ghost { padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:transparent; cursor:pointer; }
+        .btn-ghost { padding:6px 10px; border-radius:8px; border:1px solid var(--color-border); background:transparent; cursor:pointer; }
 
         /* Mini bloco de entrega dentro do Gantt */
         .entrega-mini { display:inline-block; padding:2px 6px; margin:2px 0; border-radius:6px; background:#C0DD97; color:#08303A; font-size:0.75rem; line-height:1; }
@@ -435,7 +435,7 @@
         .progress-inline > .fill { height:100%; background:var(--success); }
 
         /* Banner informativo de Execução Física sincronizada */
-        .entrega-sincronizacao-banner { padding:0.5rem 0.75rem; background:linear-gradient(90deg, rgba(59,130,246,0.08), rgba(59,130,246,0.04)); border-radius:8px; color:var(--text-secondary); font-size:0.9rem; margin-bottom:0.5rem; }
+        .entrega-sincronizacao-banner { padding:0.5rem 0.75rem; background:linear-gradient(90deg, rgba(59,130,246,0.08), rgba(59,130,246,0.04)); border-radius:8px; color:var(--color-text-secondary); font-size:0.9rem; margin-bottom:0.5rem; }
 
 
         .tab-content.active {
@@ -445,12 +445,12 @@
 
         /* Cards */
         .card {
-            background: var(--bg-primary);
+            background: var(--color-bg-card);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
             padding: var(--space-6);
             margin-bottom: var(--space-6);
-            border: 1px solid var(--border);
+            border: 1px solid var(--color-border);
             transition: var(--transition);
         }
 
@@ -459,7 +459,7 @@
         }
 
         .card h2 {
-            color: var(--text);
+            color: var(--color-text-primary);
             margin-bottom: var(--space-4);
             font-size: 1.5rem;
             font-weight: 700;
@@ -467,7 +467,7 @@
         }
 
         .card h3 {
-            color: var(--text);
+            color: var(--color-text-primary);
             margin-bottom: 0.5rem;
             font-size: 1.1rem;
             font-weight: 600;
@@ -575,17 +575,17 @@
         }
 
         .btn-primary:hover {
-            background: var(--primary-dark);
+            background: #185FA5;
         }
 
         .btn-secondary {
-            background: var(--light);
+            background: var(--color-bg-surface);
             color: var(--secondary);
-            border: 1px solid var(--border);
+            border: 1px solid var(--color-border);
         }
 
         .btn-secondary:hover {
-            background: var(--border);
+            background: var(--color-border);
         }
 
         .btn-danger {
@@ -620,7 +620,7 @@
         .form-group select {
             width: 100%;
             padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
+            border: 1px solid var(--color-border);
             border-radius: var(--radius);
             font-size: 0.95rem;
             font-family: inherit;
@@ -639,7 +639,7 @@
         .form-group input:hover,
         .form-group textarea:hover,
         .form-group select:hover {
-            border-color: var(--primary-light);
+            border-color: #378ADD;
         }
 
         .form-group textarea {
@@ -651,7 +651,7 @@
         .progress-bar {
             width: 100%;
             height: 10px;
-            background: var(--light);
+            background: var(--color-bg-surface);
             border-radius: 999px;
             overflow: hidden;
             margin: 0.5rem 0;
@@ -871,7 +871,7 @@
         .filter-bar-label {
             font-weight: 600;
             font-size: 0.85rem;
-            color: var(--text);
+            color: var(--color-text-primary);
             margin-right: 0.25rem;
         }
         .filter-btn {
@@ -882,7 +882,7 @@
             padding: 0.4rem 0.85rem;
             font-size: 0.8rem;
             background: white;
-            border: 1px solid var(--border);
+            border: 1px solid var(--color-border);
             border-radius: var(--radius);
             cursor: pointer;
             user-select: none;
@@ -890,11 +890,11 @@
             font-weight: 500;
         }
         .filter-btn:hover {
-            background: var(--light);
-            border-color: var(--primary-light);
+            background: var(--color-bg-surface);
+            border-color: #378ADD;
         }
         .filter-btn.active {
-            background: var(--primary-light);
+            background: #378ADD;
             border-color: var(--primary);
             color: white;
         }
@@ -937,7 +937,7 @@
             transition: background 0.15s;
         }
         .filter-menu label:hover {
-            background: var(--light);
+            background: var(--color-bg-surface);
         }
         .filter-menu input[type="checkbox"] {
             width: 16px;
@@ -1069,7 +1069,7 @@
         .empty-state {
             text-align: center;
             padding: 3rem 1rem;
-            color: var(--text);
+            color: var(--color-text-primary);
         }
 
         /* Table wrapper with scroll */
@@ -1277,13 +1277,13 @@
         }
 
         .btn-icon-action.edit {
-            color: var(--primary-dark);
+            color: #185FA5;
             background: transparent;
         }
 
         .btn-icon-action.edit:hover {
             background: rgba(37,99,235,0.08);
-            color: var(--primary-dark);
+            color: #185FA5;
             box-shadow: 0 2px 6px rgba(16,24,40,0.06);
         }
 
@@ -2178,7 +2178,7 @@
 
         /* Small improvements for filters and buttons in dashboard */
         #dashboard .filter-bar label,
-        #dashboard .graficos-filters label { font-weight:600; color:var(--text); }
+        #dashboard .graficos-filters label { font-weight:600; color:var(--color-text-primary); }
         #dashboard .filter-bar select,
         #dashboard .graficos-filters select { border-radius:0.4rem; padding:0.25rem; border:1px solid #dbeafe; }
 
@@ -2365,7 +2365,7 @@
             gap: 0.75rem;
             padding: 0.5rem 0.25rem;
             font-size: 0.8rem;
-            color: var(--text);
+            color: var(--color-text-primary);
             align-items: center;
         }
         .gantt-legenda-item {
@@ -2398,14 +2398,14 @@
         }
         .aditivo-modal-overlay.active { display: flex; }
         .aditivo-modal {
-            background: var(--bg-primary);
+            background: var(--color-bg-card);
             border-radius: 12px;
             padding: 1.25rem 1.5rem;
             min-width: 420px;
             max-width: 96%;
             box-shadow: 0 30px 80px rgba(0,0,0,0.55);
             border: 1px solid rgba(0,0,0,0.08);
-            color: var(--text);
+            color: var(--color-text-primary);
         }
         .aditivo-modal h3 { margin: 0 0 1rem 0; color: var(--primary); }
         .aditivo-historico { margin-top: 1rem; font-size: 0.85rem; }
@@ -2421,19 +2421,19 @@
         .aditivo-historico td.valor-aditivo .valor-text { display:inline-block; min-width:6rem; }
 
         /* Forçar contraste no modal (labels/inputs) */
-        .aditivo-modal { color: var(--text); }
-        .aditivo-modal label { color: var(--text); font-weight:600; display:block; margin-bottom:6px; }
-        .aditivo-modal input { color: var(--text); background: var(--bg-secondary); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; }
+        .aditivo-modal { color: var(--color-text-primary); }
+        .aditivo-modal label { color: var(--color-text-primary); font-weight:600; display:block; margin-bottom:6px; }
+        .aditivo-modal input { color: var(--color-text-primary); background: var(--bg-secondary); border:1px solid var(--color-border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; }
         .aditivo-modal input:focus { outline: 2px solid rgba(59,130,246,0.18); box-shadow: 0 4px 12px rgba(59,130,246,0.06); }
-        .aditivo-modal select { color: var(--text); background: var(--bg-secondary); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; }
-        .aditivo-modal textarea { color: var(--text); background: var(--bg-secondary); border:1px solid var(--border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; resize:vertical; min-height:60px; }
+        .aditivo-modal select { color: var(--color-text-primary); background: var(--bg-secondary); border:1px solid var(--color-border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; }
+        .aditivo-modal textarea { color: var(--color-text-primary); background: var(--bg-secondary); border:1px solid var(--color-border); padding:0.5rem 0.75rem; border-radius:6px; width:100%; box-sizing:border-box; resize:vertical; min-height:60px; }
         /* Expanded aditivo modal */
         .aditivo-modal-expanded { min-width: 720px; max-width: 96vw; max-height: 90vh; overflow-y: auto; }
         .aditivo-modal-expanded .aditivo-clone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
         .aditivo-modal-expanded .aditivo-clone-grid .form-group { margin-bottom: 0; }
-        .aditivo-modal-expanded .aditivo-clone-grid label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+        .aditivo-modal-expanded .aditivo-clone-grid label { font-size: 0.8rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 4px; display: block; }
         .aditivo-modal-expanded .aditivo-clone-grid .full-width { grid-column: 1 / -1; }
-        .aditivo-modal-expanded .aditivo-section-title { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin: 1rem 0 0.5rem 0; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border); }
+        .aditivo-modal-expanded .aditivo-section-title { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin: 1rem 0 0.5rem 0; padding-bottom: 0.25rem; border-bottom: 1px solid var(--color-border); }
         .aditivo-modal-expanded .campo-modificado input,
         .aditivo-modal-expanded .campo-modificado select,
         .aditivo-modal-expanded .campo-modificado textarea { border-color: #f59e0b !important; background: rgba(245,158,11,0.06) !important; }
@@ -2442,7 +2442,7 @@
         .aditivo-change-badge { display: inline-block; font-size: 0.63rem; padding: 1px 5px; border-radius: 4px; margin: 1px 2px; line-height: 1.4; }
         .aditivo-change-old { background: rgba(239,68,68,0.10); color: #dc2626; text-decoration: line-through; }
         .aditivo-change-new { background: rgba(34,197,94,0.12); color: #16a34a; font-weight: 600; }
-        .aditivo-change-field { font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; }
+        .aditivo-change-field { font-weight: 600; color: var(--color-text-secondary); font-size: 0.75rem; }
         .aditivo-changes-list { display: flex; flex-direction: column; gap: 3px; max-width: 400px; }
         .aditivo-change-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
         /* Info view: valor com alteração via aditivo */
@@ -2451,8 +2451,8 @@
         .valor-alterado-aditivo .valor-novo { color: #16a34a; font-weight: 700; }
         /* Tabela clone dentro do modal de aditivo */
         .aditivo-clone-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-        .aditivo-clone-table th { background: rgba(59,130,246,0.06); color: var(--text); font-weight: 600; padding: 6px 8px; text-align: left; border-bottom: 2px solid var(--border); white-space: nowrap; }
-        .aditivo-clone-table td { padding: 5px 8px; border-bottom: 1px solid var(--border-light); color: var(--text); }
+        .aditivo-clone-table th { background: rgba(59,130,246,0.06); color: var(--color-text-primary); font-weight: 600; padding: 6px 8px; text-align: left; border-bottom: 2px solid var(--color-border); white-space: nowrap; }
+        .aditivo-clone-table td { padding: 5px 8px; border-bottom: 1px solid var(--border-light); color: var(--color-text-primary); }
         .aditivo-clone-table td[contenteditable="true"] { cursor: text; outline: none; }
         .aditivo-clone-table td[contenteditable="true"]:focus { background: rgba(59,130,246,0.06); outline: 2px solid rgba(59,130,246,0.2); border-radius: 2px; }
         .aditivo-clone-table tr:hover { background: rgba(59,130,246,0.03); }
@@ -2698,7 +2698,7 @@
         .spinner {
             width: 20px;
             height: 20px;
-            border: 2px solid var(--border);
+            border: 2px solid var(--color-border);
             border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -2714,11 +2714,11 @@
         /* Modal para marcar realizada */
         .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 9999; }
         .modal-backdrop.open { display: flex; }
-        .modal-realizada { background: var(--bg-primary); border-radius: 0.5rem; padding: 1rem; width: 420px; max-width: 95%; box-shadow: var(--shadow-lg); }
+        .modal-realizada { background: var(--color-bg-card); border-radius: 0.5rem; padding: 1rem; width: 420px; max-width: 95%; box-shadow: var(--shadow-lg); }
         .modal-realizada h3 { margin-bottom: 0.5rem; font-size: 1rem; }
         .modal-realizada .form-row { display:flex; gap:0.5rem; margin-bottom:0.5rem; }
-        .modal-realizada label { font-size: 0.85rem; color: var(--text-secondary); }
-        .modal-realizada input { width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:0.375rem; }
+        .modal-realizada label { font-size: 0.85rem; color: var(--color-text-secondary); }
+        .modal-realizada input { width:100%; padding:0.4rem 0.5rem; border:1px solid var(--color-border); border-radius:0.375rem; }
         .modal-realizada input:focus { outline:2px solid var(--primary); box-shadow:0 0 0 3px rgba(59,130,246,0.08); }
         .modal-realizada .actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.5rem; }
         .modal-realizada .error { color:#b91c1c; background:#fff1f2; border:1px solid #fecaca; padding:0.4rem; border-radius:0.35rem; font-size:0.9rem; margin-bottom:0.5rem; display:none; }
@@ -2727,11 +2727,11 @@
         /* Modal Cadastro de Objetos */
         .modal-objeto-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); align-items:center; justify-content:center; z-index:10000; }
         .modal-objeto-backdrop.open { display:flex; }
-        .modal-objeto { background:var(--bg-primary); border-radius:0.625rem; padding:1.5rem; width:460px; max-width:95vw; box-shadow:var(--shadow-lg); }
+        .modal-objeto { background:var(--color-bg-card); border-radius:0.625rem; padding:1.5rem; width:460px; max-width:95vw; box-shadow:var(--shadow-lg); }
         .modal-objeto h3 { margin:0 0 1rem; font-size:1.1rem; display:flex; align-items:center; gap:0.5rem; }
         .modal-objeto .form-group { margin-bottom:0.85rem; }
-        .modal-objeto label { display:block; font-size:0.85rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.25rem; }
-        .modal-objeto input { width:100%; padding:0.5rem 0.6rem; border:1px solid var(--border); border-radius:0.375rem; font-size:0.95rem; background:var(--bg-primary); color:var(--text); }
+        .modal-objeto label { display:block; font-size:0.85rem; font-weight:600; color:var(--color-text-secondary); margin-bottom:0.25rem; }
+        .modal-objeto input { width:100%; padding:0.5rem 0.6rem; border:1px solid var(--color-border); border-radius:0.375rem; font-size:0.95rem; background:var(--color-bg-card); color:var(--color-text-primary); }
         .modal-objeto input:focus { outline:2px solid var(--primary); box-shadow:0 0 0 3px rgba(59,130,246,0.08); }
         .modal-objeto .modal-objeto-actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem; }
         .modal-objeto .modal-objeto-error { color:#b91c1c; background:#fff1f2; border:1px solid #fecaca; padding:0.4rem 0.6rem; border-radius:0.35rem; font-size:0.9rem; margin-bottom:0.75rem; display:none; }
