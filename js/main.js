@@ -1,3 +1,82 @@
+// Helpers: global loader, empty-state rendering, and save confirmation
+(function(){
+    function createGlobalLoader() {
+        if (document.getElementById('globalLoader')) return;
+        const loader = document.createElement('div');
+        loader.id = 'globalLoader';
+        loader.className = 'global-loader';
+        loader.setAttribute('aria-hidden','true');
+        loader.innerHTML = `
+            <div class="global-loader-backdrop" aria-hidden="true"></div>
+            <div class="global-loader-content" role="status" aria-live="polite">
+                <div class="spinner" aria-hidden="true"></div>
+                <div class="global-loader-message">Carregando dados...</div>
+            </div>`;
+        document.body.appendChild(loader);
+    }
+
+    window.showGlobalLoader = function(msg){
+        if (typeof document === 'undefined') return;
+        createGlobalLoader();
+        const el = document.getElementById('globalLoader');
+        if (!el) return;
+        if (msg) {
+            const m = el.querySelector('.global-loader-message');
+            if (m) m.textContent = msg;
+        }
+        el.classList.add('active');
+        el.setAttribute('aria-hidden','false');
+    };
+
+    window.hideGlobalLoader = function(){
+        const el = document.getElementById('globalLoader');
+        if (!el) return;
+        el.classList.remove('active');
+        el.setAttribute('aria-hidden','true');
+    };
+
+    window.renderEmptyState = function(container, title, subtitle){
+        if (!container) return;
+        const subtitleHtml = subtitle ? `<div class="empty-sub">${subtitle}</div>` : '';
+        container.innerHTML = `\n            <div class="empty-state" role="status" aria-live="polite">\n                <svg width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">\n                    <rect x="1" y="3" width="22" height="14" rx="2" stroke="currentColor" stroke-width="1.2" fill="none"></rect>\n                    <path d="M7 10h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"></path>\n                    <circle cx="9" cy="18" r="2" fill="currentColor"></circle>\n                    <circle cx="15" cy="18" r="2" fill="currentColor"></circle>\n                </svg>\n                <div class="empty-title">${title || 'Nenhum resultado'}</div>\n                ${subtitleHtml}\n            </div>`;
+    };
+
+    window.enhanceEmptyStates = function(root=document){
+        try {
+            const candidates = Array.from(root.querySelectorAll('div, p, span'));
+            for (const el of candidates) {
+                const txt = (el.textContent || '').trim();
+                if (!txt) continue;
+                if (/^Nenhum\b|^Sem\b|^Não há|^Nenhuma\b/i.test(txt) && el.children.length === 0) {
+                    if (el.classList.contains('empty-state')) continue;
+                    window.renderEmptyState(el, txt, '');
+                }
+            }
+        } catch(e) { /* safe fail */ }
+    };
+
+    window.showSaveConfirmation = function(selectorOrEl){
+        const el = typeof selectorOrEl === 'string' ? document.querySelector(selectorOrEl) : selectorOrEl;
+        if (!el) return;
+        const original = el.innerHTML;
+        el.classList.add('btn-saved');
+        el.setAttribute('data-orig', original);
+        el.innerHTML = '<span class="save-check">✓</span>';
+        setTimeout(() => {
+            el.classList.remove('btn-saved');
+            const orig = el.getAttribute('data-orig') || original;
+            el.innerHTML = orig;
+            el.removeAttribute('data-orig');
+        }, 2000);
+    };
+
+    // Ensure enhancement runs whether DOMContentLoaded already fired or not
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(() => window.enhanceEmptyStates(), 20);
+    } else {
+        document.addEventListener('DOMContentLoaded', () => window.enhanceEmptyStates());
+    }
+})();
 
 
 /* --- extracted script 1 --- */

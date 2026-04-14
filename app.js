@@ -25,6 +25,15 @@ window.salvarNoCloud = async function() {
     const ok = await waitForHelper('firestoreBatchSet', 5000);
     if (!ok) throw new Error('Firestore helpers indisponíveis');
     showToast('Salvando na nuvem...', 'info');
+    // show loader (fallback if helper not yet defined)
+    (function(msg){
+      if (typeof window.showGlobalLoader === 'function') return window.showGlobalLoader(msg);
+      const g = document.getElementById('globalLoader');
+      if (g) {
+        try { const m = g.querySelector('.global-loader-message'); if (m) m.textContent = msg; } catch(e){}
+        g.classList.add('active'); g.setAttribute('aria-hidden','false');
+      }
+    })('Salvando na nuvem...');
     console.log('[Cloud] iniciar salvarNoCloud');
     // Ensure dados exists
     if (!window.dados) window.dados = { teds: [], proxiId: 1 };
@@ -40,9 +49,12 @@ window.salvarNoCloud = async function() {
       console.warn('Não foi possível atualizar meta/teds', e);
     }
     showToast('Dados salvos na nuvem com sucesso', 'success');
+    try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
+    try { if (typeof window.showSaveConfirmation === 'function') window.showSaveConfirmation('#btnSalvarTopo'); else { const b = document.getElementById('btnSalvarTopo'); if (b) { b.classList.add('btn-saved'); setTimeout(()=>b.classList.remove('btn-saved'),2000); } } } catch(e){}
   } catch (e) {
     console.error(e);
     showToast('Erro ao salvar na nuvem: ' + (e.message || e), 'error');
+    try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
   }
 };
 
@@ -51,6 +63,15 @@ window.carregarDoCloud = async function() {
     const ok = await waitForHelper('firestoreGetCollection', 5000);
     if (!ok) throw new Error('Firestore helpers indisponíveis');
     showToast('Carregando dados da nuvem...', 'info');
+    // show loader (fallback if helper not yet defined)
+    (function(msg){
+      if (typeof window.showGlobalLoader === 'function') return window.showGlobalLoader(msg);
+      const g = document.getElementById('globalLoader');
+      if (g) {
+        try { const m = g.querySelector('.global-loader-message'); if (m) m.textContent = msg; } catch(e){}
+        g.classList.add('active'); g.setAttribute('aria-hidden','false');
+      }
+    })('Carregando dados da nuvem...');
     console.log('[Cloud] iniciar carregarDoCloud');
     const items = await window.firestoreGetCollection('teds');
     console.log('[Cloud] firestoreGetCollection items count=', (items || []).length);
@@ -80,11 +101,14 @@ window.carregarDoCloud = async function() {
     try { atualizarListaTEDs(); } catch(e) {}
     try { atualizarSeletorTED(); } catch(e) {}
     try { atualizarGantt(); } catch(e) {}
+    try { if (typeof window.enhanceEmptyStates === 'function') window.enhanceEmptyStates(); } catch(e) {}
 
     showToast('Dados carregados da nuvem', 'success');
+    try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
   } catch (e) {
     console.error(e);
     showToast('Erro ao carregar da nuvem: ' + (e.message || e), 'error');
+    try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
   }
 };
 
