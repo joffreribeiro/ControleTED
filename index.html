@@ -2746,7 +2746,7 @@
 
         function downloadRelatorioCSV() {
             const data = window._lastRelatorioData || buildRelatorioData();
-            if (!data || !data.months) return alert('Nenhum dado para exportar');
+            if (!data || !data.months) return showToast('Nenhum dado para exportar', 'info');
             const rows = [];
             rows.push(['Mês','Vigentes','Encerrados']);
             data.months.forEach(mk => {
@@ -2791,7 +2791,7 @@
 
         function downloadRelatorioXLSX() {
             const data = window._lastRelatorioData || buildRelatorioData();
-            if (!data || !data.months) return alert('Nenhum dado para exportar');
+            if (!data || !data.months) return showToast('Nenhum dado para exportar', 'info');
             loadSheetJS().then(XLSX => {
                 const rows = [];
                 rows.push(['Mês','Vigentes','Encerrados']);
@@ -2808,7 +2808,7 @@
                 XLSX.writeFile(wb, 'relatorio_mensal_teds.xlsx');
             }).catch(e => {
                 console.warn('downloadRelatorioXLSX error', e);
-                alert('Erro ao gerar XLSX: ' + (e && e.message ? e.message : e));
+                showToast('Erro ao gerar XLSX: ' + (e && e.message ? e.message : e), 'danger');
             });
         }
 
@@ -3231,7 +3231,7 @@
 
         // Editar TED
         function editarTED() {
-            alert('⚠️ Edição será implementada na próxima versão');
+            showToast('⚠️ Edição será implementada na próxima versão', 'warning');
         }
 
         // FUN→.ES PARA DETALHES TED
@@ -4182,7 +4182,7 @@
         window._editandoObjetoId = null;
 
         function abrirModalObjeto(editId) {
-            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalObjetoBackdrop');
             const titulo = document.getElementById('modalObjetoTitulo');
@@ -4272,7 +4272,7 @@
                 .filter(f => f.objeto === nomeObjeto)
                 .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
             if (somaFisico > (parseNumber(qtdeObjeto) || 0)) {
-                alert(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${nomeObjeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades no Cadastro Físico para manter a consistência.`);
+                showToast(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${nomeObjeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades no Cadastro Físico para manter a consistência.`, 'warning');
             }
         }
 
@@ -5240,7 +5240,7 @@
 
         // Abrir modal unificado para adicionar, editar ou visualizar aditivo/apostilamento
         function abrirModalAlteracao(editIndex, viewOnly) {
-            if (!window.tedSelecionado) return alert('Selecione um TED primeiro.');
+            if (!window.tedSelecionado) return showToast('Selecione um TED primeiro.', 'warning');
             if (window._readOnlyMode && !viewOnly) {
                 // Em modo leitura, permite somente visualização das alterações existentes.
                 if (typeof editIndex === 'number') viewOnly = true;
@@ -5471,12 +5471,12 @@
             if (!overlay) return;
 
             const tipoRadio = overlay.querySelector('input[name="alteracaoTipo"]:checked');
-            if (!tipoRadio) return alert('Selecione o tipo: Aditivo ou Apostilamento.');
+            if (!tipoRadio) return showToast('Selecione o tipo: Aditivo ou Apostilamento.', 'warning');
             const tipo = tipoRadio.value;
 
             const data = (document.getElementById('alteracaoDataInput') || {}).value || '';
             const obs = ((document.getElementById('alteracaoObsInput') || {}).value || '').trim();
-            if (!data) return alert('Informe a data.');
+            if (!data) return showToast('Informe a data.', 'warning');
 
             if (!ted.alteracoes) ted.alteracoes = [];
             const editIndex = overlay.dataset.editIndex !== '' ? parseInt(overlay.dataset.editIndex, 10) : null;
@@ -6027,7 +6027,7 @@
         window._editandoMetaId = null;
 
         function abrirModalMeta(editId) {
-            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalMetaBackdrop');
             const titulo = document.getElementById('modalMetaTitulo');
@@ -6402,7 +6402,7 @@
         }
 
         function abrirModalFisicoCad(editId) {
-            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalFisicoBackdrop');
             const titulo = document.getElementById('modalFisicoCadTitulo');
@@ -6482,7 +6482,7 @@
                 const somaFisico = window.tedSelecionado.fisicos.filter(f => f.objeto === objeto).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
                 const qtdeObjeto = parseNumber(objRef.qtde) || 0;
                 if (somaFisico > qtdeObjeto) {
-                    alert(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${objeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades para manter a consistência.`);
+                    showToast(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${objeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades para manter a consistência.`, 'warning');
                 }
             }
 
@@ -7186,7 +7186,7 @@
         window._editandoFinanceiroId = null;
 
         function abrirModalFinanceiro(editId) {
-            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalFinanceiroBackdrop');
             const titulo = document.getElementById('modalFinanceiroTitulo');
@@ -7694,7 +7694,7 @@
         
         //"?"? Modal Execução Financeira"?"?
         function abrirModalExecFin() {
-            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalExecFinBackdrop');
             const errEl = document.getElementById('modalExecFinError');
@@ -8351,7 +8351,7 @@
             });
 
             if (!parts.length) {
-                alert('Nenhum relatório disponível para exportar. Ajuste os filtros e tente novamente.');
+                showToast('Nenhum relatório disponível para exportar. Ajuste os filtros e tente novamente.', 'info');
                 return;
             }
 
@@ -8386,7 +8386,7 @@
 
             const win = window.open('', '_blank');
             if (!win) {
-                alert('Não foi possível abrir a janela de impressão. Verifique se o navegador bloqueou pop-ups.');
+                showToast('Não foi possível abrir a janela de impressão. Verifique se o navegador bloqueou pop-ups.', 'danger');
                 return;
             }
 
@@ -9449,7 +9449,7 @@
         function verDetalhesMensaisExecFinanceira(nd, up) {
             if (!window.tedSelecionado) return;
             const execs = (window.tedSelecionado.execFinanceiras || []).filter(e => String(e.nd || e.numero) === String(nd) && String(e.up || e.ug) === String(up));
-            if (!execs.length) { alert(`Nenhum lançamento mensal encontrado para ND: ${nd} / UP: ${up}`); return; }
+            if (!execs.length) { showToast(`Nenhum lançamento mensal encontrado para ND: ${nd} / UP: ${up}`, 'info'); return; }
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
@@ -9468,7 +9468,7 @@
             let msg = `Detalhes mensais para ND: ${nd} / UP: ${up}\n\n`;
             Array.from(mapa.entries()).forEach(([m,v]) => { msg += `${m}: ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}\n`; });
             msg += `\nTotal: ${(Array.from(mapa.values()).reduce((s,x)=>s+(x||0),0)).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            alert(msg);
+            showToast(msg, 'info');
         }
 
         // Verificar divergência entre soma do Cadastro Financeiro e soma do Cadastro de Objetos
@@ -9495,7 +9495,7 @@
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
-                alert('⚠️ Data de descentralização não definida');
+                showToast('⚠️ Data de descentralização não definida', 'warning');
                 return;
             }
             
@@ -9517,7 +9517,7 @@
             if (novoValor === null) return;
             const qtde = parseFloat(novoValor);
             if (isNaN(qtde) || qtde < 0) {
-                alert('⚠️ Valor inválido');
+                showToast('⚠️ Valor inválido', 'warning');
                 return;
             }
 
@@ -9560,7 +9560,7 @@
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
-                alert('⚠️ Data de descentralização não definida');
+                showToast('⚠️ Data de descentralização não definida', 'warning');
                 return;
             }
             
@@ -9581,7 +9581,7 @@
             const valorAtual = execsDoMes.reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
             // Exibir detalhes dos lançamentos (NC, valor e data) para este ND/UP no mês
             if (!execsDoMes || execsDoMes.length === 0) {
-                alert(`Nenhum lançamento encontrado para ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}.`);
+                showToast(`Nenhum lançamento encontrado para ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}.`, 'info');
                 return;
             }
             // Formatter DD-MMM-AAAA (meses em PT-BR abreviados maiúsculos)
@@ -9615,7 +9615,7 @@
                 }
             });
             msg += `\nTotal: ${valorAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            alert(msg);
+            showToast(msg, 'info');
             return;
 
             // Remover execuções antigas deste mês/ND/UP
@@ -9745,7 +9745,7 @@
 
         //"?"? Modal Recursos Gerais IMBEL"?"?
         function abrirModalRecGeral() {
-            if (!window.tedSelecionado) { alert('⚠️ Selecione um TED primeiro!'); return; }
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalRecGeralBackdrop');
             const errEl = document.getElementById('modalRecGeralError');
@@ -9803,7 +9803,7 @@
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
-                alert('⚠️ Data de descentralização não definida');
+                showToast('⚠️ Data de descentralização não definida', 'warning');
                 return;
             }
 
@@ -9820,7 +9820,7 @@
             });
 
             if (!recsDoMes.length) {
-                alert(`Nenhum lançamento encontrado para ND: ${nd} em ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}.`);
+                showToast(`Nenhum lançamento encontrado para ND: ${nd} em ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}.`, 'info');
                 return;
             }
 
@@ -9844,7 +9844,7 @@
                 msg += `NC: ${nc} | Valor: ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})} | Data: ${dataFmt}\n`;
             });
             msg += `\nTotal: ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            alert(msg);
+            showToast(msg, 'info');
         }
 
         function popularFiltrosRecGeral() {
@@ -10628,7 +10628,7 @@
                         switchTab('dashboard', dashBtn);
                     }
                 } catch (err) {
-                    alert('❌ Erro ao importar: arquivo inválido.');
+                    showToast('❌ Erro ao importar: arquivo inválido.', 'danger');
                 }
             };
             reader.readAsText(file);
@@ -10722,9 +10722,9 @@
                     atualizarDashboard();
                     atualizarListaTEDs();
                     atualizarSeletorTED();
-                    alert(`o. ${countNovos} TED(s) criado(s), ${countAtualizados} TED(s) atualizado(s)!`);
+                    showToast(`o. ${countNovos} TED(s) criado(s), ${countAtualizados} TED(s) atualizado(s)!`, 'success');
                 } catch (err) {
-                    alert('❌ Erro ao importar: ' + err.message);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
                 }
             };
             reader.readAsText(file);
@@ -10770,9 +10770,9 @@
                     });
                     salvarDadosImediato();
                     atualizarTabelasEmCascata('objetos');
-                    alert(`o. ${countItens} objeto(s) importado(s) para ${countTeds} TED(s)!`);
+                    showToast(`o. ${countItens} objeto(s) importado(s) para ${countTeds} TED(s)!`, 'success');
                 } catch (err) {
-                    alert('❌ Erro ao importar: ' + err.message);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
                 }
             };
             reader.readAsText(file);
@@ -10849,9 +10849,9 @@
                     });
                     salvarDadosImediato();
                     atualizarTabelasEmCascata('metas');
-                    alert(`o. ${countItens} meta(s) importada(s) para ${countTeds} TED(s)!`);
+                    showToast(`o. ${countItens} meta(s) importada(s) para ${countTeds} TED(s)!`, 'success');
                 } catch (err) {
-                    alert('❌ Erro ao importar: ' + err.message);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
                 }
             };
             reader.readAsText(file);
@@ -10929,9 +10929,9 @@
                     });
                     salvarDadosImediato();
                     atualizarTabelasEmCascata('fisicos');
-                    alert(`o. ${countItens} registro(s) físico(s) importado(s) para ${countTeds} TED(s)!`);
+                    showToast(`o. ${countItens} registro(s) físico(s) importado(s) para ${countTeds} TED(s)!`, 'success');
                 } catch (err) {
-                    alert('❌ Erro ao importar: ' + err.message);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
                 }
             };
             reader.readAsText(file);
@@ -10972,9 +10972,9 @@
                         }
                     });
                     try { salvarDadosImediato(); } catch(e) {}
-                    alert(`o. ${countItens} execução(ões) física(s) importada(s) para ${countTeds} TED(s)!`);
+                    showToast(`o. ${countItens} execução(ões) física(s) importada(s) para ${countTeds} TED(s)!`, 'success');
                 } catch (err) {
-                    alert('❌ Erro ao importar: ' + err.message);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
                 }
             };
             reader.readAsText(file);
@@ -11040,9 +11040,9 @@
                     });
                     salvarDadosImediato();
                     atualizarTabelasEmCascata('financeiros');
-                    alert(`o. ${countItens} registro(s) financeiro(s) importado(s) para ${countTeds} TED(s)!`);
+                    showToast(`o. ${countItens} registro(s) financeiro(s) importado(s) para ${countTeds} TED(s)!`, 'success');
                 } catch (err) {
-                    alert('❌ Erro ao importar: ' + err.message);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
                 }
             };
             reader.readAsText(file);
@@ -11094,7 +11094,7 @@
                     }
 
                     const lines = texto.split('\n').filter(l => l.trim());
-                    if (lines.length < 2) { alert('⚠️ Arquivo vazio.'); return; }
+                    if (lines.length < 2) { showToast('⚠️ Arquivo vazio.', 'warning'); return; }
 
                     const headers = splitCSV(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
 
@@ -11119,7 +11119,7 @@
 
                         console.log('[ExecFin] Tesouro Gerencial - SIAFI=' + (colSiafi||'?') + ', UP=' + (colUP||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
 
-                        if (!colND) { alert('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', ')); return; }
+                        if (!colND) { showToast('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger'); return; }
 
                         // Parsear dados
                         const rows = [];
@@ -11178,7 +11178,7 @@
                         const siafiKeys = Object.keys(grouped);
                         const totalItens = siafiKeys.reduce((s, k) => s + grouped[k].itens.length, 0);
 
-                        if (siafiKeys.length === 0) { alert('❌ Nenhum dado válido encontrado.'); return; }
+                        if (siafiKeys.length === 0) { showToast('❌ Nenhum dado válido encontrado.', 'danger'); return; }
 
                         if (!confirm('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Execução Financeira existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?')) return;
 
@@ -11269,7 +11269,7 @@
                         }
                         if (countItens === 0) {
                             // Nenhum dado importado, mostrar alerta detalhado
-                            alert('❌ Nenhum dado importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + (tedsNaoEncontrados.length ? ('\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ')) : '') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
+                            showToast('❌ Nenhum dado importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + (tedsNaoEncontrados.length ? ('\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ')) : '') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'), 'danger');
                         } else {
                             // Se houve itens importados, exibir toast (warning quando houver problemas)
                             const level = (tedsNaoEncontrados.length || skipped) ? 'warning' : 'success';
@@ -11350,7 +11350,7 @@
                     }
                 } catch (err) {
                     console.error('Erro na importação:', err);
-                    alert('❌ Erro ao importar: ' + err.message);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
                 }
             };
             reader.readAsText(file);
@@ -11427,7 +11427,7 @@
 
                     const lines = texto.split('\n').filter(l => l.trim());
                     if (lines.length < 2) {
-                        alert('⚠️ Arquivo vazio ou sem dados.');
+                        showToast('⚠️ Arquivo vazio ou sem dados.', 'warning');
                         return;
                     }
 
@@ -11461,11 +11461,11 @@
                     console.log('[RecGerais] Colunas: SIAFI=' + (colSiafi||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
 
                     if (!colSiafi) {
-                        alert('❌ Coluna "NC - Transferência" não encontrada.\n\nCabeçalhos: ' + headers.join(', '));
+                        showToast('❌ Coluna "NC - Transferência" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger');
                         return;
                     }
                     if (!colND) {
-                        alert('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', '));
+                        showToast('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger');
                         return;
                     }
 
@@ -11517,7 +11517,7 @@
                     console.log('[RecGerais] SIAFIs no CSV:', siafiKeys.length, '(' + siafiKeys.join(', ') + ') | Total itens:', totalItens);
 
                     if (siafiKeys.length === 0) {
-                        alert('❌ Nenhum dado válido encontrado no arquivo.');
+                        showToast('❌ Nenhum dado válido encontrado no arquivo.', 'danger');
                         return;
                     }
 
@@ -11582,18 +11582,18 @@
                     if (tedsNaoEncontrados.length > 0) {
                         msg += '\n⚠️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
                         if (countItens === 0) {
-                            alert('❌ Nenhum recurso importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + '\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'));
+                            showToast('❌ Nenhum recurso importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + '\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'), 'danger');
                         } else {
                             showToast(msg, 'warning');
                         }
                     } else if (countItens === 0) {
-                        alert('❌ Nenhum recurso importado.\n\nCabeçalhos: ' + headers.join(', ') + '\nLinhas: ' + rows.length);
+                        showToast('❌ Nenhum recurso importado.\n\nCabeçalhos: ' + headers.join(', ') + '\nLinhas: ' + rows.length, 'danger');
                     } else {
                         showToast(msg, 'success');
                     }
                 } catch (err) {
                     console.error('Erro na importação:', err);
-                    alert('❌ Erro ao importar: ' + err.message);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
                 }
             };
             reader.readAsText(file);
