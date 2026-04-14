@@ -327,11 +327,13 @@ window.testFirestoreConnection = async function() {
   window.deleteUser = async function(uid) {
     try {
       if (!isCurrentUserAdmin()) { showToast('Apenas administradores podem remover usuários', 'error'); return; }
-      if (!confirm('Remover perfil deste usuário (somente Firestore)?')) return;
-      await waitForHelper('firestoreDeleteDoc', 2000);
-      const ok = await window.firestoreDeleteDoc('users/' + uid);
-      if (ok) { showToast('Perfil removido (Firestore)', 'success'); loadUsersList(); }
-      else showToast('Erro removendo perfil', 'error');
+      confirmarAcao('Remover perfil deste usuário (somente Firestore)?', async function() {
+        await waitForHelper('firestoreDeleteDoc', 2000);
+        const ok = await window.firestoreDeleteDoc('users/' + uid);
+        if (ok) { showToast('Perfil removido (Firestore)', 'success'); loadUsersList(); }
+        else showToast('Erro removendo perfil', 'error');
+      }, 'Confirmar');
+      return;
     } catch (e) { console.warn('deleteUser', e); showToast('Erro ao remover usuário', 'error'); }
   };
 

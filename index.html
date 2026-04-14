@@ -1787,6 +1787,34 @@
             }, duration);
         }
 
+        // ===== Modal global de confirmação =====
+        function confirmarAcao(mensagem, onConfirmar, titulo) {
+            titulo = titulo || 'Confirmar';
+            var id = 'modalConfirmGlobal';
+            var el = document.getElementById(id);
+            if (!el) {
+                el = document.createElement('div');
+                el.id = id;
+                el.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;';
+                el.innerHTML =
+                    '<div style="background:#fff;border-radius:12px;padding:1.5rem;max-width:420px;width:90%;">' +
+                    '<p id="' + id + '_titulo" style="font-size:14px;font-weight:500;color:#1a1a1a;margin:0 0 8px;"></p>' +
+                    '<p id="' + id + '_msg" style="font-size:13px;color:#6b6b6b;margin:0 0 1.5rem;"></p>' +
+                    '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+                    '<button onclick="document.getElementById(\'' + id + '\').style.display=\'none\'" style="padding:7px 16px;border-radius:7px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;font-size:13px;cursor:pointer;">Cancelar</button>' +
+                    '<button id="' + id + '_ok" style="padding:7px 16px;border-radius:7px;border:none;background:#E24B4A;color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Confirmar</button>' +
+                    '</div></div>';
+                document.body.appendChild(el);
+            }
+            document.getElementById(id + '_titulo').textContent = titulo;
+            document.getElementById(id + '_msg').textContent = mensagem;
+            el.style.display = 'flex';
+            document.getElementById(id + '_ok').onclick = function() {
+                el.style.display = 'none';
+                try { onConfirmar(); } catch(e) { setTimeout(function(){ try { onConfirmar(); } catch(_){} }, 0); }
+            };
+        }
+
         // Global helper: format numeric quantities with thousands separator (pt-BR)
         function formatNumber(v) {
             if (v === undefined || v === null || v === '') return '';
@@ -3199,34 +3227,36 @@
 
         // Deletar TED
         function deletarTED() {
-            if (!confirm('Tem certeza que deseja deletar este TED?')) return;
-
-            dados.teds = dados.teds.filter(t => t.id !== window.tedAtual);
-            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
-            fecharModal();
-            atualizarListaTEDs();
-            atualizarDashboard();
-            atualizarFiltroTedEntregas();
-            showToast('TED deletado com sucesso!', 'success');
+            confirmarAcao('Tem certeza que deseja deletar este TED?', function() {
+                dados.teds = dados.teds.filter(t => t.id !== window.tedAtual);
+                try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+                fecharModal();
+                atualizarListaTEDs();
+                atualizarDashboard();
+                atualizarFiltroTedEntregas();
+                showToast('TED deletado com sucesso!', 'success');
+            }, 'Confirmar');
+            return;
         }
 
         // Excluir TED a partir da lista (botão na aba TEDs)
         function excluirTED(id) {
-            if (!confirm('Tem certeza que deseja excluir este TED? Esta ação não pode ser desfeita.')) return;
+            confirmarAcao('Tem certeza que deseja excluir este TED? Esta ação não pode ser desfeita.', function() {
+                const idx = dados.teds.findIndex(t => t.id === id);
+                if (idx === -1) {
+                    showToast('TED não encontrado.', 'error');
+                    return;
+                }
 
-            const idx = dados.teds.findIndex(t => t.id === id);
-            if (idx === -1) {
-                showToast('TED não encontrado.', 'error');
-                return;
-            }
-
-            dados.teds.splice(idx, 1);
-            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
-            atualizarListaTEDs();
-            atualizarSeletorTED();
-            atualizarFiltroTedEntregas();
-            atualizarDashboard();
-            showToast('TED excluído com sucesso!', 'success');
+                dados.teds.splice(idx, 1);
+                try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+                atualizarListaTEDs();
+                atualizarSeletorTED();
+                atualizarFiltroTedEntregas();
+                atualizarDashboard();
+                showToast('TED excluído com sucesso!', 'success');
+            }, 'Confirmar');
+            return;
         }
 
         // Editar TED
@@ -5748,7 +5778,7 @@
             const ordinal = obterOrdinalAlteracao(ted, index);
             const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
             const extra = isAditivo ? ` (+${item.meses || 0} meses)` : '';
-            if (!confirm(`Remover ${tipoLabel}${extra}?`)) return;
+            confirmarAcao(`Remover ${tipoLabel}${extra}?`, function() {
 
             const removida = ted.alteracoes[index];
             ted.alteracoes.splice(index, 1);
@@ -5790,6 +5820,8 @@
             try { atualizarTabelasEmCascata('ted'); } catch(e) {}
             renderGanttVigencia();
             if (typeof lucide !== 'undefined') lucide.createIcons();
+            }, 'Confirmar');
+            return;
         }
 
         // Manter funções legadas como wrappers para compatibilidade
@@ -10616,7 +10648,7 @@
             reader.onload = function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
-                    if (confirm('⚠️ Isso substituirá TODOS os dados atuais. Deseja continuar?')) {
+                    confirmarAcao('⚠️ Isso substituirá TODOS os dados atuais. Deseja continuar?', function() {
                         dados = imported;
                         salvarDadosImediato();
                         atualizarDashboard();
@@ -10626,7 +10658,8 @@
                         // Navegar para o Dashboard para exibir os dados restaurados
                         const dashBtn = document.querySelector('.tab-btn[onclick*="dashboard"]');
                         switchTab('dashboard', dashBtn);
-                    }
+                    }, 'Confirmar');
+                    return;
                 } catch (err) {
                     showToast('❌ Erro ao importar: arquivo inválido.', 'danger');
                 }
@@ -11180,7 +11213,7 @@
 
                         if (siafiKeys.length === 0) { showToast('❌ Nenhum dado válido encontrado.', 'danger'); return; }
 
-                        if (!confirm('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Execução Financeira existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?')) return;
+                        confirmarAcao('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Execução Financeira existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?', function() {
 
                         const normSiafi = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
 
@@ -11275,6 +11308,8 @@
                             const level = (tedsNaoEncontrados.length || skipped) ? 'warning' : 'success';
                             showToast(msg, level);
                         }
+                    }, 'Confirmar');
+                    return;
 
                     } else {
                         // === FORMATO SIMPLIFICADO (exportação do próprio sistema) ===
@@ -11521,9 +11556,7 @@
                         return;
                     }
 
-                    if (!confirm('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?')) {
-                        return;
-                    }
+                    confirmarAcao('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?', function() {
 
                     // Normalizar SIAFI para comparação
                     const normSiafi = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
@@ -11577,6 +11610,8 @@
 
                     try { salvarDadosImediato(); } catch(e) {}
                     try { atualizarTabelaRecursosGerais(); } catch(e) {}
+                }, 'Confirmar');
+                return;
 
                     let msg = countItens + ' recurso(s) importado(s) para ' + countTeds + ' TED(s)!';
                     if (tedsNaoEncontrados.length > 0) {
