@@ -4,7 +4,9 @@ import bcrypt from 'bcryptjs';
 import { getUserByEmail, createUser } from '../models/user';
 
 function getJwtSecret(): string {
-  return process.env.JWT_SECRET || 'secret';
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET não definido');
+  return secret;
 }
 
 function getJwtExpiresIn(): jwt.SignOptions['expiresIn'] {

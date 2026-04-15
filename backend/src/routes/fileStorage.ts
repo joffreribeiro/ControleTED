@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getDataFilePath, readStoredData, writeStoredData } from '../services/fileStorage';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
@@ -27,7 +28,7 @@ router.get('/app-data', async (_req: Request, res: Response) => {
   }
 });
 
-router.put('/app-data', async (req: Request, res: Response) => {
+router.put('/app-data', authMiddleware, async (req: Request, res: Response) => {
   try {
     if (!req.body || typeof req.body !== 'object') {
       return res.status(400).json({ error: 'Payload inválido' });

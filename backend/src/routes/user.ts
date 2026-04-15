@@ -38,7 +38,13 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    const updatedUser = await userModel.updateUser(userId, req.body);
+    // Não-admins não podem alterar role nem active
+    const { role, active, ...safeFields } = req.body;
+    const payload = req.user!.role === 'admin'
+      ? req.body
+      : safeFields;
+
+    const updatedUser = await userModel.updateUser(userId, payload);
     res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar usuário' });

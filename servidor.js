@@ -184,10 +184,14 @@ const server = http.createServer((req, res) => {
     }
 
     // Outros arquivos estáticos (para futuro uso)
-    const safePath = path.normalize(url).replace(/^(\.\.[\/\\])+/, '');
-    const filePath = path.join(__dirname, safePath);
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-        return enviarArquivo(res, filePath);
+    const resolved = path.resolve(__dirname, path.normalize(url).replace(/^[/\\]/, ''));
+    if (!resolved.startsWith(__dirname + path.sep)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Proibido');
+        return;
+    }
+    if (fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
+        return enviarArquivo(res, resolved);
     }
 
     // 404

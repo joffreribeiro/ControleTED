@@ -5,6 +5,12 @@ export interface AuthRequest extends Request {
   user?: { id: number; email: string; role: string };
 }
 
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET não definido');
+  return secret;
+}
+
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
   const token = req.headers.authorization?.split(' ')[1];
 
@@ -13,7 +19,7 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded as { id: number; email: string; role: string };
     next();
   } catch (error) {
