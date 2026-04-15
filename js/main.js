@@ -76,6 +76,29 @@
     } else {
         document.addEventListener('DOMContentLoaded', () => window.enhanceEmptyStates());
     }
+    // Pagination helpers
+    window._pagination = window._pagination || {};
+    window.setTablePage = function(key, page) {
+        window._pagination[key] = window._pagination[key] || { page: 1, pageSize: 25 };
+        window._pagination[key].page = Number(page) || 1;
+        if (key === 'cadFin' && typeof atualizarTabelaFinanceira === 'function') {
+            try { atualizarTabelaFinanceira(); } catch(e) {}
+        } else if (key === 'execFin' && typeof atualizarTabelaExecFinanceira === 'function') {
+            try { atualizarTabelaExecFinanceira(); } catch(e) {}
+        }
+    };
+
+    window.setTablePageSize = function(key, size) {
+        window._pagination[key] = window._pagination[key] || { page: 1, pageSize: 25 };
+        window._pagination[key].pageSize = Number(size) || 25;
+        window._pagination[key].page = 1;
+        if (key === 'cadFin' && typeof atualizarTabelaFinanceira === 'function') {
+            try { atualizarTabelaFinanceira(); } catch(e) {}
+        } else if (key === 'execFin' && typeof atualizarTabelaExecFinanceira === 'function') {
+            try { atualizarTabelaExecFinanceira(); } catch(e) {}
+        }
+    };
+
 })();
 
 
@@ -6320,20 +6343,41 @@
 
             // Criar linhas de dados
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-            
-            // Array para acumular totais por coluna (mês)
-            const totaisPorMes = new Array(meses.length).fill(0);
-            
+
             // Obter alterações de aditivos/apostilamentos para destacar
             const altFinanc = obterAlteracoesTabelaAditivos('financeiros');
             const tabDefFin = ADITIVO_TABELAS_CLONE.find(t => t.key === 'financeiros');
             const { modMap: modMapFin, addSet: addSetFin } = criarMapaAlteracoes(altFinanc, tabDefFin);
             const matchKeyFin = (item) => tabDefFin ? tabDefFin.matchFields.map(f => String(item[f] || '')).join('||') : '';
 
-            // Usar dados filtrados para exibição
-            tbody.innerHTML = dadosFiltrados.map((f, i) => {
+            // Calcular totais por mês e total geral com base nos dados filtrados
+            totalValor = 0;
+            const totaisPorMes = new Array(meses.length).fill(0);
+            dadosFiltrados.forEach(f => {
                 const valorNum = parseNumber(f.valor) || 0;
                 totalValor += valorNum;
+                const mesIdx = meses.findIndex(m => m.mes === (parseInt(f.mesDesc) || 0) && m.fullYear === (parseInt(f.anoDesc) || 0));
+                if (mesIdx >= 0) totaisPorMes[mesIdx] += valorNum;
+            });
+
+            // Paginação (estado global simples por tabela)
+            window._pagination = window._pagination || {};
+            window._pagination.cadFin = window._pagination.cadFin || { page: 1, pageSize: 25 };
+            const pageState = window._pagination.cadFin;
+            const page = Math.max(1, Number(pageState.page) || 1);
+            const pageSize = Math.max(5, Number(pageState.pageSize) || 25);
+            const totalItems = dadosFiltrados.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+            const currentPage = Math.min(page, totalPages);
+            if (window._pagination.cadFin.page !== currentPage) window._pagination.cadFin.page = currentPage;
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+            const visibleItems = dadosFiltrados.slice(startIndex, endIndex);
+
+            // Renderar somente as linhas visíveis (mantendo os totais globais)
+            const rowsHtml = visibleItems.map((f, i) => {
+                const valorNum = parseNumber(f.valor) || 0;
                 const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
                 let mesDescStr = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx]}/${f.anoDesc}` : '-';
                 const numeroDisplay = f.numero || f.nd || '-';
@@ -6343,7 +6387,6 @@
                 const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
                 const tdValor = mods && mods.valor ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : renderValorRealFmt(valorNum);
                 const tdM = mods && mods.m ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
-                // If M changed, also show old Mês Desc with strikethrough
                 if (mods && mods.m && startDate) {
                     const oldM = Number(mods.m.de) || 0;
                     const dOldMes = new Date(startDate);
@@ -6361,9 +6404,7 @@
                         <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
                         <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
                     </td>`;
-                
-                // Adicionar células do Gantt - mostrar valor com fundo azul claro no mês correspondente
-                // Calcular posição antiga do M se houve alteração de M (para mostrar no Gantt)
+
                 let oldMesDesc = null, oldAnoDesc = null;
                 if (mods && mods.m && startDate) {
                     const oldM = Number(mods.m.de) || 0;
@@ -6376,31 +6417,28 @@
                     const estaNoMes = parseInt(f.mesDesc) === mesInfo.mes && parseInt(f.anoDesc) === mesInfo.fullYear;
                     const estaNoMesAntigo = oldMesDesc !== null && oldMesDesc === mesInfo.mes && oldAnoDesc === mesInfo.fullYear;
                     if (estaNoMes && estaNoMesAntigo) {
-                        // Same cell for old and new (shouldn't happen if M actually changed, but handle)
-                        totaisPorMes[mesIdx] += valorNum;
                         html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                     } else if (estaNoMes) {
-                        totaisPorMes[mesIdx] += valorNum;
                         if (oldMesDesc !== null) {
-                            // New M position → highlight as changed (green border)
                             html += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                         } else {
                             html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                         }
                     } else if (estaNoMesAntigo) {
-                        // Old M position → show strikethrough faded value
                         const oldValor = mods && mods.valor ? Number(mods.valor.de || 0) : valorNum;
                         html += `<td class="month-col-cadFin" style="background:#fee2e2; text-align:right; padding-right:0.25rem; font-size:0.7rem; opacity:0.6;${mmHideCadFin}" title="M anterior: ${mods.m.de}"><s>${oldValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</s></td>`;
                     } else {
                         html += `<td class="month-col-cadFin" style="${mmHideCadFin}"></td>`;
                     }
                 });
-                
                 html += '</tr>';
                 return html;
             }).join('');
 
-            // Linha total com somatório por coluna - mostrar valor com fundo azul claro
+            // Se não houver linhas visíveis, mostrar placeholder
+            tbody.innerHTML = rowsHtml || '<tr><td colspan="67" class="auto-style-014">Nenhum cadastro financeiro</td></tr>';
+
+            // Linha total com somatório por coluna - mostrar valor com fundo azul claro (totais globais)
             const totalCells = totaisPorMes.map((total) => {
                 if (total > 0) {
                     return `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
@@ -6419,7 +6457,33 @@
                 const valorAno = somaAno.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 return `<td colspan="${a.count}" class="month-col-cadFin" style="background:#dbeafe; text-align:center; font-weight:700;${mmHideCadFin}">${valorAno}</td>`;
             }).join('');
-            
+
+            // Render pagination controls (inserir antes da tabela se possível)
+            try {
+                const wrapper = document.getElementById('wrapperCadFin') || tableCompleta.closest('.table-wrapper') || tableCompleta.parentElement;
+                if (wrapper) {
+                    let pag = wrapper.querySelector('.table-pagination');
+                    if (!pag) {
+                        pag = document.createElement('div');
+                        pag.className = 'table-pagination';
+                        wrapper.insertBefore(pag, tableCompleta);
+                    }
+                    pag.innerHTML = `
+                        <div class="pagination-info">Mostrando ${startIndex + 1}–${endIndex} de ${totalItems}</div>
+                        <div class="pagination-controls">
+                            <button class="btn btn-ghost" ${currentPage <= 1 ? 'disabled' : ''} onclick="setTablePage('cadFin', ${currentPage - 1})">Anterior</button>
+                            <span class="page-numbers">Página ${currentPage} / ${totalPages}</span>
+                            <button class="btn btn-ghost" ${currentPage >= totalPages ? 'disabled' : ''} onclick="setTablePage('cadFin', ${currentPage + 1})">Próximo</button>
+                            <select onchange="setTablePageSize('cadFin', this.value)">
+                                <option ${pageSize==10?'selected':''} value="10">10</option>
+                                <option ${pageSize==25?'selected':''} value="25">25</option>
+                                <option ${pageSize==50?'selected':''} value="50">50</option>
+                                <option ${pageSize==100?'selected':''} value="100">100</option>
+                            </select>
+                        </div>`;
+                }
+            } catch(e) { /* non-fatal */ }
+
             tbody.innerHTML += `
                 <tr class="linha-total">
                     <td class="col-nd">TOTAL</td>
@@ -8055,14 +8119,13 @@
                 return String(upA || '').localeCompare(String(upB || ''));
             });
 
-            const linhas = sortedChaves.map((chave, idx) => {
+            // Primeiro: calcular totais globais (para mostrar no footer) sem construir HTML completo
+            sortedChaves.forEach((chave) => {
                 const [nd, up] = chave.split('||');
                 const previsto = cad.filter(f => String(f.numero)===nd && String(f.up || f.ug)===up)
                                     .reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
                 const execList = execs.filter(e => String(e.nd || e.numero)===nd && String(e.up || e.ug)===up);
                 const realizado = execList.reduce((s,e)=>s+(parseFloat(e.valor || e.valorRealizado)||0),0);
-                const saldo = previsto - realizado;
-
                 totalPrevisto += previsto;
                 totalRealizado += realizado;
 
@@ -8073,10 +8136,33 @@
                     const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
                     if (diff>=0 && diff<60) mapaMes.set(diff, (mapaMes.get(diff)||0) + (parseFloat(e.valor || e.valorRealizado)||0));
                 });
-
                 mapaMes.forEach((val, idxMes) => {
                     totalMeses.set(idxMes, (totalMeses.get(idxMes) || 0) + val);
                 });
+            });
+
+            // Paginação para Execução Financeira
+            window._pagination = window._pagination || {};
+            window._pagination.execFin = window._pagination.execFin || { page: 1, pageSize: 25 };
+            const pageStateExec = window._pagination.execFin;
+            const pageExec = Math.max(1, Number(pageStateExec.page) || 1);
+            const pageSizeExec = Math.max(5, Number(pageStateExec.pageSize) || 25);
+            const totalItemsExec = sortedChaves.length;
+            const totalPagesExec = Math.max(1, Math.ceil(totalItemsExec / pageSizeExec));
+            const currentPageExec = Math.min(pageExec, totalPagesExec);
+            if (window._pagination.execFin.page !== currentPageExec) window._pagination.execFin.page = currentPageExec;
+            const startIdxExec = (currentPageExec - 1) * pageSizeExec;
+            const endIdxExec = Math.min(startIdxExec + pageSizeExec, totalItemsExec);
+            const visibleChaves = sortedChaves.slice(startIdxExec, endIdxExec);
+
+            // Construir linhas apenas para as chaves visíveis
+            const linhas = visibleChaves.map((chave, idx) => {
+                const [nd, up] = chave.split('||');
+                const previsto = cad.filter(f => String(f.numero)===nd && String(f.up || f.ug)===up)
+                                    .reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                const execList = execs.filter(e => String(e.nd || e.numero)===nd && String(e.up || e.ug)===up);
+                const realizado = execList.reduce((s,e)=>s+(parseFloat(e.valor || e.valorRealizado)||0),0);
+                const saldo = previsto - realizado;
 
                 // Helper to format numbers and color negative values red
                 const fmt = (v) => {
@@ -8104,7 +8190,16 @@
                            `<td class="col-saldo">${renderValorRealFmt(saldo, true)}</td>`+
                            `<td class="col-status">${statusBadge}</td>`;
 
-                meses.forEach((_,i)=>{
+                // construir mapa por linha para exibir células
+                const mapaMes = new Map();
+                execList.forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
+                    if (diff>=0 && diff<60) mapaMes.set(diff, (mapaMes.get(diff)||0) + (parseFloat(e.valor || e.valorRealizado)||0));
+                });
+
+                meses.forEach((_, i) => {
                     const val = mapaMes.get(i);
                     const cellBg = val ? '#e0f2fe' : 'transparent';
                     const display = (val !== undefined && val !== null && val !== '') ? renderValorRealFmt(parseFloat(val)) : '';
@@ -8114,6 +8209,32 @@
                 html += '</tr>';
                 return html;
             }).join('');
+
+            // Inserir controles de paginação para Execução Financeira
+            try {
+                const wrapperExec = tableEl.closest('.table-wrapper') || tableEl.closest('.table-freeze-wrapper') || tableEl.parentElement;
+                if (wrapperExec) {
+                    let pag = wrapperExec.querySelector('.table-pagination');
+                    if (!pag) {
+                        pag = document.createElement('div');
+                        pag.className = 'table-pagination';
+                        wrapperExec.insertBefore(pag, tableEl);
+                    }
+                    pag.innerHTML = `
+                        <div class="pagination-info">Mostrando ${startIdxExec + 1}–${endIdxExec} de ${totalItemsExec}</div>
+                        <div class="pagination-controls">
+                            <button class="btn btn-ghost" ${currentPageExec <= 1 ? 'disabled' : ''} onclick="setTablePage('execFin', ${currentPageExec - 1})">Anterior</button>
+                            <span class="page-numbers">Página ${currentPageExec} / ${totalPagesExec}</span>
+                            <button class="btn btn-ghost" ${currentPageExec >= totalPagesExec ? 'disabled' : ''} onclick="setTablePage('execFin', ${currentPageExec + 1})">Próximo</button>
+                            <select onchange="setTablePageSize('execFin', this.value)">
+                                <option ${pageSizeExec==10?'selected':''} value="10">10</option>
+                                <option ${pageSizeExec==25?'selected':''} value="25">25</option>
+                                <option ${pageSizeExec==50?'selected':''} value="50">50</option>
+                                <option ${pageSizeExec==100?'selected':''} value="100">100</option>
+                            </select>
+                        </div>`;
+                }
+            } catch(e) { /* non-fatal */ }
 
             const totalSaldo = totalPrevisto - totalRealizado;
 

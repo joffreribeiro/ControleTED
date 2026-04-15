@@ -2040,6 +2040,21 @@
             color: #e6edf8;
         }
 
+/* Pagination controls for large tables */
+.table-pagination {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+}
+.table-pagination .pagination-info { color: var(--text-secondary); font-size: 0.9rem; }
+.table-pagination .pagination-controls { display:flex; gap:0.5rem; align-items:center; }
+.table-pagination .pagination-controls select { padding: 4px 8px; border-radius:6px; border:1px solid var(--border); background:var(--color-bg-card); }
+.table-pagination .pagination-controls button[disabled] { opacity:0.45; cursor:not-allowed; }
+.table-pagination .page-numbers { font-size:0.88rem; color:var(--text-secondary); margin: 0 6px; }
+
+
         /* Dark mode: colunas congeladas com background opaco */
         [data-theme="dark"] #detalhes #tedsDetalheContainer .tabela-padrao thead .sticky-freeze {
             background: linear-gradient(180deg, #1a2f55 0%, #131e36 100%) !important;
