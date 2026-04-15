@@ -79,6 +79,9 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const ted = await tedModel.updateTED(parseInt(req.params.id), req.body);
+    if (!ted) {
+      return res.status(404).json({ error: 'TED não encontrado' });
+    }
     res.json(ted);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar TED' });

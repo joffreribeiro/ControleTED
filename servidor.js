@@ -14,11 +14,21 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 5000;
-const DATA_DIR = path.join(__dirname, 'dados');
-const DATA_FILE = path.join(DATA_DIR, 'ted-sistema.json');
 const INDEX_FILE = path.join(__dirname, 'index.html');
 
 const DEFAULT_DATA = { teds: [], proxiId: 1 };
+
+// Resolve o caminho do arquivo de dados — mesma lógica do backend/src/services/fileStorage.ts
+function getDataFilePath() {
+    const explicitFile = (process.env.TED_DATA_FILE || '').trim();
+    if (explicitFile) return path.resolve(explicitFile);
+    const explicitDir = (process.env.TED_DATA_DIR || '').trim();
+    if (explicitDir) return path.resolve(explicitDir, 'ted-sistema.json');
+    return path.join(__dirname, 'dados', 'ted-sistema.json');
+}
+
+const DATA_FILE = getDataFilePath();
+const DATA_DIR = path.dirname(DATA_FILE);
 
 // Extensões de arquivo para servir estáticos (se necessário no futuro)
 const MIME_TYPES = {
@@ -42,16 +52,25 @@ if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(DATA_FILE, JSON.stringify(DEFAULT_DATA, null, 2), 'utf-8');
 }
 
+// Normaliza o valor lido/recebido — mesma lógica do backend/src/services/fileStorage.ts
+function normalizarDados(valor) {
+    if (typeof valor !== 'object' || valor === null || Array.isArray(valor)) {
+        return { ...DEFAULT_DATA };
+    }
+    const proxiId = (typeof valor.proxiId === 'number' && isFinite(valor.proxiId) && valor.proxiId >= 1)
+        ? valor.proxiId : 1;
+    return {
+        ...valor,
+        teds: Array.isArray(valor.teds) ? valor.teds : [],
+        proxiId
+    };
+}
+
 function lerDados() {
     try {
         const conteudo = fs.readFileSync(DATA_FILE, 'utf-8').trim();
         if (!conteudo) return { ...DEFAULT_DATA };
-        const dados = JSON.parse(conteudo);
-        return {
-            ...dados,
-            teds: Array.isArray(dados.teds) ? dados.teds : [],
-            proxiId: (typeof dados.proxiId === 'number' && dados.proxiId >= 1) ? dados.proxiId : 1
-        };
+        return normalizarDados(JSON.parse(conteudo));
     } catch (e) {
         console.error('Erro ao ler arquivo de dados:', e.message);
         return { ...DEFAULT_DATA };
@@ -59,11 +78,7 @@ function lerDados() {
 }
 
 function salvarDados(dados) {
-    const normalizado = {
-        ...dados,
-        teds: Array.isArray(dados.teds) ? dados.teds : [],
-        proxiId: (typeof dados.proxiId === 'number' && dados.proxiId >= 1) ? dados.proxiId : 1
-    };
+    const normalizado = normalizarDados(dados);
     // Escrita atômica: gravar em .tmp e depois renomear
     const tmpFile = DATA_FILE + '.tmp';
     fs.writeFileSync(tmpFile, JSON.stringify(normalizado, null, 2), 'utf-8');
