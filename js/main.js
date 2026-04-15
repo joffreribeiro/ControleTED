@@ -10988,7 +10988,7 @@
                 if (logoutBtn) logoutBtn.style.display = 'inline-block';
                 if (cloudCtrl) cloudCtrl.style.display = 'flex';
                 if (adminPanel) adminPanel.style.display = 'block';
-                if (tabConfig) tabConfig.style.display = '';
+                if (tabConfig) { tabConfig.classList.remove('auto-style-001'); tabConfig.style.display = ''; }
                 if (tabRelatorios) tabRelatorios.style.display = '';
                 if (adminLoggedAs && window.currentUserProfile) {
                     adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '→');
@@ -11002,7 +11002,7 @@
                 if (cloudCtrl) cloudCtrl.style.display = 'none';
                 if (adminPanel) adminPanel.style.display = 'none';
                 // Esconder aba Configurações para usuários não-admin
-                if (tabConfig) tabConfig.style.display = 'none';
+                if (tabConfig) { tabConfig.classList.add('auto-style-001'); tabConfig.style.display = ''; }
                 if (tabRelatorios) tabRelatorios.style.display = '';
                 // Desabilitar botões de edição
                 enableEditButtons(false);
