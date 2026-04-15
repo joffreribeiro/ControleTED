@@ -1,12 +1,24 @@
 /**
  * Servidor simples para compartilhar dados do sistema TED entre navegadores.
- * 
+ *
  * USO:  node servidor.js
- * 
+ *
  * Não precisa de nenhuma instalação (npm install, etc).
  * Basta ter o Node.js instalado e executar o comando acima.
- * 
+ *
  * Ao abrir http://localhost:5000 no navegador, o sistema carrega automaticamente.
+ *
+ * ARQUITETURA:
+ * Este é o servidor de produção atual. Persiste os dados em JSON local (dados/ted-sistema.json)
+ * e não requer banco de dados.
+ *
+ * O diretório backend/ contém uma implementação alternativa em TypeScript com Express +
+ * PostgreSQL + JWT, ainda não integrada ao frontend. Quando essa migração for concluída,
+ * este arquivo poderá ser removido.
+ *
+ * Variáveis de ambiente opcionais (mesmas aceitas pelo backend/):
+ *   TED_DATA_FILE — caminho absoluto para o arquivo JSON de dados
+ *   TED_DATA_DIR  — diretório onde criar ted-sistema.json (ignorado se TED_DATA_FILE definido)
  */
 
 const http = require('http');

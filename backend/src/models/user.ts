@@ -21,7 +21,7 @@ export async function getUserById(id: number): Promise<User | null> {
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   const result = await pool.query(
-    'SELECT * FROM users WHERE email = $1',
+    'SELECT id, email, password, name, role, active, created_at, updated_at FROM users WHERE email = $1',
     [email]
   );
   return result.rows[0] || null;

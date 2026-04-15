@@ -31,7 +31,8 @@ router.get('/all', authMiddleware, adminMiddleware, async (req: AuthRequest, res
 router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
-    
+    if (isNaN(userId)) return res.status(400).json({ error: 'ID inválido' });
+
     // Permitir que o usuário atualize apenas seus próprios dados, ou que admins atualizem qualquer usuário
     if (req.user!.id !== userId && req.user!.role !== 'admin') {
       return res.status(403).json({ error: 'Acesso negado' });

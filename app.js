@@ -335,15 +335,43 @@ window.testFirestoreConnection = async function() {
       const users = await window.firestoreGetCollection('users');
       const wrap = document.getElementById('usersListContainer');
       if (!wrap) return;
-      if (!users || users.length === 0) { wrap.innerHTML = '<div>Nenhum usuário cadastrado.</div>'; return; }
-      const html = users.map(u => {
+      wrap.innerHTML = '';
+      if (!users || users.length === 0) {
+        const empty = document.createElement('div');
+        empty.textContent = 'Nenhum usuário cadastrado.';
+        wrap.appendChild(empty);
+        return;
+      }
+      users.forEach(u => {
         const role = u.role || 'user';
-        const name = u.displayName || u.email || u.uid;
+        const name = u.displayName || u.email || u.uid || '';
         const uid = u.uid || u._docId || '';
-        const deleteBtn = isCurrentUserAdmin() ? `<button class="btn" onclick="(function(){ deleteUser('${uid}'); })()">Remover</button>` : '';
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px;border-bottom:1px solid var(--border);"><div><strong>${name}</strong><div style="font-size:12px;color:var(--text-muted)">${u.email} · ${role}</div></div><div>${deleteBtn}</div></div>`;
-      }).join('');
-      wrap.innerHTML = html;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px;border-bottom:1px solid var(--border)';
+
+        const info = document.createElement('div');
+        const strong = document.createElement('strong');
+        strong.textContent = name;
+        const sub = document.createElement('div');
+        sub.style.cssText = 'font-size:12px;color:var(--text-muted)';
+        sub.textContent = (u.email || '') + ' · ' + role;
+        info.appendChild(strong);
+        info.appendChild(sub);
+
+        const actions = document.createElement('div');
+        if (isCurrentUserAdmin() && uid) {
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.textContent = 'Remover';
+          btn.addEventListener('click', () => window.deleteUser(uid));
+          actions.appendChild(btn);
+        }
+
+        row.appendChild(info);
+        row.appendChild(actions);
+        wrap.appendChild(row);
+      });
     } catch (e) { console.warn('loadUsersList error', e); }
   };
 

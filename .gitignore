@@ -32,6 +32,10 @@ out/
 *.sqlite
 *.db
 
+# Backups
+*.bak
+*.bak.*
+
 # OS specific
 Thumbs.db
 .AppleDouble

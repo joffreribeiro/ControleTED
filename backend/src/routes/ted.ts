@@ -20,7 +20,9 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // GET /api/ted/:id - Get TED by ID
 router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const ted = await tedModel.getTEDById(parseInt(req.params.id));
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+    const ted = await tedModel.getTEDById(id);
     if (!ted) {
       return res.status(404).json({ error: 'TED não encontrado' });
     }
@@ -78,7 +80,9 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // PUT /api/ted/:id - Update TED
 router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const ted = await tedModel.updateTED(parseInt(req.params.id), req.body);
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+    const ted = await tedModel.updateTED(id, req.body);
     if (!ted) {
       return res.status(404).json({ error: 'TED não encontrado' });
     }
@@ -91,7 +95,9 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 // DELETE /api/ted/:id - Delete TED
 router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const deleted = await tedModel.deleteTED(parseInt(req.params.id));
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+    const deleted = await tedModel.deleteTED(id);
     if (!deleted) {
       return res.status(404).json({ error: 'TED não encontrado' });
     }
@@ -106,6 +112,7 @@ router.post('/:id/physical-milestone', authMiddleware, async (req: AuthRequest, 
   try {
     const { description, target_percentage, planned_date } = req.body;
     const tedId = parseInt(req.params.id);
+    if (isNaN(tedId)) return res.status(400).json({ error: 'ID inválido' });
 
     const result = await pool.query(
       `INSERT INTO physical_milestones (ted_id, description, target_percentage, planned_date, status)
@@ -125,6 +132,7 @@ router.put('/:id/physical-milestone/:milestoneId', authMiddleware, async (req: A
   try {
     const { actual_percentage, completion_date, status } = req.body;
     const milestoneId = parseInt(req.params.milestoneId);
+    if (isNaN(milestoneId)) return res.status(400).json({ error: 'ID inválido' });
 
     const result = await pool.query(
       `UPDATE physical_milestones
@@ -152,6 +160,7 @@ router.post('/:id/financial-item', authMiddleware, async (req: AuthRequest, res:
   try {
     const { description, planned_amount, payment_date } = req.body;
     const tedId = parseInt(req.params.id);
+    if (isNaN(tedId)) return res.status(400).json({ error: 'ID inválido' });
 
     const result = await pool.query(
       `INSERT INTO financial_items (ted_id, description, planned_amount, payment_date, status)
@@ -171,6 +180,7 @@ router.put('/:id/financial-item/:itemId', authMiddleware, async (req: AuthReques
   try {
     const { spent_amount, payment_date, status } = req.body;
     const itemId = parseInt(req.params.itemId);
+    if (isNaN(itemId)) return res.status(400).json({ error: 'ID inválido' });
 
     const result = await pool.query(
       `UPDATE financial_items
