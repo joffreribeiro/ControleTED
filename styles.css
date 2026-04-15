@@ -117,7 +117,7 @@
 
         /* ===== Base ===== */
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--bg-secondary);
             color: var(--color-text-primary);
             font-size: 0.925rem;
@@ -531,7 +531,7 @@
             border-radius: 999px;
             background: var(--color-primary-mid);
         }
-        .exec-perc { font-family: inherit; font-variant-numeric: normal; font-size: 13px; margin-left: 8px; color: var(--color-text-primary); }
+        .exec-perc { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; margin-left: 8px; color: var(--color-text-primary); }
         .status-badge { display:inline-block; font-size:11px; padding:3px 9px; border-radius:999px; margin-left:8px; font-weight:600; }
         .status-badge.concluido { background:#EAF3DE; color:#3B6D11; }
         .status-badge.acima { background:#FCEBEB; color:#A32D2D; }
@@ -543,7 +543,7 @@
         .exec-row.animate { animation: rowEnter 360ms cubic-bezier(.2,.9,.2,1) forwards; }
 
         /* Saldo: monospace e estados */
-        .col-saldo { font-family: inherit; font-variant-numeric: normal; font-size: 13px; text-align: right; }
+        .col-saldo { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
         .col-saldo.zero { color: var(--color-text-secondary); }
         .col-saldo.neg { color: #A32D2D; }
 
@@ -837,11 +837,11 @@
         .ted-card-progress { margin-bottom: 8px; }
         .ted-card-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .ted-card-progress-label { font-size: 11px; color: #6b6b6b; }
-        .ted-card-progress-pct { font-size: 11px; font-family: inherit; color: #1a1a1a; }
+        .ted-card-progress-pct { font-size: 11px; font-family: 'IBM Plex Mono', ui-monospace, monospace; color: #1a1a1a; }
         .ted-card-progress-track { background: rgba(0,0,0,0.07); border-radius: 4px; height: 6px; overflow: hidden; }
         .ted-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.07); }
-        .ted-card-saldo-pos { font-size: 12px; font-weight: 500; color: #3B6D11; font-family: inherit; }
-        .ted-card-saldo-neg { font-size: 12px; font-weight: 500; color: #A32D2D; font-family: inherit; }
+        .ted-card-saldo-pos { font-size: 12px; font-weight: 500; color: #3B6D11; font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+        .ted-card-saldo-neg { font-size: 12px; font-weight: 500; color: #A32D2D; font-family: 'IBM Plex Mono', ui-monospace, monospace; }
         .ted-card-status-col { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
         .ted-card-status-row { display:flex; gap:6px; align-items:flex-start; }
         .ted-card-status-note { font-size:11px; font-weight:600; color:#b45309; line-height:1; }
@@ -1478,12 +1478,12 @@
         .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:14px; }
         .field-label { font-size:11px; color:#6b6b6b; margin-bottom:2px; }
         .field-value { font-size:13px; font-weight:500; color:#1a1a1a; min-height:1.2em; word-break:normal; overflow-wrap:normal; }
-        .field-value.mono { font-family: inherit; font-size:13px; }
+        .field-value.mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size:13px; }
         .field-value.empty { color:#9b9b9b; }
 
         /* Legado (mantido para compatibilidade com outros usos) */
         .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.9rem; margin-bottom: 0.6rem; }
-        .mono { font-family: inherit; }
+        .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
         .badge-prorrogado { background:#EAF3DE; color:#3B6D11; padding:3px 8px; border-radius:999px; font-weight:600; font-size:11px; margin-left:6px; }
         .fim-vigencia-current { display:flex; align-items:center; gap:0.5rem; font-weight:500; }
         .fim-vigencia-meta { font-size:11px; color:#9b9b9b; margin-top:3px; }
@@ -1662,7 +1662,7 @@
         .tabela-padrao {
             width: 100%;
             border-collapse: collapse;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-size: 13px;
         }
                 /* Regra base para cabeçalhos de tabela (padronizada) */
@@ -1897,7 +1897,7 @@
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-size: 13px;
             line-height: 1.35;
         }
@@ -2133,8 +2133,9 @@
             z-index: 1;
         }
         #dashboard .stat-card .value {
+            font-family: 'IBM Plex Mono', ui-monospace, monospace;
             font-size: 1.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             position: relative;
             z-index: 1;
@@ -2565,7 +2566,7 @@
         .resumo-anual-grid { display:grid; gap:0; align-items:center; }
         .resumo-anual-grid .resumo-header { font-size:12px; font-weight:500; color:var(--color-text-secondary); text-align:center; padding-bottom:10px; }
         .resumo-anual-grid .resumo-label { font-size:12px; color:var(--color-text-secondary); padding:8px 10px; text-align:left; }
-        .resumo-anual-grid .resumo-value { font-family: inherit; font-size:12px; text-align:center; padding:8px 10px; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
+        .resumo-anual-grid .resumo-value { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size:12px; text-align:center; padding:8px 10px; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
         .resumo-anual-grid .resumo-value.negative { color: #A32D2D; }
         .resumo-anual-grid .resumo-value.saldo { font-weight:500; color:var(--color-text-primary); border-bottom: none; }
 
@@ -2856,13 +2857,13 @@
             white-space: nowrap;
         }
 
-        /* Numerais tabulares para colunas numéricas (mantém Inter, alinha dígitos) */
+        /* Numerais tabulares para colunas numéricas — IBM Plex Mono para alinhamento perfeito */
         .tabela-padrao .col-saldo,
         .tabela-padrao .col-valor,
         td.valor,
         td.saldo,
         td.nd-code {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'IBM Plex Mono', ui-monospace, monospace;
             font-variant-numeric: tabular-nums;
             font-size: 13px;
         }
