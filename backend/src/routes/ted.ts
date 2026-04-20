@@ -2,6 +2,9 @@ import { Router, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import * as tedModel from '../models/ted';
 import pool from '../config/database';
+import { logger } from '../utils/logger';
+import { parseId, validateCreateTed } from '../validation/tedSchemas';
+import { TED_STATUS, PAGAMENTO_STATUS } from '../config/constants';
 
 const router = Router();
 
@@ -20,8 +23,8 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // GET /api/ted/:id - Get TED by ID
 router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const ted = await tedModel.getTEDById(id);
     if (!ted) {
       return res.status(404).json({ error: 'TED não encontrado' });
@@ -52,17 +55,17 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 // POST /api/ted - Create new TED
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { number, title, description, start_date, end_date, total_budget, responsible_user_id } = req.body;
-
-    if (!number || !title) {
-      return res.status(400).json({ error: 'Número e título são obrigatórios' });
+    const validation = validateCreateTed(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
     }
+    const { number, title, description, start_date, end_date, total_budget, responsible_user_id } = validation.data;
 
     const ted = await tedModel.createTED({
       number,
       title,
       description,
-      status: 'PLANEJAMENTO',
+      status: TED_STATUS.PLANEJAMENTO,
       start_date,
       end_date,
       total_budget,
@@ -72,7 +75,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
     res.status(201).json(ted);
   } catch (error) {
-    console.error(error);
+    logger.error('Erro ao criar TED', { error: String(error) });
     res.status(500).json({ error: 'Erro ao criar TED' });
   }
 });
@@ -80,8 +83,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // PUT /api/ted/:id - Update TED
 router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const ted = await tedModel.updateTED(id, req.body);
     if (!ted) {
       return res.status(404).json({ error: 'TED não encontrado' });
@@ -95,8 +98,8 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 // DELETE /api/ted/:id - Delete TED
 router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido' });
     const deleted = await tedModel.deleteTED(id);
     if (!deleted) {
       return res.status(404).json({ error: 'TED não encontrado' });
@@ -111,14 +114,14 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
 router.post('/:id/physical-milestone', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { description, target_percentage, planned_date } = req.body;
-    const tedId = parseInt(req.params.id);
-    if (isNaN(tedId)) return res.status(400).json({ error: 'ID inválido' });
+    const tedId = parseId(req.params.id);
+    if (!tedId) return res.status(400).json({ error: 'ID inválido' });
 
     const result = await pool.query(
       `INSERT INTO physical_milestones (ted_id, description, target_percentage, planned_date, status)
-       VALUES ($1, $2, $3, $4, 'PENDENTE')
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [tedId, description, target_percentage, planned_date]
+      [tedId, description, target_percentage, planned_date, PAGAMENTO_STATUS.PENDENTE]
     );
 
     res.status(201).json(result.rows[0]);
@@ -131,8 +134,8 @@ router.post('/:id/physical-milestone', authMiddleware, async (req: AuthRequest, 
 router.put('/:id/physical-milestone/:milestoneId', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { actual_percentage, completion_date, status } = req.body;
-    const milestoneId = parseInt(req.params.milestoneId);
-    if (isNaN(milestoneId)) return res.status(400).json({ error: 'ID inválido' });
+    const milestoneId = parseId(req.params.milestoneId);
+    if (!milestoneId) return res.status(400).json({ error: 'ID inválido' });
 
     const result = await pool.query(
       `UPDATE physical_milestones
@@ -159,14 +162,14 @@ router.put('/:id/physical-milestone/:milestoneId', authMiddleware, async (req: A
 router.post('/:id/financial-item', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { description, planned_amount, payment_date } = req.body;
-    const tedId = parseInt(req.params.id);
-    if (isNaN(tedId)) return res.status(400).json({ error: 'ID inválido' });
+    const tedId = parseId(req.params.id);
+    if (!tedId) return res.status(400).json({ error: 'ID inválido' });
 
     const result = await pool.query(
       `INSERT INTO financial_items (ted_id, description, planned_amount, payment_date, status)
-       VALUES ($1, $2, $3, $4, 'PLANEJADO')
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [tedId, description, planned_amount, payment_date]
+      [tedId, description, planned_amount, payment_date, PAGAMENTO_STATUS.PLANEJADO]
     );
 
     res.status(201).json(result.rows[0]);
@@ -179,8 +182,8 @@ router.post('/:id/financial-item', authMiddleware, async (req: AuthRequest, res:
 router.put('/:id/financial-item/:itemId', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { spent_amount, payment_date, status } = req.body;
-    const itemId = parseInt(req.params.itemId);
-    if (isNaN(itemId)) return res.status(400).json({ error: 'ID inválido' });
+    const itemId = parseId(req.params.itemId);
+    if (!itemId) return res.status(400).json({ error: 'ID inválido' });
 
     const result = await pool.query(
       `UPDATE financial_items

@@ -7,11 +7,13 @@ import authRoutes from './routes/auth';
 import fileStorageRoutes from './routes/fileStorage';
 import tedRoutes from './routes/ted';
 import userRoutes from './routes/user';
+import { DEFAULT_PORT } from './config/constants';
+import { logger } from './utils/logger';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || DEFAULT_PORT;
 
 const allowedOrigins = new Set([
   process.env.CORS_ORIGIN,
@@ -54,16 +56,16 @@ async function startServer() {
   try {
     await initializeDatabase();
   } catch (error) {
-    console.warn('⚠️ Banco de dados indisponível. As rotas baseadas em arquivo continuarão funcionando.', error);
+    logger.warn('Banco de dados indisponível. As rotas baseadas em arquivo continuarão funcionando.', { error: String(error) });
   }
 
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`💾 Arquivo compartilhado disponível em http://localhost:${PORT}/api/storage/status`);
+    logger.info(`Servidor rodando na porta ${PORT}`);
+    logger.info(`Arquivo compartilhado disponível em http://localhost:${PORT}/api/storage/status`);
   });
 }
 
 startServer().catch((error) => {
-  console.error('Erro ao iniciar servidor:', error);
+  logger.error('Erro ao iniciar servidor', { error: String(error) });
   process.exit(1);
 });

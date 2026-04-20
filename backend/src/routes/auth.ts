@@ -2,16 +2,8 @@ import { Router, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getUserByEmail, createUser } from '../models/user';
-
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error('JWT_SECRET não definido');
-  return secret;
-}
-
-function getJwtExpiresIn(): jwt.SignOptions['expiresIn'] {
-  return (process.env.JWT_EXPIRES_IN || '24h') as jwt.SignOptions['expiresIn'];
-}
+import { getJwtSecret, getJwtExpiresIn } from '../config/jwtConfig';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -50,7 +42,7 @@ router.post('/register', async (req, res: Response) => {
       token
     });
   } catch (error) {
-    console.error(error);
+    logger.error('Erro na autenticação', { error: String(error) });
     res.status(500).json({ error: 'Erro ao criar usuário' });
   }
 });
@@ -86,7 +78,7 @@ router.post('/login', async (req, res: Response) => {
       token
     });
   } catch (error) {
-    console.error(error);
+    logger.error('Erro na autenticação', { error: String(error) });
     res.status(500).json({ error: 'Erro ao fazer login' });
   }
 });

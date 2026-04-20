@@ -6,16 +6,16 @@ export interface TED {
   title: string;
   description?: string;
   status: string;
-  start_date?: Date;
-  end_date?: Date;
+  start_date?: Date | string;
+  end_date?: Date | string;
   total_budget?: number;
   total_spent?: number;
   physical_progress_percentage?: number;
   financial_progress_percentage?: number;
   responsible_user_id?: number;
   created_by?: number;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at?: Date | string;
+  updated_at?: Date | string;
 }
 
 export async function getTEDById(id: number): Promise<TED | null> {

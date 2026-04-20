@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { tedService, TED } from '../services/tedService';
+import { TED_STATUS, TED_STATUS_COLORS } from '../constants/tedStatus';
+import { STAT_CARD_COLORS } from '../constants/chartColors';
 
 export default function Dashboard() {
   const [teds, setTeds] = useState<TED[]>([]);
@@ -35,27 +37,19 @@ export default function Dashboard() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: { [key: string]: string } = {
-      'PLANEJAMENTO': 'bg-yellow-100 text-yellow-800',
-      'EXECUÇÃO': 'bg-blue-100 text-blue-800',
-      'CONCLUÍDO': 'bg-green-100 text-green-800',
-      'SUSPENSO': 'bg-red-100 text-red-800'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
+  const getStatusColor = (status: string) => TED_STATUS_COLORS[status] || 'bg-gray-100 text-gray-800';
 
   const totalBudget = teds.reduce((sum, t) => sum + (t.total_budget || 0), 0);
   const totalSpent = teds.reduce((sum, t) => sum + (t.total_spent || 0), 0);
-  const tedsAtivos = teds.filter(t => t.status === 'EXECUÇÃO').length;
-  const tedsConcluidos = teds.filter(t => t.status === 'CONCLUÍDO').length;
+  const tedsAtivos = teds.filter(t => t.status === TED_STATUS.EXECUCAO).length;
+  const tedsConcluidos = teds.filter(t => t.status === TED_STATUS.CONCLUIDO).length;
 
   const statCards = [
     {
       label: 'Orçamento Total',
       value: `R$ ${totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       sub: 'Soma de todos os TEDs',
-      color: '#0C447C',
+      color: STAT_CARD_COLORS.orcamento,
       iconPaths: (
         <>
           <rect x="8" y="16" width="48" height="32" rx="5" stroke="currentColor" strokeWidth="3.5"/>
@@ -69,7 +63,7 @@ export default function Dashboard() {
       label: 'Total Executado',
       value: `R$ ${totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       sub: `${totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(1) : '0'}% do orçamento`,
-      color: '#639922',
+      color: STAT_CARD_COLORS.executado,
       iconPaths: (
         <>
           <polyline points="8,48 22,30 32,38 44,20 56,28" stroke="currentColor" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round"/>
@@ -81,7 +75,7 @@ export default function Dashboard() {
       label: 'TEDs em Execução',
       value: String(tedsAtivos),
       sub: `de ${teds.length} total`,
-      color: '#185FA5',
+      color: STAT_CARD_COLORS.emExecucao,
       iconPaths: (
         <>
           <circle cx="32" cy="32" r="22" stroke="currentColor" strokeWidth="3.5"/>
@@ -93,7 +87,7 @@ export default function Dashboard() {
       label: 'TEDs Concluídos',
       value: String(tedsConcluidos),
       sub: `de ${teds.length} total`,
-      color: '#854F0B',
+      color: STAT_CARD_COLORS.concluidos,
       iconPaths: (
         <>
           <rect x="12" y="8" width="40" height="48" rx="5" stroke="currentColor" strokeWidth="3.5"/>

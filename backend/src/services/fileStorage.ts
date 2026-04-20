@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { DEFAULT_DATA_STRUCTURE } from '../config/constants';
 
 export interface StoredAppData {
   teds: unknown[];
@@ -7,10 +8,7 @@ export interface StoredAppData {
   [key: string]: unknown;
 }
 
-const defaultData: StoredAppData = {
-  teds: [],
-  proxiId: 1
-};
+const defaultData: StoredAppData = { ...DEFAULT_DATA_STRUCTURE };
 
 function hasObjectShape(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

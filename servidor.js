@@ -1,4 +1,9 @@
 /**
+ * ARQUIVO LEGADO — Não usado em produção.
+ * O backend ativo é backend/src/index.ts (TypeScript/Express).
+ * Não adicionar novas funcionalidades aqui. Planejado para remoção.
+ *
+ * ----
  * Servidor simples para compartilhar dados do sistema TED entre navegadores.
  *
  * USO:  node servidor.js

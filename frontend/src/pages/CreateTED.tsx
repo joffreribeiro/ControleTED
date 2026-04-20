@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tedService } from '../services/tedService';
+import { TED_STATUS } from '../constants/tedStatus';
 
 export default function CreateTED() {
   const [formData, setFormData] = useState({
@@ -32,7 +33,7 @@ export default function CreateTED() {
       const data = {
         ...formData,
         total_budget: formData.total_budget ? parseFloat(formData.total_budget) : undefined,
-        status: 'PLANEJAMENTO'
+        status: TED_STATUS.PLANEJAMENTO
       };
 
       await tedService.create(data);

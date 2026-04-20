@@ -1,3 +1,9 @@
+/**
+ * ARQUIVO LEGADO — Não usado em produção.
+ * O frontend ativo é frontend/src/ (React/TypeScript/Vite).
+ * Não adicionar novas funcionalidades aqui. Planejado para remoção.
+ */
+
 // App-level Firebase helpers and cloud save/load functions
 // Relies on `firebase-init.js` to initialize Firebase and expose window helpers
 

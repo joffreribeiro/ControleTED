@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { tedService, TED, PhysicalMilestone, FinancialItem } from '../services/tedService';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { PAGAMENTO_STATUS, PAGAMENTO_STATUS_COLORS } from '../constants/tedStatus';
+import { PIE_PROGRESS_COLORS } from '../constants/chartColors';
 
 export default function TEDDetails() {
   const { id } = useParams<{ id: string }>();
@@ -45,7 +47,7 @@ export default function TEDDetails() {
     { name: 'Restante', value: 100 - (ted.financial_progress_percentage || 0) }
   ];
 
-  const COLORS = ['#3b82f6', '#e5e7eb'];
+  const COLORS = PIE_PROGRESS_COLORS;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -229,11 +231,7 @@ export default function TEDDetails() {
                   <div key={item.id} className="border border-gray-200 rounded p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-bold">{item.description}</h4>
-                      <span className={`px-2 py-1 rounded text-sm ${
-                        item.status === 'PLANEJADO' ? 'bg-yellow-100 text-yellow-800' :
-                        item.status === 'PAGO' ? 'bg-green-100 text-green-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-sm ${PAGAMENTO_STATUS_COLORS[item.status] || 'bg-red-100 text-red-800'}`}>
                         {item.status}
                       </span>
                     </div>
