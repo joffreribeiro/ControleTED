@@ -10,32 +10,38 @@ export default function CreateTED() {
     description: '',
     start_date: '',
     end_date: '',
-    total_budget: ''
+    total_budget: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!formData.number.trim()) e.number = 'Campo obrigatório';
+    if (!formData.title.trim())  e.title  = 'Campo obrigatório';
+    return e;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const ve = validate();
+    if (Object.keys(ve).length) { setErrors(ve); return; }
     setError('');
     setLoading(true);
-
     try {
       const data = {
         ...formData,
         total_budget: formData.total_budget ? parseFloat(formData.total_budget) : undefined,
-        status: TED_STATUS.PLANEJAMENTO
+        status: TED_STATUS.PLANEJAMENTO,
       };
-
       await tedService.create(data);
       navigate('/dashboard');
     } catch (err: any) {
@@ -46,43 +52,50 @@ export default function CreateTED() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-md p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-600">Controle TED</h1>
-        </div>
-      </nav>
+    <div className="page-content" style={{ maxWidth: 700 }}>
 
-      <div className="max-w-2xl mx-auto p-6">
-        <h2 className="text-3xl font-bold mb-6">Criar novo TED</h2>
+      <button className="back-link" onClick={() => navigate('/dashboard')}>
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <polyline points="9 2 4 8 9 14"/>
+        </svg>
+        Voltar ao Dashboard
+      </button>
 
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+      <h1 className="page-title">Novo TED</h1>
+      <p className="page-subtitle" style={{ marginBottom: 24 }}>
+        Cadastre um novo Termo de Execução Descentralizada
+      </p>
 
-        <form onSubmit={handleSubmit} className="card">
-          <div className="form-group">
-            <label className="form-label">Número do TED *</label>
-            <input
-              type="text"
-              name="number"
-              className="form-input"
-              value={formData.number}
-              onChange={handleChange}
-              placeholder="Ex: TED-2024-001"
-              required
-            />
-          </div>
+      {error && <div className="alert-error">{error}</div>}
 
-          <div className="form-group">
-            <label className="form-label">Título *</label>
-            <input
-              type="text"
-              name="title"
-              className="form-input"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Título do TED"
-              required
-            />
+      <div className="card">
+        <form onSubmit={handleSubmit}>
+
+          <div className="form-grid-num-title form-group">
+            <div>
+              <label className="form-label">Nº do TED *</label>
+              <input
+                type="text"
+                name="number"
+                className={`form-input${errors.number ? ' error' : ''}`}
+                value={formData.number}
+                onChange={handleChange}
+                placeholder="TED-2025-001"
+              />
+              {errors.number && <p className="form-error">{errors.number}</p>}
+            </div>
+            <div>
+              <label className="form-label">Título *</label>
+              <input
+                type="text"
+                name="title"
+                className={`form-input${errors.title ? ' error' : ''}`}
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="Título do Termo de Execução"
+              />
+              {errors.title && <p className="form-error">{errors.title}</p>}
+            </div>
           </div>
 
           <div className="form-group">
@@ -90,15 +103,16 @@ export default function CreateTED() {
             <textarea
               name="description"
               className="form-input"
-              rows={4}
+              rows={3}
               value={formData.description}
               onChange={handleChange}
-              placeholder="Descrição detalhada do TED"
+              placeholder="Descreva o objetivo e escopo do TED"
+              style={{ resize: 'vertical', lineHeight: 1.55 }}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="form-group">
+          <div className="form-grid-3 form-group">
+            <div>
               <label className="form-label">Data de Início</label>
               <input
                 type="date"
@@ -108,8 +122,7 @@ export default function CreateTED() {
                 onChange={handleChange}
               />
             </div>
-
-            <div className="form-group">
+            <div>
               <label className="form-label">Data de Término</label>
               <input
                 type="date"
@@ -119,33 +132,36 @@ export default function CreateTED() {
                 onChange={handleChange}
               />
             </div>
+            <div>
+              <label className="form-label">Orçamento (R$)</label>
+              <input
+                type="number"
+                name="total_budget"
+                className="form-input"
+                value={formData.total_budget}
+                onChange={handleChange}
+                placeholder="0,00"
+                step="0.01"
+                min="0"
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Orçamento Total (R$)</label>
-            <input
-              type="number"
-              name="total_budget"
-              className="form-input"
-              value={formData.total_budget}
-              onChange={handleChange}
-              placeholder="0.00"
-              step="0.01"
-            />
-          </div>
+          <hr className="divider" />
 
-          <div className="flex gap-4">
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Criando...' : 'Criar TED'}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? 'Salvando...' : 'Criar TED'}
             </button>
             <button
               type="button"
-              className="btn-secondary"
+              className="btn btn-secondary"
               onClick={() => navigate('/dashboard')}
             >
               Cancelar
             </button>
           </div>
+
         </form>
       </div>
     </div>

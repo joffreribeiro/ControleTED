@@ -13,7 +13,6 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const response = await authService.login(email, password);
       localStorage.setItem('token', response.token);
@@ -27,47 +26,70 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
-      <div className="card w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-2">Controle TED</h1>
-        <p className="text-center text-gray-600 mb-6">Sistema de Execução Descentralizada</p>
+    <div className="login-root">
+      <div className="login-box">
 
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Email</label>
-            <input
-              type="email"
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+        <div className="login-logo-wrap">
+          <div className="login-logo-icon">
+            <svg width="26" height="26" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M5 3h10l5 5v14a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+              <polyline points="14,3 14,9 20,9"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
           </div>
+          <h1 className="login-title">Controle TED</h1>
+          <p className="login-subtitle">Sistema de Gestão de Termos de Execução</p>
+        </div>
 
-          <div className="form-group">
-            <label className="form-label">Senha</label>
-            <input
-              type="password"
-              className="form-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+        <div className="login-card">
+          <h2 className="login-card-title">Acesso ao Sistema</h2>
 
-          <button type="submit" className="btn-primary w-full mb-4" disabled={loading}>
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
+          {error && <div className="alert-error">{error}</div>}
 
-        <p className="text-center text-gray-600">
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">E-mail institucional</label>
+              <input
+                type="email"
+                className="form-input"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="seu@email.gov.br"
+                required
+              />
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 24 }}>
+              <label className="form-label">Senha</label>
+              <input
+                type="password"
+                className="form-input"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center' }}
+              disabled={loading}
+            >
+              {loading ? 'Autenticando...' : 'Entrar'}
+            </button>
+          </form>
+        </div>
+
+        <p style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: 'var(--color-text-muted)' }}>
           Não tem conta?{' '}
-          <a href="/register" className="text-blue-600 hover:underline">
+          <a href="/register" style={{ color: 'var(--color-primary-mid)', textDecoration: 'none', fontWeight: 500 }}>
             Cadastre-se
           </a>
         </p>
+
       </div>
     </div>
   );

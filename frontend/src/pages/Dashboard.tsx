@@ -1,25 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { tedService, TED } from '../services/tedService';
-import { TED_STATUS, TED_STATUS_COLORS } from '../constants/tedStatus';
+import { TED_STATUS } from '../constants/tedStatus';
 import { STAT_CARD_COLORS } from '../constants/chartColors';
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    'EXECUÇÃO':     'badge-execucao',
+    'CONCLUÍDO':    'badge-concluido',
+    'PLANEJAMENTO': 'badge-planejamento',
+    'SUSPENSO':     'badge-suspenso',
+  };
+  return (
+    <span className={`badge ${map[status] || 'badge-planejamento'}`}>
+      <span className="badge-dot" />
+      {status}
+    </span>
+  );
+}
+
+function ProgressCell({ value, color }: { value: number; color: 'blue' | 'green' }) {
+  return (
+    <div className="progress-wrap">
+      <div className="progress-bar">
+        <div
+          className={`progress-fill progress-fill-${color}`}
+          style={{ width: `${Math.min(value, 100)}%` }}
+        />
+      </div>
+      <span className="progress-pct">{value}%</span>
+    </div>
+  );
+}
+
+const FILTER_OPTIONS = ['TODOS', 'EXECUÇÃO', 'PLANEJAMENTO', 'CONCLUÍDO', 'SUSPENSO'];
 
 export default function Dashboard() {
   const [teds, setTeds] = useState<TED[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [filter, setFilter] = useState('TODOS');
 
-  useEffect(() => {
-    loadTEDs();
-  }, []);
+  useEffect(() => { loadTEDs(); }, []);
 
   const loadTEDs = async () => {
     try {
       setLoading(true);
       const data = await tedService.getAll();
       setTeds(data);
-    } catch (err) {
+    } catch {
       setError('Erro ao carregar TEDs');
     } finally {
       setLoading(false);
@@ -27,228 +56,192 @@ export default function Dashboard() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja deletar esta TED?')) return;
-
+    if (!confirm('Tem certeza que deseja excluir este TED?')) return;
     try {
       await tedService.delete(id);
-      setTeds(teds.filter(ted => ted.id !== id));
-    } catch (err) {
-      setError('Erro ao deletar TED');
+      setTeds(teds.filter(t => t.id !== id));
+    } catch {
+      setError('Erro ao excluir TED');
     }
   };
 
-  const getStatusColor = (status: string) => TED_STATUS_COLORS[status] || 'bg-gray-100 text-gray-800';
+  const totalBudget = teds.reduce((s, t) => s + (t.total_budget || 0), 0);
+  const totalSpent  = teds.reduce((s, t) => s + (t.total_spent  || 0), 0);
+  const emExecucao  = teds.filter(t => t.status === TED_STATUS.EXECUCAO).length;
+  const concluidos  = teds.filter(t => t.status === TED_STATUS.CONCLUIDO).length;
 
-  const totalBudget = teds.reduce((sum, t) => sum + (t.total_budget || 0), 0);
-  const totalSpent = teds.reduce((sum, t) => sum + (t.total_spent || 0), 0);
-  const tedsAtivos = teds.filter(t => t.status === TED_STATUS.EXECUCAO).length;
-  const tedsConcluidos = teds.filter(t => t.status === TED_STATUS.CONCLUIDO).length;
+  const fmtBRL = (n: number) =>
+    n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const statCards = [
     {
       label: 'Orçamento Total',
-      value: `R$ ${totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      sub: 'Soma de todos os TEDs',
+      value: `R$ ${fmtBRL(totalBudget)}`,
+      sub: `${teds.length} TED${teds.length !== 1 ? 's' : ''} cadastrados`,
       color: STAT_CARD_COLORS.orcamento,
-      iconPaths: (
-        <>
-          <rect x="8" y="16" width="48" height="32" rx="5" stroke="currentColor" strokeWidth="3.5"/>
-          <circle cx="32" cy="32" r="8" stroke="currentColor" strokeWidth="3"/>
-          <line x1="8" y1="24" x2="56" y2="24" stroke="currentColor" strokeWidth="2.5"/>
-          <line x1="8" y1="40" x2="56" y2="40" stroke="currentColor" strokeWidth="2.5"/>
-        </>
-      ),
     },
     {
       label: 'Total Executado',
-      value: `R$ ${totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      value: `R$ ${fmtBRL(totalSpent)}`,
       sub: `${totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(1) : '0'}% do orçamento`,
       color: STAT_CARD_COLORS.executado,
-      iconPaths: (
-        <>
-          <polyline points="8,48 22,30 32,38 44,20 56,28" stroke="currentColor" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round"/>
-          <circle cx="56" cy="28" r="4" fill="currentColor"/>
-        </>
-      ),
     },
     {
-      label: 'TEDs em Execução',
-      value: String(tedsAtivos),
+      label: 'Em Execução',
+      value: String(emExecucao),
       sub: `de ${teds.length} total`,
       color: STAT_CARD_COLORS.emExecucao,
-      iconPaths: (
-        <>
-          <circle cx="32" cy="32" r="22" stroke="currentColor" strokeWidth="3.5"/>
-          <polyline points="20,32 29,41 46,24" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </>
-      ),
     },
     {
-      label: 'TEDs Concluídos',
-      value: String(tedsConcluidos),
+      label: 'Concluídos',
+      value: String(concluidos),
       sub: `de ${teds.length} total`,
       color: STAT_CARD_COLORS.concluidos,
-      iconPaths: (
-        <>
-          <rect x="12" y="8" width="40" height="48" rx="5" stroke="currentColor" strokeWidth="3.5"/>
-          <line x1="20" y1="22" x2="44" y2="22" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-          <line x1="20" y1="30" x2="44" y2="30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-          <line x1="20" y1="38" x2="36" y2="38" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-        </>
-      ),
     },
   ];
 
+  const filtered = filter === 'TODOS' ? teds : teds.filter(t => t.status === filter);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-md p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-600">Controle TED</h1>
-          <div>
-            <button onClick={() => {
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              navigate('/login');
-            }} className="btn-secondary">
-              Sair
-            </button>
-          </div>
+    <div className="page-content">
+
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">Termos de Execução Descentralizada</p>
         </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold">Termos de Execução</h2>
-          <Link to="/ted/new" className="btn-primary">
-            + Novo TED
-          </Link>
+        <div className="page-actions">
+          <Link to="/ted/new" className="btn btn-primary">+ Novo TED</Link>
         </div>
-
-        {!loading && teds.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-            {statCards.map((card) => (
-              <div
-                key={card.label}
-                style={{
-                  background: '#fff',
-                  borderRadius: '12px',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-                  border: '1px solid rgba(0,0,0,0.07)',
-                  padding: '20px 20px 16px',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Ícone marca d'água */}
-                <div style={{
-                  position: 'absolute',
-                  right: '-4px',
-                  bottom: '-4px',
-                  width: '96px',
-                  height: '96px',
-                  opacity: 0.13,
-                  pointerEvents: 'none',
-                  color: card.color,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <svg
-                    viewBox="0 0 64 64"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="96"
-                    height="96"
-                    style={{ display: 'block', color: card.color }}
-                  >
-                    {card.iconPaths}
-                  </svg>
-                </div>
-                <p style={{ fontSize: '12px', fontWeight: 600, color: card.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
-                  {card.label}
-                </p>
-                <p style={{ fontSize: '22px', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.2, marginBottom: '4px' }}>
-                  {card.value}
-                </p>
-                <p style={{ fontSize: '12px', color: '#6b6b6b' }}>{card.sub}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
-
-        {loading ? (
-          <p className="text-center text-gray-600">Carregando...</p>
-        ) : teds.length === 0 ? (
-          <div className="card text-center">
-            <p className="text-gray-600 mb-4">Nenhum TED cadastrado</p>
-            <Link to="/ted/new" className="btn-primary">
-              Criar primeiro TED
-            </Link>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {teds.map(ted => (
-              <div key={ted.id} className="card hover:shadow-lg transition-shadow">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="text-lg font-bold">{ted.title}</h3>
-                    <p className="text-sm text-gray-600">TED #{ted.number}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ted.status)}`}>
-                    {ted.status}
-                  </span>
-                </div>
-
-                <p className="text-gray-600 mb-3">{ted.description}</p>
-
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Execução Física</p>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${ted.physical_progress_percentage || 0}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">{ted.physical_progress_percentage || 0}%</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-gray-600">Execução Financeira</p>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div
-                        className="bg-green-600 h-2 rounded-full"
-                        style={{ width: `${ted.financial_progress_percentage || 0}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">{ted.financial_progress_percentage || 0}%</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-gray-600">Orçamento</p>
-                    <p className="font-bold">R$ {ted.total_budget?.toLocaleString('pt-BR')}</p>
-                    <p className="text-xs text-gray-600">Gasto: R$ {ted.total_spent?.toLocaleString('pt-BR')}</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Link to={`/ted/${ted.id}`} className="btn-secondary">
-                    Detalhes
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(ted.id)}
-                    className="btn-danger"
-                  >
-                    Deletar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* Stat Cards */}
+      {!loading && teds.length > 0 && (
+        <div className="stat-grid">
+          {statCards.map(card => (
+            <div key={card.label} className="stat-card">
+              <p className="stat-label" style={{ color: card.color }}>{card.label}</p>
+              <p className="stat-value">{card.value}</p>
+              <p className="stat-sub">{card.sub}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Error */}
+      {error && <div className="alert-error">{error}</div>}
+
+      {/* Loading */}
+      {loading ? (
+        <div className="empty-state">
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>Carregando...</p>
+        </div>
+      ) : teds.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon">📋</div>
+          <h3 className="empty-title">Nenhum TED cadastrado</h3>
+          <p className="empty-sub">Comece criando o primeiro Termo de Execução.</p>
+          <Link to="/ted/new" className="btn btn-primary">+ Criar primeiro TED</Link>
+        </div>
+      ) : (
+        <>
+          {/* Filter row */}
+          <div className="filter-row">
+            {FILTER_OPTIONS.map(s => (
+              <button
+                key={s}
+                className={`filter-btn${filter === s ? ' active' : ''}`}
+                onClick={() => setFilter(s)}
+              >
+                {s}
+              </button>
+            ))}
+            <span className="filter-count">
+              {filtered.length} registro{filtered.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🔍</div>
+              <h3 className="empty-title">Nenhum TED com status "{filter}"</h3>
+              <p className="empty-sub">Tente selecionar outro filtro.</p>
+            </div>
+          ) : (
+            <div className="table-card">
+              <table className="ted-table">
+                <thead>
+                  <tr>
+                    <th>Nº TED</th>
+                    <th>Título / Descrição</th>
+                    <th>Status</th>
+                    <th>Exec. Física</th>
+                    <th>Exec. Financeira</th>
+                    <th>Orçamento</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(ted => (
+                    <tr key={ted.id}>
+                      <td><span className="td-number">{ted.number}</span></td>
+                      <td style={{ maxWidth: 260 }}>
+                        <div className="td-title-main">{ted.title}</div>
+                        <div className="td-title-sub">{ted.description}</div>
+                      </td>
+                      <td><StatusBadge status={ted.status} /></td>
+                      <td style={{ minWidth: 140 }}>
+                        <ProgressCell value={ted.physical_progress_percentage || 0} color="blue" />
+                      </td>
+                      <td style={{ minWidth: 140 }}>
+                        <ProgressCell value={ted.financial_progress_percentage || 0} color="green" />
+                      </td>
+                      <td>
+                        <div className="td-mono" style={{ fontWeight: 600 }}>
+                          R$ {ted.total_budget?.toLocaleString('pt-BR')}
+                        </div>
+                        <div className="td-mono" style={{ color: 'var(--color-text-muted)', marginTop: 2 }}>
+                          Gasto: R$ {ted.total_spent?.toLocaleString('pt-BR')}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <Link to={`/ted/${ted.id}`} className="btn btn-secondary btn-sm">
+                            Detalhes
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(ted.id)}
+                            className="btn btn-danger btn-sm"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={5} style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                      Total ({teds.length} TEDs)
+                    </td>
+                    <td>
+                      <div className="td-mono" style={{ fontWeight: 700 }}>
+                        R$ {totalBudget.toLocaleString('pt-BR')}
+                      </div>
+                      <div className="td-mono" style={{ color: 'var(--color-text-muted)', marginTop: 2 }}>
+                        Gasto: R$ {totalSpent.toLocaleString('pt-BR')}
+                      </div>
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

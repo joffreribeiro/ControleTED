@@ -1,9 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { tedService, TED, PhysicalMilestone, FinancialItem } from '../services/tedService';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { PAGAMENTO_STATUS, PAGAMENTO_STATUS_COLORS } from '../constants/tedStatus';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PAGAMENTO_STATUS_COLORS } from '../constants/tedStatus';
 import { PIE_PROGRESS_COLORS } from '../constants/chartColors';
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    'EXECUÇÃO':     'badge-execucao',
+    'CONCLUÍDO':    'badge-concluido',
+    'PLANEJAMENTO': 'badge-planejamento',
+    'SUSPENSO':     'badge-suspenso',
+    'EM ANDAMENTO': 'badge-em-andamento',
+    'PENDENTE':     'badge-pendente',
+  };
+  return (
+    <span className={`badge ${map[status] || 'badge-planejamento'}`}>
+      <span className="badge-dot" />{status}
+    </span>
+  );
+}
+
+function PagBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    'PAGO':      'badge-pago',
+    'PENDENTE':  'badge-pendente',
+    'PLANEJADO': 'badge-planejado',
+  };
+  return <span className={`badge ${map[status] || 'badge-planejamento'}`}>{status}</span>;
+}
+
+function DonutChart({ value, color }: { value: number; color: string }) {
+  const data = [{ value }, { value: 100 - value }];
+  return (
+    <div className="donut-wrap">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%" cy="50%"
+            innerRadius={38} outerRadius={52}
+            startAngle={90} endAngle={-270}
+            dataKey="value" stroke="none"
+          >
+            <Cell fill={color} />
+            <Cell fill="#E9ECF0" />
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="donut-center">
+        <span className="donut-pct">{value}%</span>
+      </div>
+    </div>
+  );
+}
+
+function fmtBRL(n?: number) {
+  return (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function fmtDate(d?: string) {
+  if (!d) return '—';
+  return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR');
+}
 
 export default function TEDDetails() {
   const { id } = useParams<{ id: string }>();
@@ -15,9 +74,7 @@ export default function TEDDetails() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'physical' | 'financial'>('overview');
 
-  useEffect(() => {
-    loadTED();
-  }, [id]);
+  useEffect(() => { loadTED(); }, [id]);
 
   const loadTED = async () => {
     try {
@@ -27,235 +84,283 @@ export default function TEDDetails() {
       setTed(data);
       setMilestones(data.physical_milestones || []);
       setFinancialItems(data.financial_items || []);
-    } catch (err) {
+    } catch {
       setError('Erro ao carregar TED');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <div className="text-center p-6">Carregando...</div>;
-  if (!ted) return <div className="text-center p-6 text-red-600">TED não encontrado</div>;
+  if (loading) return (
+    <div className="page-content">
+      <p style={{ color: 'var(--color-text-muted)' }}>Carregando...</p>
+    </div>
+  );
 
-  const physicalData = [
-    { name: 'Progresso Físico', value: ted.physical_progress_percentage || 0 },
-    { name: 'Restante', value: 100 - (ted.physical_progress_percentage || 0) }
-  ];
+  if (error || !ted) return (
+    <div className="page-content">
+      <div className="alert-error">{error || 'TED não encontrado'}</div>
+      <button className="btn btn-secondary" onClick={() => navigate('/dashboard')}>← Voltar</button>
+    </div>
+  );
 
-  const financialData = [
-    { name: 'Financeiro', value: ted.financial_progress_percentage || 0 },
-    { name: 'Restante', value: 100 - (ted.financial_progress_percentage || 0) }
-  ];
+  const phys = ted.physical_progress_percentage || 0;
+  const fin  = ted.financial_progress_percentage || 0;
 
-  const COLORS = PIE_PROGRESS_COLORS;
+  const statusMap: Record<string, string> = {
+    'EXECUÇÃO':     'badge-execucao',
+    'CONCLUÍDO':    'badge-concluido',
+    'PLANEJAMENTO': 'badge-planejamento',
+    'SUSPENSO':     'badge-suspenso',
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-md p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-600">Controle TED</h1>
-          <button onClick={() => navigate('/dashboard')} className="btn-secondary">
-            Voltar
-          </button>
-        </div>
-      </nav>
+    <div className="page-content">
 
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="card mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h2 className="text-3xl font-bold">{ted.title}</h2>
-              <p className="text-gray-600">TED #{ted.number}</p>
-            </div>
-            <span className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full font-medium">
-              {ted.status}
-            </span>
-          </div>
+      {/* Back */}
+      <button className="back-link" onClick={() => navigate('/dashboard')}>
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <polyline points="9 2 4 8 9 14"/>
+        </svg>
+        Voltar ao Dashboard
+      </button>
 
-          {ted.description && <p className="text-gray-600 mb-4">{ted.description}</p>}
-
-          <div className="grid grid-cols-4 gap-4 text-center">
-            <div className="bg-blue-50 p-3 rounded">
-              <p className="text-sm text-gray-600">Data Início</p>
-              <p className="font-bold">{ted.start_date ? new Date(ted.start_date).toLocaleDateString('pt-BR') : '-'}</p>
-            </div>
-            <div className="bg-blue-50 p-3 rounded">
-              <p className="text-sm text-gray-600">Data Término</p>
-              <p className="font-bold">{ted.end_date ? new Date(ted.end_date).toLocaleDateString('pt-BR') : '-'}</p>
-            </div>
-            <div className="bg-green-50 p-3 rounded">
-              <p className="text-sm text-gray-600">Orçamento</p>
-              <p className="font-bold">R$ {ted.total_budget?.toLocaleString('pt-BR')}</p>
-            </div>
-            <div className="bg-red-50 p-3 rounded">
-              <p className="text-sm text-gray-600">Gasto</p>
-              <p className="font-bold">R$ {ted.total_spent?.toLocaleString('pt-BR')}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Abas de navegação */}
-        <div className="flex gap-4 mb-6 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 font-medium border-b-2 transition ${
-              activeTab === 'overview'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Visão Geral
-          </button>
-          <button
-            onClick={() => setActiveTab('physical')}
-            className={`px-4 py-2 font-medium border-b-2 transition ${
-              activeTab === 'physical'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Execução Física
-          </button>
-          <button
-            onClick={() => setActiveTab('financial')}
-            className={`px-4 py-2 font-medium border-b-2 transition ${
-              activeTab === 'financial'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Execução Financeira
-          </button>
-        </div>
-
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-2 gap-6">
-            <div className="card">
-              <h3 className="text-lg font-bold mb-4">Progresso Físico</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={physicalData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {COLORS.map((color, index) => (
-                      <Cell key={`cell-${index}`} fill={color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="card">
-              <h3 className="text-lg font-bold mb-4">Progresso Financeiro</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={financialData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {COLORS.map((color, index) => (
-                      <Cell key={`cell-${index}`} fill={color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* Physical Tab */}
-        {activeTab === 'physical' && (
-          <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">Marcos Físicos</h3>
-              <button className="btn-primary text-sm">+ Adicionar Marco</button>
-            </div>
-
-            {milestones.length === 0 ? (
-              <p className="text-gray-600 text-center py-8">Nenhum marco físico cadastrado</p>
-            ) : (
-              <div className="space-y-4">
-                {milestones.map(milestone => (
-                  <div key={milestone.id} className="border border-gray-200 rounded p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-bold">{milestone.description}</h4>
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">
-                        {milestone.status}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all"
-                        style={{ width: `${milestone.actual_percentage}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {milestone.actual_percentage}% / {milestone.target_percentage}% (Meta)
-                    </p>
-                  </div>
-                ))}
-              </div>
+      {/* Header card */}
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div>
+            <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 3, fontFamily: 'var(--font-mono)' }}>
+              {ted.number}
+            </p>
+            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 5 }}>{ted.title}</h1>
+            {ted.description && (
+              <p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{ted.description}</p>
             )}
           </div>
-        )}
+          <span className={`badge badge-lg ${statusMap[ted.status] || 'badge-planejamento'}`} style={{ flexShrink: 0, marginLeft: 20 }}>
+            <span className="badge-dot" />{ted.status}
+          </span>
+        </div>
 
-        {/* Financial Tab */}
-        {activeTab === 'financial' && (
-          <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">Itens Financeiros</h3>
-              <button className="btn-primary text-sm">+ Adicionar Item</button>
-            </div>
-
-            {financialItems.length === 0 ? (
-              <p className="text-gray-600 text-center py-8">Nenhum item financeiro cadastrado</p>
-            ) : (
-              <div className="space-y-4">
-                {financialItems.map(item => (
-                  <div key={item.id} className="border border-gray-200 rounded p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-bold">{item.description}</h4>
-                      <span className={`px-2 py-1 rounded text-sm ${PAGAMENTO_STATUS_COLORS[item.status] || 'bg-red-100 text-red-800'}`}>
-                        {item.status}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600">Planejado</p>
-                        <p className="font-bold">R$ {item.planned_amount?.toLocaleString('pt-BR')}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Gasto</p>
-                        <p className="font-bold">R$ {item.spent_amount?.toLocaleString('pt-BR')}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Data</p>
-                        <p className="font-bold">{item.payment_date ? new Date(item.payment_date).toLocaleDateString('pt-BR') : '-'}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+        <div className="info-grid">
+          <div className="info-cell">
+            <p className="info-cell-label">Data Início</p>
+            <p className="info-cell-value">{fmtDate(ted.start_date)}</p>
           </div>
-        )}
+          <div className="info-cell">
+            <p className="info-cell-label">Data Término</p>
+            <p className="info-cell-value">{fmtDate(ted.end_date)}</p>
+          </div>
+          <div className="info-cell">
+            <p className="info-cell-label">Orçamento Total</p>
+            <p className="info-cell-value" style={{ fontFamily: 'var(--font-mono)' }}>R$ {fmtBRL(ted.total_budget)}</p>
+          </div>
+          <div className="info-cell">
+            <p className="info-cell-label">Total Gasto</p>
+            <p className="info-cell-value" style={{ fontFamily: 'var(--font-mono)' }}>R$ {fmtBRL(ted.total_spent)}</p>
+          </div>
+        </div>
       </div>
+
+      {/* Tab switcher */}
+      <div className="tab-switch">
+        {(['overview', 'physical', 'financial'] as const).map(t => (
+          <button
+            key={t}
+            className={`tab-btn${activeTab === t ? ' active' : ''}`}
+            onClick={() => setActiveTab(t)}
+          >
+            {{ overview: 'Visão Geral', physical: 'Execução Física', financial: 'Execução Financeira' }[t]}
+          </button>
+        ))}
+      </div>
+
+      {/* OVERVIEW */}
+      {activeTab === 'overview' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+
+          <div className="card">
+            <p className="card-title" style={{ marginBottom: 16 }}>Execução Física</p>
+            <div className="progress-card-inner">
+              <DonutChart value={phys} color="#185FA5" />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Progresso geral</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary-mid)', fontFamily: 'var(--font-mono)' }}>{phys}%</span>
+                </div>
+                <div className="progress-bar" style={{ height: 8 }}>
+                  <div className="progress-fill progress-fill-blue" style={{ width: `${phys}%` }} />
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8 }}>
+                  {milestones.filter(m => m.status === 'CONCLUÍDO').length} de {milestones.length} marcos concluídos
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <p className="card-title" style={{ marginBottom: 16 }}>Execução Financeira</p>
+            <div className="progress-card-inner">
+              <DonutChart value={fin} color="#639922" />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Progresso geral</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-success)', fontFamily: 'var(--font-mono)' }}>{fin}%</span>
+                </div>
+                <div className="progress-bar" style={{ height: 8, background: 'var(--color-success-bg)' }}>
+                  <div className="progress-fill progress-fill-green" style={{ width: `${fin}%` }} />
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8 }}>
+                  R$ {fmtBRL(ted.total_spent)} de R$ {fmtBRL(ted.total_budget)} executados
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card" style={{ gridColumn: '1 / -1' }}>
+            <p className="card-title" style={{ marginBottom: 14 }}>Marcos Físicos — Resumo</p>
+            {milestones.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--color-text-muted)', textAlign: 'center', padding: '16px 0' }}>
+                Nenhum marco cadastrado
+              </p>
+            ) : (
+              <div className="milestones-grid">
+                {milestones.map(m => (
+                  <div key={m.id} className="milestone-mini">
+                    <p className="milestone-mini-title">{m.description}</p>
+                    <div className="progress-bar" style={{ height: 4, marginBottom: 6 }}>
+                      <div className="progress-fill progress-fill-blue" style={{ width: `${m.actual_percentage}%` }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 10, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
+                        {m.actual_percentage}%
+                      </span>
+                      <StatusBadge status={m.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* PHYSICAL */}
+      {activeTab === 'physical' && (
+        <div className="table-card">
+          <div className="card-header">
+            <span className="card-title">Marcos Físicos</span>
+            <button className="btn btn-primary btn-sm">+ Adicionar Marco</button>
+          </div>
+          {milestones.length === 0 ? (
+            <div style={{ padding: '48px 32px', textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Nenhum marco físico cadastrado</p>
+            </div>
+          ) : (
+            <table className="ted-table">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Status</th>
+                  <th className="text-right">Meta</th>
+                  <th className="text-right">Realizado</th>
+                  <th>Progresso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {milestones.map(m => (
+                  <tr key={m.id}>
+                    <td style={{ fontWeight: 500 }}>{m.description}</td>
+                    <td><StatusBadge status={m.status} /></td>
+                    <td style={{ textAlign: 'right' }}>
+                      <span className="td-mono">{m.target_percentage}%</span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <span className="td-mono" style={{ fontWeight: 700, color: 'var(--color-primary-mid)' }}>
+                        {m.actual_percentage}%
+                      </span>
+                    </td>
+                    <td style={{ minWidth: 160 }}>
+                      <div className="progress-bar" style={{ height: 6 }}>
+                        <div className="progress-fill progress-fill-blue" style={{ width: `${m.actual_percentage}%` }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* FINANCIAL */}
+      {activeTab === 'financial' && (
+        <div className="table-card">
+          <div className="card-header">
+            <span className="card-title">Itens Financeiros</span>
+            <button className="btn btn-primary btn-sm">+ Adicionar Item</button>
+          </div>
+          {financialItems.length === 0 ? (
+            <div style={{ padding: '48px 32px', textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Nenhum item financeiro cadastrado</p>
+            </div>
+          ) : (
+            <table className="ted-table">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Status</th>
+                  <th className="text-right">Planejado</th>
+                  <th className="text-right">Realizado</th>
+                  <th className="text-right">Variação</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {financialItems.map(item => {
+                  const variacao = (item.spent_amount || 0) - (item.planned_amount || 0);
+                  return (
+                    <tr key={item.id}>
+                      <td style={{ fontWeight: 500 }}>{item.description}</td>
+                      <td><PagBadge status={item.status} /></td>
+                      <td style={{ textAlign: 'right' }}>
+                        <span className="td-mono">R$ {fmtBRL(item.planned_amount)}</span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <span className="td-mono" style={{ fontWeight: 700 }}>R$ {fmtBRL(item.spent_amount)}</span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <span className="td-mono" style={{
+                          color: variacao > 0 ? 'var(--color-danger)' : variacao < 0 ? 'var(--color-success)' : 'var(--color-text-muted)',
+                        }}>
+                          {variacao > 0 ? '+' : ''}{fmtBRL(variacao)}
+                        </span>
+                      </td>
+                      <td style={{ color: 'var(--color-text-secondary)' }}>{fmtDate(item.payment_date)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={2}>Total</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <span className="td-mono" style={{ fontWeight: 700 }}>
+                      R$ {fmtBRL(financialItems.reduce((s, i) => s + (i.planned_amount || 0), 0))}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <span className="td-mono" style={{ fontWeight: 700 }}>
+                      R$ {fmtBRL(financialItems.reduce((s, i) => s + (i.spent_amount || 0), 0))}
+                    </span>
+                  </td>
+                  <td colSpan={2} />
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   );
 }

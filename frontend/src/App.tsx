@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CreateTED from './pages/CreateTED';
 import TEDDetails from './pages/TEDDetails';
+import SidebarLayout from './components/SidebarLayout';
 import './styles/globals.css';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -12,14 +13,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  return <>{children}</>;
+  return <SidebarLayout>{children}</SidebarLayout>;
 }
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
           path="/dashboard"
