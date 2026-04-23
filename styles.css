@@ -3148,6 +3148,19 @@
     font-weight: 700 !important;
     color: var(--primary, #0C447C) !important;
 }
+.rel-td-merged {
+    vertical-align: middle;
+    white-space: nowrap;
+    background: var(--color-bg-surface, #f8f9fa);
+    border-right: 2px solid var(--color-border, #e5e7eb);
+}
+.rel-td-ted {
+    font-weight: 600;
+    color: var(--primary, #0C447C);
+}
+.rel-td-nd {
+    color: var(--color-text-primary, #111827);
+}
 [data-theme="dark"] .rel-multiselect-btn,
 [data-theme="dark"] .rel-multiselect-menu {
     background: #1a2a3a;

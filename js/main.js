@@ -11194,8 +11194,8 @@
         // RELATÓRIO: Previsto por TED / ND / UP / Ano
         // =====================================================================
 
-        // Estado dos filtros: array vazio = todos selecionados
-        var _relFiltros = { teds: [], nds: [], ups: [], anos: [] };
+        // Estado: null = todos; array com valores = apenas esses
+        var _relFiltros = { teds: null, nds: null, ups: null, anos: null };
 
         function _relGetOpcoes() {
             var teds = (dados && dados.teds) ? dados.teds : [];
@@ -11219,22 +11219,29 @@
             return { teds: allTeds, nds: allNDs, ups: allUPs, anos: allAnos };
         }
 
-        function _relLabelResumo(selArr, todas) {
-            if (!selArr.length || selArr.length === todas.length) return 'Todos';
-            if (selArr.length === 1) return String(selArr[0]);
-            return selArr.length + ' selecionados';
+        function _relLabelResumo(sel, todas) {
+            // null = todos
+            if (sel === null || sel.length === todas.length) return 'Todos';
+            if (sel.length === 0) return 'Nenhum';
+            if (sel.length === 1) return String(sel[0]);
+            return sel.length + ' selecionados';
+        }
+
+        function _relItemMarcado(chave, op) {
+            var sel = _relFiltros[chave];
+            // null = todos marcados
+            return sel === null || sel.indexOf(op) !== -1;
         }
 
         function _relPopularMenu(menuId, opcoes, chave) {
             var menu = document.getElementById(menuId);
             if (!menu) return;
-            var sel = _relFiltros[chave];
             var html = '<div class="rel-menu-acoes">'
                 + '<button type="button" onclick="_relSelTodos(\'' + chave + '\',\'' + menuId + '\')">Todos</button>'
                 + '<button type="button" onclick="_relSelNenhum(\'' + chave + '\',\'' + menuId + '\')">Nenhum</button>'
                 + '</div>';
             opcoes.forEach(function(op) {
-                var checked = (!sel.length || sel.indexOf(op) !== -1) ? 'checked' : '';
+                var checked = _relItemMarcado(chave, op) ? 'checked' : '';
                 var opEsc = String(op).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
                 html += '<label class="rel-menu-item">'
                     + '<input type="checkbox" ' + checked + ' onchange="_relToggleItem(\'' + chave + '\',\'' + menuId + '\',' + JSON.stringify(op) + ',this.checked)">'
@@ -11247,28 +11254,31 @@
         function _relAtualizarLabel(chave) {
             var labelIds = { teds: 'relFiltroTEDLabel', nds: 'relFiltroNDLabel', ups: 'relFiltroUPLabel', anos: 'relFiltroAnoLabel' };
             var opcoes = _relGetOpcoes();
-            var todas = opcoes[chave] || opcoes[chave === 'nds' ? 'nds' : chave];
             var el = document.getElementById(labelIds[chave]);
-            if (el) el.textContent = _relLabelResumo(_relFiltros[chave], todas);
+            if (el) el.textContent = _relLabelResumo(_relFiltros[chave], opcoes[chave]);
         }
 
         function _relToggleItem(chave, menuId, valor, marcado) {
             var opcoes = _relGetOpcoes();
             var todas = opcoes[chave];
+            // Se era null (todos), expandir para lista completa antes de modificar
+            if (_relFiltros[chave] === null) {
+                _relFiltros[chave] = todas.slice();
+            }
             var sel = _relFiltros[chave];
             if (marcado) {
                 if (sel.indexOf(valor) === -1) sel.push(valor);
-                if (sel.length === todas.length) _relFiltros[chave] = [];
+                // Se todos estão marcados, volta a null (todos)
+                if (sel.length === todas.length) _relFiltros[chave] = null;
             } else {
                 _relFiltros[chave] = sel.filter(function(v) { return v !== valor; });
-                if (_relFiltros[chave].length === 0) _relFiltros[chave] = [];
             }
             _relAtualizarLabel(chave);
             renderizarRelatorioNDUP();
         }
 
         function _relSelTodos(chave, menuId) {
-            _relFiltros[chave] = [];
+            _relFiltros[chave] = null;
             _relAtualizarLabel(chave);
             var opcoes = _relGetOpcoes();
             _relPopularMenu(menuId, opcoes[chave], chave);
@@ -11279,23 +11289,7 @@
             _relFiltros[chave] = [];
             _relAtualizarLabel(chave);
             var opcoes = _relGetOpcoes();
-            // marcar todos como desmarcados mostrando lista vazia
-            var menu = document.getElementById(menuId);
-            if (!menu) return;
-            var html = '<div class="rel-menu-acoes">'
-                + '<button type="button" onclick="_relSelTodos(\'' + chave + '\',\'' + menuId + '\')">Todos</button>'
-                + '<button type="button" onclick="_relSelNenhum(\'' + chave + '\',\'' + menuId + '\')">Nenhum</button>'
-                + '</div>';
-            opcoes[chave].forEach(function(op) {
-                var opEsc = String(op).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-                html += '<label class="rel-menu-item">'
-                    + '<input type="checkbox" onchange="_relToggleItem(\'' + chave + '\',\'' + menuId + '\',' + JSON.stringify(op) + ',this.checked)">'
-                    + '<span>' + opEsc + '</span>'
-                    + '</label>';
-            });
-            menu.innerHTML = html;
-            // filtro "nenhum" = lista vazia = sem resultados
-            _relFiltros[chave] = ['__nenhum__'];
+            _relPopularMenu(menuId, opcoes[chave], chave);
             renderizarRelatorioNDUP();
         }
 
@@ -11310,7 +11304,6 @@
             var menu = document.getElementById(menuId);
             if (!menu) return;
             var jaAberto = menu.classList.contains('open');
-            // fechar todos
             document.querySelectorAll('.rel-multiselect-menu.open').forEach(function(m) { m.classList.remove('open'); });
             if (!jaAberto) {
                 var opcoes = _relGetOpcoes();
@@ -11327,12 +11320,18 @@
         });
 
         function limparFiltrosRelatorioNDUP() {
-            _relFiltros = { teds: [], nds: [], ups: [], anos: [] };
+            _relFiltros = { teds: null, nds: null, ups: null, anos: null };
             ['relFiltroTEDLabel','relFiltroNDLabel','relFiltroUPLabel','relFiltroAnoLabel'].forEach(function(id) {
                 var el = document.getElementById(id);
                 if (el) el.textContent = 'Todos';
             });
             renderizarRelatorioNDUP();
+        }
+
+        function _relFiltroAtivo(chave, valor) {
+            var sel = _relFiltros[chave];
+            if (sel === null) return true;       // null = todos passam
+            return sel.indexOf(valor) !== -1;
         }
 
         function renderizarRelatorioNDUP() {
@@ -11342,29 +11341,13 @@
             var teds = (dados && dados.teds) ? dados.teds : [];
             var fmt = function(v) { return (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); };
 
-            // Filtros ativos (vazio = todos; '__nenhum__' = nenhum)
-            var filtTEDs = _relFiltros.teds;
-            var filtNDs  = _relFiltros.nds;
-            var filtUPs  = _relFiltros.ups;
-            var filtAnos = _relFiltros.anos;
-
-            var semTED  = filtTEDs.indexOf('__nenhum__') !== -1;
-            var semND   = filtNDs.indexOf('__nenhum__') !== -1;
-            var semUP   = filtUPs.indexOf('__nenhum__') !== -1;
-            var semAno  = filtAnos.indexOf('__nenhum__') !== -1;
-
-            if (semTED || semND || semUP || semAno) {
-                container.innerHTML = '<p style="color:var(--text-light);font-size:0.8rem;padding:0.5rem 0;">Nenhum resultado para os filtros selecionados.</p>';
-                return;
-            }
-
-            // Agrupar dados: chave = "TED||ND||UP", valor = { ted, nd, up, anos: { ano: total } }
+            // Agrupar dados: chave = "TED||ND||UP"
             var grupos = {};
             var anosSet = {};
 
             teds.forEach(function(t) {
                 var tedLabel = (t.numTed || String(t.id || '')).trim();
-                if (filtTEDs.length && filtTEDs.indexOf(tedLabel) === -1) return;
+                if (!_relFiltroAtivo('teds', tedLabel)) return;
 
                 (t.financeiros || []).forEach(function(f) {
                     var nd  = String(f.numero || '').trim();
@@ -11372,9 +11355,9 @@
                     var ano = Number(f.anoDesc);
                     var val = parseNumber(f.valor) || 0;
 
-                    if (filtNDs.length && filtNDs.indexOf(nd) === -1) return;
-                    if (filtUPs.length && filtUPs.indexOf(up) === -1) return;
-                    if (filtAnos.length && filtAnos.indexOf(ano) === -1) return;
+                    if (!_relFiltroAtivo('nds', nd)) return;
+                    if (!_relFiltroAtivo('ups', up)) return;
+                    if (!_relFiltroAtivo('anos', ano)) return;
                     if (isNaN(ano) || ano <= 0) return;
 
                     var key = tedLabel + '||' + nd + '||' + up;
@@ -11396,7 +11379,7 @@
             });
 
             if (!linhas.length) {
-                container.innerHTML = '<p style="color:var(--text-light);font-size:0.8rem;padding:0.5rem 0;">Nenhum dado de cadastro financeiro encontrado para os filtros selecionados.</p>';
+                container.innerHTML = '<p style="color:var(--text-light);font-size:0.8rem;padding:0.5rem 0;">Nenhum dado encontrado para os filtros selecionados.</p>';
                 return;
             }
 
@@ -11407,7 +11390,33 @@
                 anosOrdenados.forEach(function(ano) { totaisAnos[ano] += (l.anos[ano] || 0); });
             });
 
-            // Montar HTML da tabela
+            // Calcular rowspan para TED e ND (mesclagem de células)
+            // Para cada linha, determinar se deve emitir célula TED e/ou ND (com rowspan)
+            var rowspanTED = [];  // rowspan a usar na linha i para coluna TED (0 = não emitir)
+            var rowspanND  = [];  // idem para ND
+
+            for (var i = 0; i < linhas.length; i++) {
+                // TED: contar quantas linhas consecutivas têm o mesmo TED
+                if (i === 0 || linhas[i].ted !== linhas[i-1].ted) {
+                    var span = 1;
+                    while (i + span < linhas.length && linhas[i + span].ted === linhas[i].ted) span++;
+                    rowspanTED[i] = span;
+                } else {
+                    rowspanTED[i] = 0;
+                }
+                // ND: contar quantas linhas consecutivas têm mesmo TED+ND
+                if (i === 0 || linhas[i].ted !== linhas[i-1].ted || linhas[i].nd !== linhas[i-1].nd) {
+                    var spanND = 1;
+                    while (i + spanND < linhas.length
+                           && linhas[i + spanND].ted === linhas[i].ted
+                           && linhas[i + spanND].nd === linhas[i].nd) spanND++;
+                    rowspanND[i] = spanND;
+                } else {
+                    rowspanND[i] = 0;
+                }
+            }
+
+            // Montar HTML
             var html = '<table class="tabela-padrao rel-ndupano-tabela" style="min-width:600px;width:100%;">';
             html += '<thead><tr>'
                 + '<th class="col-rel-ted">TED</th>'
@@ -11418,17 +11427,31 @@
             });
             html += '</tr></thead><tbody>';
 
-            linhas.forEach(function(l) {
-                html += '<tr>'
-                    + '<td style="white-space:nowrap;font-weight:500;">' + (l.ted || '—') + '</td>'
-                    + '<td style="white-space:nowrap;">' + (l.nd || '—') + '</td>'
-                    + '<td style="white-space:nowrap;">' + (l.up || '—') + '</td>';
+            linhas.forEach(function(l, i) {
+                html += '<tr>';
+
+                // Célula TED (com rowspan ou omitida)
+                if (rowspanTED[i] > 0) {
+                    html += '<td rowspan="' + rowspanTED[i] + '" class="rel-td-merged rel-td-ted">'
+                        + (l.ted || '—') + '</td>';
+                }
+
+                // Célula ND (com rowspan ou omitida)
+                if (rowspanND[i] > 0) {
+                    html += '<td rowspan="' + rowspanND[i] + '" class="rel-td-merged rel-td-nd">'
+                        + (l.nd || '—') + '</td>';
+                }
+
+                // UP (nunca mesclada)
+                html += '<td style="white-space:nowrap;">' + (l.up || '—') + '</td>';
+
                 anosOrdenados.forEach(function(ano) {
                     var v = l.anos[ano] || 0;
                     html += '<td style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:12px;">'
                         + (v ? fmt(v) : '<span style="color:var(--text-light);">—</span>')
                         + '</td>';
                 });
+
                 html += '</tr>';
             });
 
@@ -11439,14 +11462,10 @@
                 html += '<td style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:600;">'
                     + fmt(totaisAnos[ano]) + '</td>';
             });
-            html += '</tr>';
+            html += '</tr></tbody></table>';
 
-            html += '</tbody></table>';
-
-            // Contador
             html = '<p style="font-size:0.75rem;color:var(--text-light);margin:0 0 0.5rem;">'
-                + linhas.length + ' linha(s) · ' + anosOrdenados.length + ' ano(s)</p>'
-                + html;
+                + linhas.length + ' linha(s) · ' + anosOrdenados.length + ' ano(s)</p>' + html;
 
             container.innerHTML = html;
             if (typeof initLucideIcons === 'function') initLucideIcons();
