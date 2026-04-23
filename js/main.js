@@ -11475,6 +11475,170 @@
             renderizarRelatorioNDUP();
         }
 
+        // Monta os dados brutos do relatório ND/UP (reutilizado por Excel e PDF)
+        function _relBuildDados() {
+            var teds = (dados && dados.teds) ? dados.teds : [];
+            var fmt  = function(v) { return (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); };
+            var grupos = {};
+            var anosSet = {};
+
+            teds.forEach(function(t) {
+                var tedLabel = (t.numTed || String(t.id || '')).trim();
+                if (!_relPassaFiltro('teds', tedLabel)) return;
+                (t.financeiros || []).forEach(function(f) {
+                    var nd   = String(f.numero || '').trim();
+                    var up   = String(f.up || f.ug || '').trim();
+                    var anoN = Number(f.anoDesc);
+                    var ano  = String(anoN);
+                    var val  = parseNumber(f.valor) || 0;
+                    if (!_relPassaFiltro('nds',  nd))  return;
+                    if (!_relPassaFiltro('ups',  up))  return;
+                    if (!_relPassaFiltro('anos', ano)) return;
+                    if (isNaN(anoN) || anoN <= 0) return;
+                    var key = tedLabel + '||' + nd + '||' + up;
+                    if (!grupos[key]) grupos[key] = { ted: tedLabel, nd: nd, up: up, anos: {} };
+                    grupos[key].anos[ano] = (grupos[key].anos[ano] || 0) + val;
+                    anosSet[ano] = true;
+                });
+            });
+
+            var anosOrdenados = Object.keys(anosSet).sort(function(a, b) { return Number(a) - Number(b); });
+            var linhas = Object.values(grupos);
+            linhas.sort(function(a, b) {
+                if (a.ted !== b.ted) return a.ted < b.ted ? -1 : 1;
+                if (a.nd  !== b.nd)  return a.nd  < b.nd  ? -1 : 1;
+                return a.up < b.up ? -1 : 1;
+            });
+
+            var totais = {};
+            anosOrdenados.forEach(function(ano) { totais[ano] = 0; });
+            linhas.forEach(function(l) {
+                anosOrdenados.forEach(function(ano) { totais[ano] += (l.anos[ano] || 0); });
+            });
+
+            return { linhas: linhas, anosOrdenados: anosOrdenados, totais: totais, fmt: fmt };
+        }
+
+        function exportarRelatorioNDUPExcel() {
+            var d = _relBuildDados();
+            if (!d.linhas.length) { showToast('Nenhum dado para exportar.', 'info'); return; }
+
+            loadSheetJS().then(function(XLSX) {
+                var rows = [];
+                // Cabeçalho
+                var header = ['TED', 'ND', 'UP'].concat(d.anosOrdenados);
+                rows.push(header);
+                // Dados
+                d.linhas.forEach(function(l) {
+                    var row = [l.ted, l.nd, l.up];
+                    d.anosOrdenados.forEach(function(ano) { row.push(l.anos[ano] || 0); });
+                    rows.push(row);
+                });
+                // Total
+                var totRow = ['Total', '', ''];
+                d.anosOrdenados.forEach(function(ano) { totRow.push(d.totais[ano] || 0); });
+                rows.push(totRow);
+
+                var ws = XLSX.utils.aoa_to_sheet(rows);
+
+                // Largura das colunas
+                var cols = [{ wch: 22 }, { wch: 14 }, { wch: 12 }];
+                d.anosOrdenados.forEach(function() { cols.push({ wch: 18 }); });
+                ws['!cols'] = cols;
+
+                var wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Previsto ND-UP');
+                XLSX.writeFile(wb, 'previsto_nd_up_ano.xlsx');
+            }).catch(function(e) {
+                showToast('Erro ao gerar Excel: ' + (e && e.message ? e.message : e), 'danger');
+            });
+        }
+
+        function exportarRelatorioNDUPPDF() {
+            var d = _relBuildDados();
+            if (!d.linhas.length) { showToast('Nenhum dado para exportar.', 'info'); return; }
+
+            // Construir cabeçalho de filtros ativos para exibir no PDF
+            var filtroTexto = [];
+            ['teds','nds','ups','anos'].forEach(function(chave) {
+                var sel = _relSel[chave];
+                var labels = { teds: 'TED', nds: 'ND', ups: 'UP', anos: 'Ano' };
+                if (sel !== null && sel.length > 0) {
+                    filtroTexto.push(labels[chave] + ': ' + sel.join(', '));
+                }
+            });
+            var filtroStr = filtroTexto.length ? filtroTexto.join(' | ') : 'Todos';
+
+            // Colunas do ano como th
+            var thAnos = d.anosOrdenados.map(function(a) { return '<th>' + a + '</th>'; }).join('');
+            // Linhas de dados com mesclagem visual (rowspan)
+            var rowspanTED = [], rowspanND = [];
+            for (var i = 0; i < d.linhas.length; i++) {
+                if (i === 0 || d.linhas[i].ted !== d.linhas[i-1].ted) {
+                    var s = 1;
+                    while (i + s < d.linhas.length && d.linhas[i+s].ted === d.linhas[i].ted) s++;
+                    rowspanTED[i] = s;
+                } else { rowspanTED[i] = 0; }
+                if (i === 0 || d.linhas[i].ted !== d.linhas[i-1].ted || d.linhas[i].nd !== d.linhas[i-1].nd) {
+                    var sn = 1;
+                    while (i + sn < d.linhas.length && d.linhas[i+sn].ted === d.linhas[i].ted && d.linhas[i+sn].nd === d.linhas[i].nd) sn++;
+                    rowspanND[i] = sn;
+                } else { rowspanND[i] = 0; }
+            }
+
+            var tbody = '';
+            d.linhas.forEach(function(l, i) {
+                tbody += '<tr>';
+                if (rowspanTED[i] > 0) tbody += '<td rowspan="' + rowspanTED[i] + '" style="font-weight:600;background:#f0f4fa;border-right:2px solid #c6d6f5;">' + (l.ted || '—') + '</td>';
+                if (rowspanND[i]  > 0) tbody += '<td rowspan="' + rowspanND[i]  + '" style="background:#f8f9fa;border-right:2px solid #e5e7eb;">' + (l.nd  || '—') + '</td>';
+                tbody += '<td>' + (l.up || '—') + '</td>';
+                d.anosOrdenados.forEach(function(ano) {
+                    var v = l.anos[ano] || 0;
+                    tbody += '<td style="text-align:right;">' + (v ? d.fmt(v) : '—') + '</td>';
+                });
+                tbody += '</tr>';
+            });
+            // linha de total
+            tbody += '<tr style="background:#e8f0fe;font-weight:700;">'
+                + '<td colspan="3">Total</td>';
+            d.anosOrdenados.forEach(function(ano) {
+                tbody += '<td style="text-align:right;">' + d.fmt(d.totais[ano]) + '</td>';
+            });
+            tbody += '</tr>';
+
+            var html = '<!doctype html><html><head><meta charset="utf-8">'
+                + '<title>Previsto por TED / ND / UP / Ano</title>'
+                + '<style>'
+                + '@page{size:A4 landscape;margin:10mm}'
+                + 'body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;padding:4px}'
+                + 'h2{margin:0 0 4px;font-size:14px;color:#0C447C}'
+                + '.filtros{font-size:10px;color:#555;margin-bottom:8px}'
+                + 'table{border-collapse:collapse;width:100%}'
+                + 'th,td{border:1px solid #ccc;padding:4px 6px;vertical-align:middle}'
+                + 'th{background:#0C447C;color:#fff;text-align:center}'
+                + 'td{white-space:nowrap}'
+                + 'tbody tr:nth-child(even) td{background:#f9f9f9}'
+                + '</style>'
+                + '</head><body>'
+                + '<h2>Previsto por TED / ND / UP / Ano</h2>'
+                + '<div class="filtros">Filtros: ' + filtroStr + '</div>'
+                + '<table><thead><tr><th>TED</th><th>ND</th><th>UP</th>' + thAnos + '</tr></thead>'
+                + '<tbody>' + tbody + '</tbody></table>'
+                + '</body></html>';
+
+            var win = window.open('', '_blank');
+            if (!win) { showToast('Pop-up bloqueado pelo navegador. Permita pop-ups para esta página.', 'danger'); return; }
+            win.document.write(html);
+            win.document.close();
+            win.focus();
+            setTimeout(function() {
+                try {
+                    win.print();
+                    setTimeout(function() { try { win.close(); } catch(e) {} }, 800);
+                } catch(e) { console.error(e); }
+            }, 600);
+        }
+
         // Modo leitura ativado por padrão
         window._readOnlyMode = true;
 
