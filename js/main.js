@@ -11194,8 +11194,10 @@
         // RELATÓRIO: Previsto por TED / ND / UP / Ano
         // =====================================================================
 
-        // Estado: null = todos; array com valores = apenas esses
-        var _relFiltros = { teds: null, nds: null, ups: null, anos: null };
+        // Estado: objeto com conjuntos de valores SELECIONADOS (string).
+        // Chave ausente ou null = todos selecionados (inicializado sob demanda).
+        // Usamos sempre strings para comparação (evita bug number vs string).
+        var _relSel = { teds: null, nds: null, ups: null, anos: null };
 
         function _relGetOpcoes() {
             var teds = (dados && dados.teds) ? dados.teds : [];
@@ -11204,100 +11206,97 @@
                 var tedLabel = (t.numTed || String(t.id || '')).trim();
                 if (tedLabel && allTeds.indexOf(tedLabel) === -1) allTeds.push(tedLabel);
                 (t.financeiros || []).forEach(function(f) {
-                    var nd = String(f.numero || '').trim();
-                    var up = String(f.up || f.ug || '').trim();
-                    var ano = Number(f.anoDesc);
+                    var nd  = String(f.numero || '').trim();
+                    var up  = String(f.up || f.ug || '').trim();
+                    var ano = String(Number(f.anoDesc));   // sempre string
                     if (nd && allNDs.indexOf(nd) === -1) allNDs.push(nd);
                     if (up && allUPs.indexOf(up) === -1) allUPs.push(up);
-                    if (!isNaN(ano) && ano > 0 && allAnos.indexOf(ano) === -1) allAnos.push(ano);
+                    if (ano !== 'NaN' && ano !== '0' && allAnos.indexOf(ano) === -1) allAnos.push(ano);
                 });
             });
             allTeds.sort();
             allNDs.sort();
             allUPs.sort();
-            allAnos.sort(function(a, b) { return a - b; });
+            allAnos.sort(function(a, b) { return Number(a) - Number(b); });
             return { teds: allTeds, nds: allNDs, ups: allUPs, anos: allAnos };
         }
 
-        function _relLabelResumo(sel, todas) {
-            // null = todos
-            if (sel === null || sel.length === todas.length) return 'Todos';
+        // Garante que _relSel[chave] é um array (copia todas as opções se ainda for null)
+        function _relEnsureArray(chave) {
+            if (_relSel[chave] === null) {
+                _relSel[chave] = _relGetOpcoes()[chave].slice();
+            }
+        }
+
+        function _relLabelResumo(chave) {
+            var opcoes = _relGetOpcoes()[chave];
+            var sel = _relSel[chave];
+            if (sel === null || sel.length === opcoes.length) return 'Todos';
             if (sel.length === 0) return 'Nenhum';
-            if (sel.length === 1) return String(sel[0]);
+            if (sel.length === 1) return sel[0];
             return sel.length + ' selecionados';
         }
 
-        function _relItemMarcado(chave, op) {
-            var sel = _relFiltros[chave];
-            // null = todos marcados
-            return sel === null || sel.indexOf(op) !== -1;
+        function _relAtualizarLabel(chave) {
+            var ids = { teds: 'relFiltroTEDLabel', nds: 'relFiltroNDLabel', ups: 'relFiltroUPLabel', anos: 'relFiltroAnoLabel' };
+            var el = document.getElementById(ids[chave]);
+            if (el) el.textContent = _relLabelResumo(chave);
         }
 
-        function _relPopularMenu(menuId, opcoes, chave) {
+        function _relPopularMenu(menuId, chave) {
             var menu = document.getElementById(menuId);
             if (!menu) return;
+            var opcoes = _relGetOpcoes()[chave];
+            var sel = _relSel[chave];   // null = todos
             var html = '<div class="rel-menu-acoes">'
                 + '<button type="button" onclick="_relSelTodos(\'' + chave + '\',\'' + menuId + '\')">Todos</button>'
                 + '<button type="button" onclick="_relSelNenhum(\'' + chave + '\',\'' + menuId + '\')">Nenhum</button>'
                 + '</div>';
             opcoes.forEach(function(op) {
-                var checked = _relItemMarcado(chave, op) ? 'checked' : '';
-                var opEsc = String(op).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+                var marcado = (sel === null || sel.indexOf(op) !== -1);
+                var opEsc = op.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 html += '<label class="rel-menu-item">'
-                    + '<input type="checkbox" ' + checked + ' onchange="_relToggleItem(\'' + chave + '\',\'' + menuId + '\',' + JSON.stringify(op) + ',this.checked)">'
-                    + '<span>' + opEsc + '</span>'
+                    + '<input type="checkbox" ' + (marcado ? 'checked' : '') + ' onchange="_relToggleItem(\'' + chave + '\',\'' + menuId + '\',\'' + opEsc + '\',this.checked)">'
+                    + '<span>' + op + '</span>'
                     + '</label>';
             });
             menu.innerHTML = html;
         }
 
-        function _relAtualizarLabel(chave) {
-            var labelIds = { teds: 'relFiltroTEDLabel', nds: 'relFiltroNDLabel', ups: 'relFiltroUPLabel', anos: 'relFiltroAnoLabel' };
-            var opcoes = _relGetOpcoes();
-            var el = document.getElementById(labelIds[chave]);
-            if (el) el.textContent = _relLabelResumo(_relFiltros[chave], opcoes[chave]);
-        }
-
         function _relToggleItem(chave, menuId, valor, marcado) {
-            var opcoes = _relGetOpcoes();
-            var todas = opcoes[chave];
-            // Se era null (todos), expandir para lista completa antes de modificar
-            if (_relFiltros[chave] === null) {
-                _relFiltros[chave] = todas.slice();
-            }
-            var sel = _relFiltros[chave];
+            _relEnsureArray(chave);
+            var sel = _relSel[chave];
             if (marcado) {
                 if (sel.indexOf(valor) === -1) sel.push(valor);
-                // Se todos estão marcados, volta a null (todos)
-                if (sel.length === todas.length) _relFiltros[chave] = null;
             } else {
-                _relFiltros[chave] = sel.filter(function(v) { return v !== valor; });
+                _relSel[chave] = sel.filter(function(v) { return v !== valor; });
             }
+            // Se todos marcados novamente, simplifica para null
+            var opcoes = _relGetOpcoes()[chave];
+            if (_relSel[chave] && _relSel[chave].length === opcoes.length) _relSel[chave] = null;
             _relAtualizarLabel(chave);
             renderizarRelatorioNDUP();
         }
 
         function _relSelTodos(chave, menuId) {
-            _relFiltros[chave] = null;
+            _relSel[chave] = null;
             _relAtualizarLabel(chave);
-            var opcoes = _relGetOpcoes();
-            _relPopularMenu(menuId, opcoes[chave], chave);
+            _relPopularMenu(menuId, chave);
             renderizarRelatorioNDUP();
         }
 
         function _relSelNenhum(chave, menuId) {
-            _relFiltros[chave] = [];
+            _relSel[chave] = [];
             _relAtualizarLabel(chave);
-            var opcoes = _relGetOpcoes();
-            _relPopularMenu(menuId, opcoes[chave], chave);
+            _relPopularMenu(menuId, chave);
             renderizarRelatorioNDUP();
         }
 
         function toggleRelFiltro(menuId) {
             var chaveMap = {
                 relFiltroTEDMenu: 'teds',
-                relFiltroNDMenu: 'nds',
-                relFiltroUPMenu: 'ups',
+                relFiltroNDMenu:  'nds',
+                relFiltroUPMenu:  'ups',
                 relFiltroAnoMenu: 'anos'
             };
             var chave = chaveMap[menuId];
@@ -11306,13 +11305,11 @@
             var jaAberto = menu.classList.contains('open');
             document.querySelectorAll('.rel-multiselect-menu.open').forEach(function(m) { m.classList.remove('open'); });
             if (!jaAberto) {
-                var opcoes = _relGetOpcoes();
-                _relPopularMenu(menuId, opcoes[chave], chave);
+                _relPopularMenu(menuId, chave);
                 menu.classList.add('open');
             }
         }
 
-        // Fechar menus ao clicar fora
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.rel-multiselect')) {
                 document.querySelectorAll('.rel-multiselect-menu.open').forEach(function(m) { m.classList.remove('open'); });
@@ -11320,7 +11317,7 @@
         });
 
         function limparFiltrosRelatorioNDUP() {
-            _relFiltros = { teds: null, nds: null, ups: null, anos: null };
+            _relSel = { teds: null, nds: null, ups: null, anos: null };
             ['relFiltroTEDLabel','relFiltroNDLabel','relFiltroUPLabel','relFiltroAnoLabel'].forEach(function(id) {
                 var el = document.getElementById(id);
                 if (el) el.textContent = 'Todos';
@@ -11328,10 +11325,11 @@
             renderizarRelatorioNDUP();
         }
 
-        function _relFiltroAtivo(chave, valor) {
-            var sel = _relFiltros[chave];
-            if (sel === null) return true;       // null = todos passam
-            return sel.indexOf(valor) !== -1;
+        // Retorna true se o valor (string) passa pelo filtro do chave
+        function _relPassaFiltro(chave, valorStr) {
+            var sel = _relSel[chave];
+            if (sel === null) return true;
+            return sel.indexOf(valorStr) !== -1;
         }
 
         function renderizarRelatorioNDUP() {
@@ -11347,18 +11345,19 @@
 
             teds.forEach(function(t) {
                 var tedLabel = (t.numTed || String(t.id || '')).trim();
-                if (!_relFiltroAtivo('teds', tedLabel)) return;
+                if (!_relPassaFiltro('teds', tedLabel)) return;
 
                 (t.financeiros || []).forEach(function(f) {
-                    var nd  = String(f.numero || '').trim();
-                    var up  = String(f.up || f.ug || '').trim();
-                    var ano = Number(f.anoDesc);
-                    var val = parseNumber(f.valor) || 0;
+                    var nd   = String(f.numero || '').trim();
+                    var up   = String(f.up || f.ug || '').trim();
+                    var anoN = Number(f.anoDesc);
+                    var ano  = String(anoN);   // string para comparação uniforme
+                    var val  = parseNumber(f.valor) || 0;
 
-                    if (!_relFiltroAtivo('nds', nd)) return;
-                    if (!_relFiltroAtivo('ups', up)) return;
-                    if (!_relFiltroAtivo('anos', ano)) return;
-                    if (isNaN(ano) || ano <= 0) return;
+                    if (!_relPassaFiltro('nds',  nd))  return;
+                    if (!_relPassaFiltro('ups',  up))  return;
+                    if (!_relPassaFiltro('anos', ano)) return;
+                    if (isNaN(anoN) || anoN <= 0) return;
 
                     var key = tedLabel + '||' + nd + '||' + up;
                     if (!grupos[key]) grupos[key] = { ted: tedLabel, nd: nd, up: up, anos: {} };
@@ -11367,7 +11366,8 @@
                 });
             });
 
-            var anosOrdenados = Object.keys(anosSet).map(Number).sort(function(a, b) { return a - b; });
+            // anosSet tem chaves string; ordenar numericamente e manter como string
+            var anosOrdenados = Object.keys(anosSet).sort(function(a, b) { return Number(a) - Number(b); });
 
             var linhas = Object.values(grupos);
             linhas.sort(function(a, b) {
