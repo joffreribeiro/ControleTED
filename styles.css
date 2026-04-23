@@ -3015,6 +3015,161 @@
     background: #123057 !important;
 }
 
+/* ===== Relatório ND/UP/Ano ===== */
+.relatorio-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    background: var(--color-bg-surface, #f8f9fa);
+    border: 0.5px solid var(--color-border, #e0e0e0);
+    border-radius: 8px;
+}
+.relatorio-filtro-grupo {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    position: relative;
+}
+.relatorio-filtro-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary, #6b7280);
+    white-space: nowrap;
+}
+.rel-multiselect {
+    position: relative;
+}
+.rel-multiselect-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.55rem;
+    font-size: 12px;
+    font-weight: 500;
+    background: #fff;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--color-text-primary, #111827);
+    white-space: nowrap;
+    min-width: 90px;
+    justify-content: space-between;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.rel-multiselect-btn:hover {
+    border-color: var(--primary, #0C447C);
+    box-shadow: 0 0 0 2px rgba(12,68,124,0.08);
+}
+.rel-multiselect-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 180px;
+    max-height: 240px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    z-index: 900;
+    padding: 0.3rem 0;
+}
+.rel-multiselect-menu.open {
+    display: block;
+}
+.rel-menu-acoes {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.3rem 0.5rem 0.4rem;
+    border-bottom: 0.5px solid var(--color-border, #e5e7eb);
+}
+.rel-menu-acoes button {
+    font-size: 11px;
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 4px;
+    background: var(--color-bg-surface, #f3f4f6);
+    cursor: pointer;
+    color: var(--primary, #0C447C);
+    font-weight: 600;
+}
+.rel-menu-acoes button:hover {
+    background: var(--primary, #0C447C);
+    color: #fff;
+    border-color: var(--primary, #0C447C);
+}
+.rel-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--color-text-primary, #111827);
+    transition: background 0.1s;
+}
+.rel-menu-item:hover {
+    background: var(--color-bg-surface, #f3f4f6);
+}
+.rel-menu-item input[type="checkbox"] {
+    accent-color: var(--primary, #0C447C);
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+.rel-ndupano-tabela th, .rel-ndupano-tabela td {
+    padding: 7px 10px;
+    font-size: 12px;
+}
+.rel-ndupano-tabela th {
+    background: var(--color-bg-surface, #f8f9fa);
+    font-weight: 600;
+    color: var(--primary, #0C447C);
+    white-space: nowrap;
+    text-align: left;
+}
+.rel-ndupano-tabela th.col-rel-ano {
+    text-align: right;
+    min-width: 110px;
+}
+.rel-ndupano-tabela td {
+    border-bottom: 0.5px solid rgba(0,0,0,0.05);
+}
+.rel-ndupano-tabela tbody tr:hover td {
+    background: rgba(12,68,124,0.04);
+}
+.rel-total-row td {
+    background: var(--color-bg-surface, #f0f4fa) !important;
+    border-top: 1.5px solid var(--primary, #0C447C);
+    border-bottom: none !important;
+    font-weight: 700 !important;
+    color: var(--primary, #0C447C) !important;
+}
+[data-theme="dark"] .rel-multiselect-btn,
+[data-theme="dark"] .rel-multiselect-menu {
+    background: #1a2a3a;
+    color: #e2e8f0;
+    border-color: #2d3f55;
+}
+[data-theme="dark"] .rel-menu-item:hover {
+    background: #1e3248;
+}
+[data-theme="dark"] .rel-menu-acoes {
+    border-color: #2d3f55;
+}
+[data-theme="dark"] .rel-menu-acoes button {
+    background: #1e3248;
+    border-color: #2d3f55;
+    color: #93c5fd;
+}
+[data-theme="dark"] .rel-menu-acoes button:hover {
+    background: #185FA5;
+    color: #fff;
+}
+
 /* ===== Auto-generated classes (extract_inline.py) ===== */
 .auto-style-001 { display: none; }
 .auto-style-002 { margin-bottom: 0.5rem; }

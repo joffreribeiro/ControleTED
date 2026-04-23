@@ -1156,6 +1156,64 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Relatório Previsto por ND/UP/Ano -->
+            <div class="card" style="margin-top:1rem;">
+                <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;">
+                    <i data-lucide="table-2" style="width:18px;height:18px;color:var(--primary);"></i>
+                    <h2 style="margin:0;">Previsto por TED / ND / UP / Ano</h2>
+                </div>
+
+                <!-- Filtros -->
+                <div class="relatorio-filtros" id="filtrosRelatorioNDUP">
+                    <div class="relatorio-filtro-grupo">
+                        <span class="relatorio-filtro-label">TED</span>
+                        <div class="rel-multiselect" id="relFiltroTED">
+                            <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroTEDMenu')">
+                                <span id="relFiltroTEDLabel">Todos</span>
+                                <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                            </button>
+                            <div class="rel-multiselect-menu" id="relFiltroTEDMenu"></div>
+                        </div>
+                    </div>
+                    <div class="relatorio-filtro-grupo">
+                        <span class="relatorio-filtro-label">ND</span>
+                        <div class="rel-multiselect" id="relFiltroND">
+                            <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroNDMenu')">
+                                <span id="relFiltroNDLabel">Todas</span>
+                                <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                            </button>
+                            <div class="rel-multiselect-menu" id="relFiltroNDMenu"></div>
+                        </div>
+                    </div>
+                    <div class="relatorio-filtro-grupo">
+                        <span class="relatorio-filtro-label">UP</span>
+                        <div class="rel-multiselect" id="relFiltroUP">
+                            <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroUPMenu')">
+                                <span id="relFiltroUPLabel">Todas</span>
+                                <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                            </button>
+                            <div class="rel-multiselect-menu" id="relFiltroUPMenu"></div>
+                        </div>
+                    </div>
+                    <div class="relatorio-filtro-grupo">
+                        <span class="relatorio-filtro-label">Ano</span>
+                        <div class="rel-multiselect" id="relFiltroAno">
+                            <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroAnoMenu')">
+                                <span id="relFiltroAnoLabel">Todos</span>
+                                <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                            </button>
+                            <div class="rel-multiselect-menu" id="relFiltroAnoMenu"></div>
+                        </div>
+                    </div>
+                    <button class="btn" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="limparFiltrosRelatorioNDUP()">Limpar</button>
+                </div>
+
+                <!-- Tabela -->
+                <div id="tabelaRelatorioNDUP" style="overflow-x:auto;margin-top:0.75rem;">
+                    <p style="color:var(--text-light);font-size:0.8rem;">Carregando...</p>
+                </div>
+            </div>
         </div>
 
         <!-- TAB 6: Configurações -->
