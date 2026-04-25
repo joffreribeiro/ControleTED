@@ -124,7 +124,7 @@
             font-size: 0.925rem;
             line-height: 1.6;
             min-height: 100vh;
-            display: flex;
+            overflow-x: hidden;
         }
 
         /* ===== Sidebar lateral ===== */
@@ -335,10 +335,12 @@
         /* Main Container — empurrado pela sidebar */
         .container {
             margin-left: 232px;
-            flex: 1;
+            width: calc(100vw - 232px);
+            max-width: calc(100vw - 232px);
             padding: 1.5rem;
             min-height: 100vh;
             box-sizing: border-box;
+            overflow-x: hidden;
         }
 
         /* Abas — ocultas (navegação agora é pela sidebar) */
