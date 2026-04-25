@@ -870,7 +870,7 @@
                 tab.classList.remove('active');
                 tab.style.display = 'none';
             });
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-btn, .nav-item').forEach(btn => btn.classList.remove('active'));
 
             // Mostrar aba selecionada
             var tabEl = document.getElementById(tabName);
@@ -878,7 +878,7 @@
                 tabEl.classList.add('active');
                 tabEl.style.display = 'block';
             }
-            var btnToActivate = btnEl || document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+            var btnToActivate = btnEl || document.querySelector('.nav-item[data-tab="' + tabName + '"]') || document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
             if (btnToActivate) btnToActivate.classList.add('active');
 
             // Inicializar conteúdo específico da aba

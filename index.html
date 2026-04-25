@@ -24,45 +24,90 @@
             </div>
         </div>
 
-        <!-- Navbar -->
-        <nav>
-            <div class="nav-inner">
-                <h1>
-                    <span class="nav-brand-icon">
-                        <img src="logo-controle-ted.svg" alt="Logo Sistema Controle TED">
-                    </span>
-                    <span class="nav-brand-text">
-                        <span class="nav-brand-name">Sistema Controle TED</span>
-                        <span class="nav-brand-sub">TERMO DE EXECUÇÃO DESCENTRALIZADA</span>
-                    </span>
-                </h1>
-                <div class="nav-actions">
-                    <div class="topbar-badge" title="sltimo salvamento">
-                        <span id="cloudLastSync">→</span>
-                    </div>
-                    <button id="btnCarregarTopo" class="topbar-btn topbar-btn-carregar" onclick="carregarDoCloud()">Carregar</button>
-                    <button id="btnSalvarTopo" class="topbar-btn topbar-btn-salvar" onclick="salvarNoCloud()">Salvar</button>
-                    <span id="modeIndicator" class="topbar-badge topbar-mode" title="Modo atual">📖 Leitura</span>
-                    <button id="btnAdminLogout" class="topbar-btn topbar-btn-logoff auto-style-001" onclick="doLogout()" title="Sair do modo Admin">
-                        <i data-lucide="log-out" class="inline-icon-sm"></i> Sair
-                    </button>
-                    <button id="btnAdminLogin" class="topbar-btn topbar-btn-admin-login" onclick="showLoginScreen()" title="Entrar como Admin">
-                        <i data-lucide="lock" class="inline-icon-sm"></i>
-                    </button>
-                </div>
-            </div>
-        </nav>
+        <!-- Sidebar lateral -->
+        <aside class="sidebar" role="navigation" aria-label="Menu lateral">
 
-        <!-- Subbar (seletor de TED) -->
-        <div class="subbar">
-            <div class="subbar-inner">
-                <div class="ted-chip" id="selectedTedChip" onclick="toggleTedDropdown()">
-                    <span class="ted-status-dot" aria-hidden="true"></span>
-                    <span class="ted-chip-text" id="selectedTedText">Selecionar TED</span>
-                    <i data-lucide="chevron-down" class="lucide"></i>
+            <!-- Logo / Título -->
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">
+                        <img src="logo-controle-ted.svg" alt="Logo" style="width:26px;height:26px;object-fit:contain;">
+                    </div>
+                    <div class="sidebar-logo-text">
+                        <span class="sidebar-title">Controle TED</span>
+                        <span class="sidebar-subtitle">TERMO DE EXEC. DESC.</span>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Navegação principal -->
+            <nav class="sidebar-nav" aria-label="Navegação principal">
+                <div class="nav-group">
+                    <div class="nav-group-label">Principal</div>
+                    <button class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard', this)">
+                        <i data-lucide="layout-dashboard" class="nav-item-icon"></i>
+                        <span class="nav-item-label">Dashboard</span>
+                    </button>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">Gestão</div>
+                    <button class="nav-item" data-tab="teds" onclick="switchTab('teds', this)">
+                        <i data-lucide="file-text" class="nav-item-icon"></i>
+                        <span class="nav-item-label">TEDs</span>
+                    </button>
+                    <button id="tab-novo" class="nav-item auto-style-001" data-tab="novo" onclick="switchTab('novo', this)">
+                        <i data-lucide="plus-circle" class="nav-item-icon"></i>
+                        <span class="nav-item-label">Novo TED</span>
+                    </button>
+                    <button class="nav-item" data-tab="detalhes" onclick="switchTab('detalhes', this)">
+                        <i data-lucide="search" class="nav-item-icon"></i>
+                        <span class="nav-item-label">Detalhes TED</span>
+                    </button>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">Análise</div>
+                    <button id="tab-relatorios" class="nav-item" data-tab="relatorios" onclick="switchTab('relatorios', this)">
+                        <i data-lucide="file-bar-chart" class="nav-item-icon"></i>
+                        <span class="nav-item-label">Relatórios</span>
+                    </button>
+                    <button id="tab-config" class="nav-item auto-style-001" data-tab="config" onclick="switchTab('config', this)">
+                        <i data-lucide="settings" class="nav-item-icon"></i>
+                        <span class="nav-item-label">Configurações</span>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Rodapé: seletor de TED + ações -->
+            <div class="sidebar-footer">
+                <div class="sidebar-ted-selector">
+                    <div class="ted-chip" id="selectedTedChip" onclick="toggleTedDropdown()">
+                        <span class="ted-status-dot" aria-hidden="true"></span>
+                        <span class="ted-chip-text" id="selectedTedText">Selecionar TED</span>
+                        <i data-lucide="chevron-down" class="lucide"></i>
+                    </div>
+                </div>
+                <div class="sidebar-actions">
+                    <div class="sidebar-sync" title="Última sincronização">
+                        <span id="cloudLastSync" style="font-size:10px;color:rgba(255,255,255,0.5);">→</span>
+                    </div>
+                    <div class="sidebar-action-btns">
+                        <button id="btnCarregarTopo" class="topbar-btn topbar-btn-carregar" onclick="carregarDoCloud()">Carregar</button>
+                        <button id="btnSalvarTopo" class="topbar-btn topbar-btn-salvar" onclick="salvarNoCloud()">Salvar</button>
+                    </div>
+                    <div class="sidebar-action-btns" style="margin-top:6px;">
+                        <span id="modeIndicator" class="topbar-badge topbar-mode" title="Modo atual">📖 Leitura</span>
+                        <button id="btnAdminLogout" class="topbar-btn topbar-btn-logoff auto-style-001" onclick="doLogout()" title="Sair do modo Admin" style="display:none;">
+                            <i data-lucide="log-out" class="inline-icon-sm"></i> Sair
+                        </button>
+                        <button id="btnAdminLogin" class="topbar-btn topbar-btn-admin-login" onclick="showLoginScreen()" title="Entrar como Admin">
+                            <i data-lucide="lock" class="inline-icon-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
 
         <!-- Modal: Adicionar Entrega (formulário com data DD/MM/AAAA) -->
         <div id="modalAddEntregaBackdrop" class="modal-backdrop" aria-hidden="true">
@@ -345,15 +390,6 @@
 
     <!-- Container Principal -->
     <div class="container">
-        <!-- Abas -->
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)"><i data-lucide="layout-dashboard"></i> Dashboard</button>
-            <button class="tab-btn" data-tab="teds" onclick="switchTab('teds', this)"><i data-lucide="file-text"></i> TED</button>
-            <button id="tab-novo" class="tab-btn auto-style-001" data-tab="novo" onclick="switchTab('novo', this)"><i data-lucide="plus-circle"></i> Novo TED</button>
-            <button class="tab-btn" data-tab="detalhes" onclick="switchTab('detalhes', this)"><i data-lucide="search"></i> Detalhes TED</button>
-            <button id="tab-relatorios" class="tab-btn" data-tab="relatorios" onclick="switchTab('relatorios', this)"><i data-lucide="file-bar-chart"></i> Relatórios</button>
-            <button id="tab-config" class="tab-btn auto-style-001" data-tab="config" onclick="switchTab('config', this)"><i data-lucide="settings"></i> Configurações</button>
-        </div>
 
         <!-- TAB 1: Dashboard -->
         <div id="dashboard" class="tab-content active">
