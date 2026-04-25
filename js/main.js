@@ -2705,9 +2705,9 @@
                     if (infoParts.length) changesHtml += infoParts.join('');
                     if (!changesHtml) changesHtml = '-';
 
-                    const viewBtn = `<button class="btn-icon" onclick="abrirModalAlteracao(${idx}, true)" title="Ver alterações"><i data-lucide="eye" class="inline-icon-sm"></i></button>`;
-                    const editBtn = `<button class="btn-icon edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>`;
-                    const delBtn = `<button class="btn-icon delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
+                    const viewBtn = `<button class="btn-icon-action" onclick="abrirModalAlteracao(${idx}, true)" title="Ver alterações"><i data-lucide="eye" class="inline-icon-sm"></i></button>`;
+                    const editBtn = `<button class="btn-icon-action edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>`;
+                    const delBtn = `<button class="btn-icon-action delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
                     const actionBtns = window._readOnlyMode ? viewBtn : `${viewBtn} ${editBtn} ${delBtn}`;
                     histHtml += `<tr><td class="col-num">${idx+1}</td><td class="col-tipo" style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td class="col-data">${dataStr}</td><td class="col-alteracoes" style="max-width:420px;">${changesHtml}</td><td class="col-acao ad-action-cell">${actionBtns}</td></tr>`;
                 });
@@ -3892,7 +3892,7 @@
                         const dataOrig = (col.field === 'numero') ? String(item[col.field] || '').replace(/[^0-9]/g, '') : sanitizeString(String(item[col.field] || '')).replace(/\"/g, '&quot;');
                         html += `<td contenteditable="true" data-field="${col.field}" data-type="${col.type || 'text'}" data-orig="${dataOrig}">${val !== undefined && val !== null ? val : ''}</td>`;
                     });
-                    html += `<td><button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`;
+                    html += `<td><button class="btn-icon-action delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`;
                     html += '</tr>';
                 });
                 html += '</tbody></table></div>';
@@ -3924,7 +3924,7 @@
             });
             // Botão remover
             const tdBtn = document.createElement('td');
-            tdBtn.innerHTML = `<button class="btn-icon delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
+            tdBtn.innerHTML = `<button class="btn-icon-action delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
             tr.appendChild(tdBtn);
             tbody.appendChild(tr);
             // Aplicar máscaras de formatação na nova linha
