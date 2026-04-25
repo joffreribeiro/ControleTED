@@ -79,14 +79,13 @@
                 </div>
             </nav>
 
-            <!-- Rodapé: seletor de TED + ações -->
+            <!-- Rodapé: ações -->
             <div class="sidebar-footer">
-                <div class="sidebar-ted-selector">
-                    <div class="ted-chip" id="selectedTedChip" onclick="toggleTedDropdown()">
-                        <span class="ted-status-dot" aria-hidden="true"></span>
-                        <span class="ted-chip-text" id="selectedTedText">Selecionar TED</span>
-                        <i data-lucide="chevron-down" class="lucide"></i>
-                    </div>
+                <!-- Indicador do TED selecionado (somente leitura na sidebar) -->
+                <div class="sidebar-ted-indicator" onclick="switchTab('detalhes')" title="Clique para ver detalhes do TED">
+                    <span class="ted-status-dot" aria-hidden="true"></span>
+                    <span id="sidebarTedText">Selecionar TED</span>
+                    <i data-lucide="chevron-right" style="width:12px;height:12px;opacity:0.5;flex-shrink:0;"></i>
                 </div>
                 <div class="sidebar-actions">
                     <div class="sidebar-sync" title="Última sincronização">
@@ -702,7 +701,14 @@
         <!-- TAB 4: Detalhes TED -->
         <div id="detalhes" class="tab-content">
             <div class="card">
-                <h2>Detalhes do TED</h2>
+                <div class="detalhes-header">
+                    <h2>Detalhes do TED</h2>
+                    <div class="ted-chip" id="selectedTedChip" onclick="toggleTedDropdown()">
+                        <span class="ted-status-dot" aria-hidden="true"></span>
+                        <span class="ted-chip-text" id="selectedTedText">Selecionar TED</span>
+                        <i data-lucide="chevron-down" class="lucide"></i>
+                    </div>
+                </div>
 
                 <!-- Busca por NF removida conforme solicitado -->
 

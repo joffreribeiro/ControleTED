@@ -11692,5 +11692,14 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             initLucideIcons();
+
+            // Espelha o texto do chip de detalhes no indicador da sidebar
+            const tedTextEl = document.getElementById('selectedTedText');
+            const sidebarEl = document.getElementById('sidebarTedText');
+            if (tedTextEl && sidebarEl) {
+                const sync = () => { sidebarEl.textContent = tedTextEl.textContent; };
+                sync();
+                new MutationObserver(sync).observe(tedTextEl, { childList: true, characterData: true, subtree: true });
+            }
         });
     
