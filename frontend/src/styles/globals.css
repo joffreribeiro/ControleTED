@@ -60,33 +60,40 @@ body {
 
 /* ─── Sidebar ───────────────────────────────────── */
 .sidebar {
-  width: var(--sidebar-width);
-  background: var(--color-primary);
-  position: fixed;
-  top: 0; left: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  z-index: 200;
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: var(--sidebar-width) !important;
+  background: var(--color-primary) !important;
+  border-right: 1px solid rgba(255,255,255,0.08);
   padding: 16px 12px;
-  gap: 8px;
+  display: flex !important;
+  flex-direction: column;
+  gap: 0;
+  z-index: 2000;
+  overflow: hidden;
 }
 
+/* Cabeçalho da sidebar */
 .sidebar-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 4px 12px;
+  padding: 4px 6px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
 .sidebar-brand-icon {
-  width: 34px; height: 34px;
+  width: 36px;
+  height: 36px;
   background: rgba(255,255,255,0.12);
   border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -94,77 +101,95 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
-.sidebar-brand-name { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: -0.01em; line-height: 1.2; }
-.sidebar-brand-sub  { font-size: 9.5px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.08em; }
+.sidebar-brand-name {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
+.sidebar-brand-sub {
+  font-size: 9.5px !important;
+  color: rgba(255,255,255,0.4) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Navegação */
 .sidebar-nav {
   flex: 1;
-  display: flex;
-  flex-direction: column;
   overflow-y: auto;
-  gap: 0;
+  overflow-x: hidden;
+  padding-right: 2px;
 }
 
-/* ─── Nav Groups ─────────────────────────────────── */
+/* Grupos de navegação */
 .nav-group {
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .nav-group-label {
-  font-size: 9.5px;
+  font-size: 9.5px !important;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.9px;
-  color: rgba(255,255,255,0.28);
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.3) !important;
   padding: 0 10px;
   margin-bottom: 4px;
+  display: block;
 }
 
+/* Itens de navegação — Link do React Router renderiza como <a> */
 .nav-item {
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
   gap: 9px;
   padding: 7px 10px;
   border-radius: 6px;
-  color: rgba(255,255,255,0.6);
-  font-size: 12.5px;
+  color: rgba(255,255,255,0.6) !important;
+  font-size: 12.5px !important;
   font-weight: 400;
-  text-decoration: none;
+  text-decoration: none !important;
   transition: background 0.15s, color 0.15s;
   width: 100%;
-  border: none;
-  background: transparent;
   cursor: pointer;
 }
 
-.nav-item:hover { background: rgba(255,255,255,0.09); color: #fff; }
+.nav-item:hover {
+  background: rgba(255,255,255,0.09) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
 
 .nav-item.active {
-  background: rgba(255,255,255,0.14);
-  color: #fff;
+  background: rgba(255,255,255,0.16) !important;
+  color: #fff !important;
   font-weight: 600;
-  border-left: 2px solid rgba(255,255,255,0.6);
+  border-left: 2px solid rgba(255,255,255,0.7);
   padding-left: 8px;
 }
 
-.nav-item-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
+.nav-item-emoji {
+  font-size: 15px;
+  line-height: 1;
   flex-shrink: 0;
-  opacity: 0.8;
+  width: 20px;
+  text-align: center;
 }
-
-.nav-item.active .nav-item-icon { opacity: 1; }
 
 .nav-item-label { flex: 1; }
 
-/* ─── Sidebar Footer ─────────────────────────────── */
+/* Rodapé da sidebar */
 .sidebar-footer {
-  padding: 10px 4px 0;
+  margin-top: 8px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255,255,255,0.1);
   flex-shrink: 0;
 }
@@ -174,12 +199,12 @@ body {
   width: 30px; height: 30px; border-radius: 50%;
   background: rgba(255,255,255,0.15);
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 12px; font-weight: 600; flex-shrink: 0;
+  color: #fff !important; font-size: 12px; font-weight: 600; flex-shrink: 0;
 }
 .sidebar-user-info { display: flex; flex-direction: column; gap: 2px; }
-.sidebar-username  { font-size: 12px; font-weight: 500; color: #fff; }
-.sidebar-logout    { font-size: 11px; color: rgba(255,255,255,0.4); background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; text-align: left; }
-.sidebar-logout:hover { color: rgba(255,255,255,0.7); }
+.sidebar-username  { font-size: 12px !important; font-weight: 500; color: #fff !important; }
+.sidebar-logout    { font-size: 11px; color: rgba(255,255,255,0.4) !important; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; text-align: left; }
+.sidebar-logout:hover { color: rgba(255,255,255,0.7) !important; }
 
 /* ─── Page Header ───────────────────────────────── */
 .page-header   { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }

@@ -5,33 +5,13 @@ const navGroups = [
   {
     label: 'Principal',
     items: [
-      {
-        path: '/dashboard',
-        label: 'Dashboard',
-        icon: (
-          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <rect x="2" y="2" width="5" height="5" rx="1"/>
-            <rect x="8" y="2" width="5" height="5" rx="1"/>
-            <rect x="2" y="8" width="5" height="5" rx="1"/>
-            <rect x="8" y="8" width="5" height="5" rx="1"/>
-          </svg>
-        ),
-      },
+      { path: '/dashboard', label: 'Dashboard', emoji: '📊' },
     ],
   },
   {
     label: 'Gestão',
     items: [
-      {
-        path: '/ted/new',
-        label: 'Novo TED',
-        icon: (
-          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-            <line x1="7.5" y1="2" x2="7.5" y2="13"/>
-            <line x1="2" y1="7.5" x2="13" y2="7.5"/>
-          </svg>
-        ),
-      },
+      { path: '/ted/new', label: 'Novo TED', emoji: '📋' },
     ],
   },
 ];
@@ -59,11 +39,19 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar">
+      {/* Cabeçalho / Logo */}
       <div className="sidebar-brand">
         <div className="sidebar-brand-icon">
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 6l9-3 9 3v2l-9 3-9-3V6z" transform="scale(0.75) translate(2,2)"/>
-            <rect x="4" y="8" width="7" height="5" rx="1"/>
+          <svg viewBox="0 0 100 100" width="26" height="26" xmlns="http://www.w3.org/2000/svg">
+            <rect x="30" y="70" width="40" height="12" rx="1" fill="rgba(255,255,255,0.8)"/>
+            <rect x="20" y="55" width="15" height="12" rx="1" fill="rgba(255,255,255,0.65)"/>
+            <rect x="42" y="55" width="15" height="12" rx="1" fill="rgba(255,255,255,0.65)"/>
+            <rect x="65" y="55" width="15" height="12" rx="1" fill="rgba(255,255,255,0.65)"/>
+            <rect x="30" y="40" width="15" height="12" rx="1" fill="rgba(255,255,255,0.5)"/>
+            <rect x="55" y="40" width="15" height="12" rx="1" fill="rgba(255,255,255,0.5)"/>
+            <rect x="25" y="28" width="12" height="9" rx="1" fill="rgba(255,255,255,0.4)"/>
+            <rect x="44" y="28" width="12" height="9" rx="1" fill="rgba(255,255,255,0.4)"/>
+            <rect x="63" y="28" width="12" height="9" rx="1" fill="rgba(255,255,255,0.4)"/>
           </svg>
         </div>
         <div className="sidebar-brand-text">
@@ -72,6 +60,7 @@ export default function Sidebar() {
         </div>
       </div>
 
+      {/* Navegação principal */}
       <nav className="sidebar-nav">
         {navGroups.map(group => (
           <div key={group.label} className="nav-group">
@@ -82,7 +71,7 @@ export default function Sidebar() {
                 to={item.path}
                 className={`nav-item${isActive(item.path) ? ' active' : ''}`}
               >
-                <span className="nav-item-icon">{item.icon}</span>
+                <span className="nav-item-emoji">{item.emoji}</span>
                 <span className="nav-item-label">{item.label}</span>
               </Link>
             ))}
@@ -90,6 +79,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
+      {/* Rodapé com usuário */}
       <div className="sidebar-footer">
         <div className="sidebar-user">
           <div className="sidebar-avatar">{initials}</div>
