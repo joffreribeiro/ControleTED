@@ -1778,14 +1778,13 @@
                     z-index: 120;
                 }
 
-                /* Auxiliar para colunas com texto longo / descrição: alinhar à esquerda */
-                .tabela-padrao thead th.col-texto {
-                    text-align: left;
-                }
         .tabela-padrao th,
         .tabela-padrao td {
             padding: 0.6rem 0.5rem;
             vertical-align: middle;
+        }
+        .tabela-padrao thead th {
+            text-align: center;
         }
         /* Colunas congeladas (aplicadas dinamicamente via JS) */
         .tabela-padrao .sticky-freeze {
