@@ -6363,22 +6363,9 @@
                 if (mesIdx >= 0) totaisPorMes[mesIdx] += valorNum;
             });
 
-            // Paginação (estado global simples por tabela)
-            window._pagination = window._pagination || {};
-            window._pagination.cadFin = window._pagination.cadFin || { page: 1, pageSize: 25 };
-            const pageState = window._pagination.cadFin;
-            const page = Math.max(1, Number(pageState.page) || 1);
-            const pageSize = Math.max(5, Number(pageState.pageSize) || 25);
-            const totalItems = dadosFiltrados.length;
-            const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-            const currentPage = Math.min(page, totalPages);
-            if (window._pagination.cadFin.page !== currentPage) window._pagination.cadFin.page = currentPage;
-            const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = Math.min(startIndex + pageSize, totalItems);
+            const visibleItems = dadosFiltrados;
 
-            const visibleItems = dadosFiltrados.slice(startIndex, endIndex);
-
-            // Renderar somente as linhas visíveis (mantendo os totais globais)
+            // Renderizar todas as linhas
             const rowsHtml = visibleItems.map((f, i) => {
                 const valorNum = parseNumber(f.valor) || 0;
                 const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
@@ -6461,30 +6448,10 @@
                 return `<td colspan="${a.count}" class="month-col-cadFin" style="background:#dbeafe; text-align:center; font-weight:700;${mmHideCadFin}">${valorAno}</td>`;
             }).join('');
 
-            // Render pagination controls (inserir antes da tabela se possível)
+            // Remover controles de paginação se existirem (legado)
             try {
                 const wrapper = document.getElementById('wrapperCadFin') || tableCompleta.closest('.table-wrapper') || tableCompleta.parentElement;
-                if (wrapper) {
-                    let pag = wrapper.querySelector('.table-pagination');
-                    if (!pag) {
-                        pag = document.createElement('div');
-                        pag.className = 'table-pagination';
-                        wrapper.insertBefore(pag, tableCompleta);
-                    }
-                    pag.innerHTML = `
-                        <div class="pagination-info">Mostrando ${startIndex + 1}–${endIndex} de ${totalItems}</div>
-                        <div class="pagination-controls">
-                            <button class="btn btn-ghost" ${currentPage <= 1 ? 'disabled' : ''} onclick="setTablePage('cadFin', ${currentPage - 1})">Anterior</button>
-                            <span class="page-numbers">Página ${currentPage} / ${totalPages}</span>
-                            <button class="btn btn-ghost" ${currentPage >= totalPages ? 'disabled' : ''} onclick="setTablePage('cadFin', ${currentPage + 1})">Próximo</button>
-                            <select onchange="setTablePageSize('cadFin', this.value)">
-                                <option ${pageSize==10?'selected':''} value="10">10</option>
-                                <option ${pageSize==25?'selected':''} value="25">25</option>
-                                <option ${pageSize==50?'selected':''} value="50">50</option>
-                                <option ${pageSize==100?'selected':''} value="100">100</option>
-                            </select>
-                        </div>`;
-                }
+                if (wrapper) { const pag = wrapper.querySelector('.table-pagination'); if (pag) pag.remove(); }
             } catch(e) { /* non-fatal */ }
 
             tbody.innerHTML += `
@@ -8144,19 +8111,7 @@
                 });
             });
 
-            // Paginação para Execução Financeira
-            window._pagination = window._pagination || {};
-            window._pagination.execFin = window._pagination.execFin || { page: 1, pageSize: 25 };
-            const pageStateExec = window._pagination.execFin;
-            const pageExec = Math.max(1, Number(pageStateExec.page) || 1);
-            const pageSizeExec = Math.max(5, Number(pageStateExec.pageSize) || 25);
-            const totalItemsExec = sortedChaves.length;
-            const totalPagesExec = Math.max(1, Math.ceil(totalItemsExec / pageSizeExec));
-            const currentPageExec = Math.min(pageExec, totalPagesExec);
-            if (window._pagination.execFin.page !== currentPageExec) window._pagination.execFin.page = currentPageExec;
-            const startIdxExec = (currentPageExec - 1) * pageSizeExec;
-            const endIdxExec = Math.min(startIdxExec + pageSizeExec, totalItemsExec);
-            const visibleChaves = sortedChaves.slice(startIdxExec, endIdxExec);
+            const visibleChaves = sortedChaves;
 
             // Construir linhas apenas para as chaves visíveis
             const linhas = visibleChaves.map((chave, idx) => {
@@ -8213,30 +8168,10 @@
                 return html;
             }).join('');
 
-            // Inserir controles de paginação para Execução Financeira
+            // Remover controles de paginação se existirem (legado)
             try {
                 const wrapperExec = tableEl.closest('.table-wrapper') || tableEl.closest('.table-freeze-wrapper') || tableEl.parentElement;
-                if (wrapperExec) {
-                    let pag = wrapperExec.querySelector('.table-pagination');
-                    if (!pag) {
-                        pag = document.createElement('div');
-                        pag.className = 'table-pagination';
-                        wrapperExec.insertBefore(pag, tableEl);
-                    }
-                    pag.innerHTML = `
-                        <div class="pagination-info">Mostrando ${startIdxExec + 1}–${endIdxExec} de ${totalItemsExec}</div>
-                        <div class="pagination-controls">
-                            <button class="btn btn-ghost" ${currentPageExec <= 1 ? 'disabled' : ''} onclick="setTablePage('execFin', ${currentPageExec - 1})">Anterior</button>
-                            <span class="page-numbers">Página ${currentPageExec} / ${totalPagesExec}</span>
-                            <button class="btn btn-ghost" ${currentPageExec >= totalPagesExec ? 'disabled' : ''} onclick="setTablePage('execFin', ${currentPageExec + 1})">Próximo</button>
-                            <select onchange="setTablePageSize('execFin', this.value)">
-                                <option ${pageSizeExec==10?'selected':''} value="10">10</option>
-                                <option ${pageSizeExec==25?'selected':''} value="25">25</option>
-                                <option ${pageSizeExec==50?'selected':''} value="50">50</option>
-                                <option ${pageSizeExec==100?'selected':''} value="100">100</option>
-                            </select>
-                        </div>`;
-                }
+                if (wrapperExec) { const pag = wrapperExec.querySelector('.table-pagination'); if (pag) pag.remove(); }
             } catch(e) { /* non-fatal */ }
 
             const totalSaldo = totalPrevisto - totalRealizado;
