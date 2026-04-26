@@ -10,7 +10,8 @@
       "Bash(curl -s https://raw.githubusercontent.com/joffreribeiro/Controle-Estoque/main/styles.css)",
       "Bash(npx tsc *)",
       "Bash(node_modules\\\\.bin\\\\tsc --noEmit)",
-      "Read(//e/e/MEUS DOCUMENTOS/OneDrive/Documentos/Sistemas/**)"
+      "Read(//e/e/MEUS DOCUMENTOS/OneDrive/Documentos/Sistemas/**)",
+      "Bash(grep -E \"\\\\.\\(html|js|css\\)$\")"
     ]
   }
 }
