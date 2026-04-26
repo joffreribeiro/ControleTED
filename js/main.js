@@ -8710,6 +8710,7 @@
             errEl.textContent = ''; errEl.classList.remove('open');
             atualizarOpcoesRecGeral();
             document.getElementById('modalRecGeralND').value = '';
+            document.getElementById('modalRecGeralNC').value = '';
             document.getElementById('modalRecGeralValor').value = '';
             document.getElementById('modalRecGeralData').value = '';
             backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
@@ -8725,6 +8726,7 @@
             const errEl = document.getElementById('modalRecGeralError');
             const ndRaw = document.getElementById('modalRecGeralND').value.trim();
             const nd = String(ndRaw).replace(/[^0-9.\-]/g, '').trim();
+            const nc = (document.getElementById('modalRecGeralNC')?.value || '').trim();
             const valor = parseNumber(document.getElementById('modalRecGeralValor').value);
             const data = document.getElementById('modalRecGeralData').value;
 
@@ -8733,7 +8735,7 @@
             }
 
             window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
-            window.tedSelecionado.recursosGerais.push({ id: Date.now(), nd, valor, data });
+            window.tedSelecionado.recursosGerais.push({ id: Date.now(), nd, nc, valor, data });
             salvarDados();
             atualizarTabelaRecursosGerais();
             showToast('Recurso Geral adicionado com sucesso!', 'success');
