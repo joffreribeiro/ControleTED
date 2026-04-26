@@ -1831,10 +1831,10 @@
         .tabela-padrao .col-percent { min-width: 160px; text-align: center; }
         .tabela-padrao .col-nd { min-width: 60px; text-align: center; }
         .tabela-padrao .col-up { min-width: 60px; text-align: center; }
-        .tabela-padrao .col-fase { width: 80px; }
-        .tabela-padrao .col-objeto { min-width: 120px; }
-        .tabela-padrao .col-descricao { min-width: 150px; }
-        .tabela-padrao .col-meta { width: 100px; }
+        .tabela-padrao .col-fase { width: 80px; text-align: center; }
+        .tabela-padrao .col-objeto { min-width: 120px; text-align: center; }
+        .tabela-padrao .col-descricao { min-width: 150px; text-align: center; }
+        .tabela-padrao .col-meta { width: 100px; text-align: center; }
         .tabela-padrao .col-saldo { width: 100px; text-align: right; }
         .tabela-padrao .col-percent { min-width: 160px; text-align: center; }
         /* Linhas: branco de base e hover suave */

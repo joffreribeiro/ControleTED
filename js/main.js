@@ -8556,24 +8556,30 @@
                 } catch(e) { return dStr; }
             }
 
-            let msg = `Lançamentos para ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\n`;
+            const linhas = [];
             execsDoMes.forEach(e => {
                 const val = parseFloat(e.valor || e.valorRealizado) || 0;
-                // Se houver origens (lista de lançamentos agregados), listar cada NC
                 if (e.origens && Array.isArray(e.origens) && e.origens.length) {
                     e.origens.forEach(o => {
-                        const nc = o.nc || (e.numero || e.nd || nd) || '';
-                        const dataLinha = o.data || e.data || '';
-                        msg += `NC: ${nc} | Valor: ${ (parseFloat(o.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) } | Data: ${formatDateDDMMM(dataLinha)}\n`;
+                        linhas.push({
+                            nc: o.nc || (e.numero || e.nd || nd) || '-',
+                            valor: parseFloat(o.valor) || 0,
+                            data: formatDateDDMMM(o.data || e.data || '')
+                        });
                     });
                 } else {
-                    const nc = e.numero || e.nd || nd;
-                    const dataLinha = e.data || '';
-                    msg += `NC: ${nc} | Valor: ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})} | Data: ${formatDateDDMMM(dataLinha)}\n`;
+                    linhas.push({
+                        nc: e.numero || e.nd || nd || '-',
+                        valor: val,
+                        data: formatDateDDMMM(e.data || '')
+                    });
                 }
             });
-            msg += `\nTotal: ${valorAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            showToast(msg, 'info');
+            abrirModalLancamentos(
+                `Lançamentos — ND: ${nd} / UP: ${up}`,
+                `Mês: ${d.toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}`,
+                linhas
+            );
             return;
 
             // Remover execuções antigas deste mês/ND/UP
@@ -8601,6 +8607,31 @@
             
             salvarDados();
             atualizarTabelaExecFinanceira();
+        }
+
+        // Modal de Lançamentos (Execução Financeira / Recursos Gerais)
+        function abrirModalLancamentos(titulo, subtitulo, linhas) {
+            document.getElementById('modalLancamentosTitulo').textContent = titulo;
+            document.getElementById('modalLancamentosSubtitulo').textContent = subtitulo;
+            const tbody = document.getElementById('modalLancamentosBody');
+            const total = linhas.reduce((s, l) => s + l.valor, 0);
+            tbody.innerHTML = linhas.map(l => `
+                <tr>
+                    <td style="text-align:center;">${l.nc}</td>
+                    <td style="text-align:right;">${l.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="text-align:center;">${l.data}</td>
+                </tr>
+            `).join('');
+            document.getElementById('modalLancamentosTotal').textContent = total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            const backdrop = document.getElementById('modalLancamentosBackdrop');
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+        }
+
+        function fecharModalLancamentos() {
+            const backdrop = document.getElementById('modalLancamentosBackdrop');
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
         }
 
         // Fechar Modal
@@ -8793,16 +8824,16 @@
                 return `${dd}-${mmm}-${yyyy}`;
             }
 
-            const total = recsDoMes.reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
-            let msg = `Lançamentos de Recursos Gerais para ND: ${nd} em ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}:\n\n`;
-            recsDoMes.forEach(r => {
-                const nc = (r.nc || r.NC || '').toString().trim() || '-';
-                const valor = parseFloat(r.valor) || 0;
-                const dataFmt = formatDateDDMMM(r.data);
-                msg += `NC: ${nc} | Valor: ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2})} | Data: ${dataFmt}\n`;
-            });
-            msg += `\nTotal: ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-            showToast(msg, 'info');
+            const linhas = recsDoMes.map(r => ({
+                nc: (r.nc || r.NC || '').toString().trim() || '-',
+                valor: parseFloat(r.valor) || 0,
+                data: formatDateDDMMM(r.data)
+            }));
+            abrirModalLancamentos(
+                `Recursos Gerais — ND: ${nd}`,
+                `Mês: ${d.toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}`,
+                linhas
+            );
         }
 
         function popularFiltrosRecGeral() {

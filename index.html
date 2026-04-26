@@ -387,6 +387,36 @@
             </div>
         </div>
 
+    <!-- Modal: Detalhes de Lançamentos (Execução Financeira / Recursos Gerais) -->
+    <div id="modalLancamentosBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalLancamentos()">
+        <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:560px; max-width:96vw;">
+            <h3 id="modalLancamentosTitulo">Lançamentos</h3>
+            <div class="modal-lancamentos-info" id="modalLancamentosSubtitulo" style="font-size:0.85rem; color:var(--color-text-secondary); margin-bottom:0.75rem;"></div>
+            <div style="overflow-x:auto;">
+                <table class="tabela-padrao" style="width:100%; min-width:360px;" id="modalLancamentosTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align:center;">NC</th>
+                            <th style="text-align:right;">Valor (R$)</th>
+                            <th style="text-align:center;">Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalLancamentosBody"></tbody>
+                    <tfoot>
+                        <tr class="linha-total">
+                            <td colspan="1" style="text-align:right; font-weight:600;">Total:</td>
+                            <td style="text-align:right; font-weight:600;" id="modalLancamentosTotal"></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="modal-objeto-actions" style="margin-top:1rem;">
+                <button class="btn btn-primary" onclick="fecharModalLancamentos()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Container Principal -->
     <div class="container">
 
