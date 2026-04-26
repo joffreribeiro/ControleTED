@@ -5576,8 +5576,23 @@
             atualizarOpcoesObjetoExecFisica();
             // Atualizar contador da seção (badge)
             try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = String(window.tedSelecionado.fisicos.length); } catch(e) {}
-            // Atualizar contador da seção (badge)
-            try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = String(window.tedSelecionado.fisicos.length); } catch(e) {}
+
+            // Ajustar card conforme estado do toggle
+            try {
+                const btn = document.getElementById('toggle-months-cadFis');
+                const tbl = document.querySelector('#tabelaFisicos')?.closest('table');
+                const sec = btn?.closest('.detalhe-secao');
+                const expanded = btn?.getAttribute('data-expanded') === '1';
+                if (sec && tbl) {
+                    if (!expanded) {
+                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'fixed';
+                        sec.classList.add('cadFin-collapsed');
+                    } else {
+                        tbl.style.minWidth = '850px'; tbl.style.width = ''; tbl.style.tableLayout = '';
+                        sec.classList.remove('cadFin-collapsed');
+                    }
+                }
+            } catch(e) {}
         }
 
         // EXECU→fO FÍSICA
@@ -5784,9 +5799,25 @@
             try {
                 const rows = Array.from(tbody.querySelectorAll('.exec-row'));
                 rows.forEach(r => {
-                    // timeout para permitir que o browser registre o elemento antes de animar
                     setTimeout(() => r.classList.add('animate'), 30);
                 });
+            } catch(e) {}
+
+            // Ajustar card conforme estado do toggle
+            try {
+                const btn = document.getElementById('toggle-months-execFis');
+                const tbl = document.getElementById('tabelaExecFinanceiraTable');
+                const sec = btn?.closest('.detalhe-secao');
+                const expanded = btn?.getAttribute('data-expanded') === '1';
+                if (sec && tbl) {
+                    if (!expanded) {
+                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'fixed';
+                        sec.classList.add('cadFin-collapsed');
+                    } else {
+                        tbl.style.minWidth = '850px'; tbl.style.width = ''; tbl.style.tableLayout = '';
+                        sec.classList.remove('cadFin-collapsed');
+                    }
+                }
             } catch(e) {}
         }
 
@@ -6176,21 +6207,11 @@
             const table = wrapper ? wrapper.querySelector('table') : null;
 
             if (!newExpanded && table) {
-                if (section === 'cadFin') {
-                    table.classList.add('months-collapsed');
-                    table.style.minWidth = '0';
-                    table.style.width = 'auto';
-                    table.style.tableLayout = 'fixed';
-                    // Encolhe o card inteiro junto com a tabela
-                    if (detalhe) detalhe.classList.add('cadFin-collapsed');
-                } else if (wrapper) {
-                    // outras seções: travar wrapper na largura atual para não colapsar
-                    const w = Math.round(table.getBoundingClientRect().width);
-                    wrapper.style.width = w + 'px';
-                    wrapper.style.minWidth = w + 'px';
-                    wrapper.style.maxWidth = w + 'px';
-                    wrapper.style.boxSizing = 'border-box';
-                }
+                table.classList.add('months-collapsed');
+                table.style.minWidth = '0';
+                table.style.width = 'auto';
+                table.style.tableLayout = 'fixed';
+                if (detalhe) detalhe.classList.add('cadFin-collapsed');
             }
 
             // mostrar/ocultar colunas de mês
@@ -6200,17 +6221,13 @@
 
             // ao expandir: restaurar estado original
             if (newExpanded) {
-                if (wrapper) {
-                    wrapper.style.width = '';
-                    wrapper.style.minWidth = '';
-                    wrapper.style.maxWidth = '';
-                }
                 if (table) {
                     table.classList.remove('months-collapsed');
-                    if (section === 'cadFin') {
-                        table.style.minWidth = '1400px';
-                        if (detalhe) detalhe.classList.remove('cadFin-collapsed');
-                    }
+                    if (detalhe) detalhe.classList.remove('cadFin-collapsed');
+                    if (section === 'cadFin') table.style.minWidth = '1400px';
+                    else if (section === 'cadFis' || section === 'execFis') table.style.minWidth = '850px';
+                    else if (section === 'execFin') table.style.minWidth = '700px';
+                    else table.style.minWidth = '';
                     table.style.width = '';
                     table.style.tableLayout = '';
                 }
@@ -8336,6 +8353,23 @@
             } catch (err) {
                 console.error('Erro em atualizarTabelaExecFinanceira:', err);
             }
+
+            // Ajustar card conforme estado do toggle
+            try {
+                const btn = document.getElementById('toggle-months-execFin');
+                const tbl = document.getElementById('tabelaExecFinanceiraTable');
+                const sec = btn?.closest('.detalhe-secao');
+                const expanded = btn?.getAttribute('data-expanded') === '1';
+                if (sec && tbl) {
+                    if (!expanded) {
+                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'fixed';
+                        sec.classList.add('cadFin-collapsed');
+                    } else {
+                        tbl.style.minWidth = '700px'; tbl.style.width = ''; tbl.style.tableLayout = '';
+                        sec.classList.remove('cadFin-collapsed');
+                    }
+                }
+            } catch(e) {}
         }
 
         // Função para visualizar detalhes mensais (drill-down) da Execução Financeira

@@ -3014,7 +3014,7 @@
             max-width: 100%;
         }
         .detalhe-secao.cadFin-collapsed .detalhe-secao-header {
-            min-width: 0;
+            min-width: max-content;
         }
 
 /* ===== Sub-entregas Cadastro Físico ===== */
