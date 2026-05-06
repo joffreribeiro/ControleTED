@@ -11,7 +11,9 @@
       "Bash(npx tsc *)",
       "Bash(node_modules\\\\.bin\\\\tsc --noEmit)",
       "Read(//e/e/MEUS DOCUMENTOS/OneDrive/Documentos/Sistemas/**)",
-      "Bash(grep -E \"\\\\.\\(html|js|css\\)$\")"
+      "Bash(grep -E \"\\\\.\\(html|js|css\\)$\")",
+      "Bash(Get-ChildItem -Path \"e:\\\\MEUS DOCUMENTOS\\\\OneDrive\\\\Documentos\\\\Sistemas\\\\TESTE\" -Recurse -Force)",
+      "Bash(Select-Object FullName)"
     ]
   }
 }

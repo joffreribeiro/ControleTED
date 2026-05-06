@@ -249,7 +249,7 @@ window.testFirestoreConnection = async function() {
         await window.carregarDoCloud();
       }
     } catch (e) {
-      console.warn('auto carregarDoCloud falhou', e);
+      console.warn('auto carregarDoCloud falhou (verifique as Firestore Security Rules — leitura deve ser pública):', e && e.code ? e.code : e);
     }
 
   })();
@@ -430,6 +430,13 @@ window.testFirestoreConnection = async function() {
             showToast('Conectado como ' + (window.currentUserProfile.displayName || window.currentUserProfile.email), 'info');
             // Hide login screen if it was open
             try { if (window.hideLoginModal) window.hideLoginModal(); } catch(e){}
+            // Recarregar dados se ainda estiverem vazios (ex: regras exigem auth para leitura)
+            try {
+              const semDados = !window.dados || !Array.isArray(window.dados.teds) || window.dados.teds.length === 0;
+              if (semDados && typeof window.carregarDoCloud === 'function') {
+                await window.carregarDoCloud();
+              }
+            } catch(e) { console.warn('recarregar após login falhou:', e && e.code ? e.code : e); }
           } else {
             window.currentUser = null;
             window.currentUserProfile = null;

@@ -119,18 +119,13 @@ window.firestoreOnSnapshot = function(path, cb) {
 
 // Collection helpers
 window.firestoreGetCollection = async function(collPath) {
-  try {
-    const parts = String(collPath || '').split('/').filter(Boolean);
-    if (parts.length === 0) return [];
-    const ref = fsCollection(db, ...parts);
-    const snap = await fsGetDocs(ref);
-    const items = [];
-    snap.forEach(d => items.push(Object.assign({ _docId: d.id }, d.data())));
-    return items;
-  } catch (e) {
-    console.warn('firestoreGetCollection error', e);
-    return [];
-  }
+  const parts = String(collPath || '').split('/').filter(Boolean);
+  if (parts.length === 0) return [];
+  const ref = fsCollection(db, ...parts);
+  const snap = await fsGetDocs(ref);
+  const items = [];
+  snap.forEach(d => items.push(Object.assign({ _docId: d.id }, d.data())));
+  return items;
 };
 
 window.firestoreOnCollectionSnapshot = function(collPath, cb) {
