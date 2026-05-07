@@ -39,7 +39,15 @@ window.authCreateUser = async function(email, password, profile = {}) {
       // create user profile in Firestore under `users/{uid}`
       try {
         const uref = fsDoc(db, 'users', user.uid);
-        await fsSetDoc(uref, Object.assign({ uid: user.uid, email: user.email, role: profile.role || 'user', displayName: profile.displayName || user.displayName || '' }));
+        const profileData = {
+          uid: user.uid,
+          email: user.email,
+          role: profile.role || 'leitor',
+          displayName: profile.displayName || user.displayName || '',
+          upRestrita: profile.upRestrita || null,
+          active: profile.active !== undefined ? profile.active : true
+        };
+        await fsSetDoc(uref, profileData);
       } catch (e) { console.warn('authCreateUser: error creating user profile', e); }
     }
     return user;
@@ -195,6 +203,39 @@ window.firestoreGetNextId = async function(key = 'teds') {
     console.warn('firestoreGetNextId error', e);
     // fallback: timestamp-based id (not ideal for sequential numeric ids)
     return Date.now();
+  }
+};
+
+// Add a document to a collection (auto-generated ID)
+window.firestoreAddDoc = async function(collPath, data) {
+  try {
+    const ref = fsCollection(db, String(collPath));
+    const docRef = await fsAddDoc(ref, data);
+    return docRef.id;
+  } catch (e) {
+    console.warn('firestoreAddDoc error', e);
+    return null;
+  }
+};
+
+// Query a collection with ordering and limit
+window.firestoreQueryCollection = async function(collPath, opts = {}) {
+  try {
+    const { orderByField, orderDir = 'desc', limitCount = 100 } = opts;
+    const collRef = fsCollection(db, String(collPath));
+    const docs = await fsGetDocs(collRef);
+    let results = docs.docs.map(d => Object.assign({ _docId: d.id }, d.data()));
+    if (orderByField) {
+      results.sort((a, b) => {
+        const av = a[orderByField] || '';
+        const bv = b[orderByField] || '';
+        return orderDir === 'desc' ? (bv > av ? 1 : -1) : (av > bv ? 1 : -1);
+      });
+    }
+    return results.slice(0, limitCount);
+  } catch (e) {
+    console.warn('firestoreQueryCollection error', e);
+    return [];
   }
 };
 

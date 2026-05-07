@@ -314,7 +314,12 @@ window.testFirestoreConnection = async function() {
       const email = (document.getElementById('create_email') || {}).value || '';
       const password = (document.getElementById('create_password') || {}).value || '';
       const name = (document.getElementById('create_name') || {}).value || '';
-      const role = (document.getElementById('create_role') || {}).value || 'user';
+      const role = (document.getElementById('create_role') || {}).value || 'leitor';
+      const upRestritaEl = document.getElementById('create_up');
+      const upRestrita = upRestritaEl ? (upRestritaEl.value || null) : null;
+      const activeEl = document.getElementById('create_active');
+      const active = activeEl ? activeEl.checked : true;
+
       if (!email || !password) { showToast('Email e senha são obrigatórios', 'warning'); return; }
 
       // check if admin or bootstrap (no users exist)
@@ -328,9 +333,17 @@ window.testFirestoreConnection = async function() {
 
       showToast('Criando usuário...', 'info');
       await waitForHelper('authCreateUser', 3000);
-      const user = await window.authCreateUser(email, password, { displayName: name, role: role });
+      const user = await window.authCreateUser(email, password, {
+        displayName: name,
+        role: role,
+        upRestrita: (role === 'editor' && upRestrita) ? upRestrita : null,
+        active: active
+      });
       if (user) {
-        showToast('Usuário criado', 'success');
+        showToast('Usuário criado com sucesso', 'success');
+        // Limpar formulário
+        ['create_email','create_password','create_name'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        if (upRestritaEl) upRestritaEl.value = '';
         loadUsersList();
       }
     } catch (e) {
@@ -348,35 +361,51 @@ window.testFirestoreConnection = async function() {
       if (!wrap) return;
       wrap.innerHTML = '';
       if (!users || users.length === 0) {
-        const empty = document.createElement('div');
-        empty.textContent = 'Nenhum usuário cadastrado.';
-        wrap.appendChild(empty);
+        wrap.innerHTML = '<div style="padding:8px;color:var(--text-muted)">Nenhum usuário cadastrado.</div>';
         return;
       }
+
+      const roleLabels = { admin: '🔑 Admin', editor: '✏️ Editor', leitor: '📖 Leitor', user: '📖 Leitor' };
+
       users.forEach(u => {
-        const role = u.role || 'user';
+        const role = u.role || 'leitor';
         const name = u.displayName || u.email || u.uid || '';
         const uid = u.uid || u._docId || '';
+        const upInfo = u.upRestrita ? ' | UP: ' + u.upRestrita : '';
+        const activeStatus = u.active === false ? ' | ⛔ Inativo' : '';
 
         const row = document.createElement('div');
-        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px;border-bottom:1px solid var(--border)';
+        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 4px;border-bottom:1px solid var(--border);gap:8px';
 
         const info = document.createElement('div');
-        const strong = document.createElement('strong');
+        info.style.cssText = 'flex:1;min-width:0';
+        const strong = document.createElement('div');
+        strong.style.cssText = 'font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
         strong.textContent = name;
         const sub = document.createElement('div');
-        sub.style.cssText = 'font-size:12px;color:var(--text-muted)';
-        sub.textContent = (u.email || '') + ' · ' + role;
+        sub.style.cssText = 'font-size:12px;color:var(--text-muted);margin-top:2px';
+        sub.textContent = (u.email || '') + ' · ' + (roleLabels[role] || role) + upInfo + activeStatus;
         info.appendChild(strong);
         info.appendChild(sub);
 
         const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
+
         if (isCurrentUserAdmin() && uid) {
-          const btn = document.createElement('button');
-          btn.className = 'btn';
-          btn.textContent = 'Remover';
-          btn.addEventListener('click', () => window.deleteUser(uid));
-          actions.appendChild(btn);
+          // Botão ativar/desativar
+          const btnToggle = document.createElement('button');
+          btnToggle.className = 'btn';
+          btnToggle.style.cssText = 'font-size:12px;padding:4px 8px';
+          btnToggle.textContent = u.active === false ? 'Ativar' : 'Desativar';
+          btnToggle.addEventListener('click', () => window.toggleUserActive(uid, !(u.active === false)));
+          actions.appendChild(btnToggle);
+
+          const btnRemove = document.createElement('button');
+          btnRemove.className = 'btn';
+          btnRemove.style.cssText = 'font-size:12px;padding:4px 8px';
+          btnRemove.textContent = 'Remover';
+          btnRemove.addEventListener('click', () => window.deleteUser(uid));
+          actions.appendChild(btnRemove);
         }
 
         row.appendChild(info);
@@ -384,6 +413,17 @@ window.testFirestoreConnection = async function() {
         wrap.appendChild(row);
       });
     } catch (e) { console.warn('loadUsersList error', e); }
+  };
+
+  // Toggle user active status
+  window.toggleUserActive = async function(uid, newActive) {
+    try {
+      if (!isCurrentUserAdmin()) { showToast('Apenas administradores podem alterar usuários', 'error'); return; }
+      await waitForHelper('firestoreSetDoc', 2000);
+      await window.firestoreSetDoc('users/' + uid, { active: newActive }, { merge: true });
+      showToast(newActive ? 'Usuário ativado' : 'Usuário desativado', 'success');
+      loadUsersList();
+    } catch (e) { console.warn('toggleUserActive', e); showToast('Erro ao alterar status', 'error'); }
   };
 
   // Delete user profile (Firestore doc). Note: does not delete Firebase Auth user.
@@ -398,6 +438,84 @@ window.testFirestoreConnection = async function() {
       }, 'Confirmar');
       return;
     } catch (e) { console.warn('deleteUser', e); showToast('Erro ao remover usuário', 'error'); }
+  };
+
+  // Load and render audit log (admin only)
+  window.loadAuditLog = async function(filterTedId) {
+    try {
+      if (!isCurrentUserAdmin()) return;
+      const wrap = document.getElementById('auditLogContainer');
+      if (!wrap) return;
+      wrap.innerHTML = '<div style="padding:8px;color:var(--text-muted)">Carregando...</div>';
+
+      await waitForHelper('firestoreQueryCollection', 3000);
+      const logs = await window.firestoreQueryCollection('auditLog', { orderByField: 'dataHora', orderDir: 'desc', limitCount: 200 });
+
+      const filtered = filterTedId ? logs.filter(l => String(l.tedId) === String(filterTedId) || String(l.tedNumero) === String(filterTedId)) : logs;
+
+      if (!filtered || filtered.length === 0) {
+        wrap.innerHTML = '<div style="padding:8px;color:var(--text-muted)">Nenhum registro encontrado.</div>';
+        return;
+      }
+
+      const acaoLabels = {
+        'editar_info': 'Editou informações gerais',
+        'adicionar_fisico': 'Adicionou cadastro físico',
+        'editar_fisico': 'Editou cadastro físico',
+        'remover_fisico': 'Removeu cadastro físico',
+        'adicionar_exec_fisica': 'Adicionou execução física',
+        'remover_exec_fisica': 'Removeu execução física',
+        'marcar_realizado': 'Marcou entrega como realizada',
+        'desmarcar_realizado': 'Removeu marcação de entrega',
+        'editar_realizado': 'Editou entrega realizada',
+        'adicionar_financeiro': 'Adicionou cadastro financeiro',
+        'editar_financeiro': 'Editou cadastro financeiro',
+        'remover_financeiro': 'Removeu cadastro financeiro',
+        'adicionar_exec_financeira': 'Adicionou execução financeira',
+        'remover_exec_financeira': 'Removeu execução financeira'
+      };
+
+      let html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+      html += '<thead><tr style="background:var(--bg-secondary);text-align:left">';
+      html += '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Data/Hora</th>';
+      html += '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Usuário</th>';
+      html += '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">TED</th>';
+      html += '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Ação</th>';
+      html += '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Detalhe</th>';
+      html += '</tr></thead><tbody>';
+
+      filtered.forEach(l => {
+        const dt = new Date(l.dataHora);
+        const dtStr = isNaN(dt) ? l.dataHora : dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const acaoStr = acaoLabels[l.acao] || l.acao || '';
+        const detalhe = l.campo ? l.campo : '';
+        html += `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:5px 8px;white-space:nowrap">${dtStr}</td>
+          <td style="padding:5px 8px">${l.usuarioNome || ''}</td>
+          <td style="padding:5px 8px">${l.tedNumero || l.tedId || ''}</td>
+          <td style="padding:5px 8px">${acaoStr}</td>
+          <td style="padding:5px 8px;color:var(--text-muted)">${detalhe}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    } catch (e) { console.warn('loadAuditLog error', e); }
+  };
+
+  // Populate UP select in create user form
+  window.popularUpsFormUsuario = function() {
+    const sel = document.getElementById('create_up');
+    if (!sel) return;
+    const ups = [...new Set((window.dados && window.dados.teds ? window.dados.teds : [])
+      .map(t => t.upResponsavel || t.up || '').filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">Todas as UPs</option>';
+    ups.forEach(up => {
+      const opt = document.createElement('option');
+      opt.value = up;
+      opt.textContent = up;
+      sel.appendChild(opt);
+    });
   };
 
   // Listen to auth state and load profile
@@ -415,6 +533,14 @@ window.testFirestoreConnection = async function() {
             } catch (e) { console.warn('error loading user profile', e); }
 
             if (profile && profile.role) {
+              // Normalizar role legado: 'user' → 'leitor'
+              if (profile.role === 'user') profile.role = 'leitor';
+              // Verificar se conta está ativa
+              if (profile.active === false) {
+                showToast('Sua conta está desativada. Entre em contato com o administrador.', 'error');
+                if (window.authSignOut) window.authSignOut();
+                return;
+              }
               window.currentUserProfile = profile;
             } else {
               // Perfil não encontrado: verificar se é o primeiro usuário (bootstrap) e tratar como admin

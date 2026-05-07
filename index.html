@@ -1405,23 +1405,87 @@
                     </div>
                 </div>
 
-                <div id="adminPanel" style="display:none;padding:1rem;background:var(--color-bg-surface);border-radius:8px;border:0.5px solid var(--color-border);">
+                <div id="adminPanel" style="display:none;padding:1.25rem;background:var(--color-bg-surface);border-radius:8px;border:0.5px solid var(--color-border);">
                     <h3 style="margin-bottom:0.75rem;color:var(--color-primary);">Administração</h3>
                     <p style="margin:0 0 0.75rem;font-size:0.875rem;color:var(--color-text-secondary);">
                         Logado como: <strong id="adminLoggedAs">-</strong>
                     </p>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
-                        <button class="btn" onclick="testFirestoreConnection()">
-                            Testar Conexão
-                        </button>
-                        <button class="btn" 
-                            style="background:#fee2e2;color:#dc2626;" 
-                            onclick="doLogout()">
-                            Sair do modo Admin
-                        </button>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+                        <button class="btn" onclick="testFirestoreConnection()">Testar Conexão</button>
+                        <button class="btn" style="background:#fee2e2;color:#dc2626;" onclick="doLogout()">Sair</button>
                     </div>
-                    <div id="usersListContainer" 
-                        style="margin-top:0.75rem;font-size:0.875rem;">
+
+                    <!-- Gerenciar Usuários -->
+                    <div style="margin-bottom:1.5rem;">
+                        <h4 style="margin:0 0 0.75rem;color:var(--color-text)">Usuários</h4>
+
+                        <!-- Formulário criar usuário -->
+                        <details style="margin-bottom:1rem;border:1px solid var(--color-border);border-radius:6px;overflow:hidden">
+                            <summary style="padding:0.6rem 0.75rem;cursor:pointer;background:var(--color-bg-alt);font-weight:600;font-size:13px;list-style:none">
+                                ➕ Criar novo usuário
+                            </summary>
+                            <div style="padding:0.75rem;display:grid;gap:0.6rem">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem">
+                                    <div>
+                                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:3px">Nome</label>
+                                        <input id="create_name" type="text" placeholder="Nome completo" style="width:100%;padding:6px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;box-sizing:border-box">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:3px">E-mail</label>
+                                        <input id="create_email" type="email" placeholder="email@exemplo.gov.br" style="width:100%;padding:6px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;box-sizing:border-box">
+                                    </div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem">
+                                    <div>
+                                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:3px">Senha</label>
+                                        <input id="create_password" type="password" placeholder="Senha inicial" style="width:100%;padding:6px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;box-sizing:border-box">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:3px">Perfil</label>
+                                        <select id="create_role" style="width:100%;padding:6px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;box-sizing:border-box"
+                                            onchange="const upRow=document.getElementById('create_up_row');if(upRow)upRow.style.display=this.value==='editor'?'block':'none'">
+                                            <option value="leitor">📖 Leitor (somente leitura)</option>
+                                            <option value="editor">✏️ Editor (pode editar TEDs)</option>
+                                            <option value="admin">🔑 Admin (acesso total)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div id="create_up_row" style="display:none">
+                                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:3px">UP Restrita <span style="font-weight:400;color:var(--color-text-secondary)">(opcional — se definida, editor só edita TEDs dessa UP)</span></label>
+                                    <select id="create_up" style="width:100%;padding:6px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;box-sizing:border-box" onclick="popularUpsFormUsuario()">
+                                        <option value="">Todas as UPs</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <input id="create_active" type="checkbox" checked style="width:16px;height:16px;cursor:pointer">
+                                    <label for="create_active" style="font-size:13px;cursor:pointer">Usuário ativo</label>
+                                </div>
+                                <button class="btn btn-primary" onclick="handleCreateUser()" style="width:fit-content;font-size:13px">Criar Usuário</button>
+                            </div>
+                        </details>
+
+                        <!-- Lista de usuários -->
+                        <div id="usersListContainer" style="font-size:0.875rem;border:1px solid var(--color-border);border-radius:6px;overflow:hidden">
+                            <div style="padding:8px 12px;background:var(--color-bg-alt);font-size:12px;color:var(--color-text-secondary);display:flex;justify-content:space-between;align-items:center">
+                                <span>Usuários cadastrados</span>
+                                <button class="btn" style="font-size:11px;padding:3px 8px" onclick="loadUsersList()">↻ Atualizar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Log de Auditoria (somente admin) -->
+                    <div id="auditLogPanel">
+                        <h4 style="margin:0 0 0.75rem;color:var(--color-text)">Log de Auditoria</h4>
+                        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap">
+                            <select id="auditFilterTed" style="padding:6px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;min-width:200px"
+                                onchange="loadAuditLog(this.value)">
+                                <option value="">Todos os TEDs</option>
+                            </select>
+                            <button class="btn" style="font-size:12px;padding:5px 10px" onclick="loadAuditLog(document.getElementById('auditFilterTed').value)">↻ Carregar</button>
+                        </div>
+                        <div id="auditLogContainer" style="max-height:400px;overflow-y:auto;border:1px solid var(--color-border);border-radius:6px;font-size:13px">
+                            <div style="padding:12px;color:var(--color-text-secondary)">Clique em "Carregar" para exibir o log.</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1448,8 +1512,8 @@
             <button onclick="hideLoginScreen()" style="position:absolute; top:0.75rem; right:0.75rem; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#94a3b8; line-height:1;" title="Fechar e continuar em modo leitura">&times;</button>
             <div style="text-align:center; margin-bottom:1.5rem;">
                 <div style="font-size:2.5rem; margin-bottom:0.5rem;">🔐</div>
-                <h2 style="margin:0; color:#0C447C; font-size:1.5rem;">Acesso Administrador</h2>
-                <p style="margin:0.25rem 0 0; color:#64748b; font-size:0.875rem;">Faça login para editar dados</p>
+                <h2 style="margin:0; color:#0C447C; font-size:1.5rem;">Controle TED</h2>
+                <p style="margin:0.25rem 0 0; color:#64748b; font-size:0.875rem;">Faça login para acessar sua conta</p>
             </div>
             <div id="loginError" style="display:none; background:#fee2e2; color:#dc2626; padding:0.5rem 0.75rem; border-radius:0.5rem; margin-bottom:0.75rem; font-size:0.875rem;"></div>
             <div id="loginSuccess" style="display:none; background:#d1fae5; color:#059669; padding:0.5rem 0.75rem; border-radius:0.5rem; margin-bottom:0.75rem; font-size:0.875rem;"></div>

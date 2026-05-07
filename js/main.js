@@ -491,30 +491,48 @@
 
         // AUDITORIA: Registrar ações de alteração em realizações
         function adicionarRegistroAuditoria(tedId, acao, fisicoId, detalhes) {
-            if (!window.currentUserProfile) {
-                // Se não há usuário logado, tenta usar um padrão
-                window.currentUserProfile = { id: 'anonimo', nome: 'Anônimo' };
-            }
-            
+            const profile = window.currentUserProfile || { uid: 'anonimo', displayName: 'Anônimo', email: '' };
+
             dados.auditLog = dados.auditLog || [];
-            
+
             const registro = {
                 id: Date.now(),
                 tedId: tedId,
                 fisicoId: fisicoId,
-                acao: acao, // 'marcar_realizado', 'desmarcar_realizado', 'editar_realizado'
-                usuarioId: window.currentUserProfile.id || 'anonimo',
-                usuarioNome: window.currentUserProfile.nome || 'Anônimo',
+                acao: acao,
+                usuarioId: profile.uid || profile.id || 'anonimo',
+                usuarioNome: profile.displayName || profile.nome || profile.email || 'Anônimo',
                 dataHora: new Date().toISOString(),
                 detalhes: detalhes || {}
             };
-            
+
             dados.auditLog.push(registro);
-            
-            // Manter apenas últimos 1000 registros
+
+            // Manter apenas últimos 1000 registros na memória
             if (dados.auditLog.length > 1000) {
                 dados.auditLog = dados.auditLog.slice(-1000);
             }
+
+            // Persistir no Firestore (assíncrono, sem bloquear)
+            try {
+                if (window.firestoreAddDoc && profile.uid !== 'anonimo') {
+                    const ted = (dados.teds || []).find(t => t.id == tedId);
+                    const logEntry = {
+                        tedId: tedId,
+                        tedNumero: ted ? (ted.numTed || String(tedId)) : String(tedId),
+                        usuarioUid: profile.uid || 'anonimo',
+                        usuarioNome: profile.displayName || profile.nome || profile.email || 'Anônimo',
+                        acao: acao,
+                        campo: (detalhes && detalhes.campo) ? detalhes.campo : null,
+                        valorAnterior: (detalhes && detalhes.anterior !== undefined) ? detalhes.anterior : null,
+                        valorNovo: (detalhes && detalhes.novo !== undefined) ? detalhes.novo : null,
+                        dataHora: registro.dataHora
+                    };
+                    window.firestoreAddDoc('auditLog', logEntry).catch(function(e) {
+                        console.warn('auditLog Firestore save failed', e);
+                    });
+                }
+            } catch(e) { console.warn('adicionarRegistroAuditoria Firestore error', e); }
         }
 
         // Obter registros de auditoria para um TED
@@ -888,10 +906,25 @@
                         al.textContent = window.currentUserProfile.displayName || 
                                          window.currentUserProfile.email || '-';
                     }
-                    // Carregar lista de usuários
+                    // Carregar lista de usuários e popular filtro de auditoria
                     if (isAdm && typeof window.loadUsersList === 'function') {
                         setTimeout(function() {
                             try { window.loadUsersList(); } catch(e) {}
+                            // Popular select de TED no filtro de auditoria
+                            try {
+                                var selAudit = document.getElementById('auditFilterTed');
+                                if (selAudit) {
+                                    selAudit.innerHTML = '<option value="">Todos os TEDs</option>';
+                                    (dados.teds || []).forEach(function(t) {
+                                        var opt = document.createElement('option');
+                                        opt.value = t.numTed || t.id;
+                                        opt.textContent = 'TED ' + (t.numTed || t.id) + (t.objetivo ? ' — ' + t.objetivo.substring(0, 40) : '');
+                                        selAudit.appendChild(opt);
+                                    });
+                                }
+                            } catch(e) {}
+                            // Popular UP no formulário de criar usuário
+                            try { if (typeof window.popularUpsFormUsuario === 'function') window.popularUpsFormUsuario(); } catch(e) {}
                         }, 100);
                     }
                 } catch(e) {}
@@ -2327,6 +2360,13 @@
             // Atualizar badges de contadores das seções
             try { atualizarTodosContadoresSecoes(); } catch(e) {}
             try { renderCompactGanttFisico(); } catch(e) {}
+            // Aplicar restrição de UP para editor com upRestrita
+            try {
+                var p = window.currentUserProfile;
+                if (p && p.role === 'editor' && p.upRestrita) {
+                    applyUpRestriction(p.upRestrita);
+                }
+            } catch(e) {}
         }
 
         // Atualizar todos os badges de contadores nas seções de detalhe
@@ -2872,7 +2912,10 @@
             
             // Limpar backup
             tedBackup = null;
-            
+
+            // Auditoria
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'editar_info', null, { campo: 'informações gerais' }); } catch(e) {}
+
             showToast('Informações do TED atualizadas com sucesso!', 'success');
         }
 
@@ -5331,6 +5374,7 @@
             }
 
             salvarDados(); atualizarTabelasEmCascata('fisicos'); fecharModalFisicoCad();
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, window._editandoFisicoId ? 'editar_fisico' : 'adicionar_fisico', null, { campo: 'cadastro físico', novo: { fase, objeto, qtde } }); } catch(e) {}
         }
 
         function adicionarFisico() { abrirModalFisicoCad(); }
@@ -5341,6 +5385,7 @@
             window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(f => f.id !== id);
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarTabelasEmCascata('fisicos');
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_fisico', id, { campo: 'cadastro físico' }); } catch(e) {}
         }
 
         function atualizarTabelaFisicos() {
@@ -5608,6 +5653,7 @@
             atualizarTabelaExecFisica();
             try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_exec_fisica', id, { campo: 'execução física' }); } catch(e) {}
         }
 
         function atualizarTabelaExecFisica() {
@@ -6126,7 +6172,9 @@
 
             if (window._editandoFinanceiroId) window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(x => x.id !== window._editandoFinanceiroId);
 
-            window.tedSelecionado.financeiros.push({ id: window._editandoFinanceiroId || Date.now(), numero, m, mesDesc, anoDesc, up, valor });
+            const finId = window._editandoFinanceiroId || Date.now();
+            const acaoFin = window._editandoFinanceiroId ? 'editar_financeiro' : 'adicionar_financeiro';
+            window.tedSelecionado.financeiros.push({ id: finId, numero, m, mesDesc, anoDesc, up, valor });
             atualizarValorTedFromFinanceiros(window.tedSelecionado);
             salvarDados();
             atualizarTabelasEmCascata('financeiros');
@@ -6134,6 +6182,7 @@
             atualizarOpcoesRecGeral();
             atualizarGantt();
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, acaoFin, finId, { campo: 'cadastro financeiro', novo: { numero, up, valor } }); } catch(e) {}
             fecharModalFinanceiro();
         }
 
@@ -6150,6 +6199,7 @@
             atualizarOpcoesExecFinanceira();
             atualizarOpcoesRecGeral();
             atualizarGantt();
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_financeiro', id, { campo: 'cadastro financeiro' }); } catch(e) {}
         }
 
         // ===== Helper: formatar valor com cor =====
@@ -6603,6 +6653,7 @@
             atualizarGantt();
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
             try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'adicionar_exec_financeira', null, { campo: 'execução financeira', novo: { nd, up, valor, data } }); } catch(e) {}
             fecharModalExecFin();
         }
 
@@ -6611,7 +6662,7 @@
         function removerExecFinanceira(nd, up, data) {
             if (!window.tedSelecionado) return;
             // Remove apenas a execução específica (mesma ND+UP+data)
-            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras.filter(f => 
+            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras.filter(f =>
                 !(String(f.nd || f.numero) === nd && String(f.up || f.ug) === up && f.data === data)
             );
             // Atualizar gasto (valor realizado) automaticamente
@@ -6620,6 +6671,7 @@
             atualizarGantt();
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_exec_financeira', null, { campo: 'execução financeira', anterior: { nd, up, data } }); } catch(e) {}
         }
 
         // GANTT 60 MESES - resumo anual agora baseado em Recursos Gerais (IMBEL)
@@ -11075,8 +11127,13 @@
         }
         window.doLogout = doLogout;
 
-        // Atualizar UI de admin/leitura
+        // Atualizar UI baseado no perfil (admin / editor / leitor)
         function updateAdminUI(isAdmin) {
+            var profile = window.currentUserProfile;
+            var role = profile ? (profile.role || 'leitor') : 'leitor';
+            var canEdit = role === 'admin' || role === 'editor';
+            var isAdminRole = role === 'admin';
+
             var modeEl = document.getElementById('modeIndicator');
             var loginBtn = document.getElementById('btnAdminLogin');
             var logoutBtn = document.getElementById('btnAdminLogout');
@@ -11086,33 +11143,66 @@
             var tabConfig = document.getElementById('tab-config');
             var tabRelatorios = document.getElementById('tab-relatorios');
 
-            if (isAdmin) {
+            // Indicador de modo
+            if (isAdminRole) {
                 if (modeEl) { modeEl.textContent = '🔑 Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
-                if (loginBtn) loginBtn.style.display = 'none';
-                if (logoutBtn) logoutBtn.style.display = 'inline-block';
-                if (cloudCtrl) cloudCtrl.style.display = 'flex';
-                if (adminPanel) adminPanel.style.display = 'block';
-                if (tabConfig) { tabConfig.classList.remove('auto-style-001'); tabConfig.style.display = ''; }
-                if (tabRelatorios) tabRelatorios.style.display = '';
-                if (adminLoggedAs && window.currentUserProfile) {
-                    adminLoggedAs.textContent = (window.currentUserProfile.displayName || window.currentUserProfile.email || '→');
-                }
-                // Habilitar botões de edição
-                enableEditButtons(true);
+            } else if (role === 'editor') {
+                var upLabel = (profile && profile.upRestrita) ? ' (' + profile.upRestrita + ')' : '';
+                if (modeEl) { modeEl.textContent = '✏️ Editor' + upLabel; modeEl.style.background = '#fef9c3'; modeEl.style.color = '#854d0e'; }
             } else {
                 if (modeEl) { modeEl.textContent = '📖 Leitura'; modeEl.style.background = '#e0e7ff'; modeEl.style.color = '#3730a3'; }
+            }
+
+            // Botões de login/logout
+            if (canEdit || role === 'leitor' && profile) {
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+            } else {
                 if (loginBtn) loginBtn.style.display = 'inline-block';
                 if (logoutBtn) logoutBtn.style.display = 'none';
-                if (cloudCtrl) cloudCtrl.style.display = 'none';
-                if (adminPanel) adminPanel.style.display = 'none';
-                // Esconder aba Configurações para usuários não-admin
-                if (tabConfig) { tabConfig.classList.add('auto-style-001'); tabConfig.style.display = ''; }
-                if (tabRelatorios) tabRelatorios.style.display = '';
-                // Desabilitar botões de edição
-                enableEditButtons(false);
+            }
+
+            // Controles de cloud e painel admin: somente admin
+            if (cloudCtrl) cloudCtrl.style.display = isAdminRole ? 'flex' : 'none';
+            if (adminPanel) adminPanel.style.display = isAdminRole ? 'block' : 'none';
+
+            // Aba Configurações: somente admin
+            if (tabConfig) {
+                if (isAdminRole) {
+                    tabConfig.classList.remove('auto-style-001');
+                    tabConfig.style.display = '';
+                } else {
+                    tabConfig.classList.add('auto-style-001');
+                    tabConfig.style.display = 'none';
+                }
+            }
+            if (tabRelatorios) tabRelatorios.style.display = '';
+
+            // Nome do usuário logado
+            if (adminLoggedAs && profile) {
+                adminLoggedAs.textContent = (profile.displayName || profile.email || '→');
+            }
+
+            // Botões de edição: habilitados para admin e editor
+            enableEditButtons(canEdit);
+
+            // Restrição por UP: se editor com upRestrita definida
+            if (canEdit && !isAdminRole && profile && profile.upRestrita) {
+                applyUpRestriction(profile.upRestrita);
             }
         }
         window.updateAdminUI = updateAdminUI;
+
+        // Aplica restrição de edição ao TED selecionado quando o usuário tem UP restrita
+        function applyUpRestriction(upRestrita) {
+            if (!window.tedSelecionado) return;
+            var tedUp = window.tedSelecionado.upResponsavel || window.tedSelecionado.up || '';
+            if (tedUp && tedUp !== upRestrita) {
+                enableEditButtons(false);
+                showToast('Você só pode editar TEDs da UP ' + upRestrita, 'warning');
+            }
+        }
+        window.applyUpRestriction = applyUpRestriction;
 
         // Habilitar/desabilitar TODOS os botões e formulários de edição
         function enableEditButtons(enabled) {
