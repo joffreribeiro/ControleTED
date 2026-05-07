@@ -1432,13 +1432,11 @@
 
     
 
+    <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
+    <script src="js/main.js"></script>
+
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js"></script>
     <script type="module" src="./app.js"></script>
-    <!-- Fallback: detect if modules failed to load -->
-    
-    
-
-<script src="js/main.js"></script>
 </body>
 </html>

@@ -93,7 +93,8 @@ window.carregarDoCloud = async function() {
       return copy;
     });
     window.dados = window.dados || { teds: [], proxiId: 1 };
-    window.dados.teds = normalized;
+    // Atualizar in-place para que referências locais em main.js (var dados) continuem válidas
+    window.dados.teds.splice(0, window.dados.teds.length, ...normalized);
     window.dados.proxiId = window.dados.teds.length ? Math.max(...window.dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
     // Try to read meta/teds to align proxiId
     try {
