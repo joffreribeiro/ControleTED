@@ -1,7 +1,7 @@
 // Firebase initialization for Controle TED
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, enableIndexedDbPersistence, doc as fsDoc, getDoc as fsGetDoc, setDoc as fsSetDoc, onSnapshot as fsOnSnapshot, collection as fsCollection, getDocs as fsGetDocs, writeBatch as fsWriteBatch, deleteDoc as fsDeleteDoc, addDoc as fsAddDoc, runTransaction as fsRunTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged as fbOnAuthStateChanged, updateProfile, sendPasswordResetEmail as fbSendPasswordResetEmail, updatePassword as fbUpdatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged as fbOnAuthStateChanged, sendPasswordResetEmail as fbSendPasswordResetEmail, updatePassword as fbUpdatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -30,28 +30,43 @@ window.firebaseAuth = auth;
 
 // ===== Auth helpers =====
 window.authCreateUser = async function(email, password, profile = {}) {
+  // Usa um app Firebase secundário isolado para criar o usuário sem deslogar o admin atual.
+  // createUserWithEmailAndPassword faz login automático com o novo usuário — o app secundário
+  // evita que isso afete a sessão principal.
+  let secondaryApp = null;
   try {
-    const cred = await createUserWithEmailAndPassword(auth, String(email), String(password));
+    const { initializeApp: fbInitApp, deleteApp: fbDeleteApp } = await import('https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js');
+    const { getAuth: fbGetAuth, createUserWithEmailAndPassword: fbCreate, updateProfile: fbUpdateProfile } = await import('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js');
+    const tmpName = 'tmp-create-' + Date.now();
+    secondaryApp = fbInitApp(firebaseConfig, tmpName);
+    const secondaryAuth = fbGetAuth(secondaryApp);
+    const cred = await fbCreate(secondaryAuth, String(email), String(password));
     const user = cred && cred.user ? cred.user : null;
     if (user) {
-      // update displayName if provided
-      try { if (profile.displayName) await updateProfile(user, { displayName: profile.displayName }); } catch(e){}
-      // create user profile in Firestore under `users/{uid}`
+      try { if (profile.displayName) await fbUpdateProfile(user, { displayName: profile.displayName }); } catch(e){}
       try {
         const uref = fsDoc(db, 'users', user.uid);
-        const profileData = {
+        await fsSetDoc(uref, {
           uid: user.uid,
           email: user.email,
           role: profile.role || 'leitor',
           displayName: profile.displayName || user.displayName || '',
           upRestrita: profile.upRestrita || null,
           active: profile.active !== undefined ? profile.active : true
-        };
-        await fsSetDoc(uref, profileData);
-      } catch (e) { console.warn('authCreateUser: error creating user profile', e); }
+        });
+      } catch (e) { console.warn('authCreateUser: error saving profile', e); }
+      try { await secondaryAuth.signOut(); } catch(e){}
     }
+    try { await fbDeleteApp(secondaryApp); } catch(e){}
+    secondaryApp = null;
     return user;
   } catch (e) {
+    if (secondaryApp) {
+      try {
+        const { deleteApp: fbDeleteApp } = await import('https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js');
+        await fbDeleteApp(secondaryApp);
+      } catch(e2){}
+    }
     console.warn('authCreateUser error', e);
     throw e;
   }

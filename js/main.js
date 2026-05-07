@@ -11236,15 +11236,18 @@
             }
 
             var isLoggedIn = !!profile;
+            var linkChangePw = document.getElementById('linkChangePassword');
             // Botões de login/logout
             if (isLoggedIn) {
                 if (loginBtn) loginBtn.style.display = 'none';
                 if (logoutBtn) logoutBtn.style.display = 'inline-block';
                 if (changePwBtn) changePwBtn.style.display = 'inline-block';
+                if (linkChangePw) linkChangePw.style.display = 'inline';
             } else {
                 if (loginBtn) loginBtn.style.display = 'inline-block';
                 if (logoutBtn) logoutBtn.style.display = 'none';
                 if (changePwBtn) changePwBtn.style.display = 'none';
+                if (linkChangePw) linkChangePw.style.display = 'none';
             }
 
             // Controles de cloud e painel admin: somente admin
