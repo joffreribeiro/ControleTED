@@ -11120,6 +11120,60 @@
         }
         window.doPasswordReset = doPasswordReset;
 
+        function showChangePasswordModal() {
+            var m = document.getElementById('changePasswordModal');
+            if (!m) return;
+            // Limpar campos e mensagens
+            ['changePwCurrent','changePwNew','changePwConfirm'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.value = '';
+            });
+            var err = document.getElementById('changePwError');
+            var ok = document.getElementById('changePwSuccess');
+            if (err) { err.style.display = 'none'; err.textContent = ''; }
+            if (ok) { ok.style.display = 'none'; ok.textContent = ''; }
+            m.style.display = 'flex';
+        }
+        window.showChangePasswordModal = showChangePasswordModal;
+
+        function hideChangePasswordModal() {
+            var m = document.getElementById('changePasswordModal');
+            if (m) m.style.display = 'none';
+        }
+        window.hideChangePasswordModal = hideChangePasswordModal;
+
+        async function doChangePassword() {
+            var errEl = document.getElementById('changePwError');
+            var okEl = document.getElementById('changePwSuccess');
+            function setErr(msg) { if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; } if (okEl) okEl.style.display = 'none'; }
+            function setOk(msg) { if (okEl) { okEl.textContent = msg; okEl.style.display = 'block'; } if (errEl) errEl.style.display = 'none'; }
+
+            var current = (document.getElementById('changePwCurrent') || {}).value || '';
+            var novo = (document.getElementById('changePwNew') || {}).value || '';
+            var confirma = (document.getElementById('changePwConfirm') || {}).value || '';
+
+            if (!current) { setErr('Informe a senha atual.'); return; }
+            if (novo.length < 6) { setErr('A nova senha deve ter pelo menos 6 caracteres.'); return; }
+            if (novo !== confirma) { setErr('A nova senha e a confirmação não coincidem.'); return; }
+
+            try {
+                var ok = await waitForGlobal('authChangePassword', 5000);
+                if (!ok) { setErr('Firebase não carregou. Verifique sua conexão.'); return; }
+                await window.authChangePassword(current, novo);
+                setOk('Senha alterada com sucesso!');
+                // Limpar campos
+                ['changePwCurrent','changePwNew','changePwConfirm'].forEach(function(id) {
+                    var el = document.getElementById(id); if (el) el.value = '';
+                });
+                setTimeout(hideChangePasswordModal, 2000);
+            } catch(e) {
+                if (e && e.code === 'auth/wrong-password') setErr('Senha atual incorreta.');
+                else if (e && e.code === 'auth/weak-password') setErr('Nova senha muito fraca. Use pelo menos 6 caracteres.');
+                else if (e && e.code === 'auth/requires-recent-login') setErr('Por segurança, faça logout e login novamente antes de trocar a senha.');
+                else setErr('Erro ao alterar senha: ' + (e && e.message ? e.message : e));
+            }
+        }
+        window.doChangePassword = doChangePassword;
+
         // Force create admin (disabled)
         function doForceCreateAdmin() {
             showToast('Operação não permitida.', 'warning');
@@ -11164,6 +11218,7 @@
             var modeEl = document.getElementById('modeIndicator');
             var loginBtn = document.getElementById('btnAdminLogin');
             var logoutBtn = document.getElementById('btnAdminLogout');
+            var changePwBtn = document.getElementById('btnChangePassword');
             var cloudCtrl = document.getElementById('adminCloudControls');
             var adminPanel = document.getElementById('adminPanel');
             var adminLoggedAs = document.getElementById('adminLoggedAs');
@@ -11180,13 +11235,16 @@
                 if (modeEl) { modeEl.textContent = '📖 Leitura'; modeEl.style.background = '#e0e7ff'; modeEl.style.color = '#3730a3'; }
             }
 
+            var isLoggedIn = !!profile;
             // Botões de login/logout
-            if (canEdit || role === 'leitor' && profile) {
+            if (isLoggedIn) {
                 if (loginBtn) loginBtn.style.display = 'none';
                 if (logoutBtn) logoutBtn.style.display = 'inline-block';
+                if (changePwBtn) changePwBtn.style.display = 'inline-block';
             } else {
                 if (loginBtn) loginBtn.style.display = 'inline-block';
                 if (logoutBtn) logoutBtn.style.display = 'none';
+                if (changePwBtn) changePwBtn.style.display = 'none';
             }
 
             // Controles de cloud e painel admin: somente admin
