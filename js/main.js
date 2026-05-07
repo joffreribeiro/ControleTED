@@ -6879,6 +6879,10 @@
             const anosSet = new Set();
             const upsSet = new Set();
             (dados.teds || []).forEach(t => {
+                // UP direto do TED
+                if (t.upResponsavel) upsSet.add(t.upResponsavel);
+                if (t.up) upsSet.add(t.up);
+                if (t.ug) upsSet.add(t.ug);
                 (t.financeiros || []).forEach(fi => {
                     if (fi.anoDesc) anosSet.add(Number(fi.anoDesc));
                     if (fi.up) upsSet.add(fi.up);
@@ -6888,6 +6892,10 @@
                     if (e.data) { const y = new Date(e.data + 'T00:00:00').getFullYear(); if (!isNaN(y)) anosSet.add(y); }
                     if (e.up) upsSet.add(e.up);
                     if (e.ug) upsSet.add(e.ug);
+                });
+                // Ano a partir das execuções físicas
+                (t.execFisicas || []).forEach(e => {
+                    if (e.data) { const y = new Date(e.data + 'T00:00:00').getFullYear(); if (!isNaN(y)) anosSet.add(y); }
                 });
             });
 
@@ -7403,10 +7411,20 @@
                 container.innerHTML = '<p style="color:var(--text);">Nenhum TED disponível.</p>';
                 return;
             }
-            const tedsSelected = dados.teds.filter(t => tedIds.includes(String(t.id)));
+            let tedsSelected = dados.teds.filter(t => tedIds.includes(String(t.id)));
             if (!tedsSelected.length) {
                 container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>';
                 return;
+            }
+
+            // Filtro UP: aplicado nos TEDs (UP é atributo do TED, não dos itens físicos)
+            if (upFilter) {
+                const ups = Array.isArray(upFilter) ? upFilter : [upFilter];
+                tedsSelected = tedsSelected.filter(t => ups.includes(t.upResponsavel || t.up || ''));
+                if (!tedsSelected.length) {
+                    container.innerHTML = '<p style="color:var(--text);">Nenhum TED encontrado para a UP selecionada.</p>';
+                    return;
+                }
             }
 
             // Consolidar fisicos/objetos/execs de todos os TEDs selecionados
@@ -7422,6 +7440,7 @@
                 return;
             }
 
+            // Filtro Ano: aplicado nas execuções físicas (execFisicas tem campo data)
             const execsFiltrados = execsAll.filter(e => {
                 if (anoFilter) {
                     const anos = Array.isArray(anoFilter) ? anoFilter.map(Number) : [Number(anoFilter)];
