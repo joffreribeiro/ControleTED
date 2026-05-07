@@ -1522,7 +1522,10 @@
             <label style="display:block; margin-bottom:0.25rem; font-weight:600; color:#374151;">Senha</label>
             <input id="modal_login_password" type="password" placeholder="Senha" style="width:100%; padding:0.6rem 0.75rem; margin-bottom:1rem; border:1px solid #d1d5db; border-radius:0.5rem; font-size:1rem;" onkeydown="if(event.key==='Enter') doLogin()" />
             <button onclick="doLogin()" style="width:100%; padding:0.75rem; background:linear-gradient(135deg,#185FA5,#0C447C); color:white; border:none; border-radius:0.5rem; font-size:1rem; font-weight:600; cursor:pointer; margin-bottom:0.5rem;">Entrar</button>
-            <p id="loginStatus" style="text-align:center; margin-top:0.75rem; font-size:0.8rem; color:#94a3b8;">Aguardando conexão com Firebase...</p>
+            <p style="text-align:center; margin:0.5rem 0 0; font-size:0.8rem;">
+                <a href="#" onclick="doPasswordReset(); return false;" style="color:#185FA5; text-decoration:none;">Esqueci minha senha</a>
+            </p>
+            <p id="loginStatus" style="text-align:center; margin-top:0.5rem; font-size:0.8rem; color:#94a3b8;">Aguardando conexão com Firebase...</p>
         </div>
     </div>
 

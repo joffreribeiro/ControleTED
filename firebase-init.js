@@ -1,7 +1,7 @@
 // Firebase initialization for Controle TED
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, enableIndexedDbPersistence, doc as fsDoc, getDoc as fsGetDoc, setDoc as fsSetDoc, onSnapshot as fsOnSnapshot, collection as fsCollection, getDocs as fsGetDocs, writeBatch as fsWriteBatch, deleteDoc as fsDeleteDoc, addDoc as fsAddDoc, runTransaction as fsRunTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged as fbOnAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged as fbOnAuthStateChanged, updateProfile, sendPasswordResetEmail as fbSendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -63,6 +63,16 @@ window.authSignIn = async function(email, password) {
     return cred && cred.user ? cred.user : null;
   } catch (e) {
     console.warn('authSignIn error', e);
+    throw e;
+  }
+};
+
+window.authSendPasswordReset = async function(email) {
+  try {
+    await fbSendPasswordResetEmail(auth, String(email));
+    return true;
+  } catch (e) {
+    console.warn('authSendPasswordReset error', e);
     throw e;
   }
 };

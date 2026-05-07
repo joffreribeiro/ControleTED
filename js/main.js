@@ -11093,6 +11093,33 @@
         }
         window.doLogin = doLogin;
 
+        async function doPasswordReset() {
+            var email = ((document.getElementById('modal_login_email') || {}).value || '').trim();
+            if (!email) {
+                setLoginError('Digite seu e-mail acima para receber o link de redefinição.');
+                return;
+            }
+            setLoginError('');
+            setLoginStatus('Enviando link...');
+            try {
+                var ok = await waitForGlobal('authSendPasswordReset', 5000);
+                if (!ok) { setLoginError('Firebase não carregou. Verifique sua conexão.'); setLoginStatus(''); return; }
+                await window.authSendPasswordReset(email);
+                setLoginSuccess('Link enviado para ' + email + '. Verifique sua caixa de entrada.');
+                setLoginStatus('');
+            } catch(e) {
+                setLoginStatus('');
+                if (e && e.code === 'auth/user-not-found') {
+                    setLoginError('Nenhuma conta encontrada com este e-mail.');
+                } else if (e && e.code === 'auth/invalid-email') {
+                    setLoginError('E-mail inválido.');
+                } else {
+                    setLoginError('Erro ao enviar link: ' + (e && e.message ? e.message : e));
+                }
+            }
+        }
+        window.doPasswordReset = doPasswordReset;
+
         // Force create admin (disabled)
         function doForceCreateAdmin() {
             showToast('Operação não permitida.', 'warning');
