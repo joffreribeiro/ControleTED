@@ -6772,57 +6772,155 @@
         }
 
         // --- Entregas chart (por objeto) ---
-        function atualizarFiltroTedEntregas() {
-            const sel = document.getElementById('filterTedEntregas');
-            if (!sel) return;
-            sel.innerHTML = '<option value="">-- Selecione um TED --</option>';
-            dados.teds.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                const encerrado = isTedFinalizado(t);
-                opt.textContent = encerrado
-                    ? `TED ${t.numTed} - ${t.objetivo} (Encerrado)`
-                    : `TED ${t.numTed} - ${t.objetivo}`;
-                if (encerrado) opt.style.color = '#ef4444';
-                sel.appendChild(opt);
-            });
+        // ===== Multi-select dropdown helpers =====
 
-            // Se não houver TED selecionado no dashboard, selecionar o primeiro em execução;
-            // fallback: primeiro da lista.
-            if ((!sel.value || sel.value === '') && Array.isArray(dados.teds) && dados.teds.length) {
-                const primeiroEmExecucao = dados.teds.find(t => !isTedFinalizado(t)) || dados.teds[0];
-                if (primeiroEmExecucao && primeiroEmExecucao.id != null) sel.value = String(primeiroEmExecucao.id);
+        // Estado das seleções dos filtros de Gráficos
+        window._grafFiltros = { teds: new Set(), anos: new Set(), ups: new Set() };
+
+        function toggleMsDropdown(id) {
+            const panel = document.getElementById(id + '-panel');
+            if (!panel) return;
+            // Fechar outros abertos
+            document.querySelectorAll('.ms-panel.open').forEach(p => { if (p.id !== id + '-panel') p.classList.remove('open'); });
+            panel.classList.toggle('open');
+        }
+
+        // Fechar dropdowns ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.ms-dropdown')) {
+                document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
             }
+        });
 
-            // Atualizar também o seletor full (se existir)
+        function filterMsOptions(dropId, query) {
+            const list = document.getElementById(dropId + '-list');
+            if (!list) return;
+            const q = query.toLowerCase();
+            list.querySelectorAll('.ms-item').forEach(item => {
+                item.style.display = item.querySelector('label').textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        function _buildMsList(dropId, items, stateSet, labelFn) {
+            const list = document.getElementById(dropId + '-list');
+            if (!list) return;
+            list.innerHTML = '';
+            items.forEach(val => {
+                const id = dropId + '-cb-' + String(val).replace(/\s/g,'_');
+                const item = document.createElement('div');
+                item.className = 'ms-item';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.id = id;
+                cb.value = String(val);
+                cb.checked = stateSet.has(String(val));
+                cb.addEventListener('change', function() {
+                    if (this.checked) stateSet.add(this.value);
+                    else stateSet.delete(this.value);
+                    _updateMsLabel(dropId, stateSet);
+                    renderEntregasFromFilter();
+                    renderResumoFinanceiroFromFilter();
+                });
+                const lbl = document.createElement('label');
+                lbl.htmlFor = id;
+                lbl.textContent = labelFn ? labelFn(val) : String(val);
+                item.appendChild(cb);
+                item.appendChild(lbl);
+                list.appendChild(item);
+            });
+        }
+
+        function _updateMsLabel(dropId, stateSet) {
+            const labelEl = document.getElementById(dropId + '-label');
+            if (!labelEl) return;
+            const defaults = { msdTed: '-- Todos --', msdAno: '-- Todos --', msdUp: '-- Todas --' };
+            if (stateSet.size === 0) {
+                labelEl.textContent = defaults[dropId] || '-- Todos --';
+            } else if (stateSet.size === 1) {
+                const val = Array.from(stateSet)[0];
+                // Para TED mostrar nome curto
+                if (dropId === 'msdTed') {
+                    const t = dados.teds.find(x => String(x.id) === val);
+                    labelEl.textContent = t ? `TED ${t.numTed}` : val;
+                } else {
+                    labelEl.textContent = val;
+                }
+            } else {
+                labelEl.innerHTML = `<span class="ms-tag-count">${stateSet.size}</span>&nbsp;selecionados`;
+            }
+        }
+
+        function atualizarFiltroTedEntregas() {
+            const f = window._grafFiltros;
+            _buildMsList('msdTed', dados.teds, f.teds, val => {
+                const t = dados.teds.find(x => String(x.id) === String(val));
+                if (!t) return String(val);
+                const enc = isTedFinalizado(t);
+                return `TED ${t.numTed} - ${t.objetivo}${enc ? ' (Encerrado)' : ''}`;
+            });
+            // Reconstruir usando os ids como val
+            const list = document.getElementById('msdTed-list');
+            if (list) {
+                list.innerHTML = '';
+                dados.teds.forEach(t => {
+                    const val = String(t.id);
+                    const cbId = 'msdTed-cb-' + val;
+                    const item = document.createElement('div');
+                    item.className = 'ms-item';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.id = cbId;
+                    cb.value = val;
+                    cb.checked = f.teds.has(val);
+                    cb.addEventListener('change', function() {
+                        if (this.checked) f.teds.add(this.value);
+                        else f.teds.delete(this.value);
+                        _updateMsLabel('msdTed', f.teds);
+                        renderEntregasFromFilter();
+                        renderResumoFinanceiroFromFilter();
+                    });
+                    const lbl = document.createElement('label');
+                    lbl.htmlFor = cbId;
+                    const enc = isTedFinalizado(t);
+                    lbl.textContent = `TED ${t.numTed} - ${t.objetivo}${enc ? ' (Encerrado)' : ''}`;
+                    if (enc) lbl.style.color = '#ef4444';
+                    item.appendChild(cb);
+                    item.appendChild(lbl);
+                    list.appendChild(item);
+                });
+            }
+            _updateMsLabel('msdTed', f.teds);
+
+            // Atualizar seletor full legado se existir
             const selFull = document.getElementById('filterTedEntregasFull');
             if (selFull) {
-                selFull.innerHTML = sel.innerHTML;
-                if (sel.value) selFull.value = sel.value;
+                selFull.innerHTML = '<option value="">-- Todos --</option>';
+                dados.teds.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = `TED ${t.numTed} - ${t.objetivo}`;
+                    selFull.appendChild(opt);
+                });
             }
-            // Atualizar filtros auxiliares (ano e UP)
-            try { atualizarFiltrosGrafico(); } catch(e) {}
 
-            // Re-renderizar gráficos ao atualizar opções/filtro
+            try { atualizarFiltrosGrafico(); } catch(e) {}
             try { renderEntregasFromFilter(); } catch(e) {}
             try { renderResumoFinanceiroFromFilter(); } catch(e) {}
+            try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) {}
         }
 
         function atualizarFiltrosGrafico() {
-            const selAno = document.getElementById('filterAnoEntregas');
-            const selUp = document.getElementById('filterUpEntregas');
-            if (!selAno || !selUp) return;
-
+            const f = window._grafFiltros;
             const anosSet = new Set();
             const upsSet = new Set();
             (dados.teds || []).forEach(t => {
-                (t.financeiros || []).forEach(f => {
-                    if (f.anoDesc) anosSet.add(Number(f.anoDesc));
-                    if (f.up) upsSet.add(f.up);
-                    if (f.ug) upsSet.add(f.ug);
+                (t.financeiros || []).forEach(fi => {
+                    if (fi.anoDesc) anosSet.add(Number(fi.anoDesc));
+                    if (fi.up) upsSet.add(fi.up);
+                    if (fi.ug) upsSet.add(fi.ug);
                 });
                 (t.execFinanceiras || []).forEach(e => {
-                    if (e.data) anosSet.add(new Date(e.data + 'T00:00:00').getFullYear());
+                    if (e.data) { const y = new Date(e.data + 'T00:00:00').getFullYear(); if (!isNaN(y)) anosSet.add(y); }
                     if (e.up) upsSet.add(e.up);
                     if (e.ug) upsSet.add(e.ug);
                 });
@@ -6831,8 +6929,25 @@
             const anos = Array.from(anosSet).sort((a,b)=>a-b);
             const ups = Array.from(upsSet).sort();
 
-            selAno.innerHTML = '<option value="">-- Todos --</option>' + anos.map(a=>`<option value="${a}">${a}</option>`).join('');
-            selUp.innerHTML = '<option value="">-- Todas --</option>' + ups.map(u=>`<option value="${u}">${u}</option>`).join('');
+            _buildMsList('msdAno', anos, f.anos, null);
+            _buildMsList('msdUp', ups, f.ups, null);
+            _updateMsLabel('msdAno', f.anos);
+            _updateMsLabel('msdUp', f.ups);
+        }
+
+        function limparFiltrosGrafico() {
+            const f = window._grafFiltros;
+            f.teds.clear(); f.anos.clear(); f.ups.clear();
+            // Desmarcar checkboxes visíveis
+            ['msdTed', 'msdAno', 'msdUp'].forEach(id => {
+                const list = document.getElementById(id + '-list');
+                if (list) list.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            });
+            _updateMsLabel('msdTed', f.teds);
+            _updateMsLabel('msdAno', f.anos);
+            _updateMsLabel('msdUp', f.ups);
+            renderEntregasFromFilter();
+            renderResumoFinanceiroFromFilter();
         }
 
         // Popular filtros da aba Relatórios (TED, UP, Ano)
@@ -7298,54 +7413,65 @@
             }, 700);
         }
 
+        function _getGrafFiltros() {
+            const f = window._grafFiltros || { teds: new Set(), anos: new Set(), ups: new Set() };
+            const teds = f.teds.size > 0 ? Array.from(f.teds) : null;
+            const anos = f.anos.size > 0 ? Array.from(f.anos).map(Number) : null;
+            const ups  = f.ups.size  > 0 ? Array.from(f.ups)  : null;
+            return { teds, anos, ups };
+        }
+
         function renderEntregasFromFilter() {
-            const sel = document.getElementById('filterTedEntregas');
-            if (!sel) return;
-            let id = sel.value;
-            if (!id && Array.isArray(dados.teds) && dados.teds.length) {
-                const primeiroEmExecucao = dados.teds.find(t => !isTedFinalizado(t)) || dados.teds[0];
-                if (primeiroEmExecucao && primeiroEmExecucao.id != null) {
-                    id = String(primeiroEmExecucao.id);
-                    sel.value = id;
-                }
+            const { teds, anos, ups } = _getGrafFiltros();
+            // Se nenhum TED selecionado, usar o primeiro em execução como padrão de exibição
+            let tedIds = teds;
+            if (!tedIds && Array.isArray(dados.teds) && dados.teds.length) {
+                const primeiro = dados.teds.find(t => !isTedFinalizado(t)) || dados.teds[0];
+                if (primeiro) tedIds = [String(primeiro.id)];
             }
-            const ano = (document.getElementById('filterAnoEntregas') || {}).value || null;
-            const up = (document.getElementById('filterUpEntregas') || {}).value || null;
-            renderEntregasChart(id, 'entregasChartContainer', ano, up);
-            try { renderResumoFinanceiro(id, 'resumoFinanceiroChart', ano, up); } catch(e) {}
+            renderEntregasChart(tedIds, 'entregasChartContainer', anos, ups);
+            try { renderResumoFinanceiro(tedIds, 'resumoFinanceiroChart', anos, ups); } catch(e) {}
         }
 
         function renderEntregasChart(tedId, containerId = 'entregasChartContainer', anoFilter = null, upFilter = null) {
             const container = document.getElementById(containerId);
             if (!container) return;
-            if (!tedId) {
+            // Normalizar tedId para array (aceita string, número ou array)
+            const tedIds = Array.isArray(tedId) ? tedId.map(String) : (tedId ? [String(tedId)] : null);
+            if (!tedIds || !tedIds.length) {
                 container.innerHTML = '<p style="color:var(--text);">Selecione um TED para ver as entregas (por objeto).</p>';
                 return;
             }
-            const ted = dados.teds.find(t => String(t.id) === String(tedId));
-            if (!ted) {
+            const tedsSelected = dados.teds.filter(t => tedIds.includes(String(t.id)));
+            if (!tedsSelected.length) {
                 container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>';
                 return;
             }
 
-            const fisicos = ted.fisicos || [];
-            const objetos = ted.objetos || [];
+            // Consolidar fisicos/objetos/execs de todos os TEDs selecionados
+            let fisicos = [], objetos = [], execsAll = [];
+            tedsSelected.forEach(ted => {
+                fisicos = fisicos.concat(ted.fisicos || []);
+                objetos = objetos.concat(ted.objetos || []);
+                execsAll = execsAll.concat(ted.execFisicas || []);
+            });
+
             if (!fisicos.length && !objetos.length) {
                 container.innerHTML = '<p style="color:var(--text);">Nenhum cadastro físico/objeto para este TED.</p>';
                 return;
             }
 
-            // Calcular entregas por objeto (execFisicas.qtde)
-            const execs = ted.execFisicas || [];
-            const execsFiltrados = execs.filter(e => {
+            const execsFiltrados = execsAll.filter(e => {
                 if (anoFilter) {
+                    const anos = Array.isArray(anoFilter) ? anoFilter.map(Number) : [Number(anoFilter)];
                     if (!e.data) return false;
                     const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
-                    if (anoExec !== Number(anoFilter)) return false;
+                    if (!anos.includes(anoExec)) return false;
                 }
                 if (upFilter) {
+                    const ups = Array.isArray(upFilter) ? upFilter : [upFilter];
                     const u = e.up || e.ug || '';
-                    if (u !== upFilter) return false;
+                    if (!ups.includes(u)) return false;
                 }
                 return true;
             });
@@ -7405,42 +7531,39 @@
 
         // --- Resumo Financeiro (lado do dashboard) ---
         function renderResumoFinanceiroFromFilter() {
-            const sel = document.getElementById('filterTedEntregas');
-            if (!sel) return renderResumoFinanceiro(null);
-            const id = sel.value || null;
-            const ano = (document.getElementById('filterAnoEntregas') || {}).value || null;
-            const up = (document.getElementById('filterUpEntregas') || {}).value || null;
-            renderResumoFinanceiro(id, 'resumoFinanceiroChart', ano, up);
+            const { teds, anos, ups } = _getGrafFiltros();
+            renderResumoFinanceiro(teds, 'resumoFinanceiroChart', anos, ups);
         }
 
         function renderResumoFinanceiro(tedId = null, containerId = 'resumoFinanceiroChart', anoFilter = null, upFilter = null) {
             const container = document.getElementById(containerId);
             if (!container) return;
 
-            // Gather cadastro (financeiros) and recursos gerais for the selected TED (or all TEDs)
+            // Normalizar tedId para array
+            const tedIds = Array.isArray(tedId) ? tedId.map(String) : (tedId ? [String(tedId)] : null);
+
+            // Gather cadastro (financeiros) e recursos gerais para os TEDs selecionados (ou todos)
             let cad = [];
             let recs = [];
-            if (tedId) {
-                const ted = dados.teds.find(t => String(t.id) === String(tedId));
-                if (!ted) { container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>'; return; }
-                cad = ted.financeiros || [];
-                recs = ted.recursosGerais || [];
+            if (tedIds && tedIds.length) {
+                const tedsSelected = dados.teds.filter(t => tedIds.includes(String(t.id)));
+                if (!tedsSelected.length) { container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>'; return; }
+                tedsSelected.forEach(ted => { cad = cad.concat(ted.financeiros || []); recs = recs.concat(ted.recursosGerais || []); });
             } else {
                 (dados.teds || []).forEach(t => { cad = cad.concat(t.financeiros || []); recs = recs.concat(t.recursosGerais || []); });
             }
 
-            // apply optional filters (ano and UP)
+            // Aplicar filtros opcionais (ano e UP) — aceitam array ou valor único
             if (anoFilter) {
-                cad = cad.filter(f => Number(f.anoDesc) === Number(anoFilter));
-                recs = recs.filter(r => r.data && new Date(r.data + 'T00:00:00').getFullYear() === Number(anoFilter));
+                const anos = Array.isArray(anoFilter) ? anoFilter.map(Number) : [Number(anoFilter)];
+                cad = cad.filter(f => anos.includes(Number(f.anoDesc)));
+                recs = recs.filter(r => r.data && anos.includes(new Date(r.data + 'T00:00:00').getFullYear()));
             }
             if (upFilter) {
-                cad = cad.filter(f => (f.up || f.ug || '') === upFilter);
-                // try to filter recs by ND associated to cad entries for the UP (if possible)
+                const ups = Array.isArray(upFilter) ? upFilter : [upFilter];
+                cad = cad.filter(f => ups.includes(f.up || f.ug || ''));
                 const ndsForUp = new Set((cad || []).map(f => String(f.numero)));
-                if (ndsForUp.size) {
-                    recs = recs.filter(r => ndsForUp.has(String(r.nd)));
-                }
+                if (ndsForUp.size) recs = recs.filter(r => ndsForUp.has(String(r.nd)));
             }
 
             const anosSet = new Set();
