@@ -13,7 +13,11 @@
       "Read(//e/e/MEUS DOCUMENTOS/OneDrive/Documentos/Sistemas/**)",
       "Bash(grep -E \"\\\\.\\(html|js|css\\)$\")",
       "Bash(Get-ChildItem -Path \"e:\\\\MEUS DOCUMENTOS\\\\OneDrive\\\\Documentos\\\\Sistemas\\\\TESTE\" -Recurse -Force)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"e:\\\\MEUS DOCUMENTOS\\\\OneDrive\\\\Documentos\\\\Sistemas\\\\TESTE\" -Recurse -Include \"*.js\", \"*.ts\", \"*.tsx\", \"*.jsx\", \"*.html\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Recurse \"e:\\\\MEUS DOCUMENTOS\\\\OneDrive\\\\Documentos\\\\Sistemas\\\\TESTE\\\\frontend\\\\src\" -Name)",
+      "PowerShell(New-Item -ItemType Directory -Path \"e:\\\\MEUS DOCUMENTOS\\\\OneDrive\\\\Documentos\\\\Sistemas\\\\TESTE\\\\frontend\\\\src\\\\services\" -Force)"
     ]
   }
 }
