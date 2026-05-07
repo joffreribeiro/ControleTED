@@ -774,22 +774,6 @@
             try { renderEntregasFromFilter(); } catch(e) {}
             try { renderResumoFinanceiroFromFilter(); } catch(e) {}
             try { popularFiltrosRelatorios(); } catch(e) {}
-            // Inicializar seletor/gráfico full (após Resumo Anual)
-            try {
-                const selFull = document.getElementById('filterTedEntregasFull');
-                const sel = document.getElementById('filterTedEntregas');
-                if (selFull && sel) {
-                    selFull.innerHTML = sel.innerHTML;
-                    // manter mesma seleção (se houver)
-                    selFull.value = sel.value || '';
-                    if (selFull.value) renderEntregasChart(selFull.value, 'entregasChartFull');
-                }
-                try {
-                    const wrap = document.getElementById('filterFullWrap');
-                    const active = document.querySelector('.tab-content.active');
-                    if (wrap) wrap.style.display = (active && active.id === 'detalhes') ? 'none' : 'flex';
-                } catch(e) {}
-            } catch(e) {}
             // ensure resumo anual headers (e.g., 'Devolvido') are centered on init
             try { if (window.centerResumoAnualDevolvidoHeader) window.centerResumoAnualDevolvidoHeader(); } catch(e) {}
 
@@ -6884,18 +6868,6 @@
             }
             _updateMsLabel('msdTed', f.teds);
 
-            // Atualizar seletor full legado se existir
-            const selFull = document.getElementById('filterTedEntregasFull');
-            if (selFull) {
-                selFull.innerHTML = '<option value="">-- Todos --</option>';
-                dados.teds.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t.id;
-                    opt.textContent = `TED ${t.numTed} - ${t.objetivo}`;
-                    selFull.appendChild(opt);
-                });
-            }
-
             try { atualizarFiltrosGrafico(); } catch(e) {}
             try { renderEntregasFromFilter(); } catch(e) {}
             try { renderResumoFinanceiroFromFilter(); } catch(e) {}
@@ -7456,11 +7428,6 @@
                     if (!e.data) return false;
                     const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
                     if (!anos.includes(anoExec)) return false;
-                }
-                if (upFilter) {
-                    const ups = Array.isArray(upFilter) ? upFilter : [upFilter];
-                    const u = e.up || e.ug || '';
-                    if (!ups.includes(u)) return false;
                 }
                 return true;
             });
@@ -9305,6 +9272,7 @@
                 } else {
                     console.warn('Firestore batch helper not available; dados not persisted.');
                     if (syncEl) syncEl.textContent = '⚠️ Sem conexão';
+                    showToast('Erro: conexão com banco de dados indisponível. Dados não salvos.', 'danger');
                 }
             } catch (e) {
                 console.warn('Erro salvando no Firestore', e);
