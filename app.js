@@ -107,6 +107,10 @@ window.carregarDoCloud = async function() {
     try { atualizarListaTEDs(); } catch(e) {}
     try { atualizarSeletorTED(); } catch(e) {}
     try { atualizarGantt(); } catch(e) {}
+    try { atualizarFiltroTedEntregas(); } catch(e) {}
+    try { renderEntregasFromFilter(); } catch(e) {}
+    try { renderResumoFinanceiroFromFilter(); } catch(e) {}
+    try { popularFiltrosRelatorios(); } catch(e) {}
     try { if (typeof window.enhanceEmptyStates === 'function') window.enhanceEmptyStates(); } catch(e) {}
 
     showToast('Dados carregados da nuvem', 'success');
