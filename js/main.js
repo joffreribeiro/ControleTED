@@ -6852,13 +6852,6 @@
 
         function atualizarFiltroTedEntregas() {
             const f = window._grafFiltros;
-            _buildMsList('msdTed', dados.teds, f.teds, val => {
-                const t = dados.teds.find(x => String(x.id) === String(val));
-                if (!t) return String(val);
-                const enc = isTedFinalizado(t);
-                return `TED ${t.numTed} - ${t.objetivo}${enc ? ' (Encerrado)' : ''}`;
-            });
-            // Reconstruir usando os ids como val
             const list = document.getElementById('msdTed-list');
             if (list) {
                 list.innerHTML = '';
@@ -7423,14 +7416,10 @@
 
         function renderEntregasFromFilter() {
             const { teds, anos, ups } = _getGrafFiltros();
-            // Se nenhum TED selecionado, usar o primeiro em execução como padrão de exibição
-            let tedIds = teds;
-            if (!tedIds && Array.isArray(dados.teds) && dados.teds.length) {
-                const primeiro = dados.teds.find(t => !isTedFinalizado(t)) || dados.teds[0];
-                if (primeiro) tedIds = [String(primeiro.id)];
-            }
+            // Sem seleção de TED → consolidar todos os TEDs
+            const tedIds = teds || dados.teds.map(t => String(t.id));
             renderEntregasChart(tedIds, 'entregasChartContainer', anos, ups);
-            try { renderResumoFinanceiro(tedIds, 'resumoFinanceiroChart', anos, ups); } catch(e) {}
+            try { renderResumoFinanceiro(teds, 'resumoFinanceiroChart', anos, ups); } catch(e) {}
         }
 
         function renderEntregasChart(tedId, containerId = 'entregasChartContainer', anoFilter = null, upFilter = null) {
@@ -7439,7 +7428,7 @@
             // Normalizar tedId para array (aceita string, número ou array)
             const tedIds = Array.isArray(tedId) ? tedId.map(String) : (tedId ? [String(tedId)] : null);
             if (!tedIds || !tedIds.length) {
-                container.innerHTML = '<p style="color:var(--text);">Selecione um TED para ver as entregas (por objeto).</p>';
+                container.innerHTML = '<p style="color:var(--text);">Nenhum TED disponível.</p>';
                 return;
             }
             const tedsSelected = dados.teds.filter(t => tedIds.includes(String(t.id)));
