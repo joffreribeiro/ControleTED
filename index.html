@@ -1242,88 +1242,224 @@
 
 <!-- TAB 5: Relatórios -->
         <div id="relatorios" class="tab-content">
-            <div class="card">
-                <h2>Relatórios</h2>
-                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
-                    <button class="btn btn-primary" onclick="renderRelatoriosSimples()">
-                        Gerar Relatório Completo
-                    </button>
-                    <button class="btn btn-secondary" onclick="exportarRelatoriosPDF()">
-                        Exportar PDF
-                    </button>
-                </div>
-                <div id="relatoriosContainer">
-                    <p style="color:var(--color-text-secondary);font-size:13px;">
-                        Clique em "Gerar Relatório Completo" para visualizar os dados.
-                    </p>
-                </div>
-            </div>
 
-            <!-- Relatório Previsto por ND/UP/Ano -->
-            <div class="card" style="margin-top:1rem;">
-                <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;">
-                    <i data-lucide="table-2" style="width:18px;height:18px;color:var(--primary);"></i>
-                    <h2 style="margin:0;">Previsto por TED / ND / UP / Ano</h2>
-                </div>
+<!-- CABEÇALHO COM AÇÕES GLOBAIS -->
+<div class="rel-header">
+  <div class="rel-header-top">
+    <div>
+      <h2 class="rel-page-title">Relatórios</h2>
+      <p class="rel-page-sub">Análise e exportação dos Termos de Execução Descentralizada</p>
+    </div>
+    <div class="rel-actions">
+      <button type="button" class="btn-rel-export" onclick="exportarRelatoriosPDF()" title="Exportar PDF">
+        <i data-lucide="file-text" class="inline-icon-sm"></i> PDF
+      </button>
+      <button type="button" class="btn-rel-export btn-rel-excel" onclick="exportarRelatoriosExcel()" title="Exportar Excel">
+        <i data-lucide="table" class="inline-icon-sm"></i> Excel
+      </button>
+      <button type="button" class="btn-rel-refresh" onclick="atualizarRelatorioAtivo()" title="Atualizar">
+        <i data-lucide="refresh-cw" class="inline-icon-sm"></i> Atualizar
+      </button>
+    </div>
+  </div>
 
-                <!-- Filtros -->
-                <div class="relatorio-filtros" id="filtrosRelatorioNDUP">
-                    <div class="relatorio-filtro-grupo">
-                        <span class="relatorio-filtro-label">TED</span>
-                        <div class="rel-multiselect" id="relFiltroTED">
-                            <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroTEDMenu')">
-                                <span id="relFiltroTEDLabel">Todos</span>
-                                <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
-                            </button>
-                            <div class="rel-multiselect-menu" id="relFiltroTEDMenu"></div>
-                        </div>
-                    </div>
-                    <div class="relatorio-filtro-grupo">
-                        <span class="relatorio-filtro-label">ND</span>
-                        <div class="rel-multiselect" id="relFiltroND">
-                            <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroNDMenu')">
-                                <span id="relFiltroNDLabel">Todas</span>
-                                <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
-                            </button>
-                            <div class="rel-multiselect-menu" id="relFiltroNDMenu"></div>
-                        </div>
-                    </div>
-                    <div class="relatorio-filtro-grupo">
-                        <span class="relatorio-filtro-label">UP</span>
-                        <div class="rel-multiselect" id="relFiltroUP">
-                            <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroUPMenu')">
-                                <span id="relFiltroUPLabel">Todas</span>
-                                <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
-                            </button>
-                            <div class="rel-multiselect-menu" id="relFiltroUPMenu"></div>
-                        </div>
-                    </div>
-                    <div class="relatorio-filtro-grupo">
-                        <span class="relatorio-filtro-label">Ano</span>
-                        <div class="rel-multiselect" id="relFiltroAno">
-                            <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroAnoMenu')">
-                                <span id="relFiltroAnoLabel">Todos</span>
-                                <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
-                            </button>
-                            <div class="rel-multiselect-menu" id="relFiltroAnoMenu"></div>
-                        </div>
-                    </div>
-                    <button class="btn" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="limparFiltrosRelatorioNDUP()">Limpar</button>
-                    <div style="margin-left:auto;display:flex;gap:0.4rem;">
-                        <button class="btn btn-primary" style="font-size:0.75rem;padding:0.25rem 0.7rem;" onclick="exportarRelatorioNDUPExcel()">
-                            <i data-lucide="file-spreadsheet" style="width:13px;height:13px;vertical-align:-2px;"></i> Excel
-                        </button>
-                        <button class="btn" style="font-size:0.75rem;padding:0.25rem 0.7rem;background:#e8f0fe;border-color:#c6d6f5;color:#1a3c74;" onclick="exportarRelatorioNDUPPDF()">
-                            <i data-lucide="file-text" style="width:13px;height:13px;vertical-align:-2px;"></i> PDF
-                        </button>
-                    </div>
-                </div>
+  <!-- FILTROS GLOBAIS -->
+  <div class="rel-filtros-globais">
+    <span class="rel-filtros-label"><i data-lucide="filter" style="width:13px;height:13px;vertical-align:-2px;"></i> Filtros:</span>
 
-                <!-- Tabela -->
-                <div id="tabelaRelatorioNDUP" style="overflow-x:auto;margin-top:0.75rem;">
-                    <p style="color:var(--text-light);font-size:0.8rem;">Carregando...</p>
-                </div>
-            </div>
+    <div class="rel-filtro-item">
+      <label for="relFiltroGlobalTED" class="rel-filtro-tag">TED</label>
+      <select id="relFiltroGlobalTED" multiple class="rel-select-multi" onchange="onFiltroGlobalChange()">
+        <option value="">Todos</option>
+      </select>
+    </div>
+
+    <div class="rel-filtro-item">
+      <label for="relFiltroGlobalUP" class="rel-filtro-tag">UP</label>
+      <select id="relFiltroGlobalUP" multiple class="rel-select-multi" onchange="onFiltroGlobalChange()">
+        <option value="">Todas</option>
+      </select>
+    </div>
+
+    <div class="rel-filtro-item">
+      <label for="relFiltroGlobalAno" class="rel-filtro-tag">Ano</label>
+      <select id="relFiltroGlobalAno" multiple class="rel-select-multi" onchange="onFiltroGlobalChange()">
+        <option value="">Todos</option>
+      </select>
+    </div>
+
+    <button type="button" class="btn-rel-limpar" onclick="limparFiltrosGlobais()">Limpar filtros</button>
+  </div>
+</div>
+
+<!-- CATÁLOGO DE RELATÓRIOS -->
+<div class="rel-catalogo">
+
+  <!-- Relatórios existentes -->
+  <p class="rel-secao-label">Relatórios existentes</p>
+  <div class="rel-cards-grid">
+
+    <div class="rel-card rel-card-ativo" data-relatorio="cadastro" onclick="ativarRelatorio('cadastro', this)">
+      <div class="rel-card-accent" style="background:#378ADD;"></div>
+      <div class="rel-card-icon ic-blue"><i data-lucide="file-text"></i></div>
+      <div class="rel-card-nome">Cadastro completo</div>
+      <div class="rel-card-desc">Dados gerais de todos os TEDs com datas, valores e status.</div>
+      <span class="rel-card-tipo">Tabela</span>
+    </div>
+
+    <div class="rel-card" data-relatorio="ndupano" onclick="ativarRelatorio('ndupano', this)">
+      <div class="rel-card-accent" style="background:#3B6D11;"></div>
+      <div class="rel-card-icon ic-green"><i data-lucide="layout-grid"></i></div>
+      <div class="rel-card-nome">Previsto por ND / UP / Ano</div>
+      <div class="rel-card-desc">Matriz de valores previstos por natureza de despesa e unidade.</div>
+      <span class="rel-card-tipo">Matriz</span>
+    </div>
+
+    <div class="rel-card" data-relatorio="mensal" onclick="ativarRelatorio('mensal', this)">
+      <div class="rel-card-accent" style="background:#BA7517;"></div>
+      <div class="rel-card-icon ic-amber"><i data-lucide="calendar"></i></div>
+      <div class="rel-card-nome">Relatório mensal</div>
+      <div class="rel-card-desc">TEDs vigentes, assinados e encerrados por mês e UP.</div>
+      <span class="rel-card-tipo">Tabela</span>
+    </div>
+
+  </div>
+
+  <!-- Novos relatórios -->
+  <p class="rel-secao-label" style="margin-top:1.25rem;">Novos relatórios</p>
+  <div class="rel-cards-grid">
+
+    <div class="rel-card" data-relatorio="painel" onclick="ativarRelatorio('painel', this)">
+      <div class="rel-card-accent" style="background:#378ADD;"></div>
+      <span class="rel-card-new">Novo</span>
+      <div class="rel-card-icon ic-blue"><i data-lucide="trending-up"></i></div>
+      <div class="rel-card-nome">Painel executivo</div>
+      <div class="rel-card-desc">KPIs consolidados: execução financeira, física, saldos e alertas.</div>
+      <span class="rel-card-tipo">Dashboard</span>
+    </div>
+
+    <div class="rel-card" data-relatorio="alertas" onclick="ativarRelatorio('alertas', this)">
+      <div class="rel-card-accent" style="background:#7F77DD;"></div>
+      <span class="rel-card-new">Novo</span>
+      <div class="rel-card-icon ic-purple"><i data-lucide="alert-triangle"></i></div>
+      <div class="rel-card-nome">Alertas e pendências</div>
+      <div class="rel-card-desc">Vigências vencidas, prazos expirados e execução abaixo do esperado.</div>
+      <span class="rel-card-tipo">Triagem</span>
+    </div>
+
+    <div class="rel-card" data-relatorio="execvsplan" onclick="ativarRelatorio('execvsplan', this)">
+      <div class="rel-card-accent" style="background:#1D9E75;"></div>
+      <span class="rel-card-new">Novo</span>
+      <div class="rel-card-icon ic-teal"><i data-lucide="bar-chart-2"></i></div>
+      <div class="rel-card-nome">Execução vs. previsto</div>
+      <div class="rel-card-desc">Comparativo mês a mês entre realizado e planejado por TED ou UP.</div>
+      <span class="rel-card-tipo">Gráfico</span>
+    </div>
+
+    <div class="rel-card" data-relatorio="execfisica" onclick="ativarRelatorio('execfisica', this)">
+      <div class="rel-card-accent" style="background:#3B6D11;"></div>
+      <span class="rel-card-new">Novo</span>
+      <div class="rel-card-icon ic-green"><i data-lucide="package"></i></div>
+      <div class="rel-card-nome">Execução física consolidada</div>
+      <div class="rel-card-desc">Entregas realizadas vs. previstas por objeto e TED, com % de avanço.</div>
+      <span class="rel-card-tipo">Tabela + Barras</span>
+    </div>
+
+    <div class="rel-card" data-relatorio="saldoano" onclick="ativarRelatorio('saldoano', this)">
+      <div class="rel-card-accent" style="background:#BA7517;"></div>
+      <span class="rel-card-new">Novo</span>
+      <div class="rel-card-icon ic-amber"><i data-lucide="receipt"></i></div>
+      <div class="rel-card-nome">Saldo a receber por ano</div>
+      <div class="rel-card-desc">Previsto, recebido, devolvido e saldo líquido por ano fiscal.</div>
+      <span class="rel-card-tipo">Tabela cruzada</span>
+    </div>
+
+    <div class="rel-card" data-relatorio="rastreonf" onclick="ativarRelatorio('rastreonf', this)">
+      <div class="rel-card-accent" style="background:#993C1D;"></div>
+      <span class="rel-card-new">Novo</span>
+      <div class="rel-card-icon ic-coral"><i data-lucide="search"></i></div>
+      <div class="rel-card-nome">Rastreamento de NF</div>
+      <div class="rel-card-desc">Busca e histórico de notas fiscais com lançamentos associados.</div>
+      <span class="rel-card-tipo">Busca</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ÁREA DE VISUALIZAÇÃO DO RELATÓRIO ATIVO -->
+<div class="rel-preview-area" id="relPreviewArea">
+
+  <!-- Cabeçalho do relatório ativo -->
+  <div class="rel-preview-header">
+    <span class="rel-preview-title" id="relPreviewTitle">Cadastro completo</span>
+    <div class="rel-preview-exports">
+      <button type="button" class="btn-rel-sm" onclick="exportarRelatoriosPDF()">PDF</button>
+      <button type="button" class="btn-rel-sm" onclick="exportarRelatoriosExcel()">Excel</button>
+    </div>
+  </div>
+
+  <!-- Conteúdo dinâmico -->
+  <div class="rel-preview-body" id="relPreviewBody">
+    <p style="color:var(--text-muted);font-size:0.82rem;">Carregando...</p>
+  </div>
+
+</div>
+
+<!-- CONTAINERS LEGADOS (mantidos para compatibilidade com exportarRelatoriosPDF) -->
+<div style="display:none;">
+  <div id="relatoriosContainer"></div>
+  <div id="tabelaRelatorioNDUP"></div>
+  <div id="filtrosRelatorioNDUP">
+    <div class="relatorio-filtro-grupo">
+      <span class="relatorio-filtro-label">TED</span>
+      <div class="rel-multiselect" id="relFiltroTED">
+        <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroTEDMenu')">
+          <span id="relFiltroTEDLabel">Todos</span>
+          <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+        </button>
+        <div class="rel-multiselect-menu" id="relFiltroTEDMenu"></div>
+      </div>
+    </div>
+    <div class="relatorio-filtro-grupo">
+      <span class="relatorio-filtro-label">ND</span>
+      <div class="rel-multiselect" id="relFiltroND">
+        <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroNDMenu')">
+          <span id="relFiltroNDLabel">Todas</span>
+          <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+        </button>
+        <div class="rel-multiselect-menu" id="relFiltroNDMenu"></div>
+      </div>
+    </div>
+    <div class="relatorio-filtro-grupo">
+      <span class="relatorio-filtro-label">UP</span>
+      <div class="rel-multiselect" id="relFiltroUP">
+        <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroUPMenu')">
+          <span id="relFiltroUPLabel">Todas</span>
+          <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+        </button>
+        <div class="rel-multiselect-menu" id="relFiltroUPMenu"></div>
+      </div>
+    </div>
+    <div class="relatorio-filtro-grupo">
+      <span class="relatorio-filtro-label">Ano</span>
+      <div class="rel-multiselect" id="relFiltroAno">
+        <button type="button" class="rel-multiselect-btn" onclick="toggleRelFiltro('relFiltroAnoMenu')">
+          <span id="relFiltroAnoLabel">Todos</span>
+          <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+        </button>
+        <div class="rel-multiselect-menu" id="relFiltroAnoMenu"></div>
+      </div>
+    </div>
+  </div>
+  <div id="relatorioCadastroTed"></div>
+  <div id="relatorioObjetos"></div>
+  <div id="relatorioMetas"></div>
+  <div id="relatorioCadastroFisico"></div>
+  <div id="relatorioExecFisica"></div>
+  <div id="relatorioCadastroFinanceiro"></div>
+  <div id="relatorioExecFinanceira"></div>
+</div>
+
         </div>
 
         <!-- TAB 6: Configurações -->

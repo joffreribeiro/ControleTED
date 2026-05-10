@@ -886,12 +886,15 @@
             // Inicializar conteúdo específico da aba
             if (tabName === 'relatorios') {
                 setTimeout(function() {
-                    try { renderRelatoriosSimples(); } catch(e) {
-                        console.warn('renderRelatoriosSimples error', e);
+                    try { inicializarFiltrosGlobais(); } catch(e) { console.warn('inicializarFiltrosGlobais error', e); }
+                    try {
+                        const primeiroCard = document.querySelector('.rel-card[data-relatorio="cadastro"]');
+                        ativarRelatorio('cadastro', primeiroCard);
+                    } catch(e) {
+                        console.warn('ativarRelatorio error', e);
+                        try { renderRelatoriosSimples(); } catch(e2) {}
                     }
-                    try { _inicializarRelatorioNDUP(); } catch(e) {
-                        console.warn('_inicializarRelatorioNDUP error', e);
-                    }
+                    try { initLucideIcons(); } catch(e) {}
                 }, 100);
             }
             if (tabName === 'config') {
@@ -11916,6 +11919,463 @@
                     setTimeout(function() { try { win.close(); } catch(e) {} }, 800);
                 } catch(e) { console.error(e); }
             }, 600);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  RELATÓRIOS — sistema refatorado
+        // ═══════════════════════════════════════════════════════════
+
+        window._relState = { ativo: 'cadastro', filtros: { teds: [], ups: [], anos: [] } };
+
+        const _REL_TITULOS = {
+            cadastro:   'Cadastro completo dos TEDs',
+            ndupano:    'Previsto por TED / ND / UP / Ano',
+            mensal:     'Relatório mensal',
+            painel:     'Painel executivo',
+            alertas:    'Alertas e pendências',
+            execvsplan: 'Execução vs. previsto',
+            execfisica: 'Execução física consolidada',
+            saldoano:   'Saldo a receber por ano',
+            rastreonf:  'Rastreamento de notas fiscais'
+        };
+
+        function inicializarFiltrosGlobais() {
+            const teds = (dados && dados.teds) ? dados.teds : [];
+            const selTed = document.getElementById('relFiltroGlobalTED');
+            const selUp  = document.getElementById('relFiltroGlobalUP');
+            const selAno = document.getElementById('relFiltroGlobalAno');
+            if (!selTed || !selUp || !selAno) return;
+
+            const upsSet = new Set(), anosSet = new Set();
+            teds.forEach(t => {
+                if (t.up) upsSet.add(t.up);
+                const addAno = v => { if (!v) return; const y = new Date(v + 'T00:00:00').getFullYear(); if (!isNaN(y)) anosSet.add(y); };
+                addAno(t.inicioVigencia); addAno(t.fimVigencia);
+                (t.execFinanceiras || []).forEach(e => addAno(e.data));
+            });
+
+            selTed.innerHTML = teds.map(t => `<option value="${t.id}">${t.numTed || t.id}</option>`).join('');
+            selUp.innerHTML  = Array.from(upsSet).sort().map(u => `<option value="${u}">${u}</option>`).join('');
+            selAno.innerHTML = Array.from(anosSet).sort((a,b)=>b-a).map(a => `<option value="${a}">${a}</option>`).join('');
+        }
+
+        function lerFiltrosGlobais() {
+            const ler = id => { const el = document.getElementById(id); return el ? Array.from(el.selectedOptions).map(o => o.value).filter(Boolean) : []; };
+            return { teds: ler('relFiltroGlobalTED'), ups: ler('relFiltroGlobalUP'), anos: ler('relFiltroGlobalAno').map(Number) };
+        }
+
+        function limparFiltrosGlobais() {
+            ['relFiltroGlobalTED','relFiltroGlobalUP','relFiltroGlobalAno'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) Array.from(el.options).forEach(o => o.selected = false);
+            });
+            onFiltroGlobalChange();
+        }
+
+        function onFiltroGlobalChange() {
+            window._relState.filtros = lerFiltrosGlobais();
+            renderRelatorioAtivo();
+        }
+
+        function filtrarTeds() {
+            const { teds: fTeds, ups: fUps, anos: fAnos } = lerFiltrosGlobais();
+            let lista = (dados && dados.teds) ? dados.teds : [];
+            if (fTeds.length) lista = lista.filter(t => fTeds.includes(String(t.id)));
+            if (fUps.length)  lista = lista.filter(t => fUps.includes(t.up));
+            if (fAnos.length) lista = lista.filter(t => {
+                const ini = t.inicioVigencia ? new Date(t.inicioVigencia + 'T00:00:00').getFullYear() : null;
+                const fim = t.fimVigencia    ? new Date(t.fimVigencia + 'T00:00:00').getFullYear()    : null;
+                return fAnos.some(a => a === ini || a === fim);
+            });
+            return lista;
+        }
+
+        function ativarRelatorio(id, cardEl) {
+            document.querySelectorAll('.rel-card').forEach(c => c.classList.remove('rel-card-ativo'));
+            if (cardEl) cardEl.classList.add('rel-card-ativo');
+            window._relState.ativo = id;
+            const titulo = document.getElementById('relPreviewTitle');
+            if (titulo) titulo.textContent = _REL_TITULOS[id] || id;
+            renderRelatorioAtivo();
+        }
+
+        function atualizarRelatorioAtivo() {
+            inicializarFiltrosGlobais();
+            renderRelatorioAtivo();
+        }
+
+        function renderRelatorioAtivo() {
+            const corpo = document.getElementById('relPreviewBody');
+            if (!corpo) return;
+            const id = window._relState ? window._relState.ativo : 'cadastro';
+            corpo.innerHTML = '<p style="font-size:0.8rem;color:var(--text-muted);padding:0.5rem 0;">Carregando...</p>';
+            try {
+                switch (id) {
+                    case 'cadastro':   renderRelCadastro(corpo);   break;
+                    case 'ndupano':    renderRelNdUpAno(corpo);     break;
+                    case 'mensal':     renderRelMensal(corpo);      break;
+                    case 'painel':     renderRelPainel(corpo);      break;
+                    case 'alertas':    renderRelAlertas(corpo);     break;
+                    case 'execvsplan': renderRelExecVsPlan(corpo);  break;
+                    case 'execfisica': renderRelExecFisica(corpo);  break;
+                    case 'saldoano':   renderRelSaldoAno(corpo);    break;
+                    case 'rastreonf':  renderRelRastreioNF(corpo);  break;
+                    default:           corpo.innerHTML = '<p>Relatório não encontrado.</p>';
+                }
+            } catch(e) {
+                corpo.innerHTML = `<p style="color:var(--danger);font-size:0.8rem;">Erro ao gerar relatório: ${e.message}</p>`;
+                console.error('renderRelatorioAtivo:', e);
+            }
+        }
+
+        // ── Relatório ND/UP/Ano dentro do preview ─────────────────
+        function renderRelNdUpAno(corpo) {
+            // Reutiliza a função legada que popula #tabelaRelatorioNDUP (hidden)
+            // e copia o resultado para o corpo do preview
+            try {
+                _inicializarRelatorioNDUP();
+                setTimeout(function() {
+                    const src = document.getElementById('tabelaRelatorioNDUP');
+                    if (src) corpo.innerHTML = src.innerHTML || '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum dado.</p>';
+                }, 200);
+            } catch(e) {
+                corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum dado para exibir.</p>';
+            }
+        }
+
+        // ── Relatório 1: Cadastro completo ───────────────────────
+        function renderRelCadastro(corpo) {
+            const teds = filtrarTeds();
+            if (!teds.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum TED encontrado.</p>'; return; }
+            const fmt = v => v ? new Date(v + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+            const fmtVal = v => (parseFloat(v)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.6rem;">${teds.length} TED(s)</p>
+            <div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:700px;width:100%;">
+              <thead><tr><th>Nº TED</th><th>Objeto</th><th>UP</th><th>Início</th><th>Fim</th><th>Status</th><th style="text-align:right;">Valor Previsto</th></tr></thead><tbody>`;
+            teds.forEach(t => {
+                const status = _calcularStatusTed(t);
+                const bc = status === 'Em execução' ? 'rel-badge-ok' : status === 'Encerrado' ? 'rel-badge-info' : 'rel-badge-danger';
+                const valPrev = (t.financeiros || []).reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+                html += `<tr>
+                  <td><strong>${t.numTed || '—'}</strong></td>
+                  <td style="max-width:220px;white-space:normal;font-size:0.78rem;">${t.objeto || t.objetivo || '—'}</td>
+                  <td>${t.up || t.upResponsavel || '—'}</td>
+                  <td>${fmt(t.inicioVigencia)}</td>
+                  <td>${fmt(t.fimVigencia)}</td>
+                  <td><span class="rel-badge ${bc}">${status}</span></td>
+                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.75rem;">R$ ${fmtVal(valPrev)}</td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 2: Mensal ──────────────────────────────────
+        function renderRelMensal(corpo) {
+            const teds = filtrarTeds();
+            const grupos = {};
+            teds.forEach(t => {
+                if (!t.inicioVigencia) return;
+                const d = new Date(t.inicioVigencia + 'T00:00:00');
+                const chave = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                if (!grupos[chave]) grupos[chave] = [];
+                grupos[chave].push(t);
+            });
+            const chaves = Object.keys(grupos).sort().reverse();
+            if (!chaves.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum dado encontrado.</p>'; return; }
+            let html = '';
+            const fmt = v => v ? new Date(v + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+            chaves.forEach(chave => {
+                const [ano, mes] = chave.split('-');
+                const nomeMes = new Date(parseInt(ano), parseInt(mes)-1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                html += `<h4 style="font-size:0.82rem;font-weight:600;margin:1rem 0 0.4rem;color:var(--text-muted);text-transform:capitalize;">${nomeMes}</h4>
+                <table class="tabela-padrao" style="width:100%;margin-bottom:0.5rem;">
+                  <thead><tr><th>TED</th><th>Objeto</th><th>UP</th><th>Início</th><th>Fim</th><th>Status</th></tr></thead><tbody>`;
+                grupos[chave].forEach(t => {
+                    const status = _calcularStatusTed(t);
+                    const bc = status === 'Em execução' ? 'rel-badge-ok' : status === 'Encerrado' ? 'rel-badge-info' : 'rel-badge-danger';
+                    const obj = (t.objeto || t.objetivo || '');
+                    html += `<tr>
+                      <td><strong>${t.numTed || '—'}</strong></td>
+                      <td style="font-size:0.78rem;">${obj.substring(0,60)}${obj.length>60?'…':''}</td>
+                      <td>${t.up || t.upResponsavel || '—'}</td>
+                      <td>${fmt(t.inicioVigencia)}</td><td>${fmt(t.fimVigencia)}</td>
+                      <td><span class="rel-badge ${bc}">${status}</span></td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+            });
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 3: Painel executivo ────────────────────────
+        function renderRelPainel(corpo) {
+            const teds = filtrarTeds();
+            const fmtVal = (v, dec=2) => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+            let totalPrevisto=0, totalRecebido=0, emExecucao=0, vencidos=0;
+            teds.forEach(t => {
+                const status = _calcularStatusTed(t);
+                if (status === 'Em execução') emExecucao++;
+                if (status === 'Vencido') vencidos++;
+                totalPrevisto += (t.financeiros||[]).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                totalRecebido += (t.execFinanceiras||[]).reduce((s,e)=>{ const v=parseFloat(e.valor||e.valorRealizado)||0; return s+(v>0?v:0); },0);
+            });
+            const pct = totalPrevisto > 0 ? ((totalRecebido/totalPrevisto)*100).toFixed(1) : 0;
+            const alertas = _calcularAlertas(teds);
+            let html = `<div class="rel-kpi-grid">
+              <div class="rel-kpi-card"><div class="rel-kpi-label">Total de TEDs</div><div class="rel-kpi-val" style="color:var(--primary)">${teds.length}</div><div class="rel-kpi-sub">${emExecucao} em execução</div></div>
+              <div class="rel-kpi-card"><div class="rel-kpi-label">Orçamento previsto</div><div class="rel-kpi-val">R$ ${fmtVal(totalPrevisto/1e6,1)}M</div><div class="rel-kpi-sub">Soma cadastros financeiros</div></div>
+              <div class="rel-kpi-card"><div class="rel-kpi-label">Total recebido</div><div class="rel-kpi-val" style="color:#166534">R$ ${fmtVal(totalRecebido/1e6,1)}M</div><div class="rel-kpi-sub">${pct}% executado</div></div>
+              <div class="rel-kpi-card"><div class="rel-kpi-label">Alertas ativos</div><div class="rel-kpi-val" style="color:#991b1b">${alertas.length}</div><div class="rel-kpi-sub">${vencidos} vigência(s) vencida(s)</div></div>
+            </div>
+            <h4 style="font-size:0.8rem;font-weight:600;margin:0 0 0.5rem;color:var(--text-muted);">Execução financeira por TED</h4>
+            <div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:500px;width:100%;">
+              <thead><tr><th>TED</th><th>UP</th><th>Status</th><th style="min-width:140px;">Execução</th></tr></thead><tbody>`;
+            teds.slice(0,20).forEach(t => {
+                const prev = (t.financeiros||[]).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                const rec  = (t.execFinanceiras||[]).reduce((s,e)=>{ const v=parseFloat(e.valor||e.valorRealizado)||0; return s+(v>0?v:0); },0);
+                const pctTed = prev>0?Math.min((rec/prev*100),100):0;
+                const status = _calcularStatusTed(t);
+                const bc = status==='Em execução'?'rel-badge-ok':status==='Encerrado'?'rel-badge-info':'rel-badge-danger';
+                const corBarra = pctTed>=80?'#166534':pctTed>=40?'#185FA5':'#991b1b';
+                html += `<tr>
+                  <td><strong>${t.numTed||t.id}</strong></td>
+                  <td>${t.up||t.upResponsavel||'—'}</td>
+                  <td><span class="rel-badge ${bc}">${status}</span></td>
+                  <td><div class="rel-bar-wrap"><div class="rel-bar-bg"><div class="rel-bar-fill" style="width:${pctTed.toFixed(0)}%;background:${corBarra};"></div></div><span class="rel-bar-val">${pctTed.toFixed(0)}%</span></div></td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 4: Alertas ─────────────────────────────────
+        function _calcularAlertas(teds) {
+            const hoje = new Date();
+            const alertas = [];
+            teds.forEach(t => {
+                const numTed = t.numTed || t.id;
+                if (t.fimVigencia) {
+                    const fim = new Date(t.fimVigencia + 'T00:00:00');
+                    if (!isNaN(fim) && fim < hoje) {
+                        alertas.push({ tipo: 'danger', ted: numTed, msg: 'Vigência vencida em ' + fim.toLocaleDateString('pt-BR') });
+                    } else if (!isNaN(fim)) {
+                        const diasRestantes = (fim - hoje) / 86400000;
+                        if (diasRestantes <= 60) {
+                            const prev = (t.financeiros||[]).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                            const rec  = (t.execFinanceiras||[]).reduce((s,e)=>{ const v=parseFloat(e.valor||e.valorRealizado)||0; return s+(v>0?v:0); },0);
+                            const pct  = prev>0?(rec/prev*100):0;
+                            if (pct < 20) alertas.push({ tipo: 'warn', ted: numTed, msg: `Encerrando em ${Math.round(diasRestantes)}d com ${pct.toFixed(0)}% executado` });
+                        }
+                    }
+                }
+                if (!(t.execFinanceiras||[]).length && !(t.financeiros||[]).length) {
+                    alertas.push({ tipo: 'info', ted: numTed, msg: 'Nenhum lançamento financeiro cadastrado' });
+                }
+            });
+            return alertas;
+        }
+
+        function renderRelAlertas(corpo) {
+            const alertas = _calcularAlertas(filtrarTeds());
+            if (!alertas.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">✓ Nenhum alerta encontrado.</p>'; return; }
+            const iconMap = { danger:'🔴', warn:'🟡', info:'🔵' };
+            const bcMap   = { danger:'rel-badge-danger', warn:'rel-badge-warn', info:'rel-badge-info' };
+            const lblMap  = { danger:'Crítico', warn:'Atenção', info:'Info' };
+            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.7rem;">${alertas.length} alerta(s)</p>
+            <table class="tabela-padrao" style="width:100%;">
+              <thead><tr><th>Tipo</th><th>TED</th><th>Descrição</th></tr></thead><tbody>`;
+            alertas.forEach(a => {
+                html += `<tr><td><span class="rel-badge ${bcMap[a.tipo]}">${iconMap[a.tipo]} ${lblMap[a.tipo]}</span></td><td><strong>${a.ted}</strong></td><td style="font-size:0.8rem;">${a.msg}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 5: Execução vs. previsto ───────────────────
+        function renderRelExecVsPlan(corpo) {
+            const fmtVal = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+            const porMes = {};
+            filtrarTeds().forEach(t => {
+                (t.execFinanceiras||[]).forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    const chave = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                    if (!porMes[chave]) porMes[chave] = { recebido: 0 };
+                    const v = parseFloat(e.valor||e.valorRealizado)||0;
+                    if (v > 0) porMes[chave].recebido += v;
+                });
+            });
+            const meses = Object.keys(porMes).sort();
+            if (!meses.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Sem dados de execução financeira.</p>'; return; }
+            const maxVal = Math.max(...meses.map(m => porMes[m].recebido));
+            let html = `<h4 style="font-size:0.8rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted);">Recebimentos mensais</h4>
+            <div style="display:flex;align-items:flex-end;gap:6px;height:120px;margin-bottom:6px;">`;
+            meses.forEach(m => {
+                const v = porMes[m].recebido;
+                const pct = maxVal>0?(v/maxVal*100):0;
+                html += `<div title="R$ ${fmtVal(v)}" style="flex:1;min-width:18px;background:var(--primary);border-radius:3px 3px 0 0;height:${pct}%;opacity:0.85;"></div>`;
+            });
+            html += `</div><div style="display:flex;gap:6px;margin-bottom:1rem;">`;
+            meses.forEach(m => {
+                const [ano, mes] = m.split('-');
+                html += `<div style="flex:1;text-align:center;font-size:0.58rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;">${mes}/${ano.substring(2)}</div>`;
+            });
+            html += `</div><table class="tabela-padrao" style="width:100%;"><thead><tr><th>Mês/Ano</th><th style="text-align:right;">Total recebido (R$)</th></tr></thead><tbody>`;
+            let total = 0;
+            meses.forEach(m => {
+                const [ano, mes] = m.split('-');
+                const nomeMes = new Date(parseInt(ano), parseInt(mes)-1, 1).toLocaleDateString('pt-BR', { month: 'short' });
+                const v = porMes[m].recebido; total += v;
+                html += `<tr><td>${nomeMes.replace('.','')}./${ano}</td><td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">R$ ${fmtVal(v)}</td></tr>`;
+            });
+            html += `<tr style="font-weight:700;background:var(--bg-secondary);"><td>Total</td><td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">R$ ${fmtVal(total)}</td></tr></tbody></table>`;
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 6: Execução física consolidada ─────────────
+        function renderRelExecFisica(corpo) {
+            const rows = [];
+            filtrarTeds().forEach(t => {
+                const numTed = t.numTed || t.id;
+                (t.fisicos||[]).forEach(f => {
+                    const prev = parseFloat(f.quantidadePrevista||f.qtdPrevista||0);
+                    const ent  = parseFloat(f.quantidadeEntregue||f.qtdEntregue||0);
+                    const pct  = prev>0?Math.min((ent/prev*100),100):0;
+                    rows.push({ ted: numTed, objeto: f.objeto||f.descricao||'—', unidade: f.unidade||'—', prev, ent, pct });
+                });
+                (t.execFisicas||[]).forEach(ef => {
+                    const prev = parseFloat(ef.qtdPrevista||0);
+                    const ent  = parseFloat(ef.qtdEntregue||0);
+                    rows.push({ ted: numTed, objeto: ef.objeto||ef.descricao||'—', unidade: ef.unidade||'—', prev, ent, pct: prev>0?Math.min((ent/prev*100),100):0 });
+                });
+            });
+            if (!rows.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum dado de execução física encontrado.</p>'; return; }
+            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.6rem;">${rows.length} item(ns)</p>
+            <div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:500px;width:100%;">
+              <thead><tr><th>TED</th><th>Objeto</th><th>Und</th><th style="text-align:right;">Previsto</th><th style="text-align:right;">Entregue</th><th style="min-width:130px;">Avanço</th></tr></thead><tbody>`;
+            rows.forEach(r => {
+                const corBarra = r.pct>=80?'#166534':r.pct>=40?'#185FA5':'#991b1b';
+                html += `<tr>
+                  <td><strong>${r.ted}</strong></td><td style="font-size:0.78rem;">${r.objeto}</td><td>${r.unidade}</td>
+                  <td style="text-align:right;">${r.prev.toLocaleString('pt-BR')}</td>
+                  <td style="text-align:right;">${r.ent.toLocaleString('pt-BR')}</td>
+                  <td><div class="rel-bar-wrap"><div class="rel-bar-bg"><div class="rel-bar-fill" style="width:${r.pct.toFixed(0)}%;background:${corBarra};"></div></div><span class="rel-bar-val">${r.pct.toFixed(0)}%</span></div></td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 7: Saldo a receber por ano ─────────────────
+        function renderRelSaldoAno(corpo) {
+            const fmt = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+            const porAno = {};
+            filtrarTeds().forEach(t => {
+                (t.financeiros||[]).forEach(f => {
+                    const ano = parseInt(f.anoDesc||(f.data?new Date(f.data+'T00:00:00').getFullYear():null));
+                    if (!isNaN(ano)) { if (!porAno[ano]) porAno[ano]={previsto:0,recebido:0,devolvido:0}; porAno[ano].previsto+=parseFloat(f.valor)||0; }
+                });
+                (t.execFinanceiras||[]).forEach(e => {
+                    if (!e.data) return;
+                    const ano = new Date(e.data+'T00:00:00').getFullYear();
+                    if (!porAno[ano]) porAno[ano]={previsto:0,recebido:0,devolvido:0};
+                    const v = parseFloat(e.valor||e.valorRealizado)||0;
+                    if (v>0) porAno[ano].recebido+=v; else if (v<0) porAno[ano].devolvido+=Math.abs(v);
+                });
+            });
+            const anos = Object.keys(porAno).map(Number).sort();
+            if (!anos.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Sem dados financeiros.</p>'; return; }
+            let html = `<div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:500px;width:100%;">
+              <thead><tr><th>Ano</th><th style="text-align:right;">Previsto (R$)</th><th style="text-align:right;">Recebido (R$)</th><th style="text-align:right;">Devolvido (R$)</th><th style="text-align:right;">Saldo a receber (R$)</th></tr></thead><tbody>`;
+            let totP=0,totR=0,totD=0;
+            anos.forEach(ano => {
+                const d = porAno[ano];
+                const saldo = d.previsto-d.recebido+d.devolvido;
+                totP+=d.previsto; totR+=d.recebido; totD+=d.devolvido;
+                const corSaldo = saldo>0?'#1e40af':'#991b1b';
+                html += `<tr><td><strong>${ano}</strong></td>
+                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(d.previsto)}</td>
+                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(d.recebido)}</td>
+                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(d.devolvido)}</td>
+                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:${corSaldo};font-weight:600;">${fmt(saldo)}</td>
+                </tr>`;
+            });
+            const totSaldo = totP-totR+totD;
+            html += `<tr style="font-weight:700;background:var(--bg-secondary);">
+              <td>Total</td>
+              <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(totP)}</td>
+              <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(totR)}</td>
+              <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(totD)}</td>
+              <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;font-weight:700;">${fmt(totSaldo)}</td>
+            </tr></tbody></table></div>`;
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 8: Rastreamento de NF ──────────────────────
+        function renderRelRastreioNF(corpo) {
+            corpo.innerHTML = `<div class="rel-busca-nf-wrap">
+              <input type="text" id="relNfInput" placeholder="Digite número da NF, objeto ou valor..." oninput="filtrarRastreioNF(this.value)" />
+              <button type="button" class="btn-rel-sm" onclick="filtrarRastreioNF(document.getElementById('relNfInput').value)">Buscar</button>
+            </div>
+            <div id="relNfResultados"><p style="font-size:0.8rem;color:var(--text-muted);">Digite para buscar notas fiscais em todos os TEDs.</p></div>`;
+        }
+
+        function filtrarRastreioNF(termo) {
+            const res = document.getElementById('relNfResultados');
+            if (!res) return;
+            if (!termo || termo.trim().length < 2) { res.innerHTML = '<p style="font-size:0.8rem;color:var(--text-muted);">Digite ao menos 2 caracteres.</p>'; return; }
+            const t = termo.toLowerCase().trim();
+            const rows = [];
+            filtrarTeds().forEach(ted => {
+                const numTed = ted.numTed || ted.id;
+                const buscar = (arr) => arr.forEach(f => {
+                    const nf  = String(f.nf||f.notaFiscal||'').toLowerCase();
+                    const obj = String(f.objeto||f.descricao||'').toLowerCase();
+                    const val = String(f.valor||f.valorNF||'').toLowerCase();
+                    if (nf.includes(t)||obj.includes(t)||val.includes(t))
+                        rows.push({ ted: numTed, nf: f.nf||f.notaFiscal||'—', objeto: f.objeto||f.descricao||'—', data: f.data||'—', valor: f.valor||f.valorNF||'—' });
+                });
+                buscar(ted.fisicos||[]);
+                buscar(ted.execFisicas||[]);
+            });
+            if (!rows.length) { res.innerHTML = `<p style="font-size:0.8rem;color:var(--text-muted);">Nenhum resultado para "<strong>${termo}</strong>".</p>`; return; }
+            const fmtD = v => (v&&v!=='—')?new Date(v+'T00:00:00').toLocaleDateString('pt-BR'):'—';
+            const fmtV = v => { const n=parseFloat(v); return isNaN(n)?(v||'—'):n.toLocaleString('pt-BR',{minimumFractionDigits:2}); };
+            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.5rem;">${rows.length} resultado(s)</p>
+            <table class="tabela-padrao" style="width:100%;"><thead><tr><th>TED</th><th>NF</th><th>Objeto</th><th>Data</th><th style="text-align:right;">Valor (R$)</th></tr></thead><tbody>`;
+            rows.forEach(r => {
+                html += `<tr><td><strong>${r.ted}</strong></td><td>${r.nf}</td><td style="font-size:0.78rem;">${r.objeto}</td><td>${fmtD(r.data)}</td><td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmtV(r.valor)}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            res.innerHTML = html;
+        }
+
+        // ── Utilitário: status do TED ────────────────────────────
+        function _calcularStatusTed(t) {
+            if (typeof statusBadge === 'function') {
+                try {
+                    const badge = statusBadge(t);
+                    if (badge) { const match = badge.match(/>([^<]+)</); if (match) return match[1].trim(); }
+                } catch(e) {}
+            }
+            if (typeof getDisplayStatus === 'function') {
+                try { const s = getDisplayStatus(t); if (s && s.text) return s.text; } catch(e) {}
+            }
+            const hoje = new Date();
+            if (t.fimVigencia) {
+                const fim = new Date(t.fimVigencia + 'T00:00:00');
+                if (!isNaN(fim) && fim < hoje) return 'Vencido';
+            }
+            if (t.dataAssinatura || t.inicioVigencia) return 'Em execução';
+            return 'Indefinido';
+        }
+
+        // ── Exportar Excel global (alias) ────────────────────────
+        function exportarRelatoriosExcel() {
+            try { exportarRelatorioNDUPExcel(); } catch(e) {
+                showToast && showToast('Função de exportação Excel não disponível para este relatório.', 'warning');
+            }
         }
 
         // Modo leitura ativado por padrão
