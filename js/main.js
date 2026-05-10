@@ -4205,6 +4205,18 @@
             try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); if (typeof limparConteudoCelulasClone === 'function') limparConteudoCelulasClone(overlay); }, 60); } catch(e) {}
         }
 
+        function desbloquearCampoClone(inputId, btn) {
+            const el = document.getElementById(inputId);
+            if (!el) return;
+            el.removeAttribute('readonly');
+            el.removeAttribute('disabled');
+            el.style.opacity = '';
+            el.style.cursor = '';
+            el.style.background = '';
+            el.focus();
+            if (btn) { btn.disabled = true; btn.textContent = '🔓 Editando'; btn.style.color = '#16a34a'; }
+        }
+
         // Atualizar o conteúdo do formulário baseado no tipo selecionado (aditivo ou apostilamento)
         function atualizarFormularioAlteracao() {
             const overlay = document.getElementById('alteracaoModalOverlay');
@@ -4243,10 +4255,13 @@
                 const escaped = String(val).replace(/"/g, '&quot;');
                 const roAttr = c.readonly ? ' readonly disabled' : '';
                 const roStyle = c.readonly ? ' style="opacity:0.6;cursor:not-allowed;background:var(--bg-tertiary,#f3f4f6);"' : '';
+                const unlockBtn = c.readonly
+                    ? `<button type="button" title="Editar campo bloqueado" onclick="desbloquearCampoClone('alt_clone_${c.key}', this)" style="margin-left:4px;padding:2px 7px;font-size:0.75rem;border:1px solid #cbd5e1;border-radius:5px;background:#f1f5f9;cursor:pointer;color:#475569;vertical-align:middle;" tabindex="-1">✏️ Editar</button>`
+                    : '';
                 if (c.type === 'textarea') {
-                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><textarea id="alt_clone_${c.key}" data-campo="${c.key}"${roAttr}${roStyle}>${val}</textarea></div>`;
+                    camposCloneHtml += `<div class="form-group${fw}"><label style="display:flex;align-items:center;gap:2px;">${c.label}${c.readonly ? ' 🔒' : ''}${unlockBtn}</label><textarea id="alt_clone_${c.key}" data-campo="${c.key}"${roAttr}${roStyle}>${val}</textarea></div>`;
                 } else {
-                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><input type="${c.type}" id="alt_clone_${c.key}" data-campo="${c.key}" value="${escaped}"${roAttr}${roStyle}></div>`;
+                    camposCloneHtml += `<div class="form-group${fw}"><label style="display:flex;align-items:center;gap:2px;">${c.label}${c.readonly ? ' 🔒' : ''}${unlockBtn}</label><input type="${c.type}" id="alt_clone_${c.key}" data-campo="${c.key}" value="${escaped}"${roAttr}${roStyle}></div>`;
                 }
             });
 

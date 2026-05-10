@@ -1031,6 +1031,7 @@
             font-size: 0.8rem;
             cursor: pointer;
             transition: background 0.15s;
+            color: var(--text, #1e293b);
         }
         .filter-menu label:hover {
             background: var(--color-bg-surface);
