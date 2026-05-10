@@ -1267,36 +1267,33 @@
   <div class="rel-filtros-globais">
     <span class="rel-filtros-label"><i data-lucide="filter" style="width:13px;height:13px;vertical-align:-2px;"></i> Filtros:</span>
 
-    <div class="rel-filtro-item">
-      <label for="relFiltroGlobalTED" class="rel-filtro-tag">TED</label>
-      <select id="relFiltroGlobalTED" multiple class="rel-select-multi" onchange="onFiltroGlobalChange()">
-        <option value="">Todos</option>
-      </select>
+    <div class="rel-filtro-item" style="position:relative;">
+      <button type="button" class="filter-btn" id="relGlobTEDBtn" onclick="toggleRelGlobFiltro('relGlobTEDMenu', 'relGlobTEDBtn')">
+        <span id="relGlobTEDLabel">TED</span>
+      </button>
+      <div class="filter-menu" id="relGlobTEDMenu"></div>
     </div>
 
-    <div class="rel-filtro-item">
-      <label for="relFiltroGlobalUP" class="rel-filtro-tag">UP</label>
-      <select id="relFiltroGlobalUP" multiple class="rel-select-multi" onchange="onFiltroGlobalChange()">
-        <option value="">Todas</option>
-      </select>
+    <div class="rel-filtro-item" style="position:relative;">
+      <button type="button" class="filter-btn" id="relGlobUPBtn" onclick="toggleRelGlobFiltro('relGlobUPMenu', 'relGlobUPBtn')">
+        <span id="relGlobUPLabel">UP</span>
+      </button>
+      <div class="filter-menu" id="relGlobUPMenu"></div>
     </div>
 
-    <div class="rel-filtro-item">
-      <label for="relFiltroGlobalAno" class="rel-filtro-tag">Ano</label>
-      <select id="relFiltroGlobalAno" multiple class="rel-select-multi" onchange="onFiltroGlobalChange()">
-        <option value="">Todos</option>
-      </select>
+    <div class="rel-filtro-item" style="position:relative;">
+      <button type="button" class="filter-btn" id="relGlobAnoBtn" onclick="toggleRelGlobFiltro('relGlobAnoMenu', 'relGlobAnoBtn')">
+        <span id="relGlobAnoLabel">Ano</span>
+      </button>
+      <div class="filter-menu" id="relGlobAnoMenu"></div>
     </div>
 
-    <button type="button" class="btn-rel-limpar" onclick="limparFiltrosGlobais()">Limpar filtros</button>
+    <button type="button" class="btn-rel-limpar" onclick="limparFiltrosGlobais()">Limpar</button>
   </div>
 </div>
 
 <!-- CATÁLOGO DE RELATÓRIOS -->
 <div class="rel-catalogo">
-
-  <!-- Relatórios existentes -->
-  <p class="rel-secao-label">Relatórios existentes</p>
   <div class="rel-cards-grid">
 
     <div class="rel-card rel-card-ativo" data-relatorio="cadastro" onclick="ativarRelatorio('cadastro', this)">
@@ -1323,11 +1320,6 @@
       <span class="rel-card-tipo">Tabela</span>
     </div>
 
-  </div>
-
-  <!-- Novos relatórios -->
-  <p class="rel-secao-label" style="margin-top:1.25rem;">Novos relatórios</p>
-  <div class="rel-cards-grid">
 
     <div class="rel-card" data-relatorio="painel" onclick="ativarRelatorio('painel', this)">
       <div class="rel-card-accent" style="background:#378ADD;"></div>

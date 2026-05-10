@@ -3633,3 +3633,34 @@
 }
 
 .inline-icon-sm { width: 13px; height: 13px; vertical-align: -2px; }
+
+.rel-menu-acoes {
+  display: flex;
+  gap: 4px;
+  padding: 5px 8px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.rel-menu-acoes button {
+  flex: 1;
+  font-size: 0.68rem;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.rel-menu-acoes button:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.rel-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  color: var(--text, #1e293b);
+  transition: background 0.12s;
+}
+.rel-menu-item:hover { background: var(--color-bg-surface); }
+.rel-menu-item input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--primary); }

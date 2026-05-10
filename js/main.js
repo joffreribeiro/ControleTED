@@ -11939,35 +11939,118 @@
             rastreonf:  'Rastreamento de notas fiscais'
         };
 
+        // Estado dos filtros globais (Set de valores selecionados, null = todos)
+        window._relGlobSel = { teds: null, ups: null, anos: null };
+
+        function toggleRelGlobFiltro(menuId, btnId) {
+            // Fechar outros menus abertos
+            ['relGlobTEDMenu','relGlobUPMenu','relGlobAnoMenu'].forEach(id => {
+                if (id !== menuId) { const m = document.getElementById(id); if (m) m.classList.remove('open'); }
+            });
+            const menu = document.getElementById(menuId);
+            if (menu) menu.classList.toggle('open');
+            // Fechar ao clicar fora
+            setTimeout(() => {
+                const handler = (e) => {
+                    const btn = document.getElementById(btnId);
+                    if (!menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+                        menu.classList.remove('open');
+                        document.removeEventListener('click', handler);
+                    }
+                };
+                document.addEventListener('click', handler);
+            }, 0);
+        }
+
+        function _relGlobPopularMenu(menuId, chave, itens) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            const sel = window._relGlobSel[chave];
+            let html = `<div class="rel-menu-acoes">
+              <button onclick="_relGlobSelTodos('${chave}','${menuId}')">Todos</button>
+              <button onclick="_relGlobSelNenhum('${chave}','${menuId}')">Nenhum</button>
+            </div>`;
+            itens.forEach(v => {
+                const checked = (!sel || sel.has(String(v))) ? 'checked' : '';
+                html += `<label class="rel-menu-item"><input type="checkbox" value="${v}" ${checked} onchange="_relGlobOnChange('${chave}','${menuId}')"> ${v}</label>`;
+            });
+            menu.innerHTML = html;
+        }
+
+        function _relGlobSelTodos(chave, menuId) {
+            window._relGlobSel[chave] = null;
+            const menu = document.getElementById(menuId);
+            if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+            _relGlobAtualizarLabel(chave);
+            onFiltroGlobalChange();
+        }
+
+        function _relGlobSelNenhum(chave, menuId) {
+            window._relGlobSel[chave] = new Set();
+            const menu = document.getElementById(menuId);
+            if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+            _relGlobAtualizarLabel(chave);
+            onFiltroGlobalChange();
+        }
+
+        function _relGlobOnChange(chave, menuId) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            const marcados = Array.from(menu.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+            const todos    = Array.from(menu.querySelectorAll('input[type=checkbox]')).map(cb => cb.value);
+            window._relGlobSel[chave] = marcados.length === todos.length ? null : new Set(marcados);
+            _relGlobAtualizarLabel(chave);
+            onFiltroGlobalChange();
+        }
+
+        const _REL_GLOB_LABELS = { teds: 'TED', ups: 'UP', anos: 'Ano' };
+        const _REL_GLOB_BTN_LABELS = { teds: 'relGlobTEDLabel', ups: 'relGlobUPLabel', anos: 'relGlobAnoLabel' };
+        const _REL_GLOB_BTN_IDS   = { teds: 'relGlobTEDBtn',   ups: 'relGlobUPBtn',   anos: 'relGlobAnoBtn' };
+
+        function _relGlobAtualizarLabel(chave) {
+            const sel = window._relGlobSel[chave];
+            const labelEl = document.getElementById(_REL_GLOB_BTN_LABELS[chave]);
+            const btnEl   = document.getElementById(_REL_GLOB_BTN_IDS[chave]);
+            const base = _REL_GLOB_LABELS[chave];
+            if (!labelEl) return;
+            if (!sel) { labelEl.textContent = base; if (btnEl) btnEl.classList.remove('active'); }
+            else if (sel.size === 0) { labelEl.textContent = base + ' (0)'; if (btnEl) btnEl.classList.add('active'); }
+            else { labelEl.textContent = base + ' (' + sel.size + ')'; if (btnEl) btnEl.classList.add('active'); }
+        }
+
         function inicializarFiltrosGlobais() {
             const teds = (dados && dados.teds) ? dados.teds : [];
-            const selTed = document.getElementById('relFiltroGlobalTED');
-            const selUp  = document.getElementById('relFiltroGlobalUP');
-            const selAno = document.getElementById('relFiltroGlobalAno');
-            if (!selTed || !selUp || !selAno) return;
-
             const upsSet = new Set(), anosSet = new Set();
             teds.forEach(t => {
-                if (t.up) upsSet.add(t.up);
+                if (t.up || t.upResponsavel) upsSet.add(t.up || t.upResponsavel);
                 const addAno = v => { if (!v) return; const y = new Date(v + 'T00:00:00').getFullYear(); if (!isNaN(y)) anosSet.add(y); };
                 addAno(t.inicioVigencia); addAno(t.fimVigencia);
                 (t.execFinanceiras || []).forEach(e => addAno(e.data));
             });
-
-            selTed.innerHTML = teds.map(t => `<option value="${t.id}">${t.numTed || t.id}</option>`).join('');
-            selUp.innerHTML  = Array.from(upsSet).sort().map(u => `<option value="${u}">${u}</option>`).join('');
-            selAno.innerHTML = Array.from(anosSet).sort((a,b)=>b-a).map(a => `<option value="${a}">${a}</option>`).join('');
+            const tedItens = teds.map(t => t.numTed || t.id);
+            const upItens  = Array.from(upsSet).sort();
+            const anoItens = Array.from(anosSet).sort((a,b)=>b-a);
+            _relGlobPopularMenu('relGlobTEDMenu', 'teds', tedItens);
+            _relGlobPopularMenu('relGlobUPMenu',  'ups',  upItens);
+            _relGlobPopularMenu('relGlobAnoMenu', 'anos', anoItens);
         }
 
         function lerFiltrosGlobais() {
-            const ler = id => { const el = document.getElementById(id); return el ? Array.from(el.selectedOptions).map(o => o.value).filter(Boolean) : []; };
-            return { teds: ler('relFiltroGlobalTED'), ups: ler('relFiltroGlobalUP'), anos: ler('relFiltroGlobalAno').map(Number) };
+            const s = window._relGlobSel;
+            return {
+                teds: s.teds ? Array.from(s.teds) : [],
+                ups:  s.ups  ? Array.from(s.ups)  : [],
+                anos: s.anos ? Array.from(s.anos).map(Number) : []
+            };
         }
 
         function limparFiltrosGlobais() {
-            ['relFiltroGlobalTED','relFiltroGlobalUP','relFiltroGlobalAno'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) Array.from(el.options).forEach(o => o.selected = false);
+            window._relGlobSel = { teds: null, ups: null, anos: null };
+            ['teds','ups','anos'].forEach(chave => {
+                const menuId = { teds:'relGlobTEDMenu', ups:'relGlobUPMenu', anos:'relGlobAnoMenu' }[chave];
+                const menu = document.getElementById(menuId);
+                if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+                _relGlobAtualizarLabel(chave);
             });
             onFiltroGlobalChange();
         }
@@ -11978,14 +12061,14 @@
         }
 
         function filtrarTeds() {
-            const { teds: fTeds, ups: fUps, anos: fAnos } = lerFiltrosGlobais();
+            const s = window._relGlobSel || { teds: null, ups: null, anos: null };
             let lista = (dados && dados.teds) ? dados.teds : [];
-            if (fTeds.length) lista = lista.filter(t => fTeds.includes(String(t.id)));
-            if (fUps.length)  lista = lista.filter(t => fUps.includes(t.up));
-            if (fAnos.length) lista = lista.filter(t => {
+            if (s.teds) lista = lista.filter(t => s.teds.has(String(t.numTed || t.id)));
+            if (s.ups)  lista = lista.filter(t => s.ups.has(t.up || t.upResponsavel || ''));
+            if (s.anos) lista = lista.filter(t => {
                 const ini = t.inicioVigencia ? new Date(t.inicioVigencia + 'T00:00:00').getFullYear() : null;
                 const fim = t.fimVigencia    ? new Date(t.fimVigencia + 'T00:00:00').getFullYear()    : null;
-                return fAnos.some(a => a === ini || a === fim);
+                return s.anos.has(ini) || s.anos.has(fim);
             });
             return lista;
         }
