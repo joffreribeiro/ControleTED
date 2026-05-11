@@ -9278,11 +9278,13 @@
             });
 
             const rowReceberAnterior = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">A Receber (ano anterior)</td>${cellsByAno((ano)=> (aReceberAnteriorByAno[ano] || 0))}</tr>`;
-            const rowRecebidoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
-            const rowDevolvido = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Devolvido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
+            const rowTotalAReceber   = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Total a Receber (Previsto + A Receber ano anterior)</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0))}</tr>`;
+            const rowRecebidoAnual   = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
+            const rowDevolvido       = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Devolvido / Recolhido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
+            const rowSaldoAnual      = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Anual (Recebido - Devolvido)</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
+            const rowResultado       = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Resultado (Total a Receber + Devolvido / Recolhido)</td>${cellsByAno((ano)=> ((previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0) + (devolvidoByAno[ano] || 0)) * -1)}</tr>`;
 
-            tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowRecebidoAnual + rowDevolvido + rowSaldoAnual;
+            tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
         }
 
         // Atualizar tabelas em cascata após alteração de dados
