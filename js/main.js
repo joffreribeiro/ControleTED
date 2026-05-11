@@ -6776,7 +6776,7 @@
 
             // Resumo Anual: renderizar em grid transposto (rótulos + colunas por ano)
             // Montamos dinamicamente `grid-template-columns` com 200px + N x 1fr
-            const cols = ['200px'].concat(anosOrdenados.map(()=>'1fr')).join(' ');
+            const cols = ['260px'].concat(anosOrdenados.map(()=>'1fr')).join(' ');
             let html = `<div class="resumo-fin-scroll"><div class="resumo-anual-card"><div class="resumo-anual-grid" style="grid-template-columns: ${cols};">`;
 
             // Cabeçalho
@@ -6812,7 +6812,7 @@
             renderRow('Total a Receber (Previsto + A Receber ano anterior)', totalAReceberByAno);
             renderRow('Recebido Anual', recebidoByAno);
             renderRow('Devolvido / Recolhido', devolvidoByAno, { negative: true });
-            renderRow('Saldo Anual', saldoAtualByAno, { saldo: true });
+            renderRow('Saldo Anual (Recebido - Devolvido)', saldoAtualByAno, { saldo: true });
             renderRow('Resultado (Total a Receber + Devolvido / Recolhido)', resultadoByAno, { saldo: true });
 
             html += `</div></div></div>`;
@@ -7655,7 +7655,7 @@
             const fmt = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
             // Renderizar em grid transposto (mesmo formato do Resumo Anual por Ano)
-            const cols = ['200px'].concat(anosOrdenados.map(()=>'1fr')).join(' ');
+            const cols = ['260px'].concat(anosOrdenados.map(()=>'1fr')).join(' ');
             let html = `<div class="resumo-fin-scroll"><div class="resumo-anual-card"><div class="resumo-anual-grid" style="grid-template-columns: ${cols};">`;
             html += `<div class="resumo-header"></div>`;
             anosOrdenados.forEach(ano => { html += `<div class="resumo-header">${ano}</div>`; });
@@ -8439,7 +8439,7 @@
             const rowTotalAReceber   = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Total a Receber (Previsto + A Receber ano anterior)</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0))}</tr>`;
             const rowRecebidoAnual   = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
             const rowDevolvido       = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Devolvido / Recolhido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual      = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Saldo Anual</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
+            const rowSaldoAnual      = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Saldo Anual (Recebido - Devolvido)</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
             const rowResultado       = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Resultado (Total a Receber + Devolvido / Recolhido)</td>${cellsByAno((ano)=> ((previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0) + (devolvidoByAno[ano] || 0)) * -1)}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;

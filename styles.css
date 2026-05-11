@@ -2680,12 +2680,16 @@
             border-bottom: 0.5px solid rgba(0,0,0,0.08);
         }
         .resumo-anual-grid .resumo-label {
-            min-width: 180px;
-            font-size: 13px;
+            min-width: 200px;
+            max-width: 260px;
+            font-size: 12px;
             color: #6b6b6b;
-            white-space: nowrap;
-            padding-right: 16px;
+            white-space: normal;
+            word-break: break-word;
+            padding: 8px 16px 8px 0;
             text-align: left;
+            line-height: 1.4;
+            align-self: center;
         }
         .resumo-anual-grid .resumo-value {
             min-width: 130px;
@@ -2707,7 +2711,7 @@
         .resumo-anual-card { background: #ffffff; border-radius:12px; padding:1.125rem; box-sizing:border-box; }
         .resumo-anual-grid { display:grid; gap:0; align-items:center; }
         .resumo-anual-grid .resumo-header { font-size:12px; font-weight:500; color:var(--color-text-secondary); text-align:center; padding-bottom:10px; }
-        .resumo-anual-grid .resumo-label { font-size:12px; color:var(--color-text-secondary); padding:8px 10px; text-align:left; }
+        .resumo-anual-grid .resumo-label { font-size:12px; color:var(--color-text-secondary); padding:8px 10px; text-align:left; white-space:normal; word-break:break-word; line-height:1.4; align-self:center; }
         .resumo-anual-grid .resumo-value { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size:12px; text-align:center; padding:8px 10px; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
         .resumo-anual-grid .resumo-value.negative { color: #A32D2D; }
         .resumo-anual-grid .resumo-value.saldo { font-weight:500; color:var(--color-text-primary); border-bottom: none; }
