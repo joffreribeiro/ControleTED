@@ -6801,10 +6801,10 @@
                 totalAReceberByAno[ano] = (previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0);
             });
 
-            // Calcular Resultado por ano: (Total a Receber + Devolvido/Recolhido) * -1
+            // Calcular Resultado por ano: Total a Receber - Devolvido/Recolhido (valor absoluto)
             const resultadoByAno = {};
             anosOrdenados.forEach(ano => {
-                resultadoByAno[ano] = (totalAReceberByAno[ano] + (devolvidoByAno[ano] || 0)) * -1;
+                resultadoByAno[ano] = (totalAReceberByAno[ano] || 0) - (devolvidoByAno[ano] || 0);
             });
 
             renderRow('Previsto Anual', previstoByAno);
@@ -6813,7 +6813,7 @@
             renderRow('Recebido Anual', recebidoByAno);
             renderRow('Devolvido / Recolhido', devolvidoByAno, { negative: true });
             renderRow('Saldo Anual (Recebido - Devolvido)', saldoAtualByAno, { saldo: true });
-            renderRow('Resultado (Total a Receber + Devolvido / Recolhido)', resultadoByAno, { saldo: true });
+            renderRow('Resultado (Total a Receber - Devolvido / Recolhido)', resultadoByAno, { saldo: true });
 
             html += `</div></div></div>`;
             resumoContainer.innerHTML = html;
@@ -7677,10 +7677,10 @@
                 totalAReceberByAno[ano] = (previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0);
             });
 
-            // Calcular Resultado por ano: (Total a Receber + Devolvido/Recolhido) * -1
+            // Calcular Resultado por ano: Total a Receber - Devolvido/Recolhido (valor absoluto)
             const resultadoByAno = {};
             anosOrdenados.forEach(ano => {
-                resultadoByAno[ano] = (totalAReceberByAno[ano] + (devolvidoByAno[ano] || 0)) * -1;
+                resultadoByAno[ano] = (totalAReceberByAno[ano] || 0) - (devolvidoByAno[ano] || 0);
             });
 
             renderRow('Previsto Anual', previstoByAno);
@@ -7688,8 +7688,8 @@
             renderRow('Total a Receber (Previsto + A Receber ano anterior)', totalAReceberByAno);
             renderRow('Recebido Anual', recebidoByAno);
             renderRow('Devolvido / Recolhido', devolvidoByAno, { negative: true });
-            renderRow('Saldo Anual', saldoByAno, { saldo: true });
-            renderRow('Resultado (Total a Receber + Devolvido / Recolhido)', resultadoByAno, { saldo: true });
+            renderRow('Saldo Anual (Recebido - Devolvido)', saldoByAno, { saldo: true });
+            renderRow('Resultado (Total a Receber - Devolvido / Recolhido)', resultadoByAno, { saldo: true });
 
             html += `</div></div></div>`;
             container.innerHTML = html;
@@ -8440,7 +8440,7 @@
             const rowRecebidoAnual   = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
             const rowDevolvido       = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Devolvido / Recolhido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
             const rowSaldoAnual      = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Saldo Anual (Recebido - Devolvido)</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
-            const rowResultado       = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Resultado (Total a Receber + Devolvido / Recolhido)</td>${cellsByAno((ano)=> ((previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0) + (devolvidoByAno[ano] || 0)) * -1)}</tr>`;
+            const rowResultado       = `<tr class="linha-total"><td colspan="6" style="text-align:left; font-weight:700;">Resultado (Total a Receber - Devolvido / Recolhido)</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0) - (devolvidoByAno[ano] || 0))}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
 
@@ -9282,7 +9282,7 @@
             const rowRecebidoAnual   = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
             const rowDevolvido       = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Devolvido / Recolhido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
             const rowSaldoAnual      = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Anual (Recebido - Devolvido)</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
-            const rowResultado       = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Resultado (Total a Receber + Devolvido / Recolhido)</td>${cellsByAno((ano)=> ((previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0) + (devolvidoByAno[ano] || 0)) * -1)}</tr>`;
+            const rowResultado       = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Resultado (Total a Receber - Devolvido / Recolhido)</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0) - (devolvidoByAno[ano] || 0))}</tr>`;
 
             tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
         }
