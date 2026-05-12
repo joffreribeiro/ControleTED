@@ -4431,10 +4431,11 @@
             if (tipo === 'aditivo') {
                 altObj.meses = meses;
             }
-            // Valor do TED ANTES das mudanças (derivado dos objetos do snapshot)
-            const valorTedAntes = Number((snapshot.objetos || []).reduce((s, o) => s + (Number(o.valorTotal) || 0), 0)) || Number(snapshot.valorTed) || 0;
-            // Valor do TED DEPOIS (calculado a partir dos novos objetos já aplicados ao ted)
-            const valorTedDepois = Number((dadosTabelas.objetos || ted.objetos || []).reduce((s, o) => s + (Number(o.valorTotal) || 0), 0)) || 0;
+            // Valor do TED ANTES das mudanças (derivado dos objetos do snapshot: qtde × valorUnitario)
+            const valorTedAntes = Number((snapshot.objetos || []).reduce((s, o) => s + ((parseNumber(o.qtde) || 0) * (parseNumber(o.valorUnitario) || 0)), 0)) || Number(snapshot.valorTed) || 0;
+            // Valor do TED DEPOIS (mesma lógica de calcularTotalObjetosValor para consistência)
+            const objsDepois = dadosTabelas.objetos || ted.objetos || [];
+            const valorTedDepois = Number(objsDepois.reduce((s, o) => s + ((parseNumber(o.qtde) || 0) * (parseNumber(o.valorUnitario) || 0)), 0)) || 0;
             // Só registrar valorTed no aditivo se houve mudança real no total do cadastro de objetos
             if (Math.round(valorTedAntes * 100) !== Math.round(valorTedDepois * 100)) {
                 altObj.prevValorTed = valorTedAntes;
