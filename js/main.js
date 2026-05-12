@@ -9332,9 +9332,10 @@
         let _salvarDebounceTimer = null;
 
         async function salvarDados() {
-            // Bloquear gravação em modo leitura (não-admin)
-            if (!window.currentUserProfile || window.currentUserProfile.role !== 'admin') {
-                console.warn('[Modo Leitura] Gravação bloqueada. Faça login como admin.');
+            // Bloquear gravação em modo leitura (somente admin e editor podem gravar)
+            const _role = window.currentUserProfile && window.currentUserProfile.role;
+            if (_role !== 'admin' && _role !== 'editor') {
+                console.warn('[Modo Leitura] Gravação bloqueada. Faça login como admin ou editor.');
                 return;
             }
             // Agendar salvamento debounced (1.5s) para não sobrecarregar
@@ -9348,7 +9349,8 @@
 
         // Salvamento imediato (sem debounce) → para usar em importações etc.
         async function salvarDadosImediato() {
-            if (!window.currentUserProfile || window.currentUserProfile.role !== 'admin') return;
+            const _role = window.currentUserProfile && window.currentUserProfile.role;
+            if (_role !== 'admin' && _role !== 'editor') return;
             if (_salvarDebounceTimer) { clearTimeout(_salvarDebounceTimer); _salvarDebounceTimer = null; }
             await _executarSalvamento();
         }
