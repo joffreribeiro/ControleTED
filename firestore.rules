@@ -2,11 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // TEDs: leitura pública, escrita somente para admin autenticado
+    // TEDs: leitura pública, escrita para admin ou editor
     match /teds/{tedId} {
       allow read: if true;
       allow write: if request.auth != null
-                   && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+                   && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+                       || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'editor');
     }
 
     // Meta (controle de IDs): leitura pública, escrita somente para admin
@@ -24,16 +25,7 @@ service cloud.firestore {
                        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
 
-    // TEDs: escrita também permitida para editor (com ou sem restrição de UP — validada no cliente)
-    // Sobrescreve a regra anterior de teds para incluir role editor
-    match /teds/{tedId} {
-      allow read: if true;
-      allow write: if request.auth != null
-                   && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
-                       || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'editor');
-    }
-
-    // Log de auditoria: escrita para autenticados (admin e editor), leitura somente admin
+    // Log de auditoria: escrita para admin e editor, leitura somente admin
     match /auditLog/{logId} {
       allow create: if request.auth != null
                     && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
