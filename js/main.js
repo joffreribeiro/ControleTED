@@ -6129,7 +6129,7 @@
                 if (f) {
                     window._editandoFinanceiroId = editId;
                     titulo.textContent = '🔑 Editar Cadastro Financeiro';
-                    document.getElementById('modalFinanceiroND').value = String(f.numero || '').replace(/[^0-9.\-]/g, '').trim();
+                    document.getElementById('modalFinanceiroND').value = formatarNDComPontos(f.numero || '');
                     document.getElementById('modalFinanceiroUP').value = f.up || f.ug;
                     document.getElementById('modalFinanceiroM').value = f.m;
                     const valFin = Number(f.valor);
@@ -6440,7 +6440,7 @@
                     mesDescStr = `<span class="celula-alterada-aditivo"><span class="val-antigo">${oldMesDescStr}</span><span class="val-novo">${mesDescStr}</span></span>`;
                 }
                 let html = `<tr${trClass}>
-                    <td class="col-nd">${numeroDisplay}</td>
+                    <td class="col-nd">${formatarNDComPontos(numeroDisplay)}</td>
                     <td class="col-up">${renderUpBadge(f.up || f.ug || '')}</td>
                     <td class="col-m">${tdM}</td>
                     <td class="col-mes">${mesDescStr}</td>
@@ -8335,7 +8335,7 @@
                 else                                statusBadge = '<span class="badge-abaixo">Abaixo</span>';
 
                 let html = `<tr>`+
-                           `<td class="col-nd">${nd}</td>`+
+                           `<td class="col-nd">${formatarNDComPontos(nd)}</td>`+
                            `<td class="col-up">${renderUpBadge(up)}</td>`+
                            `<td class="col-valor">${renderValorRealFmt(previsto)}</td>`+
                            `<td class="col-valor">${renderValorRealFmt(realizado)}</td>`+
@@ -10532,6 +10532,38 @@
             const digits = s.replace(/[^0-9]/g, '');
             return digits.length >= 4 && digits.length <= 10;
         }
+
+        // Aplicar máscara NN.NN.NN ao input de ND em tempo real
+        function aplicarMascaraND(input) {
+            const pos = input.selectionStart;
+            const digits = input.value.replace(/[^0-9]/g, '').substring(0, 6);
+            let masked = '';
+            if (digits.length <= 2) {
+                masked = digits;
+            } else if (digits.length <= 4) {
+                masked = digits.substring(0, 2) + '.' + digits.substring(2);
+            } else {
+                masked = digits.substring(0, 2) + '.' + digits.substring(2, 4) + '.' + digits.substring(4);
+            }
+            input.value = masked;
+            // Reposicionar cursor ajustando pelos pontos inseridos
+            const dotsAdded = (masked.substring(0, pos).match(/\./g) || []).length -
+                              (input.value.substring(0, pos).replace(/[^.]/g,'').length);
+            try { input.setSelectionRange(pos + dotsAdded, pos + dotsAdded); } catch(e) {}
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const ndInput = document.getElementById('modalFinanceiroND');
+            if (ndInput) {
+                ndInput.addEventListener('input', function() { aplicarMascaraND(this); });
+                ndInput.addEventListener('keydown', function(e) {
+                    // Permitir: backspace, delete, tab, escape, enter, setas, home, end
+                    if ([8,9,27,13,46,37,38,39,40,35,36].indexOf(e.keyCode) !== -1) return;
+                    // Bloquear qualquer tecla que não seja dígito
+                    if ((e.key < '0' || e.key > '9') && e.key.length === 1) e.preventDefault();
+                });
+            }
+        });
 
         function importarRecursosGerais(file) {
             if (!file) return;
