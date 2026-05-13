@@ -10534,36 +10534,105 @@
             return digits.length >= 4 && digits.length <= 10;
         }
 
-        // Aplicar máscara NN.NN.NN ao input de ND em tempo real
-        function aplicarMascaraND(input) {
-            const pos = input.selectionStart;
-            const digits = input.value.replace(/[^0-9]/g, '').substring(0, 6);
-            let masked = '';
-            if (digits.length <= 2) {
-                masked = digits;
-            } else if (digits.length <= 4) {
-                masked = digits.substring(0, 2) + '.' + digits.substring(2);
-            } else {
-                masked = digits.substring(0, 2) + '.' + digits.substring(2, 4) + '.' + digits.substring(4);
-            }
-            input.value = masked;
-            // Reposicionar cursor ajustando pelos pontos inseridos
-            const dotsAdded = (masked.substring(0, pos).match(/\./g) || []).length -
-                              (input.value.substring(0, pos).replace(/[^.]/g,'').length);
-            try { input.setSelectionRange(pos + dotsAdded, pos + dotsAdded); } catch(e) {}
+        // Reconstrói o valor mascarado NN.NN.NN a partir dos dígitos puros
+        function mascaraNDFormatar(digits) {
+            if (digits.length <= 2) return digits;
+            if (digits.length <= 4) return digits.slice(0,2) + '.' + digits.slice(2);
+            return digits.slice(0,2) + '.' + digits.slice(2,4) + '.' + digits.slice(4,6);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             const ndInput = document.getElementById('modalFinanceiroND');
-            if (ndInput) {
-                ndInput.addEventListener('input', function() { aplicarMascaraND(this); });
-                ndInput.addEventListener('keydown', function(e) {
-                    // Permitir: backspace, delete, tab, escape, enter, setas, home, end
-                    if ([8,9,27,13,46,37,38,39,40,35,36].indexOf(e.keyCode) !== -1) return;
-                    // Bloquear qualquer tecla que não seja dígito
-                    if ((e.key < '0' || e.key > '9') && e.key.length === 1) e.preventDefault();
-                });
-            }
+            if (!ndInput) return;
+
+            ndInput.addEventListener('keydown', function(e) {
+                const isDigit = e.key >= '0' && e.key <= '9';
+                const isBackspace = e.key === 'Backspace';
+                const isDelete = e.key === 'Delete';
+                const isNav = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','Tab','Enter','Escape'].includes(e.key);
+                const isCopy = (e.ctrlKey || e.metaKey) && ['a','c','v','x'].includes(e.key.toLowerCase());
+
+                if (isNav || isCopy) return;
+
+                e.preventDefault();
+
+                const val = this.value;
+                let start = this.selectionStart;
+                let end = this.selectionEnd;
+                let digits = val.replace(/[^0-9]/g, '');
+
+                if (isDigit) {
+                    // Calcular quantos dígitos existem antes do cursor
+                    const digitsBeforeCursor = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                    if (digits.length >= 6 && start === end) return; // já cheio
+                    // Remover dígitos selecionados
+                    const digitsBeforeSel = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                    const digitsAfterSel  = val.slice(end).replace(/[^0-9]/g, '').length;
+                    const digitsSelected  = digits.length - digitsBeforeSel - digitsAfterSel;
+                    const newDigits = digits.slice(0, digitsBeforeSel) + e.key + digits.slice(digitsBeforeSel + digitsSelected);
+                    const trimmed = newDigits.slice(0, 6);
+                    const masked = mascaraNDFormatar(trimmed);
+                    this.value = masked;
+                    // Cursor logo após o dígito inserido
+                    const newPos = mascaraNDFormatar(trimmed.slice(0, digitsBeforeSel + 1)).length;
+                    this.setSelectionRange(newPos, newPos);
+
+                } else if (isBackspace) {
+                    if (start !== end) {
+                        // Apagar seleção
+                        const digitsBeforeSel = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                        const digitsAfterSel  = val.slice(end).replace(/[^0-9]/g, '').length;
+                        const digitsSelected  = digits.length - digitsBeforeSel - digitsAfterSel;
+                        const newDigits = digits.slice(0, digitsBeforeSel) + digits.slice(digitsBeforeSel + digitsSelected);
+                        const masked = mascaraNDFormatar(newDigits);
+                        this.value = masked;
+                        const newPos = mascaraNDFormatar(newDigits.slice(0, digitsBeforeSel)).length;
+                        this.setSelectionRange(newPos, newPos);
+                    } else if (start > 0) {
+                        // Apagar um caractere: se cursor está em cima de ponto, pula para o dígito antes
+                        const charBefore = val[start - 1];
+                        const digitsBeforeCursor = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                        const removeIdx = charBefore === '.' ? digitsBeforeCursor - 1 : digitsBeforeCursor - 1;
+                        if (removeIdx < 0) return;
+                        const newDigits = digits.slice(0, removeIdx) + digits.slice(removeIdx + 1);
+                        const masked = mascaraNDFormatar(newDigits);
+                        this.value = masked;
+                        const newPos = mascaraNDFormatar(newDigits.slice(0, removeIdx)).length;
+                        this.setSelectionRange(newPos, newPos);
+                    }
+
+                } else if (isDelete) {
+                    if (start !== end) {
+                        const digitsBeforeSel = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                        const digitsAfterSel  = val.slice(end).replace(/[^0-9]/g, '').length;
+                        const digitsSelected  = digits.length - digitsBeforeSel - digitsAfterSel;
+                        const newDigits = digits.slice(0, digitsBeforeSel) + digits.slice(digitsBeforeSel + digitsSelected);
+                        const masked = mascaraNDFormatar(newDigits);
+                        this.value = masked;
+                        const newPos = mascaraNDFormatar(newDigits.slice(0, digitsBeforeSel)).length;
+                        this.setSelectionRange(newPos, newPos);
+                    } else if (start < val.length) {
+                        const charAt = val[start];
+                        const digitsBeforeCursor = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                        const removeIdx = charAt === '.' ? digitsBeforeCursor : digitsBeforeCursor;
+                        const newDigits = digits.slice(0, removeIdx) + digits.slice(removeIdx + 1);
+                        const masked = mascaraNDFormatar(newDigits);
+                        this.value = masked;
+                        const newPos = mascaraNDFormatar(newDigits.slice(0, removeIdx)).length;
+                        this.setSelectionRange(newPos, newPos);
+                    }
+                }
+            });
+
+            // Ao colar (Ctrl+V): limpar e reformatar
+            ndInput.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pasted = (e.clipboardData || window.clipboardData).getData('text');
+                const digits = pasted.replace(/[^0-9]/g, '').slice(0, 6);
+                this.value = mascaraNDFormatar(digits);
+                const pos = this.value.length;
+                this.setSelectionRange(pos, pos);
+            });
         });
 
         function importarRecursosGerais(file) {
