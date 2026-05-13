@@ -1218,8 +1218,9 @@
                 const diasRestantes = fimValido ? Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24)) : 0;
                 // Execução financeira baseada na tabela Recursos Gerais (IMBEL)
                 const recsRealizados = (t.recursosGerais || []).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
-                const percentualGasto = t.valorTed > 0 ? Math.round((recsRealizados / t.valorTed) * 100) : 0;
-                const percentualFisico = (typeof t.progressoFisico !== 'undefined' ? t.progressoFisico : calcularProgressoFisico(t)) || 0;
+                const percentualGasto = t.valorTed > 0 ? parseFloat(((recsRealizados / t.valorTed) * 100).toFixed(2)) : 0;
+                const percentualFisicoRaw = (typeof t.progressoFisico !== 'undefined' ? t.progressoFisico : calcularProgressoFisico(t)) || 0;
+                const percentualFisico = parseFloat(parseFloat(percentualFisicoRaw).toFixed(2));
                 const inicioStr = inicioValido ? inicio.toLocaleDateString('pt-BR') : '-';
                 const fimStr = fimValido ? fim.toLocaleDateString('pt-BR') : '-';
                 // Determinar status a partir do campo de informações do TED quando disponível
@@ -1298,7 +1299,7 @@
                         <div class="ted-card-progress">
                             <div class="ted-card-progress-header">
                                 <span class="ted-card-progress-label">Exec. Financeira</span>
-                                <span class="ted-card-progress-pct">${percentualGasto}%</span>
+                                <span class="ted-card-progress-pct">${percentualGasto.toFixed(2)}%</span>
                             </div>
                             <div class="ted-card-progress-track">
                                 <div style="background:#4CAF50; height:100%; width:${Math.min(100,percentualGasto)}%; border-radius:4px;"></div>
@@ -1308,7 +1309,7 @@
                         <div class="ted-card-progress">
                             <div class="ted-card-progress-header">
                                 <span class="ted-card-progress-label">Exec. Física</span>
-                                <span class="ted-card-progress-pct">${percentualFisico}%</span>
+                                <span class="ted-card-progress-pct">${percentualFisico.toFixed(2)}%</span>
                             </div>
                             <div class="ted-card-progress-track">
                                 <div style="background:#2196F3; height:100%; width:${Math.min(100,percentualFisico)}%; border-radius:4px;"></div>
@@ -1944,7 +1945,7 @@
             const inicioValido = inicio && !isNaN(inicio.getTime());
             const fimValido = fim && !isNaN(fim.getTime());
             const emExecucao = inicioValido && fimValido && hoje >= inicio && hoje <= fim;
-            const percentualGasto = ted.valorTed > 0 ? Math.round((ted.gasto / ted.valorTed) * 100) : 0;
+            const percentualGasto = ted.valorTed > 0 ? parseFloat(((ted.gasto / ted.valorTed) * 100).toFixed(2)) : 0;
 
             document.getElementById('modalTitulo').textContent = `TED ${ted.numTed} - ${ted.objetivo}`;
             document.getElementById('modalBody').innerHTML = `
@@ -2058,7 +2059,7 @@
                 <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
                         <span>Execução Financeira</span>
-                        <span><strong>${percentualGasto}%</strong></span>
+                        <span><strong>${percentualGasto.toFixed(2)}%</strong></span>
                     </div>
                     <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
                         <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
