@@ -3681,7 +3681,7 @@
   margin-bottom: 14px; box-shadow: 0 4px 16px rgba(12,68,124,0.18);
 }
 .ted-hero-left { min-width: 0; flex: 1; }
-.overview-two-col { display: grid; grid-template-columns: 1fr 420px; gap: 14px; margin-bottom: 14px; align-items: start; }
+.overview-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; align-items: start; }
 @media (max-width: 1100px) { .overview-two-col { grid-template-columns: 1fr; } }
 .ted-hero-id {
   font-family: 'IBM Plex Mono', monospace; font-size: 12px;
