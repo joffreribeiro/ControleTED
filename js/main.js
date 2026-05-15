@@ -12259,13 +12259,120 @@
         }
 
         // ── Relatório 1: Cadastro completo ───────────────────────
-        function renderRelCadastro(corpo) {
+        function renderRelCadastro(corpo, modoTabela) {
             const teds = filtrarTeds();
             if (!teds.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum TED encontrado.</p>'; return; }
             const fmt = v => v ? new Date(v + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
             const fmtVal = v => (parseFloat(v)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.8rem;">${teds.length} TED(s)</p>`;
+            const usarTabela = !!modoTabela;
+
+            const toggleHtml = `
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">
+                <p style="font-size:0.75rem;color:var(--text-muted);margin:0;">${teds.length} TED(s)</p>
+                <div style="display:flex;gap:4px;">
+                  <button onclick="renderRelCadastro(document.getElementById('relPreviewBody'), false)"
+                    style="padding:3px 10px;font-size:0.72rem;border-radius:4px;border:1px solid var(--border);cursor:pointer;
+                           background:${!usarTabela ? 'var(--primary)' : 'var(--surface)'};
+                           color:${!usarTabela ? '#fff' : 'var(--text)'};">
+                    Cards
+                  </button>
+                  <button onclick="renderRelCadastro(document.getElementById('relPreviewBody'), true)"
+                    style="padding:3px 10px;font-size:0.72rem;border-radius:4px;border:1px solid var(--border);cursor:pointer;
+                           background:${usarTabela ? 'var(--primary)' : 'var(--surface)'};
+                           color:${usarTabela ? '#fff' : 'var(--text)'};">
+                    Tabela
+                  </button>
+                </div>
+              </div>`;
+
+            if (usarTabela) {
+                const cols = [
+                    { label: 'Nº TED',            fn: t => t.numTed || '—' },
+                    { label: 'Plano Trabalho',     fn: t => t.planoTrabalho || '—' },
+                    { label: 'Código Plano',       fn: t => t.codigoPlano || '—' },
+                    { label: 'Nº TED SIAFI',       fn: t => t.numTedSiafi || '—', mono: true },
+                    { label: 'Nota Sistema',       fn: t => t.notaSistema || '—' },
+                    { label: 'UP Responsável',     fn: t => t.upResponsavel || '—' },
+                    { label: 'UG/EG Executora',    fn: t => t.ugExecutora || t.egExecutora || '—' },
+                    { label: 'Unid. Descentraliz.',fn: t => t.unidadeDesc || '—' },
+                    { label: 'UG Descentraliz.',   fn: t => t.ugDesc || '—' },
+                    { label: 'Objetivo / Objeto',  fn: t => t.objetivo || t.objeto || '—', wrap: true },
+                    { label: 'Início Vigência',    fn: t => fmt(t.inicioVigencia) },
+                    { label: 'Vigência (meses)',   fn: t => {
+                        const alts = t.alteracoes || [...(t.aditivos||[]),...(t.apostilamentos||[])];
+                        const mesesAdit = alts.filter(a=>a.tipo==='aditivo').reduce((s,a)=>s+(a.meses||0),0);
+                        return ((parseInt(t.vigencia)||0) + mesesAdit) || '—';
+                    }},
+                    { label: 'Fim Vigência',       fn: t => {
+                        const alts = t.alteracoes || [...(t.aditivos||[]),...(t.apostilamentos||[])];
+                        const aditivos = alts.filter(a=>a.tipo==='aditivo');
+                        const mesesAdit = aditivos.reduce((s,a)=>s+(a.meses||0),0);
+                        if (aditivos.length > 0 && t.inicioVigencia) {
+                            const d = new Date(t.inicioVigencia + 'T00:00:00');
+                            d.setMonth(d.getMonth() + (parseInt(t.vigencia)||0) + mesesAdit);
+                            return d.toLocaleDateString('pt-BR') + ' ✦';
+                        }
+                        return fmt(t.fimVigencia);
+                    }},
+                    { label: '1ª Descentraliz.',   fn: t => fmt(t.primeiraDescentralizacao) },
+                    { label: 'Entrega / Denúncia', fn: t => fmt(t.dataEntregaDenuncia || t.dataEntrega) },
+                    { label: 'Prazo Rel. Final',   fn: t => fmt(t.prazoRelatorio) },
+                    { label: 'Entrega Rel. Final', fn: t => fmt(t.entregaRelatorio) },
+                    { label: 'Aditivos / Apost.',  fn: t => {
+                        const alts = t.alteracoes || [...(t.aditivos||[]),...(t.apostilamentos||[])];
+                        const nad = alts.filter(a=>a.tipo==='aditivo').length;
+                        const nap = alts.filter(a=>a.tipo==='apostilamento').length;
+                        const mesesAdit = alts.filter(a=>a.tipo==='aditivo').reduce((s,a)=>s+(a.meses||0),0);
+                        if (!nad && !nap) return '—';
+                        return [nad > 0 ? `${nad} adit. (+${mesesAdit}m)` : '', nap > 0 ? `${nap} apost.` : ''].filter(Boolean).join(', ');
+                    }},
+                    { label: 'Situação',           fn: t => {
+                        const s = _calcularStatusTed(t);
+                        const bc = s==='Em execução'?'#166534':s==='Encerrado'?'#185FA5':'#991b1b';
+                        const bg = s==='Em execução'?'#dcfce7':s==='Encerrado'?'#dbeafe':'#fee2e2';
+                        return `<span style="font-size:0.7rem;font-weight:600;padding:1px 7px;border-radius:20px;background:${bg};color:${bc};">${s}</span>`;
+                    }},
+                    { label: 'Valor Previsto',     fn: t => 'R$ ' + fmtVal((t.financeiros||[]).reduce((s,f)=>s+(parseFloat(f.valor)||0),0)), mono: true, right: true },
+                    { label: 'Recebido',           fn: t => 'R$ ' + fmtVal((t.recursosGerais||[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0)), mono: true, right: true },
+                    { label: 'Saldo',              fn: t => {
+                        const prev = (t.financeiros||[]).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                        const rec  = (t.recursosGerais||[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+                        const saldo = prev - rec;
+                        return `<span style="color:${saldo<0?'#991b1b':'#185FA5'};">R$ ${fmtVal(saldo)}</span>`;
+                    }, mono: true, right: true },
+                ];
+
+                let thead = '<tr>' + cols.map(c =>
+                    `<th style="white-space:nowrap;padding:6px 8px;font-size:0.7rem;font-weight:600;text-align:${c.right?'right':'left'};border-bottom:2px solid var(--border);">${c.label}</th>`
+                ).join('') + '</tr>';
+
+                let tbody = teds.map(t => {
+                    const cells = cols.map(c => {
+                        const val = c.fn(t);
+                        const style = [
+                            c.mono ? "font-family:'IBM Plex Mono',monospace;" : '',
+                            c.right ? 'text-align:right;' : '',
+                            c.wrap ? 'white-space:normal;min-width:180px;max-width:260px;' : 'white-space:nowrap;',
+                            'padding:5px 8px;font-size:0.75rem;border-bottom:1px solid var(--border);'
+                        ].join('');
+                        return `<td style="${style}">${val}</td>`;
+                    }).join('');
+                    return `<tr style="vertical-align:middle;">${cells}</tr>`;
+                }).join('');
+
+                corpo.innerHTML = toggleHtml +
+                    `<div style="overflow-x:auto;">
+                       <table class="tabela-padrao" style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+                         <thead style="background:var(--surface-alt,#f8fafc);">${thead}</thead>
+                         <tbody>${tbody}</tbody>
+                       </table>
+                       <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.4rem;">✦ Fim de vigência prorrogado por aditivo.</p>
+                     </div>`;
+                return;
+            }
+
+            let html = toggleHtml;
 
             teds.forEach(t => {
                 const status = _calcularStatusTed(t);
