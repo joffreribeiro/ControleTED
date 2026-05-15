@@ -114,6 +114,16 @@ window.carregarDoCloud = async function() {
     try { popularFiltrosRelatorios(); } catch(e) {}
     try { if (typeof window.enhanceEmptyStates === 'function') window.enhanceEmptyStates(); } catch(e) {}
 
+    // Re-sincronizar tedSelecionado com o novo objeto do Firestore e re-renderizar tabelas
+    try {
+      if (window.tedSelecionado && window.tedSelecionado.id != null) {
+        const tedId = window.tedSelecionado.id;
+        if (typeof window.carregarDetalhes === 'function') {
+          window.carregarDetalhes(tedId);
+        }
+      }
+    } catch(e) { console.warn('re-sync tedSelecionado após carregarDoCloud:', e); }
+
     showToast('Dados carregados da nuvem', 'success');
     try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
   } catch (e) {

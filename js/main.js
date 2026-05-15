@@ -1283,7 +1283,7 @@
                     <div class="ted-card" style="border-left-color:${cardBorderColor};">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                             <div style="flex:1; min-width:0;">
-                                <a class="ted-card-title" href="#" onclick="switchTab('detalhes', null); carregarDetalhes(${t.id}); return false;">TED ${t.numTed}</a>
+                                <a class="ted-card-title" href="#" onclick="carregarDetalhes(${t.id}); switchTab('detalhes', null); return false;">TED ${t.numTed}</a>
                                 <p class="ted-card-obj">${t.objetivo || '→'}</p>
                                 <p class="ted-card-meta">${metaLine}</p>
                             </div>
@@ -1722,7 +1722,7 @@
             items.forEach(it => {
                 html += `<tr>`;
                 html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
-                html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a></td>`;
                 html += `<td>${it.up}</td>`;
                 html += `<td>${it.objeto}</td>`;
                 html += `<td class="col-qtde">${formatNumber(it.qtde)}</td>`;
@@ -1764,7 +1764,7 @@
             items.forEach(it => {
                 html += `<tr>`;
                 html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
-                html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a></td>`;
                 html += `<td>${formatarNDComPontos(it.nd)}</td>`;
                 html += `<td>${it.up}</td>`;
                 html += `<td class="col-valor" style="text-align:right;">${it.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
@@ -1823,7 +1823,7 @@
                 else if (it.diasRestantes <= 15) corDias = '#d97706';
                 html += `<tr>`;
                 html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
-                html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a></td>`;
                 html += `<td>${it.up}</td>`;
                 html += `<td style="text-align:center; font-weight:600; color:${corDias};">${it.diasRestantes}</td>`;
                 html += `</tr>`;
@@ -1876,7 +1876,7 @@
             expired.forEach(it => {
                 html += `<tr>`;
                 html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
-                html += `<td><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a></td>`;
                 html += `<td>${it.up}</td>`;
                 html += `<td style="text-align:center; font-weight:600; color:#dc2626;">${it.diasAtraso}</td>`;
                 html += `</tr>`;
@@ -1925,7 +1925,7 @@
             let html = `<div style="font-weight:600; color:#dc2626; margin-bottom:6px;">${expired.length} TED(s) vencido(s)</div>`;
             html += '<ul style="margin:0; padding-left:1rem; font-size:0.85rem;">';
             expired.slice(0, maxShow).forEach(it => {
-                html += `<li style="margin-bottom:0.35rem; display:flex; justify-content:space-between; gap:8px;"><div><a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${it.ted.id}); return false;">TED ${it.ted.numTed}</a> <span style="color:var(--text-muted);">${it.up}</span></div><div style="color:#dc2626; font-weight:600;">${it.diasAtraso}d</div></li>`;
+                html += `<li style="margin-bottom:0.35rem; display:flex; justify-content:space-between; gap:8px;"><div><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a> <span style="color:var(--text-muted);">${it.up}</span></div><div style="color:#dc2626; font-weight:600;">${it.diasAtraso}d</div></li>`;
             });
             if (expired.length > maxShow) html += `<li style="color:var(--text-muted); margin-top:4px;">+${expired.length - maxShow} outros...</li>`;
             html += '</ul>';
@@ -8055,7 +8055,7 @@
                     const label = `${r.ted.numTed || ''} - ${r.ted.objeto || r.ted.objetivo || ''}`;
                     // Tornar o label clicável: abre o detalhe do TED correspondente
                     table += `<td class="gantt-row-label sticky-ted" title="UP: ${r.up}" style="cursor:pointer;">
-                        <a href="#" onclick="switchTab('detalhes'); carregarDetalhes(${r.ted.id}); return false;" style="color:inherit; text-decoration:none; display:block; width:100%;">
+                        <a href="#" onclick="carregarDetalhes(${r.ted.id}); switchTab('detalhes'); return false;" style="color:inherit; text-decoration:none; display:block; width:100%;">
                             ${label}
                         </a>
                     </td>`;
@@ -12264,24 +12264,162 @@
             if (!teds.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum TED encontrado.</p>'; return; }
             const fmt = v => v ? new Date(v + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
             const fmtVal = v => (parseFloat(v)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.6rem;">${teds.length} TED(s)</p>
-            <div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:700px;width:100%;">
-              <thead><tr><th>Nº TED</th><th>Objeto</th><th>UP</th><th>Início</th><th>Fim</th><th>Status</th><th style="text-align:right;">Valor Previsto</th></tr></thead><tbody>`;
+
+            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.8rem;">${teds.length} TED(s)</p>`;
+
             teds.forEach(t => {
                 const status = _calcularStatusTed(t);
-                const bc = status === 'Em execução' ? 'rel-badge-ok' : status === 'Encerrado' ? 'rel-badge-info' : 'rel-badge-danger';
+                const bc = status === 'Em execução' ? '#166534' : status === 'Encerrado' ? '#185FA5' : '#991b1b';
+                const bcBg = status === 'Em execução' ? '#dcfce7' : status === 'Encerrado' ? '#dbeafe' : '#fee2e2';
+
+                const alteracoes = t.alteracoes || [...(t.aditivos || []), ...(t.apostilamentos || [])];
+                const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
+                const apostilamentos = alteracoes.filter(a => a.tipo === 'apostilamento');
+                const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
+
+                const vigenciaMeses = (parseInt(t.vigencia) || 0) + totalAditivoMeses;
+
+                let fimVigenciaExib = fmt(t.fimVigencia);
+                let fimVigenciaExtra = '';
+                if (aditivos.length > 0 && t.inicioVigencia) {
+                    const dInicio = new Date(t.inicioVigencia + 'T00:00:00');
+                    if (!isNaN(dInicio.getTime())) {
+                        const dFim = new Date(dInicio);
+                        dFim.setMonth(dFim.getMonth() + vigenciaMeses);
+                        fimVigenciaExib = dFim.toLocaleDateString('pt-BR') + ' <span style="font-size:0.7rem;background:#dbeafe;color:#1e40af;padding:1px 5px;border-radius:3px;font-weight:600;">Prorrogado</span>';
+                        fimVigenciaExtra = `<span style="font-size:0.7rem;color:var(--text-muted);">Original: ${fmt(t.fimVigencia)} · +${totalAditivoMeses} meses</span>`;
+                    }
+                }
+
                 const valPrev = (t.financeiros || []).reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
-                html += `<tr>
-                  <td><strong>${t.numTed || '—'}</strong></td>
-                  <td style="max-width:220px;white-space:normal;font-size:0.78rem;">${t.objeto || t.objetivo || '—'}</td>
-                  <td>${t.up || t.upResponsavel || '—'}</td>
-                  <td>${fmt(t.inicioVigencia)}</td>
-                  <td>${fmt(t.fimVigencia)}</td>
-                  <td><span class="rel-badge ${bc}">${status}</span></td>
-                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.75rem;">R$ ${fmtVal(valPrev)}</td>
-                </tr>`;
+                const valRecebido = (t.recursosGerais || []).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+                const valSaldo = valPrev - valRecebido;
+
+                const numAlt = aditivos.length + apostilamentos.length;
+                const altResumo = numAlt === 0 ? '—'
+                    : [aditivos.length > 0 ? `${aditivos.length} aditivo${aditivos.length > 1 ? 's' : ''} (+${totalAditivoMeses} meses)` : '',
+                       apostilamentos.length > 0 ? `${apostilamentos.length} apostilamento${apostilamentos.length > 1 ? 's' : ''}` : '']
+                      .filter(Boolean).join(', ');
+
+                html += `
+                <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:1.2rem;overflow:hidden;">
+                  <!-- cabeçalho do card -->
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1rem;background:var(--surface-alt,#f8fafc);border-bottom:1px solid var(--border);">
+                    <span style="font-size:0.95rem;font-weight:700;color:var(--primary);">${t.numTed || '—'}</span>
+                    <span style="font-size:0.75rem;font-weight:600;padding:2px 10px;border-radius:20px;background:${bcBg};color:${bc};">${status}</span>
+                  </div>
+                  <!-- corpo em grid -->
+                  <div style="padding:0.8rem 1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.5rem 1.2rem;">
+
+                    <div style="grid-column:1/-1;">
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Objetivo / Objeto</div>
+                      <div style="font-size:0.82rem;color:var(--text);line-height:1.4;">${t.objetivo || t.objeto || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Plano de Trabalho</div>
+                      <div style="font-size:0.82rem;">${t.planoTrabalho || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Código do Plano</div>
+                      <div style="font-size:0.82rem;">${t.codigoPlano || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Nº TED - SIAFI</div>
+                      <div style="font-size:0.82rem;font-family:'IBM Plex Mono',monospace;">${t.numTedSiafi || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Nota do Sistema</div>
+                      <div style="font-size:0.82rem;">${t.notaSistema || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">UP Responsável</div>
+                      <div style="font-size:0.82rem;">${t.upResponsavel || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">UG / EG Executora</div>
+                      <div style="font-size:0.82rem;">${t.ugExecutora || t.egExecutora || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Unidade Descentralizadora</div>
+                      <div style="font-size:0.82rem;">${t.unidadeDesc || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">UG Descentralizadora</div>
+                      <div style="font-size:0.82rem;">${t.ugDesc || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Início da Vigência</div>
+                      <div style="font-size:0.82rem;">${fmt(t.inicioVigencia)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Vigência (meses)</div>
+                      <div style="font-size:0.82rem;">${vigenciaMeses || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Fim da Vigência</div>
+                      <div style="font-size:0.82rem;">${fimVigenciaExib}${fimVigenciaExtra ? '<br>' + fimVigenciaExtra : ''}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">1ª Descentralização</div>
+                      <div style="font-size:0.82rem;">${fmt(t.primeiraDescentralizacao)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Data Entrega / Denúncia</div>
+                      <div style="font-size:0.82rem;">${fmt(t.dataEntregaDenuncia || t.dataEntrega)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Prazo Relatório Final</div>
+                      <div style="font-size:0.82rem;">${fmt(t.prazoRelatorio)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Entrega Relatório Final</div>
+                      <div style="font-size:0.82rem;">${fmt(t.entregaRelatorio)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Aditivos / Apostilamentos</div>
+                      <div style="font-size:0.82rem;">${altResumo}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Situação</div>
+                      <div style="font-size:0.82rem;">${t.statusTED || t.status || '—'}</div>
+                    </div>
+
+                  </div>
+                  <!-- rodapé financeiro -->
+                  <div style="display:flex;gap:0;border-top:1px solid var(--border);">
+                    <div style="flex:1;padding:0.5rem 1rem;border-right:1px solid var(--border);">
+                      <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);">Valor Previsto</div>
+                      <div style="font-size:0.82rem;font-family:'IBM Plex Mono',monospace;font-weight:600;">R$ ${fmtVal(valPrev)}</div>
+                    </div>
+                    <div style="flex:1;padding:0.5rem 1rem;border-right:1px solid var(--border);">
+                      <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);">Recebido</div>
+                      <div style="font-size:0.82rem;font-family:'IBM Plex Mono',monospace;font-weight:600;color:#166534;">R$ ${fmtVal(valRecebido)}</div>
+                    </div>
+                    <div style="flex:1;padding:0.5rem 1rem;">
+                      <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);">Saldo</div>
+                      <div style="font-size:0.82rem;font-family:'IBM Plex Mono',monospace;font-weight:600;color:${valSaldo < 0 ? '#991b1b' : '#185FA5'};">R$ ${fmtVal(valSaldo)}</div>
+                    </div>
+                  </div>
+                </div>`;
             });
-            html += '</tbody></table></div>';
+
             corpo.innerHTML = html;
         }
 
