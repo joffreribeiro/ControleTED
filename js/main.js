@@ -2364,6 +2364,8 @@
             // Atualizar badges de contadores das seções
             try { atualizarTodosContadoresSecoes(); } catch(e) {}
             try { renderCompactGanttFisico(); } catch(e) {}
+            // Restaurar aba interna que estava ativa (ou padrão overview)
+            try { restoreDetalhesLastTab(); } catch(e) {}
             // Aplicar restrição de UP para editor com upRestrita
             try {
                 var p = window.currentUserProfile;
@@ -2371,6 +2373,318 @@
                     applyUpRestriction(p.upRestrita);
                 }
             } catch(e) {}
+        }
+
+        // ── Navegação por abas internas do Detalhes TED ────────────────
+        function switchDt(btn) {
+            const tab = btn.getAttribute('data-tab');
+            document.querySelectorAll('.dt-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+            document.querySelectorAll('.dt-tab-panel').forEach(p =>
+                p.classList.toggle('active', p.getAttribute('data-panel') === tab)
+            );
+            try { localStorage.setItem('detalhes_lastTab', tab); } catch(e) {}
+            if (tab === 'billing') {
+                try { renderFaturamento(); } catch(e) { console.warn('renderFaturamento error', e); }
+            }
+        }
+
+        function restoreDetalhesLastTab() {
+            try {
+                const last = localStorage.getItem('detalhes_lastTab') || 'overview';
+                const btn = document.querySelector(`.dt-tab-btn[data-tab="${last}"]`);
+                if (btn) switchDt(btn);
+            } catch(e) {}
+        }
+
+        // ── Faturamento ─────────────────────────────────────────────────
+
+        function computarLinhasFaturamento(ted) {
+            if (!ted) return [];
+            const fisicos  = ted.fisicos     || [];
+            const execFis  = ted.execFisicas || [];
+            const hoje = new Date();
+            const linhas = [];
+
+            fisicos.forEach(f => {
+                const qtdePlan = parseNumber(f.qtde) || 0;
+                const valorUnit = parseNumber(f.valorUnitario) || 0;
+                const valorPrev = qtdePlan * valorUnit;
+
+                // Calcular data prevista: fim da fase (mês/ano final ou mês base + mFinal)
+                let dataPrevista = null;
+                try {
+                    if (f.anoFinal && f.mesFinal) {
+                        dataPrevista = new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
+                    } else if (f.mFinal != null && ted.primeiraDescentralizacao) {
+                        const base = new Date(ted.primeiraDescentralizacao + 'T00:00:00');
+                        base.setMonth(base.getMonth() + parseInt(f.mFinal));
+                        base.setDate(28);
+                        dataPrevista = base;
+                    }
+                } catch(e) {}
+
+                // Somar entregas deste item (casamento por objeto)
+                const normalizar = s => String(s || '').toLowerCase().trim();
+                const entregasMatch = (f.entregas && f.entregas.length)
+                    ? f.entregas
+                    : execFis.filter(e => normalizar(e.objeto) === normalizar(f.objeto));
+
+                let qtdeReal = 0;
+                let valorReal = 0;
+                let nfs = [];
+                let datasReais = [];
+
+                entregasMatch.forEach(ent => {
+                    const qtd = parseNumber(ent.quantidade != null ? ent.quantidade : ent.qtde) || 0;
+                    qtdeReal += qtd;
+                    valorReal += qtd * valorUnit;
+                    if (ent.nf) nfs.push(ent.nf);
+                    if (ent.data) datasReais.push(new Date(ent.data + 'T00:00:00'));
+                });
+
+                const dataReal = datasReais.length ? datasReais.reduce((a, b) => a > b ? a : b) : null;
+
+                let status = 'planejado';
+                if (qtdeReal > 0) {
+                    status = 'pago';
+                } else if (dataPrevista && dataPrevista < hoje) {
+                    status = 'atrasado';
+                }
+
+                linhas.push({
+                    fase: f.fase || f.meta || '',
+                    objeto: f.objeto || '',
+                    qtdePlan,
+                    valorUnit,
+                    valorPrev,
+                    qtdeReal,
+                    valorReal,
+                    dataPrevista,
+                    dataReal,
+                    nf: nfs.join(', '),
+                    status,
+                    mInicio: f.mInicio != null ? parseInt(f.mInicio) : null,
+                    mFinal:  f.mFinal  != null ? parseInt(f.mFinal)  : null,
+                });
+            });
+            return linhas;
+        }
+
+        function agruparPorMarco(linhas) {
+            const mapa = {};
+            linhas.forEach(l => {
+                const chave = l.fase || '(Sem fase)';
+                if (!mapa[chave]) mapa[chave] = { marco: chave, linhas: [], totalPrev: 0, totalReal: 0, mInicio: l.mInicio, mFinal: l.mFinal };
+                mapa[chave].linhas.push(l);
+                mapa[chave].totalPrev += l.valorPrev;
+                mapa[chave].totalReal += l.valorReal;
+                if (l.mInicio != null && (mapa[chave].mInicio == null || l.mInicio < mapa[chave].mInicio)) mapa[chave].mInicio = l.mInicio;
+                if (l.mFinal  != null && (mapa[chave].mFinal  == null || l.mFinal  > mapa[chave].mFinal))  mapa[chave].mFinal  = l.mFinal;
+            });
+            return Object.values(mapa);
+        }
+
+        function renderFaturamento(cutoffArg) {
+            const container = document.getElementById('faturamentoContainer');
+            if (!container) return;
+            const ted = window.tedSelecionado;
+            if (!ted) {
+                container.innerHTML = '<p class="fat-empty">Selecione um TED para ver o faturamento.</p>';
+                return;
+            }
+
+            const hoje = new Date();
+            let cutoff = cutoffArg instanceof Date ? cutoffArg : hoje;
+
+            const fmtDate = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+            const fmtVal  = v => (parseFloat(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const linhas = computarLinhasFaturamento(ted);
+            const marcos = agruparPorMarco(linhas);
+
+            // Totais globais até cutoff
+            let totalPrevCutoff = 0, totalRealCutoff = 0, totalPrevTed = 0, totalRealTed = 0;
+            linhas.forEach(l => {
+                totalPrevTed += l.valorPrev;
+                totalRealTed += l.valorReal;
+                const dentroCorte = !l.dataPrevista || l.dataPrevista <= cutoff;
+                if (dentroCorte) totalPrevCutoff += l.valorPrev;
+                const realDentro = l.dataReal && l.dataReal <= cutoff;
+                if (realDentro) totalRealCutoff += l.valorReal;
+            });
+            const delta = totalRealCutoff - totalPrevCutoff;
+            const pctTotal = totalPrevTed > 0 ? Math.min((totalRealTed / totalPrevTed) * 100, 100).toFixed(1) : '0.0';
+
+            // Data formatada para exibição
+            const cutoffLabel = cutoff.toLocaleDateString('pt-BR');
+
+            // Atalhos de data para meses (fim de cada marco)
+            let atalhosMarcosHtml = '';
+            marcos.forEach((m, i) => {
+                const linhaComData = m.linhas.find(l => l.dataPrevista);
+                if (linhaComData) {
+                    const d = linhaComData.dataPrevista;
+                    const iso = d.toISOString().slice(0, 10);
+                    atalhosMarcosHtml += `<button class="fat-date-shortcut" onclick="renderFaturamento(new Date('${iso}'))">Fim ${m.marco || ('M'+(i+1))}</button>`;
+                }
+            });
+            const fimTed = ted.fimVigencia ? `<button class="fat-date-shortcut" onclick="renderFaturamento(new Date('${ted.fimVigencia}'))">Fim TED</button>` : '';
+            const todayIso = hoje.toISOString().slice(0, 10);
+            const cutoffIso = cutoff.toISOString().slice(0, 10);
+
+            // KPIs
+            const kpiHtml = `
+            <div class="fat-kpi-row">
+              <div class="fat-kpi">
+                <div class="fat-kpi-label">Previsto até ${cutoffLabel}</div>
+                <div class="fat-kpi-value">R$ ${fmtVal(totalPrevCutoff)}</div>
+                <div class="fat-kpi-sub">Soma do previsto com data ≤ corte</div>
+              </div>
+              <div class="fat-kpi">
+                <div class="fat-kpi-label">Realizado até ${cutoffLabel}</div>
+                <div class="fat-kpi-value">R$ ${fmtVal(totalRealCutoff)}</div>
+                <div class="fat-kpi-delta ${delta >= 0 ? 'pos' : 'neg'}">${delta >= 0 ? '▲' : '▼'} R$ ${fmtVal(Math.abs(delta))} ${delta >= 0 ? 'acima' : 'abaixo'} do previsto</div>
+              </div>
+              <div class="fat-kpi">
+                <div class="fat-kpi-label">Total faturado / Total TED</div>
+                <div class="fat-kpi-value">R$ ${fmtVal(totalRealTed)}</div>
+                <div class="fat-kpi-sub">${pctTotal}% de R$ ${fmtVal(totalPrevTed)}</div>
+              </div>
+            </div>`;
+
+            // Date toolbar
+            const dateToolbar = `
+            <div class="fat-date-bar">
+              <label>Ver até:</label>
+              <input type="date" value="${cutoffIso}" onchange="renderFaturamento(this.value ? new Date(this.value+'T12:00:00') : new Date())">
+              <button class="fat-date-shortcut" onclick="renderFaturamento(new Date('${todayIso}T12:00:00'))">Hoje</button>
+              ${atalhosMarcosHtml}
+              ${fimTed}
+            </div>`;
+
+            // Tip banner
+            const tipHtml = `
+            <div class="fat-tip">
+              ⚙️ Faturamento automático, derivado da Execução Física. Cada entrega registrada vira receita na sua data: valor = qtde entregue × valor unitário.
+              Para ajustar, <a href="#" onclick="switchDt(document.querySelector('.dt-tab-btn[data-tab=physical]')); return false;">↗ edite as entregas</a>.
+            </div>`;
+
+            // Cards por marco
+            let marcosHtml = '';
+            if (marcos.length === 0) {
+                marcosHtml = '<p class="fat-empty">Nenhum item no Cadastro Físico. Adicione fases para ver o faturamento por marco.</p>';
+            } else {
+                marcos.forEach((m, idx) => {
+                    const num = idx + 1;
+                    // Verificar se marco está em curso no cutoff
+                    const linhasComData = m.linhas.filter(l => l.dataPrevista);
+                    const minData = linhasComData.length ? linhasComData.reduce((a,b) => a.dataPrevista < b.dataPrevista ? a : b).dataPrevista : null;
+                    const maxData = linhasComData.length ? linhasComData.reduce((a,b) => a.dataPrevista > b.dataPrevista ? a : b).dataPrevista : null;
+                    const emCurso = minData && maxData && minData <= cutoff && maxData >= cutoff;
+
+                    // Status geral do marco
+                    const allPago     = m.linhas.every(l => l.status === 'pago');
+                    const anyAtrasado = m.linhas.some(l => l.status === 'atrasado');
+                    let marcoStatus = 'planejado';
+                    if (allPago)     marcoStatus = 'pago';
+                    else if (anyAtrasado) marcoStatus = 'atrasado';
+                    else if (emCurso)    marcoStatus = 'em-curso';
+
+                    const badgeLabel = { pago: 'PAGO', planejado: 'PLANEJADO', atrasado: 'ATRASADO', 'em-curso': 'EM CURSO' }[marcoStatus] || marcoStatus;
+
+                    // Barras comparativas
+                    const maxBar = Math.max(m.totalPrev, m.totalReal, 1);
+                    const pctPrev = Math.min((m.totalPrev / maxBar) * 100, 100).toFixed(1);
+                    const pctReal = Math.min((m.totalReal / maxBar) * 100, 100).toFixed(1);
+                    const diffMarco = m.totalReal - m.totalPrev;
+                    const diffClass = diffMarco > 0 ? 'pos' : diffMarco < 0 ? 'neg' : 'zero';
+                    const diffLabel = diffMarco === 0 ? 'No prazo' : (diffMarco > 0 ? `+R$ ${fmtVal(diffMarco)}` : `-R$ ${fmtVal(Math.abs(diffMarco))}`);
+
+                    const datasLabel = [minData ? fmtDate(minData) : null, maxData && maxData !== minData ? fmtDate(maxData) : null].filter(Boolean).join(' → ');
+
+                    // Linhas do marco
+                    let rowsHtml = '';
+                    m.linhas.forEach(l => {
+                        const dentroCorte = !l.dataPrevista || l.dataPrevista <= cutoff;
+                        const dimClass = (!dentroCorte && l.status !== 'pago') ? ' dim' : '';
+                        const nfTxt = l.nf ? `<small>NF: ${l.nf}</small>` : '';
+                        const dataTxt = l.dataReal ? `<small>${fmtDate(l.dataReal)}</small>` : (l.dataPrevista ? `<small>Prev: ${fmtDate(l.dataPrevista)}</small>` : '');
+                        rowsHtml += `
+                        <div class="fat-row${dimClass}">
+                          <div class="fat-row-item">${l.objeto || '—'}${dataTxt}</div>
+                          <div class="fat-row-val">${l.qtdePlan > 0 ? `${l.qtdePlan}× R$ ${fmtVal(l.valorUnit)}` : '—'}</div>
+                          <div class="fat-row-val">R$ ${fmtVal(l.valorPrev)}</div>
+                          <div class="fat-row-val ${l.valorReal === 0 ? 'zero' : ''}">R$ ${fmtVal(l.valorReal)}${nfTxt}</div>
+                          <div style="text-align:right;"><span class="fat-badge ${l.status}">${{ pago:'PAGO', planejado:'PLAN.', atrasado:'ATRASO' }[l.status] || l.status}</span></div>
+                        </div>`;
+                    });
+
+                    const emCursoTag = emCurso ? `<span class="fat-tag-emcurso">EM CURSO</span>` : '';
+
+                    marcosHtml += `
+                    <div class="fat-marco${emCurso ? ' em-curso' : ''}" id="fat-marco-${idx}">
+                      <div class="fat-marco-head" onclick="toggleFatMarco(${idx})">
+                        <span class="fat-marco-num">M${num}</span>
+                        <span class="fat-marco-title">${m.marco}</span>
+                        ${emCursoTag}
+                        <span class="fat-badge ${marcoStatus}">${badgeLabel}</span>
+                        <span class="fat-marco-dates">${datasLabel}</span>
+                        <span class="fat-marco-chevron">▾</span>
+                      </div>
+                      <div class="fat-compare-bars">
+                        <div class="fat-bar-row">
+                          <span class="fat-bar-label">Previsto</span>
+                          <div class="fat-bar-track"><div class="fat-bar-fill prev" style="width:${pctPrev}%"></div></div>
+                          <span class="fat-bar-val">R$ ${fmtVal(m.totalPrev)}</span>
+                        </div>
+                        <div class="fat-bar-row">
+                          <span class="fat-bar-label">Faturado</span>
+                          <div class="fat-bar-track"><div class="fat-bar-fill real" style="width:${pctReal}%"></div></div>
+                          <span class="fat-bar-val">R$ ${fmtVal(m.totalReal)}</span>
+                        </div>
+                      </div>
+                      <div class="fat-marco-body">
+                        <div class="fat-row" style="background:var(--surface-alt,#f8fafc);font-weight:600;font-size:0.7rem;color:var(--text-muted);">
+                          <div>Item</div><div style="text-align:right;">Qtde × Unit.</div><div style="text-align:right;">Previsto</div><div style="text-align:right;">Realizado</div><div style="text-align:right;">Status</div>
+                        </div>
+                        ${rowsHtml}
+                      </div>
+                      <div class="fat-marco-footer">
+                        <span>Total do marco</span>
+                        <span class="fat-marco-footer-total">Prev: R$ ${fmtVal(m.totalPrev)} · Fat: R$ ${fmtVal(m.totalReal)}</span>
+                        <span class="fat-diff-chip ${diffClass}">${diffLabel}</span>
+                      </div>
+                    </div>`;
+                });
+            }
+
+            // Rodapé totais
+            const totaisHtml = `
+            <div class="fat-totais">
+              <div>
+                <div class="fat-totais-item-label">Previsto até ${cutoffLabel}</div>
+                <div class="fat-totais-item-value">R$ ${fmtVal(totalPrevCutoff)}</div>
+              </div>
+              <div>
+                <div class="fat-totais-item-label">Faturado até ${cutoffLabel}</div>
+                <div class="fat-totais-item-value" style="color:#166534;">R$ ${fmtVal(totalRealCutoff)}</div>
+              </div>
+              <div>
+                <div class="fat-totais-item-label">Total previsto TED</div>
+                <div class="fat-totais-item-value">R$ ${fmtVal(totalPrevTed)}</div>
+              </div>
+              <div>
+                <div class="fat-totais-item-label">Total faturado TED</div>
+                <div class="fat-totais-item-value">R$ ${fmtVal(totalRealTed)}</div>
+              </div>
+            </div>`;
+
+            container.innerHTML = kpiHtml + dateToolbar + tipHtml + marcosHtml + totaisHtml;
+        }
+
+        function toggleFatMarco(idx) {
+            const el = document.getElementById('fat-marco-' + idx);
+            if (el) el.classList.toggle('collapsed');
         }
 
         // Atualizar todos os badges de contadores nas seções de detalhe

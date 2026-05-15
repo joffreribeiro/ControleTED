@@ -774,8 +774,18 @@
                 <!-- Busca por NF removida conforme solicitado -->
 
                 <div id="tedsDetalheContainer" class="auto-style-001">
-                            <!-- Entregas (DETALHES TAB) -->
-                            <!-- Entregas (Visão do TED) removed from start of Details tab -->
+
+                    <!-- NAV DE ABAS INTERNAS -->
+                    <div class="dt-tab-switch" role="tablist" aria-label="Seções do Detalhes TED">
+                        <button class="dt-tab-btn active" data-tab="overview"  onclick="switchDt(this)">Visão Geral</button>
+                        <button class="dt-tab-btn"        data-tab="physical"  onclick="switchDt(this)">Execução Física</button>
+                        <button class="dt-tab-btn"        data-tab="financial" onclick="switchDt(this)">Execução Financeira</button>
+                        <button class="dt-tab-btn"        data-tab="billing"   onclick="switchDt(this)">Faturamento<span class="new-pill">NOVO</span></button>
+                    </div>
+
+                    <!-- PAINEL 1: VISÃO GERAL -->
+                    <div class="dt-tab-panel active" data-panel="overview">
+
                     <!-- INFORMA→.ES DO TED -->
                     <div class="ted-info-section" id="infoTEDSection">
                         <div class="ted-info-header">
@@ -990,6 +1000,11 @@
                     </div>
                     </div>
 
+                    </div><!-- /dt-tab-panel overview -->
+
+                    <!-- PAINEL 2: EXECUÇÃO FÍSICA -->
+                    <div class="dt-tab-panel" data-panel="physical">
+
                     <!-- CADASTRO DE METAS -->
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
@@ -1081,6 +1096,11 @@
                         </div>
                         </div>
                     </div>
+
+                    </div><!-- /dt-tab-panel physical -->
+
+                    <!-- PAINEL 3: EXECUÇÃO FINANCEIRA -->
+                    <div class="dt-tab-panel" data-panel="financial">
 
                     <!-- CADASTRO FINANCEIRA -->
                     <div class="detalhe-secao cadFin-collapsed">
@@ -1234,7 +1254,17 @@
                         </div>
                         </div>
                     </div>
-                </div>
+
+                    </div><!-- /dt-tab-panel financial -->
+
+                    <!-- PAINEL 4: FATURAMENTO -->
+                    <div class="dt-tab-panel" data-panel="billing">
+                        <div id="faturamentoContainer">
+                            <p class="fat-empty">Selecione um TED para ver o faturamento.</p>
+                        </div>
+                    </div><!-- /dt-tab-panel billing -->
+
+                </div><!-- /tedsDetalheContainer -->
             </div>
         </div>
 

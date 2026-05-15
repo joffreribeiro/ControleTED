@@ -3668,3 +3668,302 @@
 }
 .rel-menu-item:hover { background: var(--color-bg-surface); }
 .rel-menu-item input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--primary); }
+
+/* ============================================================
+   ABAS INTERNAS — DETALHES TED (dt-tab-*)
+   ============================================================ */
+.dt-tab-switch {
+  display: flex;
+  gap: 2px;
+  background: var(--bg, #fff);
+  border: 1px solid var(--border, rgba(0,0,0,0.07));
+  border-radius: 9px;
+  padding: 3px;
+  width: fit-content;
+  margin: 14px 0 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  flex-wrap: wrap;
+}
+.dt-tab-btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-muted, #64748b);
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.dt-tab-btn:hover { color: var(--text, #1a1a1a); background: var(--surface-alt, #f1f5f9); }
+.dt-tab-btn.active { background: var(--primary, #0C447C); color: #fff; font-weight: 600; }
+.dt-tab-btn .new-pill {
+  background: #f5b50b;
+  color: #4a3a04;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 6px;
+  vertical-align: 2px;
+  letter-spacing: 0.04em;
+}
+.dt-tab-panel { display: none; }
+.dt-tab-panel.active { display: block; }
+
+/* ============================================================
+   FATURAMENTO
+   ============================================================ */
+.fat-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.fat-kpi {
+  background: var(--bg, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.fat-kpi-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 4px;
+}
+.fat-kpi-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text, #0f172a);
+  line-height: 1.2;
+}
+.fat-kpi-delta {
+  font-size: 0.72rem;
+  margin-top: 4px;
+  font-weight: 600;
+}
+.fat-kpi-delta.pos { color: #166534; }
+.fat-kpi-delta.neg { color: #991b1b; }
+.fat-kpi-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted, #64748b);
+  margin-top: 3px;
+}
+
+.fat-date-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  background: var(--surface-alt, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+}
+.fat-date-bar label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.fat-date-bar input[type="date"] {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--text);
+}
+.fat-date-shortcut {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.fat-date-shortcut:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.fat-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  color: #1e3a5f;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.fat-tip a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.fat-tip a:hover { text-decoration: underline; }
+
+.fat-marco {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.fat-marco.em-curso { border-color: #185FA5; border-width: 2px; }
+.fat-marco-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface-alt, #f8fafc);
+  cursor: pointer;
+  user-select: none;
+  flex-wrap: wrap;
+}
+.fat-marco-head:hover { background: var(--surface, #f1f5f9); }
+.fat-marco-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--primary, #0C447C);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.fat-marco-title {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fat-marco-dates {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.fat-marco-chevron {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.fat-marco.collapsed .fat-marco-chevron { transform: rotate(-90deg); }
+
+.fat-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.fat-badge.pago     { background: #EAF3DE; color: #3B6D11; }
+.fat-badge.planejado{ background: #E6F1FB; color: #185FA5; }
+.fat-badge.atrasado { background: #FEE2E2; color: #A32D2D; }
+.fat-badge.em-curso { background: #DBEAFE; color: #1e40af; }
+
+.fat-tag-emcurso {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: #185FA5;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.fat-compare-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.fat-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+}
+.fat-bar-label { width: 70px; color: var(--text-muted); font-weight: 600; }
+.fat-bar-track {
+  flex: 1;
+  height: 7px;
+  background: var(--border, #e2e8f0);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.fat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.fat-bar-fill.prev { background: #185FA5; }
+.fat-bar-fill.real { background: #639922; }
+.fat-bar-val { width: 90px; text-align: right; font-family: 'IBM Plex Mono', monospace; color: var(--text); }
+
+.fat-diff-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.fat-diff-chip.pos { background: #EAF3DE; color: #3B6D11; }
+.fat-diff-chip.neg { background: #FEE2E2; color: #A32D2D; }
+.fat-diff-chip.zero{ background: #f1f5f9; color: #64748b; }
+
+.fat-marco-body { background: var(--bg); }
+.fat-marco.collapsed .fat-marco-body { display: none; }
+
+.fat-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 110px 110px 80px;
+  gap: 0;
+  align-items: center;
+  padding: 6px 14px;
+  border-top: 1px solid var(--border, #e2e8f0);
+  font-size: 0.78rem;
+}
+.fat-row:first-child { border-top: none; }
+.fat-row.dim { opacity: 0.45; }
+.fat-row-item { color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fat-row-item small { display: block; font-size: 0.65rem; color: var(--text-muted); }
+.fat-row-val { font-family: 'IBM Plex Mono', monospace; text-align: right; color: var(--text); }
+.fat-row-val.zero { color: var(--text-muted); }
+
+.fat-marco-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  background: var(--surface-alt, #f8fafc);
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.fat-marco-footer-total {
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.fat-totais {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: var(--surface-alt, #f8fafc);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.fat-totais-item-label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+.fat-totais-item-value { font-size: 1rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+
+.fat-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
