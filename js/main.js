@@ -12372,26 +12372,27 @@
         //  RELATÓRIOS — sistema refatorado
         // ═══════════════════════════════════════════════════════════
 
-        window._relState = { ativo: 'cadastro', filtros: { teds: [], ups: [], anos: [] } };
+        window._relState = { ativo: 'cadastro', filtros: { teds: [], ups: [], anos: [], meses: [] } };
 
         const _REL_TITULOS = {
-            cadastro:   'Cadastro completo dos TEDs',
-            ndupano:    'Previsto por TED / ND / UP / Ano',
-            mensal:     'Relatório mensal',
-            painel:     'Painel executivo',
-            alertas:    'Alertas e pendências',
-            execvsplan: 'Execução vs. previsto',
-            execfisica: 'Execução física consolidada',
-            saldoano:   'Saldo a receber por ano',
-            rastreonf:  'Rastreamento de notas fiscais'
+            cadastro:     'Cadastro completo dos TEDs',
+            ndupano:      'Previsto por TED / ND / UP / Ano',
+            mensal:       'Relatório mensal',
+            painel:       'Painel executivo',
+            alertas:      'Alertas e pendências',
+            execvsplan:   'Execução vs. previsto',
+            execfisica:   'Execução física consolidada',
+            saldoano:     'Saldo a receber por ano',
+            rastreonf:    'Rastreamento de notas fiscais',
+            faturamento:  'Relatório de Faturamento'
         };
 
         // Estado dos filtros globais (Set de valores selecionados, null = todos)
-        window._relGlobSel = { teds: null, ups: null, anos: null };
+        window._relGlobSel = { teds: null, ups: null, anos: null, meses: null };
 
         function toggleRelGlobFiltro(menuId, btnId) {
             // Fechar outros menus abertos
-            ['relGlobTEDMenu','relGlobUPMenu','relGlobAnoMenu'].forEach(id => {
+            ['relGlobTEDMenu','relGlobUPMenu','relGlobAnoMenu','relGlobMESMenu'].forEach(id => {
                 if (id !== menuId) { const m = document.getElementById(id); if (m) m.classList.remove('open'); }
             });
             const menu = document.getElementById(menuId);
@@ -12450,9 +12451,9 @@
             onFiltroGlobalChange();
         }
 
-        const _REL_GLOB_LABELS = { teds: 'TED', ups: 'UP', anos: 'Ano' };
-        const _REL_GLOB_BTN_LABELS = { teds: 'relGlobTEDLabel', ups: 'relGlobUPLabel', anos: 'relGlobAnoLabel' };
-        const _REL_GLOB_BTN_IDS   = { teds: 'relGlobTEDBtn',   ups: 'relGlobUPBtn',   anos: 'relGlobAnoBtn' };
+        const _REL_GLOB_LABELS = { teds: 'TED', ups: 'UP', anos: 'Ano', meses: 'Mês' };
+        const _REL_GLOB_BTN_LABELS = { teds: 'relGlobTEDLabel', ups: 'relGlobUPLabel', anos: 'relGlobAnoLabel', meses: 'relGlobMESLabel' };
+        const _REL_GLOB_BTN_IDS   = { teds: 'relGlobTEDBtn',   ups: 'relGlobUPBtn',   anos: 'relGlobAnoBtn',   meses: 'relGlobMESBtn' };
 
         function _relGlobAtualizarLabel(chave) {
             const sel = window._relGlobSel[chave];
@@ -12465,36 +12466,78 @@
             else { labelEl.textContent = base + ' (' + sel.size + ')'; if (btnEl) btnEl.classList.add('active'); }
         }
 
+        const _MESES_NOMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
         function inicializarFiltrosGlobais() {
             const teds = (dados && dados.teds) ? dados.teds : [];
-            const upsSet = new Set(), anosSet = new Set();
+            const upsSet = new Set(), anosSet = new Set(), mesesSet = new Set();
             teds.forEach(t => {
                 if (t.up || t.upResponsavel) upsSet.add(t.up || t.upResponsavel);
-                const addAno = v => { if (!v) return; const y = new Date(v + 'T00:00:00').getFullYear(); if (!isNaN(y)) anosSet.add(y); };
-                addAno(t.inicioVigencia); addAno(t.fimVigencia);
-                (t.execFinanceiras || []).forEach(e => addAno(e.data));
+                const addAnoMes = v => {
+                    if (!v) return;
+                    const d = new Date(v + 'T00:00:00');
+                    if (!isNaN(d)) { anosSet.add(d.getFullYear()); }
+                };
+                addAnoMes(t.inicioVigencia); addAnoMes(t.fimVigencia);
+                (t.execFinanceiras || []).forEach(e => addAnoMes(e.data));
+                // Meses das entregas físicas para filtro de faturamento
+                (t.fisicos || []).forEach(f => {
+                    if (f.mesFinal) mesesSet.add(parseInt(f.mesFinal));
+                    (f.entregas || []).forEach(e => {
+                        if (e.data) { const d = new Date(e.data + 'T00:00:00'); if (!isNaN(d)) mesesSet.add(d.getMonth() + 1); }
+                    });
+                });
             });
-            const tedItens = teds.map(t => t.numTed || t.id);
-            const upItens  = Array.from(upsSet).sort();
-            const anoItens = Array.from(anosSet).sort((a,b)=>b-a);
+            const tedItens  = teds.map(t => t.numTed || t.id);
+            const upItens   = Array.from(upsSet).sort();
+            const anoItens  = Array.from(anosSet).sort((a,b) => b - a);
+            const mesItens  = Array.from(mesesSet).sort((a,b) => a - b).map(m => ({ val: m, label: `${String(m).padStart(2,'0')} - ${_MESES_NOMES[m-1]}` }));
             _relGlobPopularMenu('relGlobTEDMenu', 'teds', tedItens);
             _relGlobPopularMenu('relGlobUPMenu',  'ups',  upItens);
             _relGlobPopularMenu('relGlobAnoMenu', 'anos', anoItens);
+            _relGlobPopularMenuObj('relGlobMESMenu', 'meses', mesItens);
+            // Mostrar/ocultar filtro de Mês conforme relatório ativo
+            _atualizarVisibilidadeFiltroMes();
+        }
+
+        function _atualizarVisibilidadeFiltroMes() {
+            const wrap = document.getElementById('relGlobMESWrap');
+            if (!wrap) return;
+            const ativo = window._relState ? window._relState.ativo : '';
+            wrap.style.display = (ativo === 'faturamento') ? '' : 'none';
+        }
+
+        // Versão de popularMenu para itens com val/label distintos
+        function _relGlobPopularMenuObj(menuId, chave, itens) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            const sel = window._relGlobSel[chave];
+            let html = `<div class="rel-menu-acoes">
+              <button onclick="_relGlobSelTodos('${chave}','${menuId}')">Todos</button>
+              <button onclick="_relGlobSelNenhum('${chave}','${menuId}')">Nenhum</button>
+            </div>`;
+            itens.forEach(it => {
+                const v = String(it.val);
+                const checked = (!sel || sel.has(v)) ? 'checked' : '';
+                html += `<label class="rel-menu-item"><input type="checkbox" value="${v}" ${checked} onchange="_relGlobOnChange('${chave}','${menuId}')"> ${it.label}</label>`;
+            });
+            menu.innerHTML = html;
         }
 
         function lerFiltrosGlobais() {
             const s = window._relGlobSel;
             return {
-                teds: s.teds ? Array.from(s.teds) : [],
-                ups:  s.ups  ? Array.from(s.ups)  : [],
-                anos: s.anos ? Array.from(s.anos).map(Number) : []
+                teds:  s.teds  ? Array.from(s.teds)  : [],
+                ups:   s.ups   ? Array.from(s.ups)   : [],
+                anos:  s.anos  ? Array.from(s.anos).map(Number)  : [],
+                meses: s.meses ? Array.from(s.meses).map(Number) : []
             };
         }
 
         function limparFiltrosGlobais() {
-            window._relGlobSel = { teds: null, ups: null, anos: null };
-            ['teds','ups','anos'].forEach(chave => {
-                const menuId = { teds:'relGlobTEDMenu', ups:'relGlobUPMenu', anos:'relGlobAnoMenu' }[chave];
+            window._relGlobSel = { teds: null, ups: null, anos: null, meses: null };
+            ['teds','ups','anos','meses'].forEach(chave => {
+                const menuId = { teds:'relGlobTEDMenu', ups:'relGlobUPMenu', anos:'relGlobAnoMenu', meses:'relGlobMESMenu' }[chave];
                 const menu = document.getElementById(menuId);
                 if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
                 _relGlobAtualizarLabel(chave);
@@ -12526,6 +12569,7 @@
             window._relState.ativo = id;
             const titulo = document.getElementById('relPreviewTitle');
             if (titulo) titulo.textContent = _REL_TITULOS[id] || id;
+            _atualizarVisibilidadeFiltroMes();
             renderRelatorioAtivo();
         }
 
@@ -12549,8 +12593,9 @@
                     case 'execvsplan': renderRelExecVsPlan(corpo);  break;
                     case 'execfisica': renderRelExecFisica(corpo);  break;
                     case 'saldoano':   renderRelSaldoAno(corpo);    break;
-                    case 'rastreonf':  renderRelRastreioNF(corpo);  break;
-                    default:           corpo.innerHTML = '<p>Relatório não encontrado.</p>';
+                    case 'rastreonf':    renderRelRastreioNF(corpo);      break;
+                    case 'faturamento':  renderRelFaturamento(corpo);     break;
+                    default:             corpo.innerHTML = '<p>Relatório não encontrado.</p>';
                 }
             } catch(e) {
                 corpo.innerHTML = `<p style="color:var(--danger);font-size:0.8rem;">Erro ao gerar relatório: ${e.message}</p>`;
@@ -13146,11 +13191,253 @@
             return 'Indefinido';
         }
 
-        // ── Exportar Excel global (alias) ────────────────────────
-        function exportarRelatoriosExcel() {
-            try { exportarRelatorioNDUPExcel(); } catch(e) {
-                showToast && showToast('Função de exportação Excel não disponível para este relatório.', 'warning');
+        // ── Exportar PDF do relatório ativo em tela ──────────────
+        function exportarRelatoriosPDF() {
+            const corpo = document.getElementById('relPreviewBody');
+            if (!corpo || !corpo.innerHTML.trim()) {
+                showToast('Nenhum relatório em tela para exportar.', 'info'); return;
             }
+            const tituloEl = document.getElementById('relPreviewTitle');
+            const titulo = tituloEl ? tituloEl.textContent : 'Relatório';
+
+            // Resumo dos filtros ativos
+            const s = window._relGlobSel || {};
+            const partesFiltro = [];
+            if (s.teds && s.teds.size > 0) partesFiltro.push('TED: ' + Array.from(s.teds).join(', '));
+            if (s.ups  && s.ups.size  > 0) partesFiltro.push('UP: '  + Array.from(s.ups).join(', '));
+            if (s.anos && s.anos.size > 0) partesFiltro.push('Ano: ' + Array.from(s.anos).join(', '));
+            if (s.meses && s.meses.size > 0) partesFiltro.push('Mês: ' + Array.from(s.meses).join(', '));
+            const filtroStr = partesFiltro.length ? partesFiltro.join(' | ') : 'Todos';
+
+            const styles = `
+                @page { size: A4 landscape; margin: 10mm; }
+                body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; padding: 6px; -webkit-print-color-adjust: exact; }
+                h1 { margin: 0 0 3px; font-size: 15px; color: #0C447C; }
+                .filtros { font-size: 10px; color: #555; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #ddd; }
+                table { border-collapse: collapse; width: 100%; font-size: 10px; }
+                th, td { border: 1px solid #ccc; padding: 4px 5px; text-align: left; vertical-align: top; }
+                th { background: #0C447C; color: #fff; }
+                tbody tr:nth-child(even) td { background: #f9f9f9; }
+                .fat-fase-block, .fat-fase-body { display: block !important; }
+                .fat-fase-head { display: flex; gap: 8px; font-weight: 700; margin: 8px 0 4px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+                .fat-badge { border: 1px solid #ccc; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 700; }
+                .fat-table { width: 100%; border-collapse: collapse; }
+                .fat-table th, .fat-table td { border: 1px solid #ccc; padding: 3px 5px; font-size: 10px; }
+                .fat-entrega-item { display: flex; gap: 6px; font-size: 9px; margin-bottom: 2px; }
+                .fat-kpi-row { display: flex; gap: 10px; margin-bottom: 8px; }
+                .fat-kpi { border: 1px solid #ccc; padding: 5px 8px; flex: 1; }
+                .fat-kpi-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #555; }
+                .fat-kpi-value { font-size: 13px; font-weight: 700; }
+                .fat-totais { display: flex; gap: 10px; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 6px; }
+                [onclick], button, .filter-btn, .btn-rel-sm, .fat-tip a { display: none !important; }
+                .fat-tip { display: none !important; }
+                @media print { .no-print { display: none !important; } }
+            `;
+
+            const win = window.open('', '_blank');
+            if (!win) { showToast('Pop-up bloqueado. Permita pop-ups para esta página.', 'danger'); return; }
+            win.document.write(`<!doctype html><html><head><meta charset="utf-8">
+                <title>${titulo}</title><style>${styles}</style></head><body>
+                <h1>${titulo}</h1>
+                <div class="filtros">Filtros: ${filtroStr}</div>
+                ${corpo.innerHTML}
+                </body></html>`);
+            win.document.close();
+            win.focus();
+            setTimeout(() => {
+                try { win.print(); setTimeout(() => { try { win.close(); } catch(e) {} }, 800); } catch(e) {}
+            }, 600);
+        }
+
+        // ── Relatório de Faturamento ─────────────────────────────
+        function renderRelFaturamento(corpo) {
+            const s     = window._relGlobSel || {};
+            const todos = (dados && dados.teds) ? dados.teds : [];
+            const fmtVal   = v => (parseFloat(v)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const fmtMesAno = d => { if (!d) return '—'; const dt = d instanceof Date ? d : new Date(d); return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }); };
+            const fmtQtde  = v => (parseFloat(v)||0).toLocaleString('pt-BR', { maximumFractionDigits: 4 });
+            const normalizar = str => String(str||'').toLowerCase().trim();
+
+            // Filtrar TEDs
+            let tedsFiltrados = todos;
+            if (s.teds) tedsFiltrados = tedsFiltrados.filter(t => s.teds.has(String(t.numTed || t.id)));
+            if (s.ups)  tedsFiltrados = tedsFiltrados.filter(t => s.ups.has(t.up || t.upResponsavel || ''));
+
+            if (!tedsFiltrados.length) {
+                corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;padding:1rem;">Nenhum TED encontrado com os filtros selecionados.</p>';
+                return;
+            }
+
+            // Coletar linhas de faturamento de todos os TEDs filtrados
+            // linha: { ted, up, objeto, fase, dataPrevista, qtdePlan, valorUnit, valorPrev, entregas:[{data,qtde,nf,valorReal}], qtdeReal, valorReal, status }
+            const linhasAll = [];
+            tedsFiltrados.forEach(ted => {
+                const objetos = ted.objetos || [];
+                const mapaValorUnit = {};
+                objetos.forEach(o => {
+                    const k = normalizar(o.objeto);
+                    if (k) mapaValorUnit[k] = parseNumber(o.valorUnitario) || 0;
+                });
+                const hoje = new Date();
+                (ted.fisicos || []).forEach(f => {
+                    const objKey    = normalizar(f.objeto);
+                    const qtdePlan  = parseNumber(f.qtde) || 0;
+                    const valorUnit = mapaValorUnit[objKey] || 0;
+                    const valorPrev = qtdePlan * valorUnit;
+
+                    let dataPrevista = null;
+                    try {
+                        if (f.anoFinal && f.mesFinal) dataPrevista = new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
+                        else if (f.mFinal != null && ted.primeiraDescentralizacao) {
+                            const base = new Date(ted.primeiraDescentralizacao + 'T00:00:00');
+                            base.setMonth(base.getMonth() + parseInt(f.mFinal)); base.setDate(28);
+                            dataPrevista = base;
+                        }
+                    } catch(e) {}
+
+                    const entregas = (Array.isArray(f.entregas) ? f.entregas : []).map(ent => {
+                        const qtd = parseNumber(ent.quantidade != null ? ent.quantidade : ent.qtde) || 0;
+                        let dataEnt = null;
+                        try { if (ent.data) dataEnt = new Date(ent.data + 'T00:00:00'); } catch(e) {}
+                        return { data: dataEnt, qtde: qtd, nf: ent.nf || '', valorReal: qtd * valorUnit };
+                    });
+
+                    // Filtro por Mês: manter linha se mesFinal ou mês de alguma entrega bater
+                    if (s.meses && s.meses.size > 0) {
+                        const mesPrev = dataPrevista ? dataPrevista.getMonth() + 1 : null;
+                        const mesesEntregas = entregas.map(e => e.data ? e.data.getMonth() + 1 : null).filter(Boolean);
+                        const mesOk = (mesPrev && s.meses.has(String(mesPrev))) || mesesEntregas.some(m => s.meses.has(String(m)));
+                        if (!mesOk) return;
+                    }
+                    // Filtro por Ano
+                    if (s.anos && s.anos.size > 0) {
+                        const anoPrev = dataPrevista ? dataPrevista.getFullYear() : null;
+                        const anosEntregas = entregas.map(e => e.data ? e.data.getFullYear() : null).filter(Boolean);
+                        const anoOk = (anoPrev && s.anos.has(String(anoPrev))) || anosEntregas.some(a => s.anos.has(String(a)));
+                        if (!anoOk) return;
+                    }
+
+                    const qtdeReal  = entregas.reduce((s, e) => s + e.qtde, 0);
+                    const valorReal = qtdeReal * valorUnit;
+                    let status = 'planejado';
+                    if (qtdeReal >= qtdePlan && qtdePlan > 0) status = 'pago';
+                    else if (qtdeReal > 0) status = 'em-curso';
+                    else if (dataPrevista && dataPrevista < hoje) status = 'atrasado';
+
+                    linhasAll.push({ ted: ted.numTed || ted.id, up: ted.up || ted.upResponsavel || '—', objeto: f.objeto || '—', fase: f.fase || '—', dataPrevista, qtdePlan, valorUnit, valorPrev, entregas, qtdeReal, valorReal, status });
+                });
+            });
+
+            if (!linhasAll.length) {
+                corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;padding:1rem;">Nenhuma linha de faturamento encontrada com os filtros aplicados.</p>';
+                return;
+            }
+
+            // KPIs globais
+            const totPrev = linhasAll.reduce((s, l) => s + l.valorPrev, 0);
+            const totReal = linhasAll.reduce((s, l) => s + l.valorReal, 0);
+            const pct     = totPrev > 0 ? Math.min((totReal / totPrev) * 100, 999).toFixed(1) : '0.0';
+            const delta   = totReal - totPrev;
+            const kpiHtml = `
+            <div class="fat-kpi-row">
+              <div class="fat-kpi"><div class="fat-kpi-label">Total Previsto</div><div class="fat-kpi-value">R$ ${fmtVal(totPrev)}</div><div class="fat-kpi-sub">${linhasAll.length} linha(s) · ${tedsFiltrados.length} TED(s)</div></div>
+              <div class="fat-kpi"><div class="fat-kpi-label">Total Faturado</div><div class="fat-kpi-value">R$ ${fmtVal(totReal)}</div><div class="fat-kpi-delta ${delta>=0?'pos':'neg'}">${delta>=0?'▲':'▼'} R$ ${fmtVal(Math.abs(delta))} ${delta>=0?'acima':'abaixo'} do previsto</div></div>
+              <div class="fat-kpi"><div class="fat-kpi-label">% Executado</div><div class="fat-kpi-value">${pct}%</div><div class="fat-kpi-sub">do total previsto</div></div>
+            </div>`;
+
+            // Tabela
+            const statusLabel = { pago:'PAGO', planejado:'PLAN.', atrasado:'ATRASO', 'em-curso':'EM CURSO' };
+            const rowsHtml = linhasAll.map(l => {
+                const entStr = l.entregas.length
+                    ? l.entregas.map(e => `${fmtMesAno(e.data)} · ${fmtQtde(e.qtde)} un · R$ ${fmtVal(e.valorReal)}${e.nf ? ' · NF: '+e.nf : ''}`).join('<br>')
+                    : '<span style="color:var(--text-muted);font-style:italic;">Sem entrega</span>';
+                const dataReal = l.entregas.filter(e=>e.data).map(e=>e.data).reduce((a,b)=>a>b?a:b, null);
+                let deltaDataHtml = '';
+                if (l.dataPrevista && dataReal) {
+                    const diffMes = Math.round((dataReal - l.dataPrevista) / (1000*60*60*24*30));
+                    if (diffMes === 0) deltaDataHtml = '<span class="fat-delta-data zero">No prazo</span>';
+                    else if (diffMes > 0) deltaDataHtml = `<span class="fat-delta-data neg">${diffMes}m atraso</span>`;
+                    else deltaDataHtml = `<span class="fat-delta-data pos">${Math.abs(diffMes)}m adiant.</span>`;
+                } else if (!dataReal && l.dataPrevista && l.dataPrevista < new Date()) {
+                    const diffMes = Math.round((new Date() - l.dataPrevista) / (1000*60*60*24*30));
+                    deltaDataHtml = `<span class="fat-delta-data neg">${diffMes}m s/ entrega</span>`;
+                }
+                return `<tr>
+                  <td style="font-weight:600;">${l.ted}</td>
+                  <td>${l.up}</td>
+                  <td>Fase ${l.fase}</td>
+                  <td>${l.objeto}</td>
+                  <td style="text-align:center;">${fmtMesAno(l.dataPrevista)}</td>
+                  <td style="text-align:right;font-family:monospace;">${fmtQtde(l.qtdePlan)}</td>
+                  <td style="text-align:right;font-family:monospace;">R$ ${fmtVal(l.valorUnit)}</td>
+                  <td style="text-align:right;font-family:monospace;">R$ ${fmtVal(l.valorPrev)}</td>
+                  <td style="font-size:0.72rem;">${entStr}</td>
+                  <td style="text-align:right;font-family:monospace;color:#166534;">R$ ${fmtVal(l.valorReal)}</td>
+                  <td style="text-align:center;">${deltaDataHtml}</td>
+                  <td style="text-align:center;"><span class="fat-badge ${l.status}">${statusLabel[l.status]||l.status}</span></td>
+                </tr>`;
+            }).join('');
+
+            const totRow = `<tr style="background:var(--surface-alt);font-weight:700;">
+              <td colspan="7">Total</td>
+              <td style="text-align:right;font-family:monospace;">R$ ${fmtVal(totPrev)}</td>
+              <td></td>
+              <td style="text-align:right;font-family:monospace;color:#166534;">R$ ${fmtVal(totReal)}</td>
+              <td colspan="2" style="text-align:right;font-family:monospace;color:${delta>=0?'#166534':'#A32D2D'};">${delta>=0?'+':'-'}R$ ${fmtVal(Math.abs(delta))}</td>
+            </tr>`;
+
+            const tabelaHtml = `<div style="overflow-x:auto;margin-top:12px;">
+              <table class="tabela-padrao" style="min-width:1100px;font-size:0.75rem;">
+                <thead><tr>
+                  <th>TED</th><th>UP</th><th>Fase</th><th>Objeto</th>
+                  <th>Previsto (mês)</th><th style="text-align:right;">Qtde Plan.</th>
+                  <th style="text-align:right;">Val. Unit.</th><th style="text-align:right;">Val. Prev.</th>
+                  <th>Entregas Realizadas</th><th style="text-align:right;">Val. Real.</th>
+                  <th>Δ Datas</th><th>Status</th>
+                </tr></thead>
+                <tbody>${rowsHtml}</tbody>
+                <tfoot>${totRow}</tfoot>
+              </table>
+            </div>`;
+
+            corpo.innerHTML = kpiHtml + tabelaHtml;
+        }
+
+        function exportarRelatorioFaturamentoExcel() {
+            const corpo = document.getElementById('relPreviewBody');
+            if (!corpo) return;
+            const tabela = corpo.querySelector('table');
+            if (!tabela) { showToast('Gere o relatório antes de exportar.', 'info'); return; }
+            loadSheetJS().then(XLSX => {
+                const ws = XLSX.utils.table_to_sheet(tabela);
+                ws['!cols'] = [8,8,6,20,10,10,12,12,30,12,10,10].map(w => ({ wch: w }));
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Faturamento');
+                XLSX.writeFile(wb, 'relatorio_faturamento.xlsx');
+            }).catch(e => showToast('Erro ao gerar Excel: ' + (e && e.message ? e.message : e), 'danger'));
+        }
+
+        // ── Exportar Excel do relatório ativo ────────────────────
+        function exportarRelatoriosExcel() {
+            const ativo = window._relState ? window._relState.ativo : '';
+            // Relatórios com exportação Excel própria
+            if (ativo === 'ndupano') { try { exportarRelatorioNDUPExcel(); } catch(e) {} return; }
+            if (ativo === 'faturamento') { try { exportarRelatorioFaturamentoExcel(); } catch(e) {} return; }
+
+            // Exportação genérica: extrai dados da tabela em tela
+            const corpo = document.getElementById('relPreviewBody');
+            if (!corpo) { showToast('Nenhum relatório em tela.', 'info'); return; }
+            const tabela = corpo.querySelector('table');
+            if (!tabela) { showToast('Este relatório não tem tabela exportável para Excel.', 'info'); return; }
+
+            loadSheetJS().then(XLSX => {
+                const tituloEl = document.getElementById('relPreviewTitle');
+                const titulo = tituloEl ? tituloEl.textContent.slice(0, 28) : 'Relatorio';
+                const ws = XLSX.utils.table_to_sheet(tabela);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, titulo);
+                XLSX.writeFile(wb, titulo.replace(/[^a-zA-Z0-9]/g, '_') + '.xlsx');
+            }).catch(e => { showToast('Erro ao gerar Excel: ' + (e && e.message ? e.message : e), 'danger'); });
         }
 
         // Modo leitura ativado por padrão

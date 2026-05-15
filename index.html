@@ -1318,6 +1318,13 @@
       <div class="filter-menu" id="relGlobAnoMenu"></div>
     </div>
 
+    <div class="rel-filtro-item" id="relGlobMESWrap" style="position:relative;display:none;">
+      <button type="button" class="filter-btn" id="relGlobMESBtn" onclick="toggleRelGlobFiltro('relGlobMESMenu', 'relGlobMESBtn')">
+        <span id="relGlobMESLabel">Mês</span>
+      </button>
+      <div class="filter-menu" id="relGlobMESMenu"></div>
+    </div>
+
     <button type="button" class="btn-rel-limpar" onclick="limparFiltrosGlobais()">Limpar</button>
   </div>
 </div>
@@ -1403,6 +1410,15 @@
       <div class="rel-card-nome">Rastreamento de NF</div>
       <div class="rel-card-desc">Busca e histórico de notas fiscais com lançamentos associados.</div>
       <span class="rel-card-tipo">Busca</span>
+    </div>
+
+    <div class="rel-card" data-relatorio="faturamento" onclick="ativarRelatorio('faturamento', this)">
+      <div class="rel-card-accent" style="background:#166534;"></div>
+      <span class="rel-card-new">Novo</span>
+      <div class="rel-card-icon ic-green"><i data-lucide="dollar-sign"></i></div>
+      <div class="rel-card-nome">Faturamento</div>
+      <div class="rel-card-desc">Previsto vs. realizado por TED, UP, Fase e Objeto. Filtros por mês e ano.</div>
+      <span class="rel-card-tipo">Tabela comparativa</span>
     </div>
 
   </div>
