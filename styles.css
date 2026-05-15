@@ -3884,21 +3884,11 @@
   background: #fff; border: 0.5px solid rgba(0,0,0,0.10);
   border-radius: 12px; overflow: hidden;
 }
-.obj-card-head-new {
-  padding: 11px 14px; border-bottom: 1px solid rgba(0,0,0,0.05);
-  background: #F7F9FC; display: flex; justify-content: space-between; align-items: center;
-  gap: 12px;
-}
-.obj-card-title-new {
-  font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 7px;
-}
-.obj-card-total-new {
-  font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: #0C447C;
-}
+/* colunas: Objeto | Qtde | V.Unitário | V.Total | Ações */
 .obj-row-new {
   display: grid;
-  grid-template-columns: 1fr 90px 30px 120px 120px 64px;
-  gap: 8px; align-items: center;
+  grid-template-columns: 1fr 110px 150px 160px 56px;
+  gap: 10px; align-items: center;
   padding: 9px 14px; border-bottom: 1px solid rgba(0,0,0,0.05);
   font-size: 12.5px;
 }
@@ -3906,17 +3896,19 @@
 .obj-row-new.linha-adicionada-aditivo { background: #f0fdf4; }
 .obj-name-new { font-weight: 600; color: #1a1a1a; }
 .obj-sub-new  { font-size: 10.5px; color: #94a3b8; margin-top: 1px; }
-.obj-num-new  { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #64748b; text-align: right; }
+.obj-num-new  { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #64748b; text-align: right; white-space: nowrap; }
 .obj-share-bar-new { height: 5px; background: #F7F9FC; border-radius: 3px; overflow: hidden; width: 100%; }
 .obj-share-fill-new { height: 100%; background: #185FA5; border-radius: 3px; transition: width 0.4s; }
-.obj-total-new { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; font-weight: 600; color: #1a1a1a; text-align: right; }
+.obj-total-new { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; font-weight: 600; color: #1a1a1a; text-align: right; white-space: nowrap; }
 .obj-actions-new { display: flex; gap: 4px; justify-content: flex-end; }
 .obj-tfoot-new {
-  display: flex; justify-content: space-between; align-items: center;
+  display: grid;
+  grid-template-columns: 1fr 110px 150px 160px 56px;
+  gap: 10px; align-items: center;
   padding: 8px 14px; background: #F7F9FC; border-top: 1px solid rgba(0,0,0,0.07);
   font-size: 11.5px; color: #64748b;
 }
-.obj-tfoot-total { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: #0C447C; }
+.obj-tfoot-total { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: #0C447C; text-align: right; white-space: nowrap; }
 
 /* Situação do TED — card condicional */
 .situacao-ted-card {

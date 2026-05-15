@@ -3658,26 +3658,24 @@
                         <div class="obj-share-bar-new"><div class="obj-share-fill-new" style="width:${sharePct.toFixed(1)}%;"></div></div>
                         <div class="obj-sub-new">${sharePct.toFixed(1)}% do TED</div>
                     </div>
-                    <div class="obj-num-new">${qtdeHtml}</div>
-                    <div class="obj-num-new" style="font-size:10.5px;color:#94a3b8;">un</div>
+                    <div class="obj-num-new">${qtdeHtml} <span style="color:#cbd5e1;font-size:10px;">un</span></div>
                     <div class="obj-num-new">R$ ${vuHtml}</div>
                     <div class="obj-total-new">R$ ${vtHtml}</div>
                     <div class="obj-actions-new">${editBtn}${delBtn}</div>
                 </div>`;
             }).join('');
 
-            // cabeçalho de colunas
+            // cabeçalho de colunas (mesmo grid: 1fr 110px 150px 160px 56px)
             const headerHtml = `<div class="obj-row-new" style="background:#F7F9FC;border-bottom:1px solid rgba(0,0,0,0.07);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;">
                 <div>Objeto</div>
                 <div style="text-align:right;">Qtde</div>
-                <div></div>
                 <div style="text-align:right;">V. Unitário</div>
                 <div style="text-align:right;">V. Total</div>
                 <div></div>
             </div>`;
             container.innerHTML = headerHtml + rowsHtml;
 
-            // tfoot
+            // tfoot — mesmo grid, total alinhado na coluna V. Total
             const tfootEl = document.getElementById('obj_tfoot');
             const tfootCount = document.getElementById('obj_tfootCount');
             const tfootTotal = document.getElementById('obj_tfootTotal');
