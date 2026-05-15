@@ -786,218 +786,247 @@
                     <!-- PAINEL 1: VISÃO GERAL -->
                     <div class="dt-tab-panel active" data-panel="overview">
 
-                    <!-- INFORMA→.ES DO TED -->
-                    <div class="ted-info-section" id="infoTEDSection">
-                        <div class="ted-info-header">
-                            <h3 class="ted-info-title"><i data-lucide="clipboard-list" class="inline-icon"></i> Informações do TED <span id="info_tituloTedCodigo" class="ted-info-title-code"></span></h3>
-                        </div>
-                        
-                        <div class="ted-info-grid">
-                            <div class="metrics-grid">
-                                <div class="metric-card">
-                                    <div class="metric-label">Valor do TED</div>
-                                    <div class="metric-value" id="kpi_valorTed">R$ 0,00</div>
-                                </div>
-                                <div class="metric-card accent-green">
-                                    <div class="metric-label">Total recebido</div>
-                                    <div class="metric-value green" id="kpi_recebidoTed">R$ 0,00</div>
-                                    <div class="metric-sub" id="kpi_recebidoPercentual">0,0% do valor contratado</div>
-                                </div>
-                                <div class="metric-card accent-red" id="kpi_saldoCard">
-                                    <div class="metric-label">Saldo</div>
-                                    <div class="metric-value red" id="kpi_saldoTed">R$ 0,00</div>
-                                </div>
-                                <div class="metric-card">
-                                    <div class="metric-label">Status</div>
-                                    <div id="kpi_statusTed"><span class="status-pill">Em Execução</span></div>
-                                </div>
+                    <!-- ===== HERO BANNER ===== -->
+                    <div class="ted-hero" id="infoTEDSection">
+                        <div class="ted-hero-left">
+                            <div class="ted-hero-id">
+                                TED&nbsp;<span class="num" id="info_tituloTedCodigo"></span>
                             </div>
+                            <div class="ted-hero-title" id="hero_objetivo">—</div>
+                            <div class="ted-hero-sub" id="hero_sub">—</div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;">
+                            <div class="ted-hero-status" id="hero_statusPill"><span class="dot"></span><span id="hero_statusText">Em Execução</span></div>
+                            <div class="ted-hero-cd" id="hero_countdown" style="display:none;">
+                                <div class="ted-hero-cd-num" id="hero_cd_num">0</div>
+                                <div class="ted-hero-cd-label" id="hero_cd_label">dias restantes</div>
+                            </div>
+                        </div>
+                    </div>
 
-                            <div class="detail-two-col">
-                                <!-- COLUNA ESQUERDA: Dados Cadastrais -->
-                                <div class="dc-card">
-                                    <div class="dc-header">
-                                        <span class="dc-title">Dados cadastrais</span>
-                                        <div style="display:flex;gap:6px;align-items:center;">
-                                            <button class="btn-dc-edit" id="btnEditarInfo" onclick="toggleEditarInfo()" style="display:block;">Editar</button>
-                                            <button class="btn-dc-save auto-style-001" id="btnSalvarInfo" onclick="salvarEdicaoInfo()">Salvar</button>
-                                            <button class="btn-dc-cancel auto-style-001" id="btnCancelarInfo" onclick="cancelarEdicaoInfo()">Cancelar</button>
-                                        </div>
-                                    </div>
+                    <!-- ===== 4 KPI CARDS ===== -->
+                    <div class="kpi-grid">
+                        <!-- KPI 1: Valor do TED -->
+                        <div class="kpi lead-blue">
+                            <div class="kpi-icon b-blue"><i data-lucide="dollar-sign" style="width:14px;height:14px;"></i></div>
+                            <div class="kpi-label">Valor do TED</div>
+                            <div class="kpi-val" id="kpi_valorTed"><span class="cur">R$</span>0,00</div>
+                            <div class="kpi-sub" id="kpi_valorTedSub">—</div>
+                        </div>
+                        <!-- KPI 2: Total Recebido -->
+                        <div class="kpi lead-green">
+                            <div class="kpi-icon b-green"><i data-lucide="trending-up" style="width:14px;height:14px;"></i></div>
+                            <div class="kpi-label">Total Recebido</div>
+                            <div class="kpi-val green" id="kpi_recebidoTed"><span class="cur">R$</span>0,00</div>
+                            <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi_recebidoBar" style="width:0%;background:#639922;"></div></div>
+                            <div class="kpi-sub" id="kpi_recebidoPercentual">0,0% do valor contratado</div>
+                        </div>
+                        <!-- KPI 3: Saldo -->
+                        <div class="kpi lead-red" id="kpi_saldoCard">
+                            <div class="kpi-icon b-red"><i data-lucide="wallet" style="width:14px;height:14px;"></i></div>
+                            <div class="kpi-label">Saldo</div>
+                            <div class="kpi-val" id="kpi_saldoTed"><span class="cur">R$</span>0,00</div>
+                            <div class="kpi-sub" id="kpi_saldoSub">—</div>
+                        </div>
+                        <!-- KPI 4: Vigência -->
+                        <div class="kpi lead-amber">
+                            <div class="kpi-icon b-amber"><i data-lucide="calendar" style="width:14px;height:14px;"></i></div>
+                            <div class="kpi-label">Vigência</div>
+                            <div class="kpi-val" id="kpi_vigenciaVal">— meses</div>
+                            <div class="kpi-chips" id="kpi_vigenciaChips"></div>
+                        </div>
+                    </div>
 
-                                    <!-- Sub-grupo 1: Identificação -->
-                                    <p class="sub-group-title">Identificação</p>
-                                    <div class="field-grid">
-                                        <div>
-                                            <div class="field-label">Plano de Trabalho</div>
-                                            <div class="field-value" id="info_planoTrabalho">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_planoTrabalho">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">TED</div>
-                                            <div class="field-value" id="info_numTed">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_numTed">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">Objeto</div>
-                                            <div class="field-value" id="info_objetivo">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_objetivo">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">Nº TED-SIAFI</div>
-                                            <div class="field-value" id="info_numTedSiafi">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_numTedSiafi">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">Código do Plano de Ação</div>
-                                            <div class="field-value" id="info_codigoPlano">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_codigoPlano">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">Nota do Sistema TED</div>
-                                            <div class="field-value" id="info_notaSistema">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_notaSistema">
-                                        </div>
-                                    </div>
+                    <!-- ===== VIGÊNCIA TIMELINE ===== -->
+                    <div class="vig-card">
+                        <div class="vig-head">
+                            <div class="vig-title">
+                                <i data-lucide="bar-chart-2" style="width:13px;height:13px;color:#185FA5;"></i>
+                                Timeline de Vigência
+                                <span class="vig-pror-pill" id="vig_prorPill" style="display:none;">PRORROGADO</span>
+                            </div>
+                            <div class="vig-meta" id="vig_meta">—</div>
+                        </div>
+                        <div class="vig-bar-wrap" id="vig_barWrap">
+                            <div class="vig-bar-track"></div>
+                            <!-- preenchido via JS -->
+                        </div>
+                        <div class="vig-legend" id="vig_legend"></div>
+                    </div>
 
-                                    <hr class="dc-divider">
+                    <!-- ===== DADOS CADASTRAIS (editável) ===== -->
+                    <div class="dc-card" style="margin-bottom:14px;">
+                        <div class="dc-header">
+                            <span class="dc-title">Dados Cadastrais</span>
+                            <div style="display:flex;gap:6px;align-items:center;">
+                                <button class="btn-dc-edit" id="btnEditarInfo" onclick="toggleEditarInfo()" style="display:block;">Editar</button>
+                                <button class="btn-dc-save auto-style-001" id="btnSalvarInfo" onclick="salvarEdicaoInfo()">Salvar</button>
+                                <button class="btn-dc-cancel auto-style-001" id="btnCancelarInfo" onclick="cancelarEdicaoInfo()">Cancelar</button>
+                            </div>
+                        </div>
 
-                                    <!-- Sub-grupo 2: Unidades envolvidas -->
-                                    <p class="sub-group-title">Unidades envolvidas</p>
-                                    <div class="field-grid">
-                                        <div>
-                                            <div class="field-label">UP Responsável</div>
-                                            <div class="field-value" id="info_upResponsavel">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_upResponsavel">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">UG Executora</div>
-                                            <div class="field-value" id="info_egExecutora">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_egExecutora">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">Unidade Descentralizadora</div>
-                                            <div class="field-value" id="info_unidadeDesc">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_unidadeDesc">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">UG Descentralizadora</div>
-                                            <div class="field-value" id="info_ugDesc">→</div>
-                                            <input type="text" class="ted-info-input auto-style-001" id="edit_ugDesc">
-                                        </div>
-                                    </div>
+                        <p class="sub-group-title">Identificação</p>
+                        <div class="field-grid">
+                            <div>
+                                <div class="field-label">Plano de Trabalho</div>
+                                <div class="field-value" id="info_planoTrabalho">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_planoTrabalho">
+                            </div>
+                            <div>
+                                <div class="field-label">TED</div>
+                                <div class="field-value" id="info_numTed">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_numTed">
+                            </div>
+                            <div>
+                                <div class="field-label">Objeto</div>
+                                <div class="field-value" id="info_objetivo">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_objetivo">
+                            </div>
+                            <div>
+                                <div class="field-label">Nº TED-SIAFI</div>
+                                <div class="field-value" id="info_numTedSiafi">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_numTedSiafi">
+                            </div>
+                            <div>
+                                <div class="field-label">Código do Plano de Ação</div>
+                                <div class="field-value" id="info_codigoPlano">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_codigoPlano">
+                            </div>
+                            <div>
+                                <div class="field-label">Nota do Sistema TED</div>
+                                <div class="field-value" id="info_notaSistema">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_notaSistema">
+                            </div>
+                        </div>
 
-                                    <hr class="dc-divider">
+                        <hr class="dc-divider">
 
-                                    <!-- Sub-grupo 3: Vigência -->
-                                    <p class="sub-group-title">Vigência</p>
-                                    <div class="field-grid" style="margin-bottom:0;">
-                                        <div>
-                                            <div class="field-label">Início</div>
-                                            <div class="field-value" id="info_inicioVigencia">→</div>
-                                            <input type="date" class="ted-info-input auto-style-001" id="edit_inicioVigencia" onchange="calcularFimVigenciaEdit()">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">Fim</div>
-                                            <div class="field-value" id="info_fimVigencia">→</div>
-                                            <input type="date" class="ted-info-input auto-style-001" id="edit_fimVigencia" readonly>
-                                        </div>
-                                        <div>
-                                            <div class="field-label">1ª Descentralização</div>
-                                            <div class="field-value" id="info_primeiraDescentralizacao">→</div>
-                                            <input type="date" class="ted-info-input auto-style-001" id="edit_primeiraDescentralizacao">
-                                        </div>
-                                        <div>
-                                            <div class="field-label">Vigência Atual (meses)</div>
-                                            <div class="field-value" id="info_vigencia">→</div>
-                                            <input type="number" class="ted-info-input auto-style-001" id="edit_vigencia" min="0" oninput="calcularFimVigenciaEdit()">
-                                        </div>
-                                    </div>
+                        <p class="sub-group-title">Unidades envolvidas</p>
+                        <div class="field-grid">
+                            <div>
+                                <div class="field-label">UP Responsável</div>
+                                <div class="field-value" id="info_upResponsavel">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_upResponsavel">
+                            </div>
+                            <div>
+                                <div class="field-label">UG Executora</div>
+                                <div class="field-value" id="info_egExecutora">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_egExecutora">
+                            </div>
+                            <div>
+                                <div class="field-label">Unidade Descentralizadora</div>
+                                <div class="field-value" id="info_unidadeDesc">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_unidadeDesc">
+                            </div>
+                            <div>
+                                <div class="field-label">UG Descentralizadora</div>
+                                <div class="field-value" id="info_ugDesc">—</div>
+                                <input type="text" class="ted-info-input auto-style-001" id="edit_ugDesc">
+                            </div>
+                        </div>
+
+                        <hr class="dc-divider">
+
+                        <p class="sub-group-title">Vigência</p>
+                        <div class="field-grid" style="margin-bottom:0;">
+                            <div>
+                                <div class="field-label">Início</div>
+                                <div class="field-value" id="info_inicioVigencia">—</div>
+                                <input type="date" class="ted-info-input auto-style-001" id="edit_inicioVigencia" onchange="calcularFimVigenciaEdit()">
+                            </div>
+                            <div>
+                                <div class="field-label">Fim</div>
+                                <div class="field-value" id="info_fimVigencia">—</div>
+                                <input type="date" class="ted-info-input auto-style-001" id="edit_fimVigencia" readonly>
+                            </div>
+                            <div>
+                                <div class="field-label">1ª Descentralização</div>
+                                <div class="field-value" id="info_primeiraDescentralizacao">—</div>
+                                <input type="date" class="ted-info-input auto-style-001" id="edit_primeiraDescentralizacao">
+                            </div>
+                            <div>
+                                <div class="field-label">Vigência Atual (meses)</div>
+                                <div class="field-value" id="info_vigencia">—</div>
+                                <input type="number" class="ted-info-input auto-style-001" id="edit_vigencia" min="0" oninput="calcularFimVigenciaEdit()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== ADITIVOS / APOSTILAMENTOS (cards visuais) ===== -->
+                    <div class="dc-card" style="margin-bottom:14px;">
+                        <div class="dc-header">
+                            <span class="dc-title">Aditivos / Apostilamentos</span>
+                            <span class="badge-neutro" id="aditivosCounter"></span>
+                        </div>
+                        <div id="info_alteracoesHistorico" class="aditivo-cards-list"></div>
+                        <div class="aditivos-footer" style="margin-top:10px;">
+                            <button class="btn-add-aditivo" onclick="abrirModalAlteracao()">Adicionar aditivo / apostilamento</button>
+                        </div>
+                    </div>
+
+                    <!-- ===== SITUAÇÃO DO TED (condicional) ===== -->
+                    <div id="situacaoTEDSection" style="display:none;margin-bottom:14px;">
+                        <div class="situacao-ted-card" id="situacaoTEDCard">
+                            <div class="dc-header" style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(0,0,0,0.06);">
+                                <span class="dc-title" style="font-size:12.5px;font-weight:600;">Situação do TED</span>
+                            </div>
+                            <div class="field-grid" style="margin-bottom:0;">
+                                <div>
+                                    <div class="field-label">Situação TED</div>
+                                    <div class="field-value" id="info_situacaoTED">—</div>
+                                    <select class="ted-info-input auto-style-001" id="edit_situacaoTED" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
+                                        <option value="">--</option>
+                                        <option value="finalizado">TED Finalizado</option>
+                                        <option value="denunciado">TED Denunciado</option>
+                                    </select>
                                 </div>
-
-                                <!-- COLUNA DIREITA: dois cards empilhados -->
-                                <div class="detail-right-col">
-                                    <!-- Card Aditivos / Apostilamentos -->
-                                                        <div class="dc-card">
-                                                            <div class="dc-header">
-                                                                <span class="dc-title">Aditivos / Apostilamentos</span>
-                                                                <span class="badge-neutro" id="aditivosCounter"></span>
-                                                            </div>
-                                                            <div id="info_alteracoesHistorico" class="aditivo-historico ted-info-historico auto-style-001"></div>
-                                                            <div class="aditivos-footer">
-                                                                <button class="btn-add-aditivo" onclick="abrirModalAlteracao()">Adicionar aditivo / apostilamento</button>
-                                                            </div>
-                                                        </div>
-
-                                    <!-- Card Situação do TED -->
-                                    <div class="dc-card">
-                                        <div class="dc-header">
-                                            <span class="dc-title">Situação do TED</span>
-                                        </div>
-                                        <div class="field-grid" style="margin-bottom:0;">
-                                            <div>
-                                                <div class="field-label">Situação TED</div>
-                                                <div class="field-value" id="info_situacaoTED">→</div>
-                                                <select class="ted-info-input auto-style-001" id="edit_situacaoTED" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
-                                                    <option value="">--</option>
-                                                    <option value="finalizado">TED Finalizado</option>
-                                                    <option value="denunciado">TED Denunciado</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <div class="field-label">Data entrega/denúncia</div>
-                                                <div class="field-value" id="info_dataEntregaDenuncia">→</div>
-                                                <input type="date" class="ted-info-input auto-style-001" id="edit_dataEntregaDenuncia" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
-                                            </div>
-                                            <div>
-                                                <div class="field-label">Prazo do Relatório Final</div>
-                                                <div class="field-value" id="info_prazoRelatorio">→</div>
-                                                <input type="date" class="ted-info-input auto-style-001" id="edit_prazoRelatorio" readonly>
-                                            </div>
-                                            <div>
-                                                <div class="field-label">Data da Entrega do Relatório</div>
-                                                <div class="field-value" id="info_dataEntregaRelatorio">→</div>
-                                                <input type="date" class="ted-info-input auto-style-001" id="edit_dataEntregaRelatorio" onchange="atualizarStatusPorEntregaRelatorio();">
-                                            </div>
-                                        </div>
-                                        <!-- Campos ocultos para compatibilidade JS -->
-                                        <div id="info_statusTED" class="auto-style-001"></div>
-                                        <input type="text" id="edit_statusTED" readonly class="auto-style-001">
-                                        <span id="info_alteracoesResumo" class="auto-style-001"></span>
-                                    </div>
+                                <div>
+                                    <div class="field-label">Data entrega/denúncia</div>
+                                    <div class="field-value" id="info_dataEntregaDenuncia">—</div>
+                                    <input type="date" class="ted-info-input auto-style-001" id="edit_dataEntregaDenuncia" onchange="calcularPrazoRelatorio(); atualizarStatusPorEntregaRelatorio();">
+                                </div>
+                                <div>
+                                    <div class="field-label">Prazo do Relatório Final</div>
+                                    <div class="field-value" id="info_prazoRelatorio">—</div>
+                                    <input type="date" class="ted-info-input auto-style-001" id="edit_prazoRelatorio" readonly>
+                                </div>
+                                <div>
+                                    <div class="field-label">Data da Entrega do Relatório</div>
+                                    <div class="field-value" id="info_dataEntregaRelatorio">—</div>
+                                    <input type="date" class="ted-info-input auto-style-001" id="edit_dataEntregaRelatorio" onchange="atualizarStatusPorEntregaRelatorio();">
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- CADASTRO DE OBJETOS -->
+                    <!-- Campos ocultos para compatibilidade JS (info_statusTED, edit_statusTED, info_alteracoesResumo) -->
+                    <div id="info_statusTED" class="auto-style-001" style="display:none;"></div>
+                    <input type="text" id="edit_statusTED" readonly class="auto-style-001" style="display:none;">
+                    <span id="info_alteracoesResumo" class="auto-style-001" style="display:none;"></span>
+
+                    <!-- ===== CADASTRO DE OBJETOS (share-bar) ===== -->
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="package" class="inline-icon-sm"></i> Cadastro de Objetos <span class="section-count-badge" id="count-objetos">0</span></h3>
                             <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalObjeto()">+ Adicionar</button></div>
                         </div>
                         <div class="detalhe-secao-body">
-                        <div>
-                        <div class="table-wrapper" style="max-width: 900px; overflow-x: auto;">
-                            <table class="tabela-padrao auto-style-013">
-                                <thead>
-                                    <tr>
-                                        <th class="col-objeto col-texto">Objeto</th>
-                                        <th class="col-qtde">Qtde</th>
-                                        <th class="col-valor">Valor Unit.</th>
-                                        <th class="col-valor">Valor Total</th>
-                                        <th class="col-acao">Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelaObjetos">
-                                    <tr><td colspan="5" class="auto-style-014">Nenhum objeto cadastrado</td></tr>
-                                </tbody>
-                            </table>
+                            <div id="objCardNew" class="obj-card-new">
+                                <div class="obj-card-head-new">
+                                    <div class="obj-card-title-new"><i data-lucide="package" style="width:13px;height:13px;color:#185FA5;"></i> Objetos do TED</div>
+                                    <div class="obj-card-total-new" id="obj_totalCard">R$ 0,00</div>
+                                </div>
+                                <div id="tabelaObjetos">
+                                    <div style="text-align:center;padding:1.5rem;color:#94a3b8;font-size:12.5px;">Nenhum objeto cadastrado</div>
+                                </div>
+                                <div class="obj-tfoot-new" id="obj_tfoot" style="display:none;">
+                                    <span id="obj_tfootCount">0 objeto(s)</span>
+                                    <span class="obj-tfoot-total" id="obj_tfootTotal">R$ 0,00</span>
+                                </div>
+                            </div>
+                            <!-- Alerta de divergência entre Cadastro Financeiro e Cadastro de Objetos -->
+                            <div id="divergenciaFinanceiroAlert" class="alert-divergencia" aria-live="polite"></div>
                         </div>
-                        </div>
-                        <!-- Alerta de divergência entre Cadastro Financeiro e Cadastro de Objetos -->
-                        <div id="divergenciaFinanceiroAlert" class="alert-divergencia" aria-live="polite"></div>
-                    </div>
                     </div>
 
                     </div><!-- /dt-tab-panel overview -->

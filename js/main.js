@@ -2800,101 +2800,313 @@
             container.innerHTML = html;
         }
 
+        // ─── helpers para o redesign da Visão Geral ───────────────────────────
+
+        function _fmtData(data) {
+            if (!data) return '';
+            const norm = normalizarData(String(data));
+            const d = new Date(norm + 'T00:00:00');
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString('pt-BR');
+        }
+        function _fmtDataInput(data) {
+            if (!data) return '';
+            const norm = normalizarData(String(data));
+            const d = new Date(norm + 'T00:00:00');
+            if (isNaN(d.getTime())) return '';
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function _fmtMoeda(v) {
+            return `R$ ${Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+        }
+
+        function _renderVigenciaTimeline(ted, alteracoes) {
+            const wrap = document.getElementById('vig_barWrap');
+            const legend = document.getElementById('vig_legend');
+            const metaEl = document.getElementById('vig_meta');
+            const prorPill = document.getElementById('vig_prorPill');
+            if (!wrap) return;
+
+            const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
+            const totalMesesAdic = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
+            const vigOrigMeses = parseInt(ted.vigencia) || 0;
+            const vigTotalMeses = vigOrigMeses + totalMesesAdic;
+            const hasPror = totalMesesAdic > 0;
+
+            if (!ted.inicioVigencia || vigTotalMeses === 0) {
+                wrap.innerHTML = '<div style="text-align:center;padding:18px;color:#94a3b8;font-size:12px;">Datas de vigência não informadas</div>';
+                if (legend) legend.innerHTML = '';
+                if (metaEl) metaEl.textContent = '';
+                if (prorPill) prorPill.style.display = 'none';
+                return;
+            }
+
+            const dInicio = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+            const dFimOrig = new Date(dInicio); dFimOrig.setMonth(dFimOrig.getMonth() + vigOrigMeses);
+            const dFimTotal = new Date(dInicio); dFimTotal.setMonth(dFimTotal.getMonth() + vigTotalMeses);
+            const dHoje = new Date(); dHoje.setHours(0,0,0,0);
+            const dDesc = ted.primeiraDescentralizacao ? new Date(normalizarData(ted.primeiraDescentralizacao) + 'T00:00:00') : null;
+
+            const totalSpan = dFimTotal - dInicio || 1;
+            const pct = (d) => Math.max(0, Math.min(100, ((d - dInicio) / totalSpan) * 100));
+            const fmtBr = (d) => d.toLocaleDateString('pt-BR');
+
+            const origPct = hasPror ? pct(dFimOrig) : 100;
+            const prorPct = hasPror ? (100 - origPct) : 0;
+            const hojePct = pct(dHoje);
+            const descPct = dDesc ? pct(dDesc) : null;
+
+            let html = `<div class="vig-bar-track"></div>`;
+            html += `<div class="vig-bar-orig${hasPror?' with-pror':''}" style="width:${origPct}%;"></div>`;
+            if (hasPror) {
+                html += `<div class="vig-bar-pror" style="left:${origPct}%;width:${prorPct}%;"></div>`;
+            }
+            // tick início
+            html += `<div class="vig-tick start" style="left:0%"><div class="vig-tick-label top">${fmtBr(dInicio)}</div><div class="vig-tick-label">Início</div></div>`;
+            // tick fim original (só se houver prorrogação)
+            if (hasPror) {
+                html += `<div class="vig-tick original-end" style="left:${origPct}%"><div class="vig-tick-label" style="color:#c07a1c;font-weight:600;">Orig</div></div>`;
+            }
+            // tick fim total
+            html += `<div class="vig-tick end" style="left:100%"><div class="vig-tick-label top">${fmtBr(dFimTotal)}</div><div class="vig-tick-label">Fim</div></div>`;
+            // marcador 1ª desc
+            if (descPct !== null) {
+                html += `<div class="vig-desc-marker" style="left:${descPct}%" title="1ª Descentralização: ${fmtBr(dDesc)}"></div>`;
+            }
+            // linha hoje
+            if (hojePct >= 0 && hojePct <= 100) {
+                html += `<div class="vig-today" style="left:${hojePct}%"><div class="vig-today-label">Hoje</div></div>`;
+            }
+            wrap.innerHTML = html;
+
+            // legenda
+            let legHtml = `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:linear-gradient(to right,#E6F1FB,#B3D1EF);"></span>Vigência original (${vigOrigMeses}m)</span>`;
+            if (hasPror) legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:repeating-linear-gradient(45deg,#EAF3DE,#EAF3DE 3px,#C8E0A2 3px,#C8E0A2 6px);"></span>Prorrogação (+${totalMesesAdic}m)</span>`;
+            if (descPct !== null) legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:#639922;border-radius:50%;"></span>1ª Descentralização</span>`;
+            legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:#A32D2D;width:3px;border-radius:2px;"></span>Hoje</span>`;
+            if (legend) legend.innerHTML = legHtml;
+
+            if (metaEl) metaEl.textContent = `${fmtBr(dInicio)} → ${fmtBr(dFimTotal)} · ${vigTotalMeses} meses`;
+            if (prorPill) prorPill.style.display = hasPror ? '' : 'none';
+        }
+
+        function _buildAditivoChips(a) {
+            const chips = [];
+            const isAditivo = a.tipo === 'aditivo';
+            // Vigência
+            if (isAditivo && a.meses) {
+                const s = a.meses >= 0 ? `+${a.meses}m` : `${a.meses}m`;
+                chips.push(`<span class="change-chip-new"><span class="ch-field">Vigência</span><span class="ch-new">${s}</span></span>`);
+            }
+            // Valor
+            const pRaw = (typeof a.prevValorTed !== 'undefined' && a.prevValorTed !== null) ? Number(a.prevValorTed) : null;
+            const nRaw = (typeof a.valorTed !== 'undefined' && a.valorTed !== null && a.valorTed !== '') ? Number(a.valorTed) : null;
+            if (nRaw !== null && !isNaN(nRaw) && pRaw !== nRaw) {
+                const pStr = (pRaw !== null && !isNaN(pRaw)) ? `R$${pRaw.toLocaleString('pt-BR',{minimumFractionDigits:2})}` : '—';
+                chips.push(`<span class="change-chip-new amber"><span class="ch-field">Valor</span><span class="ch-old">${pStr}</span><span class="ch-arrow">→</span><span class="ch-new">R$${nRaw.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></span>`);
+            }
+            // campos simples
+            if (a.camposAlterados) {
+                Object.keys(a.camposAlterados).forEach(k => {
+                    const ch = a.camposAlterados[k];
+                    const def = (typeof ADITIVO_CAMPOS_CLONE !== 'undefined') ? ADITIVO_CAMPOS_CLONE.find(c => c.key === k) : null;
+                    const label = (def && def.label) || (ch && ch.label) || k;
+                    const deStr = ch.de !== undefined ? String(ch.de) : '—';
+                    const paraStr = ch.para !== undefined ? String(ch.para) : '—';
+                    chips.push(`<span class="change-chip-new"><span class="ch-field">${label}</span><span class="ch-old">${deStr}</span><span class="ch-arrow">→</span><span class="ch-new">${paraStr}</span></span>`);
+                });
+            }
+            // tabelas alteradas (resumo)
+            if (a.tabelasAlteradas) {
+                const keys = Array.isArray(a.tabelasAlteradas) ? a.tabelasAlteradas.map(t => t.key || t) : Object.keys(a.tabelasAlteradas);
+                keys.forEach(k => chips.push(`<span class="change-chip-new"><span class="ch-field">Tabela</span><span class="ch-new">${k}</span></span>`));
+            }
+            if (!chips.length) chips.push(`<span class="change-chip-new"><span class="ch-field" style="color:#94a3b8;">Sem alterações registradas</span></span>`);
+            return chips.join('');
+        }
+
+        function _renderAditivoCards(alteracoes, container) {
+            if (!container) return;
+            if (!alteracoes || !alteracoes.length) {
+                container.innerHTML = `<div style="text-align:center;padding:1.2rem;color:#94a3b8;font-size:12.5px;">Nenhum aditivo / apostilamento cadastrado</div>`;
+                return;
+            }
+            let contAdit = 0, contApost = 0;
+            const html = alteracoes.map((a, idx) => {
+                const isAditivo = a.tipo === 'aditivo';
+                if (isAditivo) contAdit++; else contApost++;
+                const ordinal = isAditivo ? contAdit : contApost;
+                const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
+                const dataStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+                const badgeClass = isAditivo ? '' : ' apostilamento';
+                const chips = _buildAditivoChips(a);
+                const viewBtn = `<button class="btn-icon-action" onclick="abrirModalAlteracao(${idx}, true)" title="Ver"><i data-lucide="eye" class="inline-icon-sm"></i></button>`;
+                const editBtn = `<button class="btn-icon-action edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>`;
+                const delBtn = `<button class="btn-icon-action delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
+                const actions = window._readOnlyMode ? viewBtn : `${viewBtn}${editBtn}${delBtn}`;
+                return `<div class="aditivo-card-new">
+                    <div class="aditivo-num-badge${badgeClass}">${ordinal}</div>
+                    <div class="aditivo-card-body">
+                        <div class="aditivo-card-line1">
+                            <span class="aditivo-card-tipo">${tipoLabel}</span>
+                            <span class="aditivo-card-date">${dataStr}</span>
+                        </div>
+                        <div class="change-chips">${chips}</div>
+                    </div>
+                    <div class="aditivo-card-actions">${actions}</div>
+                </div>`;
+            }).join('');
+            container.innerHTML = html;
+        }
+
         // Exibir informações do TED
         function exibirInformacoesTED() {
             if (!window.tedSelecionado) return;
 
             const ted = window.tedSelecionado;
-            // Total recebido e saldo agora vindos da tabela Recursos Gerais (IMBEL)
             const totalRecebido = (ted.recursosGerais || []).reduce((soma, item) => soma + (parseFloat(item.valor) || 0), 0);
             const valorTedAtual = parseNumber(ted.valorTed) || 0;
             const saldoTed = valorTedAtual - totalRecebido;
-            // Determinar status usando a regra centralizada (data de entrega/denúncia / vigência)
             const statusObj = getDisplayStatus(ted) || { text: (ted.statusTED || ted.status || 'Em Execução'), origin: 'inferido', vigenciaVencida: false };
             const statusText = statusObj.text || (ted.statusTED || ted.status || 'Em Execução');
             const vigenciaVencidaFlag = !!statusObj.vigenciaVencida;
 
-            const elTituloTedCodigo = document.getElementById('info_tituloTedCodigo');
-            if (elTituloTedCodigo) {
-                elTituloTedCodigo.textContent = ted.numTed ? String(ted.numTed) : '';
+            // Migrar dados legados antes de qualquer leitura de alterações
+            migrarParaAlteracoesUnificadas(ted);
+            const alteracoes = ted.alteracoes || [];
+            const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
+            const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
+            const vigOrigMeses = parseInt(ted.vigencia) || 0;
+            const vigTotalMeses = vigOrigMeses + totalAditivoMeses;
+
+            // ── HERO ──────────────────────────────────────────────
+            const elCod = document.getElementById('info_tituloTedCodigo');
+            if (elCod) elCod.textContent = ted.numTed ? String(ted.numTed) : '';
+
+            const heroObj = document.getElementById('hero_objetivo');
+            if (heroObj) heroObj.textContent = ted.objetivo || '(sem descrição)';
+
+            const heroSub = document.getElementById('hero_sub');
+            if (heroSub) {
+                const partes = [];
+                if (ted.upResponsavel) partes.push(`UP: ${ted.upResponsavel}`);
+                if (ted.planoTrabalho) partes.push(`PT: ${ted.planoTrabalho}`);
+                heroSub.textContent = partes.join(' · ') || '—';
             }
-            
-            // Formatar data (para exibição DD/MM/YYYY)
-            const formatarData = (data) => {
-                if (!data) return '';
-                const norm = normalizarData(String(data));
-                // Usar T00:00:00 para evitar deslocamento de fuso horário
-                const d = new Date(norm + 'T00:00:00');
-                if (isNaN(d.getTime())) return '';
-                return d.toLocaleDateString('pt-BR');
-            };
 
-            const formatarMoeda = (valor) => `R$ ${Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const heroPill = document.getElementById('hero_statusPill');
+            const heroStatusText = document.getElementById('hero_statusText');
+            const stNorm = String(statusText || '').toLowerCase();
+            const isVenc = vigenciaVencidaFlag && /em execu/.test(stNorm);
+            const isFinalizado = /finaliz/.test(stNorm);
+            const isDenunciado = /denunci/.test(stNorm);
+            if (heroPill) {
+                heroPill.className = 'ted-hero-status' + (isVenc ? ' status-vencido' : isFinalizado ? ' status-finalizado' : '');
+            }
+            if (heroStatusText) heroStatusText.textContent = isVenc ? 'Vigência Vencida' : statusText;
 
-            const elKpiValor = document.getElementById('kpi_valorTed');
-            const elKpiRecebido = document.getElementById('kpi_recebidoTed');
-            const elKpiSaldo = document.getElementById('kpi_saldoTed');
-            const elKpiStatus = document.getElementById('kpi_statusTed');
-            const elKpiPercentual = document.getElementById('kpi_recebidoPercentual');
-
-            if (elKpiValor) elKpiValor.textContent = formatarMoeda(valorTedAtual);
-            if (elKpiRecebido) elKpiRecebido.textContent = formatarMoeda(totalRecebido);
-            if (elKpiSaldo) {
-                const saldoCard = document.getElementById('kpi_saldoCard');
-                if (saldoTed < 0) {
-                    elKpiSaldo.textContent = `- ${formatarMoeda(Math.abs(saldoTed))}`;
-                    elKpiSaldo.className = 'metric-value red';
-                    if (saldoCard) { saldoCard.classList.remove('accent-green'); saldoCard.classList.add('accent-red'); }
+            // Countdown
+            const heroCD = document.getElementById('hero_countdown');
+            const heroCDNum = document.getElementById('hero_cd_num');
+            const heroCDLabel = document.getElementById('hero_cd_label');
+            if (heroCD && heroCDNum && heroCDLabel && ted.inicioVigencia && vigTotalMeses > 0) {
+                const dInicio = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                const dFim = new Date(dInicio); dFim.setMonth(dFim.getMonth() + vigTotalMeses);
+                const hoje = new Date(); hoje.setHours(0,0,0,0);
+                const diffMs = dFim - hoje;
+                const diffDias = Math.round(diffMs / 86400000);
+                if (isFinalizado || isDenunciado) {
+                    heroCD.style.display = 'none';
                 } else {
-                    elKpiSaldo.textContent = formatarMoeda(saldoTed);
-                    elKpiSaldo.className = 'metric-value green';
-                    if (saldoCard) { saldoCard.classList.remove('accent-red'); saldoCard.classList.add('accent-green'); }
+                    heroCD.style.display = '';
+                    heroCDNum.textContent = Math.abs(diffDias);
+                    heroCDLabel.textContent = diffDias < 0 ? 'dias vencido' : 'dias restantes';
+                }
+            } else if (heroCD) {
+                heroCD.style.display = 'none';
+            }
+
+            // ── KPI CARDS ─────────────────────────────────────────
+            // KPI 1: Valor do TED
+            const elKpiValor = document.getElementById('kpi_valorTed');
+            if (elKpiValor) elKpiValor.innerHTML = `<span class="cur">R$</span>${valorTedAtual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            const elKpiValorSub = document.getElementById('kpi_valorTedSub');
+            if (elKpiValorSub) {
+                if (aditivos.length > 0) {
+                    const adivosComValor = aditivos.filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
+                    if (adivosComValor.length) {
+                        const lastA = adivosComValor[adivosComValor.length - 1];
+                        const prevNum = Number(lastA.prevValorTed || 0);
+                        elKpiValorSub.innerHTML = prevNum ? `<span style="text-decoration:line-through;color:#94a3b8;">R$${prevNum.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span> original` : `${aditivos.length} aditivo(s)`;
+                    } else {
+                        elKpiValorSub.textContent = `${aditivos.length} aditivo(s)`;
+                    }
+                } else {
+                    elKpiValorSub.textContent = 'Valor contratado';
                 }
             }
 
-            if (elKpiStatus) {
-                // Mostrar o pill de status e, se aplicável, uma nota de vigência vencida abaixo (mantendo status como 'Em Execução')
-                let statusHtml = `<span class="status-pill">${statusText}</span>`;
-                const stNorm = String(statusText || '').toLowerCase();
-                const showVigNote = (/execu|em execução/.test(stNorm) && vigenciaVencidaFlag) || (/vigênc.*venc|vigencia.*venc/.test(stNorm));
-                if (showVigNote) {
-                    statusHtml += `<div class="metric-sub" style="color:var(--warning);margin-top:6px;">Vigência Vencida</div>`;
+            // KPI 2: Total recebido
+            const elKpiRecebido = document.getElementById('kpi_recebidoTed');
+            if (elKpiRecebido) elKpiRecebido.innerHTML = `<span class="cur">R$</span>${totalRecebido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            const pct = valorTedAtual > 0 ? (totalRecebido / valorTedAtual) * 100 : 0;
+            const elBar = document.getElementById('kpi_recebidoBar');
+            if (elBar) elBar.style.width = Math.min(100, pct) + '%';
+            const elKpiPerc = document.getElementById('kpi_recebidoPercentual');
+            if (elKpiPerc) elKpiPerc.textContent = `${pct.toFixed(1).replace('.',',')}% do valor contratado`;
+
+            // KPI 3: Saldo
+            const elKpiSaldo = document.getElementById('kpi_saldoTed');
+            const saldoCard = document.getElementById('kpi_saldoCard');
+            if (elKpiSaldo) {
+                const saldoIcon = saldoCard ? saldoCard.querySelector('.kpi-icon') : null;
+                if (saldoTed < 0) {
+                    elKpiSaldo.innerHTML = `<span class="cur">-R$</span>${Math.abs(saldoTed).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+                    elKpiSaldo.className = 'kpi-val red';
+                    if (saldoCard) { saldoCard.className = 'kpi lead-red'; }
+                    if (saldoIcon) saldoIcon.className = 'kpi-icon b-red';
+                } else {
+                    elKpiSaldo.innerHTML = `<span class="cur">R$</span>${saldoTed.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+                    elKpiSaldo.className = 'kpi-val green';
+                    if (saldoCard) { saldoCard.className = 'kpi lead-green'; }
+                    if (saldoIcon) saldoIcon.className = 'kpi-icon b-green';
                 }
-                elKpiStatus.innerHTML = statusHtml;
+            }
+            const elKpiSaldoSub = document.getElementById('kpi_saldoSub');
+            if (elKpiSaldoSub) elKpiSaldoSub.textContent = saldoTed < 0 ? 'Valor a pagar excedido' : 'Disponível para receber';
+
+            // KPI 4: Vigência
+            const elVig = document.getElementById('kpi_vigenciaVal');
+            if (elVig) elVig.textContent = vigTotalMeses ? `${vigTotalMeses} meses` : '— meses';
+            const elVigChips = document.getElementById('kpi_vigenciaChips');
+            if (elVigChips) {
+                let chipsHtml = '';
+                if (ted.inicioVigencia) {
+                    const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    chipsHtml += `<span class="kpi-chip blue">${dI.toLocaleDateString('pt-BR')}</span>`;
+                }
+                if (vigTotalMeses && ted.inicioVigencia) {
+                    const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    const dF = new Date(dI); dF.setMonth(dF.getMonth() + vigTotalMeses);
+                    chipsHtml += `<span class="kpi-chip ${totalAditivoMeses > 0 ? 'green' : 'amber'}">${dF.toLocaleDateString('pt-BR')}</span>`;
+                }
+                elVigChips.innerHTML = chipsHtml;
             }
 
-            if (elKpiPercentual) {
-                const percentual = valorTedAtual > 0 ? ((totalRecebido / valorTedAtual) * 100) : 0;
-                elKpiPercentual.textContent = `${percentual.toFixed(1).replace('.', ',')}% do valor contratado`;
-            }
-            
-            // Formatar data para input (YYYY-MM-DD)
-            const formatarDataInput = (data) => {
-                if (!data) return '';
-                const norm = normalizarData(String(data));
-                // Usar T00:00:00 para evitar deslocamento de fuso horário
-                const d = new Date(norm + 'T00:00:00');
-                if (isNaN(d.getTime())) return '';
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                return `${yyyy}-${mm}-${dd}`;
-            };
-            
-            // Preencher campos de visualização
-            // Coletar todas as alterações de aditivos e apostilamentos para destacar campos modificados
+            // ── TIMELINE DE VIGÊNCIA ──────────────────────────────
+            _renderVigenciaTimeline(ted, alteracoes);
+
+            // ── DADOS CADASTRAIS ──────────────────────────────────
             const todasAlteracoes = {};
-            (ted.alteracoes || [...(ted.aditivos || []), ...(ted.apostilamentos || [])]).forEach(item => {
+            alteracoes.forEach(item => {
                 if (item.camposAlterados && typeof item.camposAlterados === 'object') {
                     Object.keys(item.camposAlterados).forEach(key => {
-                        // Manter a última alteração (mais recente)
                         if (!todasAlteracoes[key]) todasAlteracoes[key] = [];
                         todasAlteracoes[key].push(item.camposAlterados[key]);
                     });
                 }
             });
 
-            // Função helper para exibir campo com destaque de alteração (strikethrough no original)
             const exibirCampoComAlteracao = (elementId, valorAtual, campoKey) => {
                 const el = document.getElementById(elementId);
                 if (!el) return;
@@ -2911,182 +3123,109 @@
             exibirCampoComAlteracao('info_planoTrabalho', ted.planoTrabalho, 'planoTrabalho');
             exibirCampoComAlteracao('info_numTed', ted.numTed, 'numTed');
             exibirCampoComAlteracao('info_objetivo', ted.objetivo, 'objetivo');
-
-            // Migrar dados legados para lista unificada (mover para cima para que aditivos fique disponível)
-            migrarParaAlteracoesUnificadas(ted);
-            const alteracoes = ted.alteracoes || [];
-            const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
-            const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
-
-            // Exibir valor do TED: se houver aditivo com valor, mostrar apenas se realmente alterou
-            let valorDisplay = '-';
-            const aditivosComValor = aditivos.filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
-            if (aditivosComValor.length) {
-                const lastA = aditivosComValor[aditivosComValor.length - 1];
-                const prevRaw = (typeof lastA.prevValorTed !== 'undefined' && lastA.prevValorTed !== null) ? lastA.prevValorTed : null;
-                const novoRaw = lastA.valorTed;
-                const prevNum = (prevRaw === null || prevRaw === '') ? null : Number(prevRaw);
-                const novoNum = (novoRaw === null || novoRaw === '' || typeof novoRaw === 'undefined') ? null : Number(novoRaw);
-                if (prevNum !== null && novoNum !== null && !isNaN(prevNum) && !isNaN(novoNum) && prevNum !== novoNum) {
-                    valorDisplay = `<span class="valor-original-tachado">${prevNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span><span class="valor-aditivo-novo">${novoNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>`;
-                } else if (novoNum !== null && !isNaN(novoNum)) {
-                    valorDisplay = novoNum.toLocaleString('pt-BR', {minimumFractionDigits:2});
-                } else {
-                    valorDisplay = ted.valorTed ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
-                }
-            } else {
-                valorDisplay = ted.valorTed ? Number(ted.valorTed).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '-';
-            }
-            const infoValorEl = document.getElementById('info_valorTed');
-            if (infoValorEl) infoValorEl.innerHTML = valorDisplay;
-            
             exibirCampoComAlteracao('info_codigoPlano', ted.codigoPlano, 'codigoPlano');
             exibirCampoComAlteracao('info_numTedSiafi', ted.numTedSiafi, 'numTedSiafi');
             exibirCampoComAlteracao('info_notaSistema', ted.notaSistema, 'notaSistema');
-            
             exibirCampoComAlteracao('info_upResponsavel', ted.upResponsavel, 'upResponsavel');
             exibirCampoComAlteracao('info_egExecutora', ted.ugExecutora || ted.egExecutora, 'ugExecutora');
             exibirCampoComAlteracao('info_unidadeDesc', ted.unidadeDesc, 'unidadeDesc');
             exibirCampoComAlteracao('info_ugDesc', ted.ugDesc, 'ugDesc');
-            
-            document.getElementById('info_inicioVigencia').textContent = formatarData(ted.inicioVigencia);
-            // Vigência e Fim com suporte a aditivos → mostrar apenas a data ativa e meta original abaixo
-            if (aditivos.length > 0) {
-                const vigOriginal = parseInt(ted.vigencia) || 0;
-                const vigNova = vigOriginal + totalAditivoMeses;
-                document.getElementById('info_vigencia').textContent = vigNova || '-';
 
-                const fimOriginal = formatarData(ted.fimVigencia);
-                // Calcular nova data fim = inicio + vigNova meses
+            document.getElementById('info_inicioVigencia').textContent = _fmtData(ted.inicioVigencia);
+            document.getElementById('info_primeiraDescentralizacao').textContent = _fmtData(ted.primeiraDescentralizacao);
+
+            if (aditivos.length > 0) {
+                document.getElementById('info_vigencia').textContent = vigTotalMeses || '-';
                 let novaDataFim = '';
                 if (ted.inicioVigencia) {
-                    const dInicio = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
-                    if (!isNaN(dInicio.getTime())) {
-                        const dFim = new Date(dInicio);
-                        dFim.setMonth(dFim.getMonth() + vigNova);
-                        novaDataFim = dFim.toLocaleDateString('pt-BR');
+                    const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    if (!isNaN(dI.getTime())) {
+                        const dF = new Date(dI); dF.setMonth(dF.getMonth() + vigTotalMeses);
+                        novaDataFim = dF.toLocaleDateString('pt-BR');
                     }
                 }
                 document.getElementById('info_fimVigencia').innerHTML =
-                    `<div class="fim-vigencia-current">${novaDataFim} <span class="badge-prorrogado">Prorrogado</span></div><div class="fim-vigencia-meta">Original: ${fimOriginal} · ${totalAditivoMeses} meses</div>`;
+                    `<div class="fim-vigencia-current">${novaDataFim} <span class="badge-prorrogado">Prorrogado</span></div><div class="fim-vigencia-meta">Original: ${_fmtData(ted.fimVigencia)} · ${totalAditivoMeses} meses</div>`;
             } else {
                 document.getElementById('info_vigencia').textContent = ted.vigencia || '-';
-                document.getElementById('info_fimVigencia').textContent = formatarData(ted.fimVigencia);
+                document.getElementById('info_fimVigencia').textContent = _fmtData(ted.fimVigencia);
             }
 
-            // Histórico unificado de aditivos e apostilamentos (versão compacta para coluna lateral)
-            if (alteracoes.length > 0) {
-                const nAditivos = aditivos.length;
-                const nApost = alteracoes.filter(a => a.tipo === 'apostilamento').length;
-                let resumoParts = [];
-                if (nAditivos > 0) resumoParts.push(`${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} (+${totalAditivoMeses} meses)`);
-                if (nApost > 0) resumoParts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
-                document.getElementById('info_alteracoesResumo').textContent = `Total: ${resumoParts.join(', ')}`;
-
-                // (f) Atualizar contador lateral — incluir aditivos E apostilamentos
-                const adCountEl = document.getElementById('aditivosCounter');
-                if (adCountEl) {
-                    const _cParts = [];
-                    if (nAditivos > 0) _cParts.push(`${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} (+${totalAditivoMeses}m)`);
-                    if (nApost > 0) _cParts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
-                    adCountEl.textContent = _cParts.join(' · ');
-                }
-
-                // Montar tabela compacta (colunas: #, Tipo, Data, Alterações detalhadas, Ação)
-                let histHtml = '<table class="tabela-aditivos"><thead><tr><th class="col-num">#</th><th class="col-tipo">Tipo</th><th class="col-data">Data</th><th class="col-alteracoes">Alterações</th><th class="col-acao">Ação</th></tr></thead><tbody>';
-                let contAditivo = 0, contApost = 0;
-                alteracoes.forEach((a, idx) => {
-                    const isAditivo = a.tipo === 'aditivo';
-                    if (isAditivo) contAditivo++; else contApost++;
-                    const ordinal = isAditivo ? contAditivo : contApost;
-                    const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
-                    const tipoColor = isAditivo ? '#185FA5' : '#2563eb';
-                    const dataStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
-                    // Construir resumo detalhado de alterações (campos simples + tabelas)
-                    let changesHtml = '';
-                    const hasFieldChanges = a.camposAlterados && Object.keys(a.camposAlterados).length;
-                    const hasTableChanges = a.tabelasAlteradas && ((Array.isArray(a.tabelasAlteradas) && a.tabelasAlteradas.length) || (typeof a.tabelasAlteradas === 'object' && Object.keys(a.tabelasAlteradas).length));
-                    const hasAnyChanges = Boolean(hasFieldChanges || hasTableChanges);
-
-                    if (hasFieldChanges) {
-                        const parts = [];
-                        Object.keys(a.camposAlterados).forEach(k => {
-                            const ch = a.camposAlterados[k];
-                            let label = k;
-                            const def = ADITIVO_CAMPOS_CLONE.find(c => c.key === k);
-                            if (def && def.label) label = def.label;
-                            else if (ch && ch.label) label = ch.label || label;
-                            const tipoCampo = def ? def.type : (ch && ch.type ? ch.type : 'text');
-                            const cellHtml = formatarCelulaAlterada(ch.para, ch.de, tipoCampo);
-                            parts.push(`<div style="margin-bottom:0.2rem;"><strong>${label}:</strong> ${cellHtml}</div>`);
-                        });
-                        changesHtml += parts.join('');
-                    }
-                    if (hasTableChanges) {
-                        changesHtml += gerarResumoTabelasAlteradas(a.tabelasAlteradas, idx);
-                    }
-
-                    // Incluir Valor e Vigência sempre que houver mudança (independente de hasAnyChanges)
-                    const infoParts = [];
-                    // Valor do TED: exibir apenas se houve mudança entre prevValorTed e valorTed
-                    const valorPrevRaw = (typeof a.prevValorTed !== 'undefined' && a.prevValorTed !== null) ? a.prevValorTed : null;
-                    const valorNovoRaw = (typeof a.valorTed !== 'undefined' && a.valorTed !== null && a.valorTed !== '') ? a.valorTed : null;
-                    const valorPrevNum = (valorPrevRaw === null || valorPrevRaw === '') ? null : Number(valorPrevRaw);
-                    const valorNovoNum = (valorNovoRaw === null || valorNovoRaw === '') ? null : Number(valorNovoRaw);
-                    const valorChanged = !((valorPrevNum === null && valorNovoNum === null) || (valorPrevNum !== null && valorNovoNum !== null && !isNaN(valorPrevNum) && !isNaN(valorNovoNum) && valorPrevNum === valorNovoNum));
-                    if (valorChanged) {
-                        const prevStr = (valorPrevNum !== null && !isNaN(valorPrevNum)) ? `R$ ${valorPrevNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}` : '-';
-                        const novoStr = (valorNovoNum !== null && !isNaN(valorNovoNum)) ? `R$ ${valorNovoNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}` : '-';
-                        infoParts.push(`<div class="alt-linha"><strong>Valor:</strong> <span class="alt-de">${prevStr}</span> <span class="alt-arrow">→</span> <span class="alt-para">${novoStr}</span></div>`);
-                    }
-                    // Vigência (Meses): para aditivos, sempre mostrar quando meses != 0
-                    if (isAditivo && a.meses) {
-                        const sinalMeses = a.meses >= 0 ? `+${a.meses}` : `${a.meses}`;
-                        infoParts.push(`<div class="alt-linha"><strong>Vigência:</strong> <span class="alt-para">${sinalMeses} meses</span></div>`);
-                    }
-
-                    if (infoParts.length) changesHtml += infoParts.join('');
-                    if (!changesHtml) changesHtml = '-';
-
-                    const viewBtn = `<button class="btn-icon-action" onclick="abrirModalAlteracao(${idx}, true)" title="Ver alterações"><i data-lucide="eye" class="inline-icon-sm"></i></button>`;
-                    const editBtn = `<button class="btn-icon-action edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>`;
-                    const delBtn = `<button class="btn-icon-action delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
-                    const actionBtns = window._readOnlyMode ? viewBtn : `${viewBtn} ${editBtn} ${delBtn}`;
-                    histHtml += `<tr><td class="col-num">${idx+1}</td><td class="col-tipo" style="color:${tipoColor};font-weight:600;white-space:nowrap;">${tipoLabel}</td><td class="col-data">${dataStr}</td><td class="col-alteracoes" style="max-width:420px;">${changesHtml}</td><td class="col-acao ad-action-cell">${actionBtns}</td></tr>`;
-                });
-                histHtml += '</tbody></table>';
-                document.getElementById('info_alteracoesHistorico').innerHTML = histHtml;
-                document.getElementById('info_alteracoesHistorico').style.display = 'block';
-            } else {
-                document.getElementById('info_alteracoesResumo').textContent = '';
-                document.getElementById('aditivosCounter').textContent = '';
-                // Exibir tabela vazia com colspan=5 conforme especificado
-                const emptyHtml = '<table class="tabela-aditivos"><thead><tr><th class="col-num">#</th><th class="col-tipo">Tipo</th><th class="col-data">Data</th><th class="col-alteracoes">Alterações</th><th class="col-acao">Ação</th></tr></thead><tbody><tr><td colspan="5" style="text-align:center; padding:1rem; color:var(--color-text-secondary);">Nenhum aditivo/apostilamento cadastrado</td></tr></tbody></table>';
-                document.getElementById('info_alteracoesHistorico').innerHTML = emptyHtml;
-                document.getElementById('info_alteracoesHistorico').style.display = 'block';
+            // Exibir valor do TED com aditivo (campo legado info_valorTed — pode não existir no novo layout)
+            const infoValorEl = document.getElementById('info_valorTed');
+            if (infoValorEl) {
+                const adivosComValorLeg = aditivos.filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
+                if (adivosComValorLeg.length) {
+                    const lastA = adivosComValorLeg[adivosComValorLeg.length - 1];
+                    const pN = Number(lastA.prevValorTed || 0); const nN = Number(lastA.valorTed || 0);
+                    if (pN !== nN && pN) {
+                        infoValorEl.innerHTML = `<span class="valor-original-tachado">${pN.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span><span class="valor-aditivo-novo">${nN.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
+                    } else { infoValorEl.textContent = nN ? nN.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-'; }
+                } else { infoValorEl.textContent = ted.valorTed ? Number(ted.valorTed).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-'; }
             }
 
-            document.getElementById('info_primeiraDescentralizacao').textContent = formatarData(ted.primeiraDescentralizacao);
-            
-            // Preencher campos de edição
+            // ── ADITIVOS CARDS ───────────────────────────────────
+            const nAditivos = aditivos.length;
+            const nApost = alteracoes.filter(a => a.tipo === 'apostilamento').length;
+            const adCountEl = document.getElementById('aditivosCounter');
+            if (adCountEl) {
+                const parts = [];
+                if (nAditivos > 0) parts.push(`${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} (+${totalAditivoMeses}m)`);
+                if (nApost > 0) parts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
+                adCountEl.textContent = parts.join(' · ');
+            }
+            const infoAlt = document.getElementById('info_alteracoesHistorico');
+            _renderAditivoCards(alteracoes, infoAlt);
+
+            // campos hidden compatibilidade
+            const infoAltResumo = document.getElementById('info_alteracoesResumo');
+            if (infoAltResumo) {
+                const rParts = [];
+                if (nAditivos > 0) rParts.push(`${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} (+${totalAditivoMeses} meses)`);
+                if (nApost > 0) rParts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
+                infoAltResumo.textContent = rParts.length ? `Total: ${rParts.join(', ')}` : '';
+            }
+
+            // ── SITUAÇÃO DO TED (condicional) ─────────────────────
+            const temSituacao = !!(ted.situacaoTED && (ted.situacaoTED === 'finalizado' || ted.situacaoTED === 'denunciado'));
+            const situacaoSection = document.getElementById('situacaoTEDSection');
+            const situacaoCard = document.getElementById('situacaoTEDCard');
+            if (situacaoSection) situacaoSection.style.display = temSituacao ? '' : 'none';
+            if (situacaoCard) {
+                situacaoCard.className = 'situacao-ted-card' + (ted.situacaoTED === 'finalizado' ? ' finalizado' : ted.situacaoTED === 'denunciado' ? ' denunciado' : '');
+            }
+            document.getElementById('info_situacaoTED').textContent = ted.situacaoTED === 'finalizado' ? 'TED Finalizado' : (ted.situacaoTED === 'denunciado' ? 'TED Denunciado' : '-');
+            document.getElementById('info_dataEntregaDenuncia').textContent = _fmtData(ted.dataEntregaDenuncia);
+            document.getElementById('info_prazoRelatorio').textContent = _fmtData(ted.prazoRelatorio);
+            if (ted.prazoRelatorio) {
+                try { mostrarAvisoPrazo('info_prazoRelatorio', new Date(ted.prazoRelatorio + 'T00:00:00')); } catch(e) {}
+            }
+            document.getElementById('info_dataEntregaRelatorio').textContent = _fmtData(ted.dataEntregaRelatorio);
+            const statusInfoObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido', vigenciaVencida: false };
+            document.getElementById('info_statusTED').textContent = statusInfoObj.text || '-';
+
+            // ── CAMPOS DE EDIÇÃO ──────────────────────────────────
             document.getElementById('edit_planoTrabalho').value = ted.planoTrabalho || '';
             document.getElementById('edit_numTed').value = ted.numTed || '';
             document.getElementById('edit_objetivo').value = ted.objetivo || '';
-            
             document.getElementById('edit_codigoPlano').value = ted.codigoPlano || '';
             document.getElementById('edit_numTedSiafi').value = ted.numTedSiafi || '';
             document.getElementById('edit_notaSistema').value = ted.notaSistema || '';
-            
             document.getElementById('edit_upResponsavel').value = ted.upResponsavel || '';
             document.getElementById('edit_egExecutora').value = ted.egExecutora || '';
             document.getElementById('edit_unidadeDesc').value = ted.unidadeDesc || '';
             document.getElementById('edit_ugDesc').value = ted.ugDesc || '';
-            
-            document.getElementById('edit_inicioVigencia').value = formatarDataInput(ted.inicioVigencia);
+            document.getElementById('edit_inicioVigencia').value = _fmtDataInput(ted.inicioVigencia);
             document.getElementById('edit_vigencia').value = ted.vigencia || '';
-            document.getElementById('edit_fimVigencia').value = formatarDataInput(ted.fimVigencia);
-            document.getElementById('edit_primeiraDescentralizacao').value = formatarDataInput(ted.primeiraDescentralizacao);
-            // Permissão no card de Aditivos/Apostilamentos: em leitura pode ver, mas não adicionar
+            document.getElementById('edit_fimVigencia').value = _fmtDataInput(ted.fimVigencia);
+            document.getElementById('edit_primeiraDescentralizacao').value = _fmtDataInput(ted.primeiraDescentralizacao);
+            document.getElementById('edit_situacaoTED').value = ted.situacaoTED || '';
+            document.getElementById('edit_dataEntregaDenuncia').value = _fmtDataInput(ted.dataEntregaDenuncia) || '';
+            document.getElementById('edit_prazoRelatorio').value = _fmtDataInput(ted.prazoRelatorio) || '';
+            document.getElementById('edit_dataEntregaRelatorio').value = _fmtDataInput(ted.dataEntregaRelatorio) || '';
+            document.getElementById('edit_statusTED').value = ted.statusTED || '';
+
+            // Permissão no botão de adicionar aditivo
             try {
                 const btnAddAlt = document.querySelector('.btn-add-aditivo');
                 if (btnAddAlt) {
@@ -3096,52 +3235,9 @@
                     btnAddAlt.title = window._readOnlyMode ? 'Faça login como Admin para adicionar aditivo/apostilamento' : '';
                 }
             } catch(e) {}
-            // Novos campos: situação, data entrega/denúncia, prazo do relatório, data entrega do relatório, status
-            document.getElementById('info_situacaoTED').textContent = ted.situacaoTED === 'finalizado' ? 'TED Finalizado' : (ted.situacaoTED === 'denunciado' ? 'TED Denunciado' : '-');
-            document.getElementById('info_dataEntregaDenuncia').textContent = formatarData(ted.dataEntregaDenuncia);
-            document.getElementById('info_prazoRelatorio').textContent = formatarData(ted.prazoRelatorio);
-            if (ted.prazoRelatorio) {
-                try { mostrarAvisoPrazo('info_prazoRelatorio', new Date(ted.prazoRelatorio + 'T00:00:00')); } catch(e) {}
-            }
-            document.getElementById('info_dataEntregaRelatorio').textContent = formatarData(ted.dataEntregaRelatorio);
-            const statusInfoObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido', vigenciaVencida: false };
-            document.getElementById('info_statusTED').textContent = statusInfoObj.text || '-';
-            // adicionar tooltip que indica a origem do status
-            const infoStatusEl = document.getElementById('info_statusTED');
-            if (infoStatusEl) {
-                infoStatusEl.title = `Origem: ${statusInfoObj.origin || ''}`;
-                // Se vigência vencida e status não é já "Vigência Vencida"/"Finalizado", adicionar nota visual
-                const stInfoNorm = (statusInfoObj.text || '').toLowerCase();
-                const vigVencInfo = statusInfoObj.vigenciaVencida || false;
-                const isFinalizadoInfo = /finaliz|finalizado/.test(stInfoNorm);
-                const jaIndicaVigVenc = /vigênc.*venc|vigencia.*venc|encerr/.test(stInfoNorm);
-                // Limpar nota anterior se existir
-                const notaAnterior = infoStatusEl.parentElement ? infoStatusEl.parentElement.querySelector('.nota-vigencia-vencida') : null;
-                if (notaAnterior) notaAnterior.remove();
-                if (vigVencInfo && !jaIndicaVigVenc && !isFinalizadoInfo) {
-                    infoStatusEl.style.color = '#b45309';
-                    const nota = document.createElement('span');
-                    nota.className = 'nota-vigencia-vencida';
-                    nota.style.cssText = 'font-size:0.75rem; color:#b45309; font-weight:600; margin-left:8px;';
-                    nota.textContent = '⚠️ Vigência Vencida';
-                    infoStatusEl.parentElement.appendChild(nota);
-                } else {
-                    infoStatusEl.style.color = '';
-                }
-            }
 
-            document.getElementById('edit_situacaoTED').value = ted.situacaoTED || '';
-            document.getElementById('edit_dataEntregaDenuncia').value = formatarDataInput(ted.dataEntregaDenuncia) || '';
-            document.getElementById('edit_prazoRelatorio').value = formatarDataInput(ted.prazoRelatorio) || '';
-            document.getElementById('edit_dataEntregaRelatorio').value = formatarDataInput(ted.dataEntregaRelatorio) || '';
-            document.getElementById('edit_statusTED').value = ted.statusTED || computedStatus || '';
-            // Recalcular prazo e status ao exibir
-            try {
-                calcularPrazoRelatorio();
-            } catch(e) {}
-            try {
-                atualizarStatusPorEntregaRelatorio();
-            } catch(e) {}
+            try { calcularPrazoRelatorio(); } catch(e) {}
+            try { atualizarStatusPorEntregaRelatorio(); } catch(e) {}
         }
 
         // Variável para backup dos dados originais
@@ -3150,27 +3246,29 @@
         // Alternar modo de edição
         function toggleEditarInfo() {
             if (!window.tedSelecionado) return;
-            
-            // Fazer backup dos dados originais
+
             tedBackup = JSON.parse(JSON.stringify(window.tedSelecionado));
-            
-            // Mostrar campos de edição e ocultar visualização
-            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'codigoPlano', 'numTedSiafi', 
-                           'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc', 
+
+            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'codigoPlano', 'numTedSiafi',
+                           'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc',
                            'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao',
                            'situacaoTED', 'dataEntregaDenuncia', 'prazoRelatorio', 'dataEntregaRelatorio', 'statusTED'];
-            
+
             campos.forEach(campo => {
-                document.getElementById(`info_${campo}`).style.display = 'none';
-                document.getElementById(`edit_${campo}`).style.display = 'block';
+                const infoEl = document.getElementById(`info_${campo}`);
+                const editEl = document.getElementById(`edit_${campo}`);
+                if (infoEl) infoEl.style.display = 'none';
+                if (editEl) editEl.style.display = 'block';
             });
-            
-            // Trocar botões
+
+            // Sempre mostrar a seção de situação em modo edição
+            const sitSection = document.getElementById('situacaoTEDSection');
+            if (sitSection) sitSection.style.display = '';
+
             document.getElementById('btnEditarInfo').style.display = 'none';
             document.getElementById('btnSalvarInfo').style.display = 'block';
             document.getElementById('btnCancelarInfo').style.display = 'block';
 
-            // Recalcular Fim de Vigência ao abrir edição (considera aditivos)
             calcularFimVigenciaEdit();
         }
 
@@ -3257,17 +3355,18 @@
 
         // Sair do modo de edição
         function sairModoEdicao() {
-            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'codigoPlano', 'numTedSiafi', 
-                           'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc', 
+            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'codigoPlano', 'numTedSiafi',
+                           'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc',
                            'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao',
                            'situacaoTED', 'dataEntregaDenuncia', 'prazoRelatorio', 'dataEntregaRelatorio', 'statusTED'];
-            
+
             campos.forEach(campo => {
-                document.getElementById(`info_${campo}`).style.display = 'block';
-                document.getElementById(`edit_${campo}`).style.display = 'none';
+                const infoEl = document.getElementById(`info_${campo}`);
+                const editEl = document.getElementById(`edit_${campo}`);
+                if (infoEl) infoEl.style.display = 'block';
+                if (editEl) editEl.style.display = 'none';
             });
-            
-            // Trocar botões
+
             document.getElementById('btnEditarInfo').style.display = 'block';
             document.getElementById('btnSalvarInfo').style.display = 'none';
             document.getElementById('btnCancelarInfo').style.display = 'none';
@@ -3497,77 +3596,100 @@
         }
 
         function atualizarTabelaObjetos() {
-            const tbody = document.getElementById('tabelaObjetos');
-            
-            if (!window.tedSelecionado || !window.tedSelecionado.objetos || window.tedSelecionado.objetos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum objeto cadastrado</td></tr>';
+            const container = document.getElementById('tabelaObjetos');
+            if (!container) return;
+
+            const objetos = (window.tedSelecionado && window.tedSelecionado.objetos) || [];
+            if (!window.tedSelecionado || objetos.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#94a3b8;font-size:12.5px;">Nenhum objeto cadastrado</div>';
+                const tfootEl = document.getElementById('obj_tfoot');
+                if (tfootEl) tfootEl.style.display = 'none';
+                const totalCardEl = document.getElementById('obj_totalCard');
+                if (totalCardEl) totalCardEl.textContent = 'R$ 0,00';
+                try { const c = document.getElementById('count-objetos'); if (c) c.textContent = '0'; } catch(e) {}
                 return;
             }
 
-            // Obter alterações de aditivos/apostilamentos para destacar
+            // Obter mapa de alterações de aditivos para destacar linhas
             const altObjetos = obterAlteracoesTabelaAditivos('objetos');
             const tabDefObj = ADITIVO_TABELAS_CLONE.find(t => t.key === 'objetos');
             const { modMap: modMapObj, addSet: addSetObj } = criarMapaAlteracoes(altObjetos, tabDefObj);
             const matchKeyObj = (item) => tabDefObj ? tabDefObj.matchFields.map(f => String(item[f] || '')).join('||') : '';
 
             let totalValor = 0;
-            tbody.innerHTML = window.tedSelecionado.objetos.map(obj => {
+            objetos.forEach(obj => {
+                const qt = parseNumber(obj.qtde); const vu = parseNumber(obj.valorUnitario);
+                obj.valorTotal = qt * vu;
+                totalValor += obj.valorTotal;
+            });
+
+            const rowsHtml = objetos.map(obj => {
                 const qt = parseNumber(obj.qtde);
                 const vu = parseNumber(obj.valorUnitario);
-                const vt = qt * vu;
-                obj.valorTotal = vt; // garantir persistência em memória/localStorage
-                totalValor += vt;
+                const vt = obj.valorTotal || 0;
+                const sharePct = totalValor > 0 ? Math.min(100, (vt / totalValor) * 100) : 0;
+
                 const mKey = matchKeyObj(obj);
                 const mods = modMapObj[mKey];
                 const isAdded = addSetObj.has(mKey);
-                const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
-                // Verificar consistência com Cadastro Físico
+
+                // consistência com Cadastro Físico
                 const somaFisico = (window.tedSelecionado.fisicos || [])
                     .filter(f => f.objeto === obj.objeto)
                     .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
-                const qtdeExcedida = somaFisico > qt;
-                const alertaFisico = qtdeExcedida 
-                    ? ` <span title="Soma no Cad. Físico (${formatNumber(somaFisico)}) excede a qtde do Objeto (${formatNumber(qt)})" style="color:#ef4444;font-weight:700;cursor:help;">⚠️️</span>` 
+                const alertaFisico = somaFisico > qt
+                    ? `<span title="Soma no Cad. Físico (${formatNumber(somaFisico)}) excede a qtde do Objeto (${formatNumber(qt)})" style="color:#ef4444;cursor:help;margin-left:4px;">⚠️</span>`
                     : '';
-                // Formatar células com destaque de alteração
-                const tdObjeto = obj.objeto;
-                const tdQtde = (mods && mods.qtde ? formatarCelulaAlterada(qt, mods.qtde.de, 'number') : formatNumber(qt)) + alertaFisico;
-                const tdVU = mods && mods.valorUnitario ? formatarCelulaAlterada(vu.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valorUnitario.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : vu.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                const tdVT = mods && mods.valorTotal ? formatarCelulaAlterada(vt.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valorTotal.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : vt.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                return `
-                    <tr${trClass}>
-                        <td class="col-objeto">${tdObjeto}</td>
-                        <td class="col-qtde">${tdQtde}</td>
-                        <td class="col-valor">${tdVU}</td>
-                        <td class="col-valor">${tdVT}</td>
-                        <td class="col-acao">
-                            <button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
-                            <button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
-                        </td>
-                    </tr>
-                `;
+
+                const qtdeHtml = (mods && mods.qtde ? formatarCelulaAlterada(qt, mods.qtde.de, 'number') : formatNumber(qt)) + alertaFisico;
+                const vuHtml = mods && mods.valorUnitario
+                    ? formatarCelulaAlterada(vu.toLocaleString('pt-BR',{minimumFractionDigits:2}), Number(mods.valorUnitario.de||0).toLocaleString('pt-BR',{minimumFractionDigits:2}), '')
+                    : vu.toLocaleString('pt-BR',{minimumFractionDigits:2});
+                const vtHtml = mods && mods.valorTotal
+                    ? formatarCelulaAlterada(vt.toLocaleString('pt-BR',{minimumFractionDigits:2}), Number(mods.valorTotal.de||0).toLocaleString('pt-BR',{minimumFractionDigits:2}), '')
+                    : vt.toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+                const editBtn = !window._readOnlyMode ? `<button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>` : '';
+                const delBtn = !window._readOnlyMode ? `<button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>` : '';
+
+                return `<div class="obj-row-new${isAdded?' linha-adicionada-aditivo':''}">
+                    <div>
+                        <div class="obj-name-new">${obj.objeto || '—'}</div>
+                        <div class="obj-share-bar-new"><div class="obj-share-fill-new" style="width:${sharePct.toFixed(1)}%;"></div></div>
+                        <div class="obj-sub-new">${sharePct.toFixed(1)}% do TED</div>
+                    </div>
+                    <div class="obj-num-new">${qtdeHtml}</div>
+                    <div class="obj-num-new" style="font-size:10.5px;color:#94a3b8;">un</div>
+                    <div class="obj-num-new">R$ ${vuHtml}</div>
+                    <div class="obj-total-new">R$ ${vtHtml}</div>
+                    <div class="obj-actions-new">${editBtn}${delBtn}</div>
+                </div>`;
             }).join('');
 
-            // Atualizar tfoot com linha de total
-            const tableEl = tbody.closest('table');
-            if (tableEl) {
-                let tfoot = tableEl.querySelector('tfoot');
-                if (!tfoot) {
-                    tfoot = document.createElement('tfoot');
-                    tableEl.appendChild(tfoot);
-                }
-                tfoot.innerHTML = `
-                    <tr class="linha-total">
-                        <td colspan="3" style="text-align: right;">TOTAL:</td>
-                        <td class="col-valor">${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td class="col-acao"></td>
-                    </tr>
-                `;
-            }
+            // cabeçalho de colunas
+            const headerHtml = `<div class="obj-row-new" style="background:#F7F9FC;border-bottom:1px solid rgba(0,0,0,0.07);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;">
+                <div>Objeto</div>
+                <div style="text-align:right;">Qtde</div>
+                <div></div>
+                <div style="text-align:right;">V. Unitário</div>
+                <div style="text-align:right;">V. Total</div>
+                <div></div>
+            </div>`;
+            container.innerHTML = headerHtml + rowsHtml;
 
-            // Atualizar contador da seção (badge)
-            try { const c = document.getElementById('count-objetos'); if (c) c.textContent = String(window.tedSelecionado.objetos.length); } catch(e) {}
-            // Reinicializar ícones Lucide
+            // tfoot
+            const tfootEl = document.getElementById('obj_tfoot');
+            const tfootCount = document.getElementById('obj_tfootCount');
+            const tfootTotal = document.getElementById('obj_tfootTotal');
+            if (tfootEl) tfootEl.style.display = '';
+            if (tfootCount) tfootCount.textContent = `${objetos.length} objeto${objetos.length !== 1 ? 's' : ''}`;
+            if (tfootTotal) tfootTotal.textContent = `R$ ${totalValor.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+
+            // atualizar card header total e badge
+            const totalCardEl = document.getElementById('obj_totalCard');
+            if (totalCardEl) totalCardEl.textContent = `R$ ${totalValor.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            try { const c = document.getElementById('count-objetos'); if (c) c.textContent = String(objetos.length); } catch(e) {}
+
             initLucideIcons();
         }
 
