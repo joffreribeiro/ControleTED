@@ -2400,17 +2400,38 @@
 
         function computarLinhasFaturamento(ted) {
             if (!ted) return [];
+            // Previsto: Cadastro Físico (fisicos[]) — qtde + mesFinal/anoFinal
+            // Executado: Execução Física (execFisicas[]) — qtde + data
+            // Valor unitário: Cadastro de Objetos (objetos[]) — valorUnitario, matched by objeto name
             const fisicos  = ted.fisicos     || [];
             const execFis  = ted.execFisicas || [];
+            const objetos  = ted.objetos     || [];
             const hoje = new Date();
-            const linhas = [];
 
+            // Build map: objeto name -> valorUnitario
+            const normalizar = s => String(s || '').toLowerCase().trim();
+            const mapaValorUnit = {};
+            objetos.forEach(o => {
+                const key = normalizar(o.objeto);
+                if (key) mapaValorUnit[key] = parseNumber(o.valorUnitario) || 0;
+            });
+
+            // Build map: objeto name -> list of execFisica entries
+            const mapaExecFis = {};
+            execFis.forEach(e => {
+                const key = normalizar(e.objeto);
+                if (!mapaExecFis[key]) mapaExecFis[key] = [];
+                mapaExecFis[key].push(e);
+            });
+
+            const linhas = [];
             fisicos.forEach(f => {
+                const objKey = normalizar(f.objeto);
                 const qtdePlan = parseNumber(f.qtde) || 0;
-                const valorUnit = parseNumber(f.valorUnitario) || 0;
+                const valorUnit = mapaValorUnit[objKey] || 0;
                 const valorPrev = qtdePlan * valorUnit;
 
-                // Calcular data prevista: fim da fase (mês/ano final ou mês base + mFinal)
+                // Data prevista: mesFinal/anoFinal do Cadastro Físico
                 let dataPrevista = null;
                 try {
                     if (f.anoFinal && f.mesFinal) {
@@ -2423,30 +2444,25 @@
                     }
                 } catch(e) {}
 
-                // Somar entregas deste item (casamento por objeto)
-                const normalizar = s => String(s || '').toLowerCase().trim();
-                const entregasMatch = (f.entregas && f.entregas.length)
-                    ? f.entregas
-                    : execFis.filter(e => normalizar(e.objeto) === normalizar(f.objeto));
-
+                // Executado: soma das entregas na Execução Física para este objeto
+                const entregasObj = mapaExecFis[objKey] || [];
                 let qtdeReal = 0;
-                let valorReal = 0;
                 let nfs = [];
                 let datasReais = [];
-
-                entregasMatch.forEach(ent => {
-                    const qtd = parseNumber(ent.quantidade != null ? ent.quantidade : ent.qtde) || 0;
+                entregasObj.forEach(ent => {
+                    const qtd = parseNumber(ent.qtde) || 0;
                     qtdeReal += qtd;
-                    valorReal += qtd * valorUnit;
                     if (ent.nf) nfs.push(ent.nf);
                     if (ent.data) datasReais.push(new Date(ent.data + 'T00:00:00'));
                 });
-
+                const valorReal = qtdeReal * valorUnit;
                 const dataReal = datasReais.length ? datasReais.reduce((a, b) => a > b ? a : b) : null;
 
                 let status = 'planejado';
-                if (qtdeReal > 0) {
+                if (qtdeReal >= qtdePlan && qtdePlan > 0) {
                     status = 'pago';
+                } else if (qtdeReal > 0) {
+                    status = 'em-curso';
                 } else if (dataPrevista && dataPrevista < hoje) {
                     status = 'atrasado';
                 }
