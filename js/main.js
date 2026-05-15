@@ -6874,16 +6874,198 @@
             btn.textContent = newExpanded ? 'Ocultar detalhes mensais' : 'Ver detalhes mensais';
         }
 
+        // ===== Cadastro Financeiro — helpers redesign =====
+        function _cfNdCategoria(nd) {
+            const s = String(nd || '').replace(/\D/g, '');
+            if (s.startsWith('44')) return 'invest';
+            if (s.startsWith('33')) return 'custeio';
+            return 'outros';
+        }
+        function _cfUpCategoria(up) {
+            const u = String(up || '').trim().toUpperCase();
+            if (u === 'FI' || u.startsWith('FI/') || u.startsWith('FI ')) return 'fi';
+            if (u === 'UA' || u.startsWith('UA/') || u.startsWith('UA ')) return 'ua';
+            return 'outros';
+        }
+        function _cfCalcKPIs(financeiros) {
+            let total = 0;
+            let maxNd = { val: 0, nd: '' };
+            const byNd = {};
+            const byUp = {};
+            const meses = {};
+            const hoje = new Date();
+            let proxMes = null, proxMesVal = 0;
+            financeiros.forEach(f => {
+                const v = parseNumber(f.valor) || 0;
+                total += v;
+                const nd = String(f.numero || f.nd || '');
+                byNd[nd] = (byNd[nd] || 0) + v;
+                const up = String(f.up || f.ug || '');
+                byUp[up] = (byUp[up] || 0) + v;
+                const key = `${f.mesDesc}/${f.anoDesc}`;
+                meses[key] = (meses[key] || 0) + v;
+                if (f.anoDesc && f.mesDesc) {
+                    const d = new Date(parseInt(f.anoDesc), parseInt(f.mesDesc) - 1, 1);
+                    const isNextOrCurrent = d >= new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                    if (isNextOrCurrent && (!proxMes || d < proxMes)) { proxMes = d; proxMesVal = meses[key]; }
+                }
+            });
+            Object.entries(byNd).forEach(([nd, v]) => { if (v > maxNd.val) { maxNd = { val: v, nd }; } });
+            const upCount = Object.keys(byUp).length;
+            return { total, maxNd, upCount, proxMes, proxMesVal };
+        }
+        function _cfRenderKPIs(kpis, container) {
+            if (!container) return;
+            const fmt = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+            const proxLabel = kpis.proxMes ? `${meses[kpis.proxMes.getMonth()]}/${kpis.proxMes.getFullYear()}` : '—';
+            container.innerHTML = `
+            <div class="cf-kpis">
+              <div class="cf-kpi lead-blue">
+                <span class="cf-kpi-label">Total Cadastrado</span>
+                <span class="cf-kpi-val">R$ ${fmt(kpis.total)}</span>
+              </div>
+              <div class="cf-kpi lead-green">
+                <span class="cf-kpi-label">Maior ND</span>
+                <span class="cf-kpi-val" style="font-size:14px;">${formatarNDComPontos(kpis.maxNd.nd) || '—'}</span>
+                <span class="cf-kpi-sub">R$ ${fmt(kpis.maxNd.val)}</span>
+              </div>
+              <div class="cf-kpi lead-amber">
+                <span class="cf-kpi-label">Distribuição por UP</span>
+                <span class="cf-kpi-val">${kpis.upCount}</span>
+                <span class="cf-kpi-sub">unidades</span>
+              </div>
+              <div class="cf-kpi lead-purple">
+                <span class="cf-kpi-label">Próximo período</span>
+                <span class="cf-kpi-val" style="font-size:14px;">${proxLabel}</span>
+                <span class="cf-kpi-sub">${kpis.proxMes ? 'R$ ' + fmt(kpis.proxMesVal) : 'sem previsão'}</span>
+              </div>
+            </div>`;
+        }
+        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody) {
+            const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+            // group by mesDesc/anoDesc label
+            const grupos = {};
+            const grupoOrdem = [];
+            dadosFiltrados.forEach(f => {
+                const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
+                const label = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx]}/${f.anoDesc}` : '—';
+                const chave = `${String(f.anoDesc || '0').padStart(4,'0')}_${String(f.mesDesc || '0').padStart(2,'0')}`;
+                if (!grupos[chave]) { grupos[chave] = { label, items: [] }; grupoOrdem.push(chave); }
+                grupos[chave].items.push(f);
+            });
+            let rowsHtml = '';
+            grupoOrdem.forEach(chave => {
+                const grp = grupos[chave];
+                const subTotal = grp.items.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
+                const subFmt = subTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                const grpId = 'cfgrp_' + chave;
+                // group header row (fixed cols + Gantt spacers)
+                const nGantt = meses.length;
+                rowsHtml += `<tr class="cf-grp-tr-head" data-grp="${grpId}" onclick="toggleGrupoCadFin('${grpId}', this)">
+                    <td colspan="${6 + nGantt}" style="padding:0; border:none;">
+                        <div class="cf-grp-head">
+                            <div class="cf-grp-head-left">
+                                <span class="cf-grp-toggle open" id="${grpId}_arrow">▶</span>
+                                <span class="mes-pill">${grp.label}</span>
+                                <span class="cf-grp-count">${grp.items.length} lançamento${grp.items.length !== 1 ? 's' : ''}</span>
+                            </div>
+                            <span class="cf-grp-subtotal">R$ ${subFmt}</span>
+                        </div>
+                    </td>
+                </tr>`;
+                // data rows inside group
+                grp.items.forEach((f, i) => {
+                    const valorNum = parseNumber(f.valor) || 0;
+                    const mesDescIdx2 = (parseInt(f.mesDesc) || 1) - 1;
+                    let mesDescStr = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx2]}/${f.anoDesc}` : '-';
+                    const numeroDisplay = f.numero || f.nd || '-';
+                    const mKey = matchKeyFin(f);
+                    const mods = modMapFin[mKey];
+                    const isAdded = addSetFin.has(mKey);
+                    const trClass = isAdded ? ' linha-adicionada-aditivo' : '';
+                    const ndCat = _cfNdCategoria(numeroDisplay);
+                    const upCat = _cfUpCategoria(f.up || f.ug || '');
+                    const upRaw = String(f.up || f.ug || '');
+                    const pct = totalValor > 0 ? (valorNum / totalValor * 100) : 0;
+                    const pctFmt = pct.toFixed(1);
+                    const tdValor = mods && mods.valor
+                        ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '')
+                        : renderValorRealFmt(valorNum);
+                    const tdM = mods && mods.m ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
+                    if (mods && mods.m && window._cfStartDate) {
+                        const dOldMes = new Date(window._cfStartDate);
+                        dOldMes.setMonth(dOldMes.getMonth() + (Number(mods.m.de) || 0));
+                        const oldMesDescStr = `${mesesNome[dOldMes.getMonth()]}/${dOldMes.getFullYear()}`;
+                        mesDescStr = `<span class="celula-alterada-aditivo"><span class="val-antigo">${oldMesDescStr}</span><span class="val-novo">${mesDescStr}</span></span>`;
+                    }
+                    rowsHtml += `<tr class="cf-grp-data-row${trClass}" data-grprow="${grpId}">
+                        <td class="col-nd"><span class="nd-tag ${ndCat}">${formatarNDComPontos(numeroDisplay)}</span></td>
+                        <td class="col-up"><span class="up-pill ${upCat}">${upRaw || '—'}</span></td>
+                        <td class="col-m">${tdM}</td>
+                        <td class="col-mes">${mesDescStr}</td>
+                        <td class="col-valor" style="text-align:right;">
+                            <div class="val-share">
+                                <span style="font-size:12.5px; white-space:nowrap;">${tdValor}</span>
+                                <div class="val-share-bar"><div class="val-share-fill" style="width:${Math.min(pct,100)}%;"></div></div>
+                                <span class="val-share-pct">${pctFmt}%</span>
+                            </div>
+                        </td>
+                        <td class="col-acao">
+                            <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
+                            <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
+                        </td>`;
+                    // Gantt cells
+                    let oldMesDesc2 = null, oldAnoDesc2 = null;
+                    if (mods && mods.m && window._cfStartDate) {
+                        const dOld = new Date(window._cfStartDate);
+                        dOld.setMonth(dOld.getMonth() + (Number(mods.m.de) || 0));
+                        oldMesDesc2 = dOld.getMonth() + 1;
+                        oldAnoDesc2 = dOld.getFullYear();
+                    }
+                    meses.forEach((mesInfo) => {
+                        const estaNoMes = parseInt(f.mesDesc) === mesInfo.mes && parseInt(f.anoDesc) === mesInfo.fullYear;
+                        const estaNoMesAntigo = oldMesDesc2 !== null && oldMesDesc2 === mesInfo.mes && oldAnoDesc2 === mesInfo.fullYear;
+                        if (estaNoMes && estaNoMesAntigo) {
+                            rowsHtml += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                        } else if (estaNoMes) {
+                            if (oldMesDesc2 !== null) {
+                                rowsHtml += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            } else {
+                                rowsHtml += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            }
+                        } else if (estaNoMesAntigo) {
+                            const oldValor = mods && mods.valor ? Number(mods.valor.de || 0) : valorNum;
+                            rowsHtml += `<td class="month-col-cadFin" style="background:#fee2e2; text-align:right; padding-right:0.25rem; font-size:0.7rem; opacity:0.6;${mmHideCadFin}" title="M anterior: ${mods.m.de}"><s>${oldValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</s></td>`;
+                        } else {
+                            rowsHtml += `<td class="month-col-cadFin" style="${mmHideCadFin}"></td>`;
+                        }
+                    });
+                    rowsHtml += '</tr>';
+                });
+            });
+            return rowsHtml;
+        }
+        function toggleGrupoCadFin(grpId, headTr) {
+            const table = headTr.closest('table');
+            if (!table) return;
+            const rows = table.querySelectorAll(`tr[data-grprow="${grpId}"]`);
+            const arrow = document.getElementById(grpId + '_arrow');
+            const isOpen = arrow && arrow.classList.contains('open');
+            rows.forEach(r => r.style.display = isOpen ? 'none' : '');
+            if (arrow) arrow.classList.toggle('open', !isOpen);
+        }
+
         function atualizarTabelaFinanceira() {
             const tbody = document.getElementById('tabelaFinanceira');
             const headerGantt = document.getElementById('ganttHeaderFinanceira');
             const tableCompleta = document.getElementById('tabelaFinanceiraCompleta');
             const previstoAnualSpan = document.getElementById('previstoAnualValor');
             let totalValor = 0;
-            
+
             // Popular menus de filtro
             try { popularFiltrosCadFin(); } catch(e) {}
-            
+
             if (!window.tedSelecionado || !window.tedSelecionado.financeiros.length) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
                 if (headerGantt) {
@@ -6998,9 +7180,6 @@
             headerRow2.innerHTML = headerRow2HTML;
             tableCompleta.querySelector('thead').appendChild(headerRow2);
 
-            // Criar linhas de dados
-            const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-
             // Obter alterações de aditivos/apostilamentos para destacar
             const altFinanc = obterAlteracoesTabelaAditivos('financeiros');
             const tabDefFin = ADITIVO_TABELAS_CLONE.find(t => t.key === 'financeiros');
@@ -7017,67 +7196,16 @@
                 if (mesIdx >= 0) totaisPorMes[mesIdx] += valorNum;
             });
 
-            const visibleItems = dadosFiltrados;
+            // Renderizar KPIs
+            window._cfStartDate = startDate;
+            try {
+                const cfKpiWrap = document.getElementById('cfKpiWrap');
+                const kpis = _cfCalcKPIs(dadosFiltrados);
+                _cfRenderKPIs(kpis, cfKpiWrap);
+            } catch(e) { console.warn('cf kpis error', e); }
 
-            // Renderizar todas as linhas
-            const rowsHtml = visibleItems.map((f, i) => {
-                const valorNum = parseNumber(f.valor) || 0;
-                const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
-                let mesDescStr = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx]}/${f.anoDesc}` : '-';
-                const numeroDisplay = f.numero || f.nd || '-';
-                const mKey = matchKeyFin(f);
-                const mods = modMapFin[mKey];
-                const isAdded = addSetFin.has(mKey);
-                const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
-                const tdValor = mods && mods.valor ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '') : renderValorRealFmt(valorNum);
-                const tdM = mods && mods.m ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
-                if (mods && mods.m && startDate) {
-                    const oldM = Number(mods.m.de) || 0;
-                    const dOldMes = new Date(startDate);
-                    dOldMes.setMonth(dOldMes.getMonth() + oldM);
-                    const oldMesDescStr = `${mesesNome[dOldMes.getMonth()]}/${dOldMes.getFullYear()}`;
-                    mesDescStr = `<span class="celula-alterada-aditivo"><span class="val-antigo">${oldMesDescStr}</span><span class="val-novo">${mesDescStr}</span></span>`;
-                }
-                let html = `<tr${trClass}>
-                    <td class="col-nd">${formatarNDComPontos(numeroDisplay)}</td>
-                    <td class="col-up">${renderUpBadge(f.up || f.ug || '')}</td>
-                    <td class="col-m">${tdM}</td>
-                    <td class="col-mes">${mesDescStr}</td>
-                    <td class="col-valor">${tdValor}</td>
-                    <td class="col-acao">
-                        <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
-                        <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
-                    </td>`;
-
-                let oldMesDesc = null, oldAnoDesc = null;
-                if (mods && mods.m && startDate) {
-                    const oldM = Number(mods.m.de) || 0;
-                    const dOld = new Date(startDate);
-                    dOld.setMonth(dOld.getMonth() + oldM);
-                    oldMesDesc = dOld.getMonth() + 1;
-                    oldAnoDesc = dOld.getFullYear();
-                }
-                meses.forEach((mesInfo, mesIdx) => {
-                    const estaNoMes = parseInt(f.mesDesc) === mesInfo.mes && parseInt(f.anoDesc) === mesInfo.fullYear;
-                    const estaNoMesAntigo = oldMesDesc !== null && oldMesDesc === mesInfo.mes && oldAnoDesc === mesInfo.fullYear;
-                    if (estaNoMes && estaNoMesAntigo) {
-                        html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                    } else if (estaNoMes) {
-                        if (oldMesDesc !== null) {
-                            html += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                        } else {
-                            html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
-                        }
-                    } else if (estaNoMesAntigo) {
-                        const oldValor = mods && mods.valor ? Number(mods.valor.de || 0) : valorNum;
-                        html += `<td class="month-col-cadFin" style="background:#fee2e2; text-align:right; padding-right:0.25rem; font-size:0.7rem; opacity:0.6;${mmHideCadFin}" title="M anterior: ${mods.m.de}"><s>${oldValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</s></td>`;
-                    } else {
-                        html += `<td class="month-col-cadFin" style="${mmHideCadFin}"></td>`;
-                    }
-                });
-                html += '</tr>';
-                return html;
-            }).join('');
+            // Renderizar linhas agrupadas por Mês Desc.
+            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody);
 
             // Se não houver linhas visíveis, mostrar placeholder
             tbody.innerHTML = rowsHtml || '<tr><td colspan="67" class="auto-style-014">Nenhum cadastro financeiro</td></tr>';
