@@ -5829,173 +5829,337 @@
             try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_fisico', id, { campo: 'cadastro físico' }); } catch(e) {}
         }
 
-        function atualizarTabelaFisicos() {
-            const tbody = document.getElementById('tabelaFisicos');
-            const tableElement = tbody.closest('table');
-            
-            if (!window.tedSelecionado || !window.tedSelecionado.fisicos.length) {
-                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro físico</td></tr>';
-                return;
-            }
+        // ── helpers EF redesign ──────────────────────────────────────────────
 
-            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
-            let startDate;
-            if (window.tedSelecionado.primeiraDescentralizacao) {
-                const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
-                startDate = new Date(dataDesc + 'T00:00:00');
-            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
-                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
-            } else {
-                startDate = new Date();
-            }
+        function _efCalcKPIs(fisicos, baseDate) {
+            const mesesNomes = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            let total = fisicos.length;
+            let concluidas = 0, parciais = 0;
+            let qtdeTotal = 0, qtdeEntregue = 0;
+            const objetos = new Set();
+            let proxima = null;
 
-            const meses = [];
-            for (let i = 0; i < 60; i++) {
-                const d = new Date(startDate);
-                d.setMonth(d.getMonth() + i);
-                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
-                const ano2 = String(d.getFullYear()).slice(-2);
-                meses.push({ 
-                    label: `${mes}/${ano2}`, 
-                    ano: d.getFullYear(), 
-                    mes: d.getMonth() + 1,
-                    fullYear: d.getFullYear()
-                });
-            }
-
-            // Agrupar por ano
-            const anos = [];
-            meses.forEach((m) => {
-                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
-                    anos.push({ ano: m.ano, count: 1 });
-                } else {
-                    anos[anos.length-1].count += 1;
+            fisicos.forEach(f => {
+                const s = entregas_getStatus(f);
+                if (s.estado === 'concluido') concluidas++;
+                else if (s.estado === 'parcial') parciais++;
+                qtdeTotal += parseNumber(f.qtde) || 0;
+                qtdeEntregue += s.totalEntregue || 0;
+                if (f.objeto) objetos.add(f.objeto);
+                if (s.estado !== 'concluido') {
+                    // usar mFinal para ordenar próxima entrega
+                    const mf = parseInt(f.mFinal);
+                    if (!isNaN(mf) && (proxima === null || mf < parseInt(proxima.mFinal))) proxima = f;
                 }
             });
 
-            // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
-            let headerRow1 = tableElement.querySelector('thead tr');
-            // Estado do toggle de meses (Cadastro Físico)
-            const monthsExpandedCadFis = document.getElementById('toggle-months-cadFis')?.getAttribute('data-expanded') === '1';
-            const mmHideCadFis = monthsExpandedCadFis ? '' : ' display:none;';
-
-            let headerHTML = '<th rowspan="2" class="col-fase">Fase</th>';
-            headerHTML += '<th rowspan="2" class="col-objeto col-texto">Objeto</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde">Qtde</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde">Qtde Entregue</th>';
-            headerHTML += '<th rowspan="2" class="col-m">M Início</th>';
-            headerHTML += '<th rowspan="2" class="col-m">M Final</th>';
-            headerHTML += '<th rowspan="2" class="col-mes">Mês Início</th>';
-            headerHTML += '<th rowspan="2" class="col-mes">Mês Final</th>';
-            headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
-            
-            anos.forEach(a => {
-                headerHTML += `<th class="month-col-cadFis" style="text-align: center;${mmHideCadFis}" colspan="${a.count}">${a.ano}</th>`;
-            });
-            
-            headerRow1.innerHTML = headerHTML;
-
-            // Remover segunda linha de cabeçalho se existir
-            let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
-            if (headerRow2) {
-                headerRow2.remove();
+            let proximaLabel = '—';
+            let proximaSub = '';
+            if (proxima && baseDate) {
+                const dF = new Date(baseDate);
+                dF.setMonth(dF.getMonth() + parseInt(proxima.mFinal));
+                const mes = mesesNomes[dF.getMonth()];
+                const ano = dF.getFullYear();
+                const hoje = new Date(); hoje.setHours(0,0,0,0);
+                const diffDias = Math.round((dF - hoje) / 86400000);
+                const qtdPend = parseNumber(proxima.qtde) || 0;
+                proximaLabel = `Fase ${proxima.fase} · ${formatNumber(qtdPend)} un`;
+                proximaSub = `${mes}/${ano} · ${diffDias >= 0 ? `daqui ~${diffDias} dias` : `há ${Math.abs(diffDias)} dias`}`;
             }
 
-            // Criar segunda linha do cabeçalho com meses
-            headerRow2 = document.createElement('tr');
-            headerRow2.className = 'header-meses';
-            let headerRow2HTML = '';
-            meses.forEach(m => {
-                headerRow2HTML += `<th class="month-col-cadFis" style="${mmHideCadFis}">${m.label}</th>`;
-            });
-            headerRow2.innerHTML = headerRow2HTML;
-            tableElement.querySelector('thead').appendChild(headerRow2);
+            return { total, concluidas, parciais, qtdeTotal, qtdeEntregue, objetos: objetos.size, proximaLabel, proximaSub };
+        }
 
-            // Criar linhas de dados
-            // Calcular MM/AAAA dinamicamente a partir da 1ª descentralização e offsets M
+        function _efRenderKPIs(kpis, container) {
+            if (!container) return;
+            const pctConc = kpis.total > 0 ? ((kpis.concluidas / kpis.total) * 100).toFixed(1) : '0.0';
+            const pctQtde = kpis.qtdeTotal > 0 ? ((kpis.qtdeEntregue / kpis.qtdeTotal) * 100).toFixed(1) : '0.0';
+            container.innerHTML = `
+            <div class="ef-kpis">
+              <div class="ef-kpi lead-blue">
+                <div class="ef-kpi-label">Total de fases</div>
+                <div class="ef-kpi-val">${kpis.total}</div>
+                <div class="ef-kpi-sub">${kpis.objetos} objeto${kpis.objetos !== 1 ? 's' : ''} distinto${kpis.objetos !== 1 ? 's' : ''}</div>
+              </div>
+              <div class="ef-kpi lead-green">
+                <div class="ef-kpi-label">Concluídas</div>
+                <div class="ef-kpi-val">${kpis.concluidas}<span class="small">/ ${kpis.total}</span></div>
+                <div class="ef-kpi-sub">${pctConc.replace('.',',')}% das fases</div>
+                <div class="ef-kpi-bar"><div class="ef-kpi-bar-fill" style="width:${pctConc}%;background:#639922;"></div></div>
+              </div>
+              <div class="ef-kpi lead-amber">
+                <div class="ef-kpi-label">Qtde entregue</div>
+                <div class="ef-kpi-val">${formatNumber(kpis.qtdeEntregue)}<span class="small">/ ${formatNumber(kpis.qtdeTotal)}</span></div>
+                <div class="ef-kpi-sub">${pctQtde.replace('.',',')}% das unidades</div>
+                <div class="ef-kpi-bar"><div class="ef-kpi-bar-fill" style="width:${pctQtde}%;background:#c07a1c;"></div></div>
+              </div>
+              <div class="ef-kpi lead-gray">
+                <div class="ef-kpi-label">Próxima entrega prevista</div>
+                <div class="ef-kpi-val" style="font-size:13px;font-family:inherit;font-weight:600;">${kpis.proximaLabel}</div>
+                <div class="ef-kpi-sub">${kpis.proximaSub}</div>
+              </div>
+            </div>`;
+        }
+
+        function filtrarFasesCadFis(chip) {
+            const filtro = chip.dataset.filtro;
+            // atualizar chip ativo
+            chip.closest('.ef-filters').querySelectorAll('.ef-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            // filtrar linhas
+            const rows = document.querySelectorAll('#efTabelaFisicos tbody tr[data-ef-status]');
+            let visiveis = 0;
+            rows.forEach(tr => {
+                const st = tr.dataset.efStatus;
+                const temAdit = tr.dataset.efAditivo === '1';
+                let show = true;
+                if (filtro === 'concluidas') show = st === 'concluido';
+                else if (filtro === 'pendentes') show = st !== 'concluido';
+                else if (filtro === 'aditivo') show = temAdit;
+                tr.classList.toggle('ef-row-hidden', !show);
+                if (show) visiveis++;
+            });
+            // empty state
+            let emptyRow = document.querySelector('#efTabelaFisicos .ef-empty-filter-row');
+            if (visiveis === 0) {
+                if (!emptyRow) {
+                    const tbody = document.querySelector('#efTabelaFisicos tbody');
+                    if (tbody) {
+                        const tr = document.createElement('tr');
+                        tr.className = 'ef-empty-filter-row';
+                        tr.innerHTML = `<td colspan="7" class="ef-empty-filter">Nenhuma fase com esse filtro</td>`;
+                        tbody.appendChild(tr);
+                    }
+                }
+            } else {
+                if (emptyRow) emptyRow.remove();
+            }
+        }
+
+        function atualizarTabelaFisicos() {
+            // Localizar o container da seção de Cadastro Físico (detalhe-secao-body dentro do painel physical)
+            const tbody = document.getElementById('tabelaFisicos');
+            const tableElement = tbody ? tbody.closest('table') : null;
+
+            if (!window.tedSelecionado || !window.tedSelecionado.fisicos || !window.tedSelecionado.fisicos.length) {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--text);">Nenhum cadastro físico</td></tr>';
+                // Limpar KPIs e filtros se existirem
+                const efWrap = document.getElementById('efCadFisWrap');
+                if (efWrap) efWrap.innerHTML = '';
+                try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = '0'; } catch(e) {}
+                return;
+            }
+
+            // ── base date ───────────────────────────────────────────────────
             let baseDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
                 baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                baseDate = new Date();
             }
 
-            // Ordenar cadastro físico por 'fase' em ordem crescente antes de renderizar
+            const mesesNomes = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+            // ── ordenar fases ───────────────────────────────────────────────
             const fisicosSorted = Array.from(window.tedSelecionado.fisicos || []);
             fisicosSorted.sort((a, b) => {
                 const aVal = a && a.fase != null ? a.fase : '';
                 const bVal = b && b.fase != null ? b.fase : '';
-                const aNum = Number(aVal);
-                const bNum = Number(bVal);
+                const aNum = Number(aVal); const bNum = Number(bVal);
                 if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
                 return String(aVal).localeCompare(String(bVal), 'pt', { numeric: true });
             });
 
-            // Obter alterações de aditivos/apostilamentos para destacar
+            // ── mapa de aditivos ────────────────────────────────────────────
             const altFisicos = obterAlteracoesTabelaAditivos('fisicos');
             const tabDefFis = ADITIVO_TABELAS_CLONE.find(t => t.key === 'fisicos');
             const { modMap: modMapFis, addSet: addSetFis } = criarMapaAlteracoes(altFisicos, tabDefFis);
             const matchKeyFis = (item) => tabDefFis ? tabDefFis.matchFields.map(f => String(item[f] || '')).join('||') : '';
 
-            tbody.innerHTML = fisicosSorted.map((f, i) => {
-                let inicioStr = '';
-                let finalStr = '';
-                const mesesNomes = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-                
-                if (baseDate && !isNaN(f.mInicio) && !isNaN(f.mFinal)) {
-                    const dI = new Date(baseDate);
-                    dI.setMonth(dI.getMonth() + f.mInicio);
-                    inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
-                    const dF = new Date(baseDate);
-                    dF.setMonth(dF.getMonth() + f.mFinal);
-                    finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
-                } else {
-                    inicioStr = f.mesInicio && f.anoInicio ? `${mesesNomes[(f.mesInicio || 1) - 1]}/${f.anoInicio}` : '-';
-                    finalStr = f.mesFinal && f.anoFinal ? `${mesesNomes[(f.mesFinal || 1) - 1]}/${f.anoFinal}` : '-';
-                }
+            // ── KPIs ────────────────────────────────────────────────────────
+            const efWrap = document.getElementById('efCadFisWrap');
+            if (efWrap) {
+                const kpis = _efCalcKPIs(fisicosSorted, baseDate);
+                _efRenderKPIs(kpis, efWrap);
 
+                // contagem por filtro
+                let nConc = 0, nPend = 0, nAdit = 0;
+                fisicosSorted.forEach(f => {
+                    const s = entregas_getStatus(f).estado;
+                    if (s === 'concluido') nConc++; else nPend++;
+                    const mKey = matchKeyFis(f);
+                    const mods = modMapFis[mKey];
+                    if (mods && (mods.mInicio || mods.mFinal)) nAdit++;
+                });
+
+                efWrap.innerHTML += `
+                <div class="ef-filters" id="efFilters">
+                    <span class="ef-filter-label">Filtrar:</span>
+                    <button class="ef-chip active" data-filtro="todas" onclick="filtrarFasesCadFis(this)">Todas <span class="ef-chip-pill">${fisicosSorted.length}</span></button>
+                    <button class="ef-chip" data-filtro="concluidas" onclick="filtrarFasesCadFis(this)"><i data-lucide="check" style="width:11px;height:11px;color:#3B6D11;"></i> Concluídas <span class="ef-chip-pill">${nConc}</span></button>
+                    <button class="ef-chip" data-filtro="pendentes" onclick="filtrarFasesCadFis(this)"><i data-lucide="clock" style="width:11px;height:11px;color:#854F0B;"></i> Pendentes <span class="ef-chip-pill">${nPend}</span></button>
+                    ${nAdit > 0 ? `<button class="ef-chip" style="margin-left:auto;" data-filtro="aditivo" onclick="filtrarFasesCadFis(this)"><i data-lucide="alert-triangle" style="width:11px;height:11px;color:#c07a1c;"></i> Aditivo aplicado <span class="ef-chip-pill">${nAdit}</span></button>` : ''}
+                </div>`;
+            }
+
+            // ── montar tabela redesenhada ────────────────────────────────────
+            // Usar a tabela existente no HTML mas reescrever thead e tbody
+            const tableElement = tbody ? tbody.closest('table') : null;
+            if (!tableElement) { initLucideIcons(); return; }
+
+            // dar id à tabela para filtros
+            tableElement.id = 'efTabelaFisicos';
+
+            // cabeçalho fixo (7 colunas — sem Gantt quando recolhido)
+            const monthsExpandedCadFis = document.getElementById('toggle-months-cadFis')?.getAttribute('data-expanded') === '1';
+            const mmHideCadFis = monthsExpandedCadFis ? '' : ' display:none;';
+
+            // meses para Gantt (mantido igual ao original)
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(baseDate);
+                d.setMonth(d.getMonth() + i);
+                const mesLabel = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mesLabel}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth()+1 });
+            }
+            const anos = [];
+            meses.forEach(m => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ ano: m.ano, count: 1 });
+                else anos[anos.length-1].count++;
+            });
+
+            let headerRow1 = tableElement.querySelector('thead tr');
+            let headerHTML = '<th class="center" style="width:40px;"></th>';
+            headerHTML += '<th class="center" style="width:56px;">Fase</th>';
+            headerHTML += '<th>Objeto</th>';
+            headerHTML += '<th class="right" style="width:140px;">Qtde / Entregue</th>';
+            headerHTML += '<th style="width:190px;">Período (meses)</th>';
+            headerHTML += '<th style="width:150px;">Datas previstas</th>';
+            headerHTML += '<th class="center" style="width:96px;">Ações</th>';
+            anos.forEach(a => {
+                headerHTML += `<th class="month-col-cadFis" style="text-align:center;${mmHideCadFis}" colspan="${a.count}">${a.ano}</th>`;
+            });
+            headerRow1.innerHTML = headerHTML;
+            headerRow1.className = 'ef-thead-row';
+
+            let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) headerRow2.remove();
+            headerRow2 = document.createElement('tr');
+            headerRow2.className = 'header-meses';
+            // 7 células fixas (vazias) + meses
+            headerRow2.innerHTML = '<th></th><th></th><th></th><th></th><th></th><th></th><th></th>' +
+                meses.map(m => `<th class="month-col-cadFis" style="${mmHideCadFis}">${m.label}</th>`).join('');
+            tableElement.querySelector('thead').appendChild(headerRow2);
+
+            // aplicar classe ef-table
+            tableElement.classList.add('ef-table');
+
+            // ── linhas ─────────────────────────────────────────────────────
+            tbody.innerHTML = fisicosSorted.map((f, i) => {
                 const mKey = matchKeyFis(f);
                 const mods = modMapFis[mKey];
                 const isAdded = addSetFis.has(mKey);
-                const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
-                const tdMInicio = mods && mods.mInicio ? formatarCelulaAlterada(f.mInicio, mods.mInicio.de, 'number') : f.mInicio;
-                const tdMFinal = mods && mods.mFinal ? formatarCelulaAlterada(f.mFinal, mods.mFinal.de, 'number') : f.mFinal;
 
-                // Preparar valores de qtde e qtde entregue e destacar em verde quando iguais
-                const tdQtdeRaw = mods && mods.qtde ? formatarCelulaAlterada((f.qtde ?? ''), mods.qtde.de, 'number') : formatNumber(f.qtde ?? '');
-                // calcular quantidade entregue a partir de f.entregas[]
+                // status
+                const statusEnt = entregas_getStatus(f);
+                const estado = statusEnt.estado; // 'concluido' | 'parcial' | 'vazio'
+                const isConcluido = estado === 'concluido';
+                const isParcial   = estado === 'parcial';
+                const temAditivo  = !!(mods && (mods.mInicio || mods.mFinal));
+
+                // qtde
+                const prevQtde = parseNumber(f.qtde) || 0;
                 const entregasArr = Array.isArray(f.entregas) ? f.entregas : [];
                 const entNum = entregasArr.reduce((s, e) => s + (parseNumber(e.quantidade || e.qtde || 0) || 0), 0);
-                const tdQtdeEntRaw = formatNumber(entNum || '');
-                const statusEntrega = entregas_getStatus(f);
-                const percEntrega = Math.max(0, Math.min(100, Number(statusEntrega.percentual || 0)));
-                const percEntregaLabel = `${Math.round(percEntrega)}%`;
-                const prevNum = (f.qtde !== undefined && f.qtde !== null && String(f.qtde).trim() !== '') ? parseNumber(f.qtde) : null;
-                const numsEqual = (prevNum !== null && entNum !== null && Math.abs(prevNum - entNum) < 1e-9);
-                const equalClass = numsEqual ? ' equal-qtde' : '';
+                const percEnt = prevQtde > 0 ? Math.min(100, (entNum / prevQtde) * 100) : (entNum > 0 ? 100 : 0);
+                const barClass = isConcluido ? '' : (isParcial ? ' amber' : '');
 
-                let html = `<tr${trClass} data-fisico-id="${f.id}">
-                    <td class="col-fase">${f.fase}</td>
-                    <td class="col-objeto">${f.objeto}</td>
-                        <td class="col-qtde${equalClass}">${tdQtdeRaw}</td>
-                        <td class="col-qtde${equalClass}">
-                            <div>${tdQtdeEntRaw}</div>
-                            <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-                                <div style="width:60px; height:6px; background:#e5e7eb; border-radius:999px; overflow:hidden;">
-                                    <div style="display:block; height:100%; background:${statusEntrega.estado === 'concluido' ? '#16a34a' : (statusEntrega.estado === 'parcial' ? '#eab308' : '#9ca3af')}; width:${percEntrega > 0 ? Math.max(3, percEntrega).toFixed(2) : 0}%;"></div>
-                                </div>
-                                <span class="exec-perc" style="font-size:11px; color:#64748b;">${percEntregaLabel}</span>
+                // período
+                let inicioStr = '—', finalStr = '—';
+                if (baseDate && f.mInicio != null && !isNaN(f.mInicio)) {
+                    const dI = new Date(baseDate); dI.setMonth(dI.getMonth() + parseInt(f.mInicio));
+                    inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
+                } else if (f.mesInicio && f.anoInicio) {
+                    inicioStr = `${mesesNomes[(f.mesInicio||1)-1]}/${f.anoInicio}`;
+                }
+                if (baseDate && f.mFinal != null && !isNaN(f.mFinal)) {
+                    const dF = new Date(baseDate); dF.setMonth(dF.getMonth() + parseInt(f.mFinal));
+                    finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
+                } else if (f.mesFinal && f.anoFinal) {
+                    finalStr = `${mesesNomes[(f.mesFinal||1)-1]}/${f.anoFinal}`;
+                }
+
+                const mIni = f.mInicio != null ? parseInt(f.mInicio) : null;
+                const mFin = f.mFinal != null ? parseInt(f.mFinal) : null;
+                const durMeses = (mIni != null && mFin != null && mFin >= mIni) ? (mFin - mIni + 1) : null;
+                const periodoMesesStr = (mIni != null && mFin != null)
+                    ? `M${mIni} → M${mFin}${durMeses ? ` · ${durMeses} mês${durMeses !== 1 ? 'es' : ''}` : ''}`
+                    : '—';
+
+                // pílula de aditivo: mostrar original se houver modificação
+                let aditPill = '';
+                if (mods && (mods.mInicio || mods.mFinal)) {
+                    const mIniOrig = mods.mInicio ? mods.mInicio.de : mIni;
+                    const mFinOrig = mods.mFinal  ? mods.mFinal.de  : mFin;
+                    aditPill = `<div class="ef-adit-pill">Aditivo: era M${mIniOrig}→M${mFinOrig}</div>`;
+                }
+
+                // objeto: mostrar "↳ idem" se igual ao anterior
+                const fAnterior = i > 0 ? fisicosSorted[i-1] : null;
+                let objetoHtml;
+                if (fAnterior && fAnterior.objeto === f.objeto) {
+                    objetoHtml = `<span class="ef-obj-idem">↳ idem</span>`;
+                } else if (fAnterior && fAnterior.objeto !== f.objeto && i > 0) {
+                    objetoHtml = `<span style="font-weight:500;">${f.objeto}</span> <span class="ef-obj-distinct">objeto diferente</span>`;
+                } else {
+                    objetoHtml = `<span style="font-weight:500;">${f.objeto || '—'}</span>`;
+                }
+                if (isAdded) objetoHtml += ` <span class="ef-obj-distinct">novo (aditivo)</span>`;
+
+                // status icon
+                let statusIcon, statusClass, rowClass;
+                if (isConcluido) {
+                    statusIcon = `<i data-lucide="check" style="width:14px;height:14px;"></i>`;
+                    statusClass = 'done'; rowClass = 'ef-row-done';
+                } else if (isParcial) {
+                    statusIcon = `<i data-lucide="loader" style="width:14px;height:14px;"></i>`;
+                    statusClass = 'partial'; rowClass = '';
+                } else {
+                    statusIcon = `<i data-lucide="clock" style="width:14px;height:14px;"></i>`;
+                    statusClass = 'pending'; rowClass = '';
+                }
+
+                // ações
+                const editBtn  = `<button onclick="editarFisico(${f.id})" title="Editar"><i data-lucide="pencil" style="width:12px;height:12px;"></i></button>`;
+                const delBtn   = `<button class="delete" onclick="removerFisico(${f.id})" title="Remover"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button>`;
+                const entBtn   = !isConcluido
+                    ? `<button class="ef-confirm" onclick="entregas_toggleExpandir(event,'${f.id}')" title="Ver/Registrar entregas"><i data-lucide="check" style="width:12px;height:12px;"></i></button>`
+                    : `<button onclick="entregas_toggleExpandir(event,'${f.id}')" title="Ver entregas" style="background:#EAF3DE;color:#3B6D11;border-color:rgba(99,153,34,0.3);"><i data-lucide="eye" style="width:12px;height:12px;"></i></button>`;
+
+                let html = `<tr class="${rowClass}" data-fisico-id="${f.id}" data-ef-status="${estado}" data-ef-aditivo="${temAditivo ? '1' : '0'}">
+                    <td class="center"><span class="ef-row-status ${statusClass}">${statusIcon}</span></td>
+                    <td class="center"><span class="ef-fase-badge">F${f.fase}</span></td>
+                    <td>${objetoHtml}</td>
+                    <td class="right">
+                        <div class="ef-qty-wrap">
+                            <div class="ef-qty-line">
+                                <span class="num">${formatNumber(entNum)}</span>
+                                <span class="denom">/ ${formatNumber(prevQtde)}</span>
                             </div>
-                        </td>
-                    <td class="col-m">${tdMInicio}</td>
-                    <td class="col-m">${tdMFinal}</td>
-                    <td class="col-mes">${inicioStr}</td>
-                    <td class="col-mes">${finalStr}</td>
-                    <td class="col-acao">
-                        <button class="btn-icon-action edit" onclick="editarFisico(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
-                        <button class="btn-icon-action delete" onclick="removerFisico(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
-                        ${entregas_renderIconeStatus(f)}
-                    </td>`;
+                            <div class="ef-qty-bar"><div class="ef-qty-bar-fill${barClass}" style="width:${percEnt.toFixed(1)}%;"></div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="ef-periodo">
+                            <div class="ef-periodo-meses">${periodoMesesStr}</div>
+                            ${aditPill}
+                        </div>
+                    </td>
+                    <td><div class="ef-periodo"><div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div></div></td>
+                    <td class="center"><span class="ef-row-actions">${editBtn}${delBtn}${entBtn}</span></td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal e renderizar entregas por mês (empilhadas)
                 const entregaMesMap = new Map();
