@@ -6005,8 +6005,6 @@
             }
 
             // ── montar tabela redesenhada ────────────────────────────────────
-            // Usar a tabela existente no HTML mas reescrever thead e tbody
-            const tableElement = tbody ? tbody.closest('table') : null;
             if (!tableElement) { initLucideIcons(); return; }
 
             // dar id à tabela para filtros
