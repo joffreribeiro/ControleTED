@@ -5400,6 +5400,7 @@
 
         function atualizarTabelaMetas() {
             const tbody = document.getElementById('tabelaMetas');
+            if (!tbody) return;
             const tableElement = tbody.closest('table');
             
             if (!window.tedSelecionado || !window.tedSelecionado.metas || window.tedSelecionado.metas.length === 0) {
