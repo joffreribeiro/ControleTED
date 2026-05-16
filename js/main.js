@@ -9200,16 +9200,15 @@
                 const thead = tableEl.querySelector('thead');
                 while (thead.rows.length > 0) thead.deleteRow(0);
 
-                const colFixas = 6; // ND UP Previsto Realizado Saldo Status
+                const colFixas = 5; // ND UP Previsto Realizado Saldo
 
-                // definição das 6 colunas fixas
+                // definição das 5 colunas fixas
                 const fixedCols = [
                     {label:'ND',              cls:'col-nd col-sticky'},
                     {label:'UP',              cls:'col-up'},
                     {label:'Valor Previsto',  cls:'col-valor right'},
                     {label:'Valor Realizado', cls:'col-valor right'},
                     {label:'Saldo',           cls:'col-saldo right'},
-                    {label:'Status',          cls:'col-status center'},
                 ];
 
                 // Linha 1: fixas com rowspan=2 + agrupadores de ano (igual ao Cadastro Financeiro)
@@ -9253,7 +9252,6 @@
                         {cls:'col-vprev', w:'150px'},
                         {cls:'col-vreal', w:'150px'},
                         {cls:'col-saldo', w:'130px'},
-                        {cls:'col-status',w:'90px'},
                     ];
                     fixedColDefs.forEach(({cls, w}) => {
                         const col = document.createElement('col');
@@ -9311,8 +9309,7 @@
                         `<td class="col-up">${upPill}</td>` +
                         `<td class="col-valor right">${prevFmt}</td>` +
                         `<td class="col-valor right">${realFmt}</td>` +
-                        `<td class="col-saldo right">${saldFmt}</td>` +
-                        `<td class="col-status center">${statusBadge}</td>`;
+                        `<td class="col-saldo right">${saldFmt}</td>`;
 
                     if (monthsExpanded) {
                         meses.forEach((m, i) => {
@@ -9336,8 +9333,7 @@
                     `<td class="col-up"></td>` +
                     `<td class="col-valor right"><span class="execfin-val previsto">R$ ${fmtBR(totalPrevisto)}</span></td>` +
                     `<td class="col-valor right"><span class="execfin-val realizado">R$ ${fmtBR(totalRealizado)}</span></td>` +
-                    `<td class="col-saldo right"><span class="execfin-val saldo ${saldoCls}">R$ ${fmtBR(totalSaldo)}</span></td>` +
-                    `<td class="col-status center"></td>`;
+                    `<td class="col-saldo right"><span class="execfin-val saldo ${saldoCls}">R$ ${fmtBR(totalSaldo)}</span></td>`;
 
                 if (monthsExpanded) {
                     meses.forEach((m, idx) => {
