@@ -9235,34 +9235,32 @@
                     }
                 });
 
-                // helper para montar células de mês nas linhas consolidadas
-                // Uma <td> por mês (igual às linhas de dados) — primeira do ano mostra valor, demais vazias
+                // helper para montar célula de ano nas linhas consolidadas
                 const anoAtual = today.getFullYear();
-                const consYearCells = (calcFn, colorFn) => {
+                const consYearCells = (calcFn, colorFn) => anos.map(a => {
                     if (!monthsExpanded) return '';
-                    return meses.map(m => {
-                        const isCurr = m.ano === anoAtual;
-                        let cls = 'year-total month-col-execFin';
-                        if (m.isFirstOfYear) cls += ' first';
-                        if (isCurr) cls += ' year-current';
-                        if (!m.isFirstOfYear) return `<td class="${cls}"></td>`;
-                        const val = calcFn(m.ano);
-                        const colorCls = colorFn ? colorFn(val) : (val < -0.01 ? 'neg' : val === 0 ? 'zero' : '');
-                        if (colorCls) cls += ` ${colorCls}`;
-                        return `<td class="${cls}">R$ ${fmtBR(val)}</td>`;
-                    }).join('');
-                };
+                    const val    = calcFn(a.ano);
+                    const isCurr = a.ano === anoAtual;
+                    let cls = 'year-total month-col-execFin';
+                    if (isCurr) cls += ' year-current';
+                    const colorCls = colorFn ? colorFn(val) : (val < -0.01 ? 'neg' : val === 0 ? 'zero' : '');
+                    if (colorCls) cls += ` ${colorCls}`;
+                    return `<td colspan="${a.count}" class="${cls}">R$ ${fmtBR(val)}</td>`;
+                }).join('');
 
                 const iconHtml = (name) => `<i data-lucide="${name}" style="width:13px;height:13px;"></i>`;
 
                 const consRow = (tipo, icon, label, formula, calcFn, colorFn) => {
                     const cells = monthsExpanded ? consYearCells(calcFn, colorFn) : '';
                     const fmlaHtml = formula ? `<span class="formula">${formula}</span>` : '';
+                    // 6 células individuais (não colspan) para alinhar com o colgroup
+                    const emptyFixedCells = '<td></td>'.repeat(colFixas - 1);
                     return `<tr class="cons ${tipo}">` +
-                        `<td class="col-sticky label-cell" colspan="${colFixas}">` +
+                        `<td class="col-sticky label-cell">` +
                             `<span class="icon">${iconHtml(icon)}</span>` +
                             `<span>${label}${fmlaHtml}</span>` +
                         `</td>` +
+                        emptyFixedCells +
                         cells +
                         `</tr>`;
                 };
