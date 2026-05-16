@@ -4618,21 +4618,15 @@ table.ef-table tbody td.right  { text-align: right; }
   color: #0C447C;
 }
 
-/* ND tag with dot */
+/* ND tag */
 .execfin-nd-tag {
-  display: inline-flex; align-items: center; gap: 4px;
+  display: inline-flex; align-items: center;
   font-family: 'IBM Plex Mono', monospace; font-weight: 600;
   font-size: 11px; padding: 2px 7px; border-radius: 5px;
 }
 .execfin-nd-tag.invest  { background: #E6F1FB; color: #0C447C; }
 .execfin-nd-tag.custeio { background: #FEF3C7; color: #92400E; }
 .execfin-nd-tag.outros  { background: #F3F4F6; color: #374151; }
-.execfin-nd-tag .dot {
-  width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
-}
-.execfin-nd-tag.invest .dot  { background: #185FA5; }
-.execfin-nd-tag.custeio .dot { background: #B45309; }
-.execfin-nd-tag.outros .dot  { background: #94a3b8; }
 
 /* UP pill */
 .execfin-up-pill {

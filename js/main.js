@@ -9111,7 +9111,7 @@
                     const cat      = ndCat(nd);
                     const uc       = upCls(up);
 
-                    const ndTag    = `<span class="execfin-nd-tag ${cat}"><span class="dot"></span>${ndFmt}</span>`;
+                    const ndTag    = `<span class="execfin-nd-tag ${cat}">${ndFmt}</span>`;
                     const upPill   = `<span class="execfin-up-pill ${uc}">${up}</span>`;
                     const prevFmt  = `<span class="execfin-val previsto">R$ ${fmtBR(previsto)}</span>`;
                     const realFmt  = `<span class="execfin-val realizado">R$ ${fmtBR(realizado)}</span>`;
