@@ -6951,6 +6951,38 @@
         }
         function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody) {
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+            // Pré-calcular % Part. recebida por linha (ND+UP sequencial)
+            // Para cada ND+UP: soma recebimentos da ExecFin e distribui pelas linhas CadFin em ordem
+            const normND = nd => String(nd || '').replace(/\D/g, '');
+            const execFins = (window.tedSelecionado && window.tedSelecionado.execFinanceiras) || [];
+            // total recebido por ND+UP
+            const recebidoPorNdUp = {};
+            execFins.forEach(e => {
+                const chaveNdUp = normND(e.nd || e.numero) + '|' + String(e.up || e.ug || '');
+                recebidoPorNdUp[chaveNdUp] = (recebidoPorNdUp[chaveNdUp] || 0) + (parseNumber(e.valor) || 0);
+            });
+            // linhas CadFin ordenadas por ND+UP (mesma ordem de dadosFiltrados)
+            const linhasPorNdUp = {};
+            dadosFiltrados.forEach(f => {
+                const chaveNdUp = normND(f.numero || f.nd) + '|' + String(f.up || f.ug || '');
+                if (!linhasPorNdUp[chaveNdUp]) linhasPorNdUp[chaveNdUp] = [];
+                linhasPorNdUp[chaveNdUp].push(f);
+            });
+            // para cada linha, calcular pctRecebido (0-100)
+            const pctRecebidoMap = new Map();
+            Object.keys(linhasPorNdUp).forEach(chaveNdUp => {
+                const linhas = linhasPorNdUp[chaveNdUp];
+                let saldoRecebido = recebidoPorNdUp[chaveNdUp] || 0;
+                linhas.forEach(f => {
+                    const valorLinha = parseNumber(f.valor) || 0;
+                    if (valorLinha <= 0) { pctRecebidoMap.set(f, 0); return; }
+                    const absorvido = Math.max(0, Math.min(saldoRecebido, valorLinha));
+                    pctRecebidoMap.set(f, absorvido / valorLinha * 100);
+                    saldoRecebido -= absorvido;
+                });
+            });
+
             // group by mesDesc/anoDesc label
             const grupos = {};
             const grupoOrdem = [];
@@ -6994,7 +7026,7 @@
                     const ndCat = _cfNdCategoria(numeroDisplay);
                     const upCat = _cfUpCategoria(f.up || f.ug || '');
                     const upRaw = String(f.up || f.ug || '');
-                    const pct = totalValor > 0 ? (valorNum / totalValor * 100) : 0;
+                    const pct = pctRecebidoMap.get(f) ?? 0;
                     const pctFmt = pct.toFixed(1);
                     const tdValor = mods && mods.valor
                         ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '')
@@ -7014,7 +7046,7 @@
                         <td class="col-valor" style="text-align:right;">${tdValor}</td>
                         <td class="col-percent">
                             <div class="val-share">
-                                <div class="val-share-bar"><div class="val-share-fill" style="width:${Math.min(pct,100)}%;"></div></div>
+                                <div class="val-share-bar"><div class="val-share-fill" style="width:${Math.min(pct,100)}%;${pct>=100?'background:#16a34a;':''}"></div></div>
                                 <span class="val-share-pct">${pctFmt}%</span>
                             </div>
                         </td>
