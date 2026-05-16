@@ -9235,18 +9235,23 @@
                     }
                 });
 
-                // helper para montar célula de ano nas linhas consolidadas
+                // helper para montar células de mês nas linhas consolidadas
+                // Uma <td> por mês (igual às linhas de dados) — primeira do ano mostra valor, demais vazias
                 const anoAtual = today.getFullYear();
-                const consYearCells = (calcFn, colorFn) => anos.map(a => {
+                const consYearCells = (calcFn, colorFn) => {
                     if (!monthsExpanded) return '';
-                    const val    = calcFn(a.ano);
-                    const isCurr = a.ano === anoAtual;
-                    let cls = 'year-total month-col-execFin';
-                    if (isCurr) cls += ' year-current';
-                    const colorCls = colorFn ? colorFn(val) : (val < -0.01 ? 'neg' : val === 0 ? 'zero' : '');
-                    if (colorCls) cls += ` ${colorCls}`;
-                    return `<td colspan="${a.count}" class="${cls}">R$ ${fmtBR(val)}</td>`;
-                }).join('');
+                    return meses.map(m => {
+                        const isCurr = m.ano === anoAtual;
+                        let cls = 'year-total month-col-execFin';
+                        if (m.isFirstOfYear) cls += ' first';
+                        if (isCurr) cls += ' year-current';
+                        if (!m.isFirstOfYear) return `<td class="${cls}"></td>`;
+                        const val = calcFn(m.ano);
+                        const colorCls = colorFn ? colorFn(val) : (val < -0.01 ? 'neg' : val === 0 ? 'zero' : '');
+                        if (colorCls) cls += ` ${colorCls}`;
+                        return `<td class="${cls}">R$ ${fmtBR(val)}</td>`;
+                    }).join('');
+                };
 
                 const iconHtml = (name) => `<i data-lucide="${name}" style="width:13px;height:13px;"></i>`;
 
