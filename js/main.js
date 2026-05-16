@@ -9090,6 +9090,33 @@
                     });
                 }
 
+                // ── reconstruir colgroup para refletir colunas atuais ───────
+                {
+                    let cg = tableEl.querySelector('colgroup');
+                    if (!cg) { cg = document.createElement('colgroup'); tableEl.prepend(cg); }
+                    cg.innerHTML = '';
+                    const fixedColDefs = [
+                        {cls:'col-nd',    w:'120px'},
+                        {cls:'col-up',    w:'80px'},
+                        {cls:'col-vprev', w:'150px'},
+                        {cls:'col-vreal', w:'150px'},
+                        {cls:'col-saldo', w:'130px'},
+                        {cls:'col-status',w:'90px'},
+                    ];
+                    fixedColDefs.forEach(({cls, w}) => {
+                        const col = document.createElement('col');
+                        col.className = cls; col.style.width = w;
+                        cg.appendChild(col);
+                    });
+                    if (monthsExpanded) {
+                        meses.forEach(() => {
+                            const col = document.createElement('col');
+                            col.className = 'month-col-execFin'; col.style.width = '80px';
+                            cg.appendChild(col);
+                        });
+                    }
+                }
+
                 // ── linhas de itens ─────────────────────────────────────────
                 const linhas = sortedChaves.map(chave => {
                     const [nd, up] = chave.split('||');
@@ -9323,7 +9350,7 @@
                         // 700px fixas + ~80px por mês visível
                         const nMeses = tbl.querySelectorAll('thead th.month-col').length || 60;
                         tbl.style.minWidth = (700 + nMeses * 82) + 'px';
-                        tbl.style.width = ''; tbl.style.tableLayout = '';
+                        tbl.style.width = ''; tbl.style.tableLayout = 'fixed';
                         if (wrapper) wrapper.style.width = '';
                         sec.classList.remove('cadFin-collapsed');
                     }
