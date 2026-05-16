@@ -4510,7 +4510,8 @@ table.ef-table tbody td.right  { text-align: right; }
    ============================================================ */
 
 #wrapperExecFin {
-    display: block;
+    display: block !important;
+    width: 100% !important;
     min-width: 730px;
     max-width: 100%;
     overflow-x: auto;
@@ -4788,7 +4789,9 @@ table.ef-table tbody td.right  { text-align: right; }
    ============================================================ */
 
 #wrapperRecGeral {
-  display: block; min-width: 730px; max-width: 100%; overflow-x: auto;
+  display: block !important;
+  width: 100% !important;
+  min-width: 730px; max-width: 100%; overflow-x: auto;
 }
 
 /* Main table */
