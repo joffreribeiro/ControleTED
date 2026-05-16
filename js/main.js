@@ -9042,7 +9042,7 @@
 
                 const colFixas = 6; // ND UP Previsto Realizado Saldo Status
 
-                // definição das 6 colunas fixas (usada em todas as linhas do thead)
+                // definição das 6 colunas fixas
                 const fixedCols = [
                     {label:'ND',              cls:'col-nd col-sticky'},
                     {label:'UP',              cls:'col-up'},
@@ -9052,14 +9052,16 @@
                     {label:'Status',          cls:'col-status center'},
                 ];
 
+                // Linha 1: fixas com rowspan=2 + agrupadores de ano (igual ao Cadastro Financeiro)
+                const tr1 = thead.insertRow();
+                fixedCols.forEach(c => {
+                    const th = document.createElement('th');
+                    th.className = c.cls;
+                    th.textContent = c.label;
+                    if (monthsExpanded) th.rowSpan = 2;
+                    tr1.appendChild(th);
+                });
                 if (monthsExpanded) {
-                    // Linha 1: 6 th fixos vazios + agrupadores de ano
-                    const tr1 = thead.insertRow();
-                    fixedCols.forEach(() => {
-                        const th = document.createElement('th');
-                        th.style.background = '#F4F4F2';
-                        tr1.appendChild(th);
-                    });
                     anos.forEach(a => {
                         const th = document.createElement('th');
                         th.colSpan = a.count;
@@ -9068,13 +9070,8 @@
                         tr1.appendChild(th);
                     });
 
-                    // Linha 2: 6 th fixos vazios + meses individuais
+                    // Linha 2: apenas meses (fixas já têm rowspan=2)
                     const tr2 = thead.insertRow();
-                    fixedCols.forEach(() => {
-                        const th = document.createElement('th');
-                        th.style.background = '#F4F4F2';
-                        tr2.appendChild(th);
-                    });
                     meses.forEach(m => {
                         const th = document.createElement('th');
                         th.className = 'month-col-execFin month-col' +
@@ -9083,21 +9080,6 @@
                         th.textContent = m.label;
                         tr2.appendChild(th);
                     });
-                }
-
-                // Última linha: rótulos das colunas fixas + espaçador de meses (se expandido)
-                const tr3 = thead.insertRow();
-                fixedCols.forEach(c => {
-                    const th = document.createElement('th');
-                    th.className = c.cls;
-                    th.textContent = c.label;
-                    tr3.appendChild(th);
-                });
-                if (monthsExpanded) {
-                    const thSpacer = document.createElement('th');
-                    thSpacer.colSpan = meses.length;
-                    thSpacer.className = 'month-col-execFin';
-                    tr3.appendChild(thSpacer);
                 }
 
                 // ── linhas de itens ─────────────────────────────────────────
@@ -9236,14 +9218,11 @@
                 const consRow = (tipo, icon, label, formula, calcFn, colorFn) => {
                     const cells = monthsExpanded ? consYearCells(calcFn, colorFn) : '';
                     const fmlaHtml = formula ? `<span class="formula">${formula}</span>` : '';
-                    // Primeira célula: ícone + label (sticky), demais células fixas vazias
-                    const emptyFixedCells = '<td></td>'.repeat(colFixas - 1);
                     return `<tr class="cons ${tipo}">` +
-                        `<td class="col-sticky label-cell" colspan="1">` +
+                        `<td class="col-sticky label-cell" colspan="${colFixas}">` +
                             `<span class="icon">${iconHtml(icon)}</span>` +
                             `<span>${label}${fmlaHtml}</span>` +
                         `</td>` +
-                        emptyFixedCells +
                         cells +
                         `</tr>`;
                 };
