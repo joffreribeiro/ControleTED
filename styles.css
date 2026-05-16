@@ -3049,8 +3049,9 @@
         #tabelaFinanceiraCompleta col.col-up  { width: 80px; }
         #tabelaFinanceiraCompleta col.col-m   { width: 60px; }
         #tabelaFinanceiraCompleta col.col-mes { width: 120px; }
-        #tabelaFinanceiraCompleta col.col-valor { width: 160px; }
-        #tabelaFinanceiraCompleta col.col-acao  { width: 80px; }
+        #tabelaFinanceiraCompleta col.col-valor   { width: 160px; }
+        #tabelaFinanceiraCompleta col.col-percent { width: 110px; }
+        #tabelaFinanceiraCompleta col.col-acao    { width: 80px; }
         /* Container: encolhe ao tamanho da tabela, scroll quando necessário */
         #wrapperCadFin {
             display: inline-block;
@@ -4132,11 +4133,11 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-grp-table tbody td.right { text-align: right; }
 .cf-grp-table tbody td.center { text-align: center; }
 
-/* val-share mini bar */
-.val-share { display: flex; align-items: center; gap: 6px; }
-.val-share-bar { flex: 1; height: 5px; border-radius: 99px; background: #e5e7eb; overflow: hidden; min-width: 40px; }
+/* val-share mini bar — coluna % Part. separada */
+.val-share { display: flex; align-items: center; gap: 5px; width: 100%; }
+.val-share-bar { flex: 1; height: 5px; border-radius: 99px; background: #e5e7eb; overflow: hidden; min-width: 30px; }
 .val-share-fill { height: 100%; border-radius: 99px; background: #3b82f6; }
-.val-share-pct { font-size: 10.5px; color: #6b7280; white-space: nowrap; min-width: 34px; text-align: right; }
+.val-share-pct { font-size: 11px; color: #374151; white-space: nowrap; min-width: 36px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
 
 /* total footer card */
 .cf-total-card {

@@ -6970,7 +6970,7 @@
                 // group header row (fixed cols + Gantt spacers)
                 const nGantt = meses.length;
                 rowsHtml += `<tr class="cf-grp-tr-head" data-grp="${grpId}" onclick="toggleGrupoCadFin('${grpId}', this)">
-                    <td colspan="${6 + nGantt}" style="padding:0; border:none;">
+                    <td colspan="${7 + nGantt}" style="padding:0; border:none;">
                         <div class="cf-grp-head">
                             <div class="cf-grp-head-left">
                                 <span class="cf-grp-toggle open" id="${grpId}_arrow">▶</span>
@@ -7011,9 +7011,9 @@
                         <td class="col-up"><span class="up-pill ${upCat}">${upRaw || '—'}</span></td>
                         <td class="col-m">${tdM}</td>
                         <td class="col-mes">${mesDescStr}</td>
-                        <td class="col-valor" style="text-align:right;">
+                        <td class="col-valor" style="text-align:right;">${tdValor}</td>
+                        <td class="col-percent">
                             <div class="val-share">
-                                <span style="font-size:12.5px; white-space:nowrap;">${tdValor}</span>
                                 <div class="val-share-bar"><div class="val-share-fill" style="width:${Math.min(pct,100)}%;"></div></div>
                                 <span class="val-share-pct">${pctFmt}%</span>
                             </div>
@@ -7169,6 +7169,7 @@
             headerHTML += '<th rowspan="2" class="col-m">M</th>';
             headerHTML += '<th rowspan="2" class="col-mes">Mês Desc.</th>';
             headerHTML += '<th rowspan="2" class="col-valor">Valor</th>';
+            headerHTML += '<th rowspan="2" class="col-percent">% Part.</th>';
             headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
 
             const today = new Date();
@@ -7258,11 +7259,12 @@
                     <td class="col-m"></td>
                     <td class="col-mes"></td>
                     <td class="col-valor">${renderValorRealFmt(totalValor, true)}</td>
+                    <td class="col-percent"></td>
                     <td class="col-acao"></td>
                     ${totalCells}
                 </tr>
                 <tr class="linha-total">
-                    <td colspan="6" style="text-align:left; font-weight:700;">Previsto Anual</td>
+                    <td colspan="7" style="text-align:left; font-weight:700;">Previsto Anual</td>
                     ${previstoAnualPorAnoCells}
                 </tr>
             `;
