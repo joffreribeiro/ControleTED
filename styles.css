@@ -1920,11 +1920,15 @@
             overflow-x: auto;
         }
 
-        /* Wrappers das tabelas ocupam toda a largura do detalhe-secao-body */
+        /* Wrappers e KPI containers ocupam toda a largura do detalhe-secao-body */
         #wrapperCadFin,
         #wrapperExecFin,
-        #wrapperRecGeral {
+        #wrapperRecGeral,
+        #cfKpiWrap,
+        #execfin-kpis-container,
+        #recgeral-kpis-container {
             width: 100%;
+            box-sizing: border-box;
         }
 
         /* Form groups dentro das seções: labels mais legíveis */
@@ -3066,6 +3070,9 @@
             min-width: 730px;
             max-width: 100%;
             overflow-x: auto;
+            border: 1px solid #ddd;
+            border-radius: 0.25rem;
+            position: relative;
         }
         /* Card da seção encolhe junto quando meses ocultos */
         .detalhe-secao.cadFin-collapsed {
