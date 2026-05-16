@@ -4522,14 +4522,15 @@ table.ef-table tbody td.right  { text-align: right; }
   min-width: 900px;
 }
 
-/* Header */
+/* Header — igual ao tabela-padrao thead th */
 .execfin-table thead th {
-  background: #F4F4F2; color: #64748b;
-  font-size: 10.5px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.05em;
-  padding: 8px 10px; text-align: left;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
-  white-space: nowrap;
+  background: #F4F4F2; color: #1a1a1a;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 10px 12px; text-align: center;
+  border-bottom: 2px solid #85B7EB;
+  white-space: nowrap; vertical-align: middle;
+  position: sticky; top: 0; z-index: 120;
 }
 .execfin-table thead th.right  { text-align: right; }
 .execfin-table thead th.center { text-align: center; }
@@ -4538,13 +4539,13 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table thead th.year-group {
   background: #E6F1FB; color: #0C447C; text-align: center;
   font-weight: 700; border-left: 2px solid #185FA5;
-  padding: 4px 8px; font-size: 11px;
+  font-size: 11px;
 }
 
 /* Month column headers */
 .execfin-table thead th.month-col {
-  font-size: 10px; padding: 6px 6px; min-width: 80px;
-  background: #F7F9FC; text-align: right;
+  min-width: 80px; text-align: center;
+  background: #E6F1FB; color: #0C447C;
 }
 .execfin-table thead th.month-col.first { border-left: 2px solid #185FA5; }
 .execfin-table thead th.month-col.current {
@@ -4708,3 +4709,26 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr.cons td.year-total.green { color: #3B6D11; }
 .execfin-table tbody tr.cons td.year-total.year-current { background: rgba(24,95,165,0.10); }
 .execfin-table tbody tr.cons.resultado td.year-total { color: #A32D2D !important; }
+
+/* ============================================================
+   CADASTRO FINANCEIRO — cabeçalho de meses padronizado
+   ============================================================ */
+/* Agrupador de ano — igual ao execfin year-group */
+.tabela-padrao thead th.year-group-cadfin {
+  background: #E6F1FB !important; color: #0C447C !important;
+  text-align: center; font-weight: 700;
+  border-left: 2px solid #185FA5;
+}
+/* Primeiro mês de cada ano — borda esquerda azul */
+.tabela-padrao .header-meses th.mes-first {
+  border-left: 2px solid #185FA5;
+}
+/* Mês atual — fundo azul escuro + label "ATUAL" */
+.tabela-padrao .header-meses th.mes-current {
+  background: #185FA5 !important; color: #fff !important;
+}
+.tabela-padrao .header-meses th.mes-current::after {
+  content: 'ATUAL'; display: block;
+  font-size: 8px; color: #fff; opacity: 0.85;
+  margin-top: 1px; letter-spacing: 0.06em;
+}

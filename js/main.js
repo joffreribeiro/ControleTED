@@ -7166,19 +7166,27 @@
             headerHTML += '<th rowspan="2" class="col-mes">Mês Desc.</th>';
             headerHTML += '<th rowspan="2" class="col-valor">Valor</th>';
             headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
-            
+
+            const today = new Date();
             anos.forEach(a => {
-                headerHTML += `<th class="month-col-cadFin" style="text-align:center;${mmHideCadFin}" colspan="${a.count}">${a.ano}</th>`;
+                headerHTML += `<th class="month-col-cadFin year-group-cadfin" style="${mmHideCadFin}" colspan="${a.count}">${a.ano}</th>`;
             });
-            
+
             headerRow1.innerHTML = headerHTML;
 
             // Criar segunda linha do cabeçalho com meses
             headerRow2 = document.createElement('tr');
             headerRow2.className = 'header-meses';
             let headerRow2HTML = '';
+            let lastAno = null;
             meses.forEach(m => {
-                headerRow2HTML += `<th class="month-col-cadFin" style="${mmHideCadFin}">${m.label}</th>`;
+                const isFirst   = m.ano !== lastAno;
+                const isCurrent = m.ano === today.getFullYear() && m.mes === today.getMonth() + 1;
+                lastAno = m.ano;
+                let cls = 'month-col-cadFin';
+                if (isFirst)   cls += ' mes-first';
+                if (isCurrent) cls += ' mes-current';
+                headerRow2HTML += `<th class="${cls}" style="${mmHideCadFin}">${m.label}</th>`;
             });
             headerRow2.innerHTML = headerRow2HTML;
             tableCompleta.querySelector('thead').appendChild(headerRow2);
