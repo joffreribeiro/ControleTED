@@ -4542,6 +4542,10 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaExecFinanceiraTable th.col-nd,
 #tabelaExecFinanceiraTable td.col-nd { text-align: left; }
 
+/* UP column — mesma largura do CadFin (padding compacto) */
+#tabelaExecFinanceiraTable th.col-up,
+#tabelaExecFinanceiraTable td.col-up { padding-left: 6px !important; padding-right: 6px !important; }
+
 /* thead base — herda tabela-padrao, mas garante centralizacao e border */
 .execfin-table thead th {
   text-align: center;
