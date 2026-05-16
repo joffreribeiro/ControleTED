@@ -4664,55 +4664,75 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-status.critico  { background: #FCEBEB; color: #A32D2D; }
 .execfin-status.critico .dot { background: #A32D2D; }
 
-/* Consolidated annual rows */
-.execfin-table tbody tr.cons { background: #FAFBFC; }
-.execfin-table tbody tr.cons:hover td { background: #F4F8FE; }
-.execfin-table tbody tr.cons td {
+/* Consolidated annual rows — shared by execfin-table and rg-table */
+.execfin-table tbody tr.cons,
+.rg-table tbody tr.cons { background: #FAFBFC; }
+.execfin-table tbody tr.cons:hover td,
+.rg-table tbody tr.cons:hover td { background: #F4F8FE; }
+.execfin-table tbody tr.cons td,
+.rg-table tbody tr.cons td {
   padding: 11px 14px; font-size: 12px; color: #1a1a1a;
   border-bottom: 1px solid rgba(0,0,0,0.04);
 }
-.execfin-table tbody tr.cons td.label-cell {
+.execfin-table tbody tr.cons td.label-cell,
+.rg-table tbody tr.cons td.label-cell {
   font-weight: 600; font-style: normal;
   display: flex; align-items: center; gap: 8px;
 }
-.execfin-table tbody tr.cons td.label-cell .icon {
+.execfin-table tbody tr.cons td.label-cell .icon,
+.rg-table tbody tr.cons td.label-cell .icon {
   width: 22px; height: 22px; border-radius: 6px;
   display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.execfin-table tbody tr.cons.previsto  td.label-cell .icon { background: #E6F1FB; color: #0C447C; }
-.execfin-table tbody tr.cons.areceber  td.label-cell .icon { background: #FAEEDA; color: #854F0B; }
-.execfin-table tbody tr.cons.total     td.label-cell .icon { background: #F1F5F9; color: #475569; }
-.execfin-table tbody tr.cons.recebido  td.label-cell .icon { background: #EAF3DE; color: #3B6D11; }
-.execfin-table tbody tr.cons.devolvido td.label-cell .icon { background: #FCEBEB; color: #A32D2D; }
-.execfin-table tbody tr.cons.saldo-row td.label-cell .icon { background: #E6F1FB; color: #185FA5; }
-.execfin-table tbody tr.cons.resultado {
-  background: #FCEBEB !important;
-}
-.execfin-table tbody tr.cons.resultado td {
+.execfin-table tbody tr.cons.previsto  td.label-cell .icon,
+.rg-table tbody tr.cons.previsto  td.label-cell .icon { background: #E6F1FB; color: #0C447C; }
+.execfin-table tbody tr.cons.areceber  td.label-cell .icon,
+.rg-table tbody tr.cons.areceber  td.label-cell .icon { background: #FAEEDA; color: #854F0B; }
+.execfin-table tbody tr.cons.total     td.label-cell .icon,
+.rg-table tbody tr.cons.total     td.label-cell .icon { background: #F1F5F9; color: #475569; }
+.execfin-table tbody tr.cons.recebido  td.label-cell .icon,
+.rg-table tbody tr.cons.recebido  td.label-cell .icon { background: #EAF3DE; color: #3B6D11; }
+.execfin-table tbody tr.cons.devolvido td.label-cell .icon,
+.rg-table tbody tr.cons.devolvido td.label-cell .icon { background: #FCEBEB; color: #A32D2D; }
+.execfin-table tbody tr.cons.saldo-row td.label-cell .icon,
+.rg-table tbody tr.cons.saldo-row td.label-cell .icon { background: #E6F1FB; color: #185FA5; }
+.execfin-table tbody tr.cons.resultado,
+.rg-table tbody tr.cons.resultado { background: #FCEBEB !important; }
+.execfin-table tbody tr.cons.resultado td,
+.rg-table tbody tr.cons.resultado td {
   color: #A32D2D !important; font-weight: 700; font-style: normal;
   border-top: 2px solid #A32D2D; border-bottom: 2px solid #A32D2D;
   padding: 13px 14px;
 }
-.execfin-table tbody tr.cons.resultado td.label-cell .icon { background: #A32D2D; color: #fff; }
-.execfin-table tbody tr.cons td .formula {
+.execfin-table tbody tr.cons.resultado td.label-cell .icon,
+.rg-table tbody tr.cons.resultado td.label-cell .icon { background: #A32D2D; color: #fff; }
+.execfin-table tbody tr.cons td .formula,
+.rg-table tbody tr.cons td .formula {
   display: block; font-size: 10px; color: #94a3b8;
   font-style: italic; font-weight: 400; margin-top: 1px;
 }
-.execfin-table tbody tr.cons.resultado td .formula { color: rgba(163,45,45,0.7); }
+.execfin-table tbody tr.cons.resultado td .formula,
+.rg-table tbody tr.cons.resultado td .formula { color: rgba(163,45,45,0.7); }
 
 /* Year-total cells in consolidated rows */
-.execfin-table tbody tr.cons td.year-total {
+.execfin-table tbody tr.cons td.year-total,
+.rg-table tbody tr.cons td.year-total {
   text-align: center; font-family: 'IBM Plex Mono', monospace;
   font-style: normal; font-weight: 600; font-size: 12.5px; color: #1a1a1a;
   background: rgba(24,95,165,0.05); border-left: 1px solid rgba(24,95,165,0.15);
   vertical-align: middle;
 }
-.execfin-table tbody tr.cons td.year-total.zero  { color: #c0c8d4; font-weight: 400; }
-.execfin-table tbody tr.cons td.year-total.neg   { color: #A32D2D; }
-.execfin-table tbody tr.cons td.year-total.green { color: #3B6D11; }
-.execfin-table tbody tr.cons td.year-total.year-current { background: rgba(24,95,165,0.10); }
-.execfin-table tbody tr.cons.resultado td.year-total { color: #A32D2D !important; }
+.execfin-table tbody tr.cons td.year-total.zero,
+.rg-table tbody tr.cons td.year-total.zero  { color: #c0c8d4; font-weight: 400; }
+.execfin-table tbody tr.cons td.year-total.neg,
+.rg-table tbody tr.cons td.year-total.neg   { color: #A32D2D; }
+.execfin-table tbody tr.cons td.year-total.green,
+.rg-table tbody tr.cons td.year-total.green { color: #3B6D11; }
+.execfin-table tbody tr.cons td.year-total.year-current,
+.rg-table tbody tr.cons td.year-total.year-current { background: rgba(24,95,165,0.10); }
+.execfin-table tbody tr.cons.resultado td.year-total,
+.rg-table tbody tr.cons.resultado td.year-total { color: #A32D2D !important; }
 
 /* ============================================================
    CADASTRO FINANCEIRO — cabeçalho de meses padronizado
@@ -4735,4 +4755,118 @@ table.ef-table tbody td.right  { text-align: right; }
   content: 'ATUAL'; display: block;
   font-size: 8px; color: #fff; opacity: 0.85;
   margin-top: 1px; letter-spacing: 0.06em;
+}
+
+/* ============================================================
+   RECURSOS GERAIS IMBEL — REDESIGN (rg-*)
+   ============================================================ */
+
+#wrapperRecGeral {
+  display: inline-block; width: fit-content; max-width: 100%; overflow-x: auto;
+}
+
+/* Main table */
+.rg-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  min-width: 550px; table-layout: fixed;
+}
+
+/* Larguras das colunas fixas */
+#tabelaRecursosGeraisTable col.rg-col-nd    { width: 120px; }
+#tabelaRecursosGeraisTable col.rg-col-vprev { width: 150px; }
+#tabelaRecursosGeraisTable col.rg-col-vreal { width: 150px; }
+#tabelaRecursosGeraisTable col.rg-col-saldo { width: 130px; }
+
+/* thead */
+.rg-table thead th { text-align: center; }
+.rg-table thead th.right { text-align: right; }
+
+/* Year group header */
+.rg-table thead th.year-group {
+  background: #E6F1FB; color: #0C447C;
+  font-weight: 700; border-left: 2px solid #185FA5;
+  border-bottom: 2px solid #85B7EB; padding: 4px 8px; font-size: 11px;
+}
+.rg-table thead th.year-group.future {
+  background: #F4F4F2; color: #94a3b8; border-left: 2px solid #cbd5e1;
+}
+
+/* Month header */
+.rg-table thead th.month-col {
+  min-width: 80px; background: #E6F1FB; color: #0C447C;
+  border-bottom: 2px solid #85B7EB; font-size: 10px; padding: 6px 4px;
+}
+.rg-table thead th.month-col.first { border-left: 2px solid #185FA5; }
+.rg-table thead th.month-col.first.future { border-left: 2px solid #cbd5e1; }
+.rg-table thead th.month-col.current {
+  background: #185FA5; color: #fff; border-bottom: 2px solid #185FA5;
+}
+.rg-table thead th.month-col.current::after {
+  content: 'ATUAL'; display: block;
+  font-size: 8px; color: #fff; opacity: 0.85;
+}
+.rg-table thead th.month-col.future { color: #c0c8d4; background: #F7F9FC; }
+
+/* ND tag — rg-nd-tag */
+.rg-nd-tag {
+  display: inline-flex; align-items: center;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 600;
+  font-size: 11px; padding: 2px 7px; border-radius: 5px;
+}
+.rg-nd-tag.invest  { background: #E6F1FB; color: #0C447C; }
+.rg-nd-tag.invest2 { background: #FBEAFE; color: #6B21A8; }
+.rg-nd-tag.custeio { background: #FEF3C7; color: #92400E; }
+.rg-nd-tag.outros  { background: #F3F4F6; color: #374151; }
+
+/* Valores */
+.rg-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.rg-val.previsto  { color: #475569; }
+.rg-val.realizado { color: #1a1a1a; font-weight: 600; }
+.rg-val.saldo     { font-weight: 600; }
+.rg-val.saldo.alert { color: #A32D2D; }
+.rg-val.saldo.ok    { color: #3B6D11; }
+.rg-val.saldo.neg   { color: #A32D2D; }
+
+/* Células mensais */
+.rg-table tbody td.month-cell {
+  background: #FCFDFE; font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; text-align: right; padding: 6px 6px;
+  border-left: 1px solid rgba(0,0,0,0.03); color: #475569;
+  cursor: pointer;
+}
+.rg-table tbody td.month-cell.first { border-left: 1px solid rgba(24,95,165,0.18); }
+.rg-table tbody td.month-cell.first.future { border-left: 1px solid rgba(148,163,184,0.18); }
+.rg-table tbody td.month-cell.has-value { background: #EAF3DE; color: #2D5A0A; font-weight: 600; }
+.rg-table tbody td.month-cell.has-value.neg { background: #FCEBEB; color: #A32D2D; font-weight: 600; }
+.rg-table tbody td.month-cell.current { background: #E6F1FB; }
+.rg-table tbody td.month-cell.current.has-value { background: linear-gradient(135deg,#EAF3DE 0%,#E6F1FB 100%); }
+.rg-table tbody td.month-cell.future { color: #c0c8d4; }
+
+/* Linha TOTAL */
+.rg-table tbody tr.rg-total-row td {
+  background: #F0F4F9 !important; font-weight: 700; color: #0C447C;
+  border-top: 2px solid #185FA5; border-bottom: 2px solid #185FA5;
+  padding: 10px 10px;
+}
+.rg-table tbody tr.rg-total-row td.month-cell {
+  background: #F0F4F9 !important; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+}
+.rg-table tbody tr.rg-total-row td.month-cell.has-value {
+  background: linear-gradient(135deg,#DDE9F4 0%,#C8DCE9 100%) !important; color: #0C447C;
+}
+.rg-table tbody tr.rg-total-row td.month-cell.has-value.neg {
+  background: #FCEBEB !important; color: #A32D2D;
+}
+
+/* Linhas consolidadas — reutiliza .cons do ExecFin, só adiciona variações de future */
+.rg-table tbody tr.cons td.year-total.future { background: rgba(148,163,184,0.04); }
+.rg-table tbody tr.cons td.year-total.future.zero { color: #c0c8d4; }
+.rg-table tbody tr.cons td.year-total.future.neg  { background: rgba(163,45,45,0.04); }
+.rg-table tbody tr.cons.resultado td.year-total.future { background: rgba(163,45,45,0.06); }
+
+/* Banner de insight */
+.rg-insight-banner {
+  background: #FFF8E6; border: 1px solid #F5D77A; color: #4a3a04;
+  padding: 10px 14px; border-radius: 8px; font-size: 12.5px; line-height: 1.5;
+  margin: 14px 0 4px; display: flex; align-items: flex-start; gap: 8px;
 }

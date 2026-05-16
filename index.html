@@ -1224,11 +1224,17 @@
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL <span class="section-count-badge" id="count-recgeral">0</span></h3>
-                            <div class="detalhe-secao-actions"><button type="button" class="section-add-btn" onclick="abrirModalRecGeral()">+ Adicionar</button></div>
+                            <div class="detalhe-secao-actions">
+                                <button type="button" id="toggle-months-recGeral" class="btn btn-sm auto-style-005" data-expanded="0" onclick="toggleMonthCols('recGeral', this)">Ver detalhes mensais</button>
+                                <button type="button" class="section-add-btn" onclick="abrirModalRecGeral()">+ Adicionar</button>
+                            </div>
                         </div>
                         <div class="detalhe-secao-body">
 
-                        <div class="table-freeze-wrapper auto-style-015">
+                        <!-- KPIs Recursos Gerais (preenchidos por JS) -->
+                        <div id="recgeral-kpis-container"></div>
+
+                        <div id="wrapperRecGeral" class="table-freeze-wrapper auto-style-015" style="max-width:100%;overflow-x:auto;">
                             <!-- Filtros Recursos Gerais -->
                             <div class="filter-bar" id="filterBarRecGeral">
                                 <span class="filter-bar-label">Filtrar:</span>
@@ -1238,20 +1244,23 @@
                                     <div class="filter-menu" id="filterNdRecGeralMenu"></div>
                                 </div>
                             </div>
-                            <table id="tabelaRecursosGeraisTable" class="tabela-padrao" style="min-width: 500px;">
+                            <table id="tabelaRecursosGeraisTable" class="rg-table tabela-padrao">
+                                <colgroup>
+                                    <col class="rg-col-nd">
+                                    <col class="rg-col-vprev">
+                                    <col class="rg-col-vreal">
+                                    <col class="rg-col-saldo">
+                                </colgroup>
                                 <thead>
-                                    <tr>
-                                        <th class="col-nd">ND</th>
-                                        <th class="col-valor">Valor Previsto</th>
-                                        <th class="col-valor">Valor Realizado</th>
-                                        <th class="col-saldo">Saldo</th>
-                                    </tr>
+                                    <tr></tr>
+                                    <tr></tr>
                                 </thead>
                                 <tbody id="tabelaRecursosGerais">
                                     <tr><td colspan="67" class="auto-style-014">Nenhum recurso geral cadastrado</td></tr>
                                 </tbody>
                             </table>
                         </div>
+                        <div id="recgeral-insight-container"></div>
                         </div>
                     </div>
 

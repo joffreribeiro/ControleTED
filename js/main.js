@@ -6841,9 +6841,13 @@
             btn.setAttribute('data-expanded', newExpanded ? '1' : '0');
             btn.textContent = newExpanded ? 'Ocultar detalhes mensais' : 'Ver detalhes mensais';
 
-            // execFin reconstrói o thead do zero — só re-renderiza
+            // execFin e recGeral reconstroem o thead do zero — só re-renderiza
             if (section === 'execFin') {
                 try { atualizarTabelaExecFinanceira(); } catch(e) { console.error(e); }
+                return;
+            }
+            if (section === 'recGeral') {
+                try { atualizarTabelaRecursosGerais(); } catch(e) { console.error(e); }
                 return;
             }
 
@@ -9917,233 +9921,368 @@
         }
 
         function atualizarTabelaRecursosGerais() {
-            const tbody = document.getElementById('tabelaRecursosGerais');
+            const tbody   = document.getElementById('tabelaRecursosGerais');
             const tableEl = document.getElementById('tabelaRecursosGeraisTable');
-
             if (!tbody || !tableEl) return;
 
-            // Popular filtros
             try { popularFiltrosRecGeral(); } catch(e) {}
 
             if (!window.tedSelecionado) {
-                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Selecione um TED</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center;padding:1rem;">Selecione um TED</td></tr>';
                 return;
             }
 
-            // Base (60 meses) - mesma lógica da Execução Financeira
+            const fmtBR = (v) => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+            // ND category (extend para invest2 = 44.91.xx)
+            const ndCat = (nd) => {
+                const s = String(nd||'').replace(/\D/g,'');
+                if (s.startsWith('4491')) return 'invest2';
+                if (s.startsWith('44'))   return 'invest';
+                if (s.startsWith('33'))   return 'custeio';
+                return 'outros';
+            };
+
+            // Timeline 60 meses
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao+'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
-                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc-1, 1);
             } else {
                 startDate = new Date();
             }
 
+            const today = new Date();
+            const cad   = window.tedSelecionado.financeiros     || [];
+            const recs  = window.tedSelecionado.recursosGerais  || [];
+
+            // Anos com dados (para detectar anos futuros)
+            const anosComDados = new Set();
+            cad.forEach(f  => { const a=parseInt(f.anoDesc,10); if(!isNaN(a)) anosComDados.add(a); });
+            recs.forEach(r => { if(!r.data) return; anosComDados.add(new Date(r.data+'T00:00:00').getFullYear()); });
+
             const meses = [];
-            for (let i = 0; i < 60; i++) {
-                const dd = new Date(startDate);
-                dd.setMonth(dd.getMonth() + i);
-                const mes = dd.toLocaleString('pt-BR', {month:'short'}).replace('.','').toUpperCase();
-                const ano2 = String(dd.getFullYear()).slice(-2);
-                meses.push({label:`${mes}/${ano2}`, ano:dd.getFullYear(), mes:dd.getMonth()+1, fullYear:dd.getFullYear()});
+            for (let i=0; i<60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth()+i);
+                const mesLabel = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({
+                    label: `${mesLabel}/${ano2}`,
+                    ano: d.getFullYear(), mes: d.getMonth()+1,
+                    isCurrent: d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth(),
+                    isFuture: !anosComDados.has(d.getFullYear()),
+                });
             }
+            const seenAnos = new Set();
+            meses.forEach(m => { m.isFirstOfYear = !seenAnos.has(m.ano); seenAnos.add(m.ano); });
 
             const anos = [];
             meses.forEach(m => {
-                if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ano:m.ano, count:1}); else anos[anos.length-1].count += 1;
+                if (!anos.length || anos[anos.length-1].ano!==m.ano) anos.push({ano:m.ano,count:1});
+                else anos[anos.length-1].count++;
             });
 
-            // Cabeçalho com rowspan (sem UP)
-            let hr1 = tableEl.querySelector('thead tr');
-            let hdr = '<th rowspan="2" class="col-nd">ND</th>' +
-                      '<th rowspan="2" class="col-valor">Valor Previsto</th>' +
-                      '<th rowspan="2" class="col-valor">Valor Realizado</th>' +
-                      '<th rowspan="2" class="col-saldo">Saldo</th>';
-            anos.forEach(a => {
-                hdr += `<th style="text-align:center;" colspan="${a.count}">${a.ano}</th>`;
+            const monthsExpanded = document.getElementById('toggle-months-recGeral')?.getAttribute('data-expanded')==='1';
+
+            // ── Reconstruir thead ────────────────────────────────────────────
+            const thead = tableEl.querySelector('thead');
+            while (thead.rows.length>0) thead.deleteRow(0);
+
+            const colFixas = 4; // ND VP VR Saldo
+
+            const fixedCols = [
+                {label:'ND',              cls:'rg-col-nd col-sticky'},
+                {label:'Valor Previsto',  cls:'rg-col-vprev right'},
+                {label:'Valor Realizado', cls:'rg-col-vreal right'},
+                {label:'Saldo',           cls:'rg-col-saldo right'},
+            ];
+
+            const tr1 = thead.insertRow();
+            fixedCols.forEach(c => {
+                const th = document.createElement('th');
+                th.className = c.cls;
+                th.textContent = c.label;
+                if (monthsExpanded) th.rowSpan = 2;
+                tr1.appendChild(th);
             });
-            hr1.innerHTML = hdr;
+            if (monthsExpanded) {
+                anos.forEach(a => {
+                    const th = document.createElement('th');
+                    th.colSpan = a.count;
+                    th.className = 'month-col-recGeral year-group' + (a.isFuture || !anosComDados.has(a.ano) ? ' future' : '');
+                    th.textContent = String(a.ano);
+                    tr1.appendChild(th);
+                });
+                const tr2 = thead.insertRow();
+                meses.forEach(m => {
+                    const th = document.createElement('th');
+                    let cls = 'month-col-recGeral month-col';
+                    if (m.isFirstOfYear) cls += ' first';
+                    if (m.isCurrent)     cls += ' current';
+                    if (m.isFuture)      cls += ' future';
+                    th.className = cls;
+                    th.textContent = m.label;
+                    tr2.appendChild(th);
+                });
+            }
 
-            let hr2 = tableEl.querySelector('thead tr:nth-child(2)');
-            if (hr2) hr2.remove();
-            hr2 = document.createElement('tr');
-            hr2.className = 'header-meses';
-            let hdr2 = '';
-            meses.forEach(m => { hdr2 += `<th>${m.label}</th>`; });
-            hr2.innerHTML = hdr2;
-            tableEl.querySelector('thead').appendChild(hr2);
+            // ── Reconstruir colgroup ─────────────────────────────────────────
+            {
+                let cg = tableEl.querySelector('colgroup');
+                if (!cg) { cg=document.createElement('colgroup'); tableEl.prepend(cg); }
+                cg.innerHTML='';
+                [{cls:'rg-col-nd',w:'120px'},{cls:'rg-col-vprev',w:'150px'},{cls:'rg-col-vreal',w:'150px'},{cls:'rg-col-saldo',w:'130px'}]
+                    .forEach(({cls,w})=>{ const col=document.createElement('col'); col.className=cls; col.style.width=w; cg.appendChild(col); });
+                if (monthsExpanded) meses.forEach(()=>{ const col=document.createElement('col'); col.className='month-col-recGeral'; col.style.width='80px'; cg.appendChild(col); });
+            }
 
-            // Dados: cadastro financeiro (previsto) agrupado por ND (somando todas as UPs)
-            const cad = window.tedSelecionado.financeiros || [];
-            const recs = window.tedSelecionado.recursosGerais || [];
-
-            // Conjunto de NDs presentes no cadastro ou nos recursos gerais (normalizadas para agrupar corretamente)
-            // Mapa: ND normalizada → ND para exibição (preferir formato do cadastro com pontos)
+            // ── Dados ────────────────────────────────────────────────────────
             const ndDisplayMap = {};
-            cad.forEach(f => {
-                const norm = normalizarND(f.numero);
-                if (norm && !ndDisplayMap[norm]) ndDisplayMap[norm] = formatarNDComPontos(norm);
-            });
-            recs.forEach(r => {
-                const norm = normalizarND(r.nd);
-                if (norm && !ndDisplayMap[norm]) ndDisplayMap[norm] = formatarNDComPontos(norm);
-            });
+            cad.forEach(f  => { const n=normalizarND(f.numero); if(n&&!ndDisplayMap[n]) ndDisplayMap[n]=formatarNDComPontos(n); });
+            recs.forEach(r => { const n=normalizarND(r.nd);     if(n&&!ndDisplayMap[n]) ndDisplayMap[n]=formatarNDComPontos(n); });
 
             const ndsNormSet = new Set(Object.keys(ndDisplayMap));
 
-            if (ndsNormSet.size === 0) {
-                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Nenhum dado financeiro</td></tr>';
-                return;
+            if (ndsNormSet.size===0) {
+                tbody.innerHTML='<tr><td colspan="67" style="text-align:center;padding:1rem;">Nenhum dado financeiro</td></tr>';
+                _recgeralRenderKpis(null); return;
             }
 
-            // Aplicar filtros
-            const filtros = window.filtrosRecGeral || { nd: [] };
+            const filtros = window.filtrosRecGeral||{nd:[]};
             const ndsFiltrados = Array.from(ndsNormSet).filter(ndNorm => {
-                if (filtros.nd.length) {
-                    // Comparar filtro normalizado
-                    const filtrosNorm = filtros.nd.map(f => normalizarND(f));
-                    if (!filtrosNorm.includes(ndNorm)) return false;
-                }
+                if (filtros.nd.length) { const fn=filtros.nd.map(f=>normalizarND(f)); if(!fn.includes(ndNorm)) return false; }
                 return true;
             });
 
-            if (ndsFiltrados.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center; padding:1rem; color:var(--text);">Nenhum dado com os filtros aplicados</td></tr>';
-                return;
+            if (ndsFiltrados.length===0) {
+                tbody.innerHTML='<tr><td colspan="67" style="text-align:center;padding:1rem;">Nenhum dado com os filtros aplicados</td></tr>';
+                _recgeralRenderKpis(null); return;
             }
 
-            let totalPrevisto = 0;
-            let totalRealizado = 0;
-            const totalMeses = new Map();
+            const sortedNDs = [...ndsFiltrados].sort((a,b)=>{
+                const nA=parseFloat(String(a).replace(/[^0-9]/g,'')), nB=parseFloat(String(b).replace(/[^0-9]/g,''));
+                return (!isNaN(nA)&&!isNaN(nB)) ? nA-nB : String(a).localeCompare(String(b),undefined,{numeric:true});
+            });
 
-            // Ordenar NDs (normalizadas)
-            const sortedNDs = ndsFiltrados.sort((a, b) => {
-                const nA = parseFloat(String(a).replace(/[^0-9]/g, ''));
-                const nB = parseFloat(String(b).replace(/[^0-9]/g, ''));
-                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
-                return String(a).localeCompare(String(b), undefined, {numeric:true});
+            let totalPrevisto=0, totalRealizado=0;
+            const totalMeses=new Map();
+            const previstoByAno={}, recebidoByAno={}, devolvidoByAno={};
+
+            // Agrupar previsto por ano
+            cad.forEach(f => {
+                const ndNorm=normalizarND(f.numero);
+                if(ndsFiltrados.length&&!ndsFiltrados.includes(ndNorm)) return;
+                const ano=parseInt(f.anoDesc,10);
+                if(!isNaN(ano)) previstoByAno[ano]=(previstoByAno[ano]||0)+(parseFloat(f.valor)||0);
+            });
+            // Agrupar recebido/devolvido por ano
+            recs.forEach(r => {
+                const ndNorm=normalizarND(r.nd);
+                if(ndsFiltrados.length&&!ndsFiltrados.includes(ndNorm)) return;
+                if(!r.data) return;
+                const ano=new Date(r.data+'T00:00:00').getFullYear(); if(isNaN(ano)) return;
+                const valor=parseFloat(r.valor)||0;
+                if(valor>0) recebidoByAno[ano]=(recebidoByAno[ano]||0)+valor;
+                if(valor<0) devolvidoByAno[ano]=(devolvidoByAno[ano]||0)+valor;
             });
 
             const linhas = sortedNDs.map(ndNorm => {
-                const ndDisplay = ndDisplayMap[ndNorm] || ndNorm;
+                const ndDisplay = ndDisplayMap[ndNorm]||ndNorm;
+                const previsto  = cad.filter(f=>normalizarND(f.numero)===ndNorm).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                const recsList  = recs.filter(r=>normalizarND(r.nd)===ndNorm);
+                const realizado = recsList.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+                const saldo     = previsto-realizado;
 
-                // Previsto: soma do cadastro financeiro para esta ND (todas as UPs), comparando normalizado
-                const previsto = cad.filter(f => normalizarND(f.numero) === ndNorm)
-                                    .reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+                totalPrevisto+=previsto; totalRealizado+=realizado;
 
-                // Realizado: soma dos recursos gerais para esta ND, comparando normalizado
-                const recsList = recs.filter(r => normalizarND(r.nd) === ndNorm);
-                const realizado = recsList.reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
-                const saldo = previsto - realizado;
-
-                totalPrevisto += previsto;
-                totalRealizado += realizado;
-
-                // Mapear valores por mês (cronograma 60 meses)
-                const mapaMes = new Map();
+                const mapaMes=new Map();
                 recsList.forEach(r => {
-                    if (!r.data) return;
-                    const rd = new Date(r.data + 'T00:00:00');
-                    const diff = (rd.getFullYear() - startDate.getFullYear()) * 12 + (rd.getMonth() - startDate.getMonth());
-                    if (diff >= 0 && diff < 60) mapaMes.set(diff, (mapaMes.get(diff) || 0) + (parseFloat(r.valor) || 0));
+                    if(!r.data) return;
+                    const rd=new Date(r.data+'T00:00:00');
+                    const diff=(rd.getFullYear()-startDate.getFullYear())*12+(rd.getMonth()-startDate.getMonth());
+                    if(diff>=0&&diff<60) mapaMes.set(diff,(mapaMes.get(diff)||0)+(parseFloat(r.valor)||0));
                 });
+                mapaMes.forEach((v,i)=>totalMeses.set(i,(totalMeses.get(i)||0)+v));
 
-                mapaMes.forEach((val, idxMes) => {
-                    totalMeses.set(idxMes, (totalMeses.get(idxMes) || 0) + val);
-                });
+                const saldoCls = saldo>0.01?'alert':(Math.abs(saldo)<0.01?'ok':'neg');
+                const ndTag    = `<span class="rg-nd-tag ${ndCat(ndNorm)}">${ndDisplay}</span>`;
 
-                let html = `<tr>` +
-                           `<td class="col-nd">${ndDisplay}</td>` +
-                           `<td class="col-valor">${previsto < 0 ? '<span style="color:#ef4444">' + previsto.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : previsto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>` +
-                           `<td class="col-valor">${realizado < 0 ? '<span style="color:#ef4444">' + realizado.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' : realizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>` +
-                           `<td class="col-saldo"><span style="font-weight:700;color:${saldo < 0 ? '#ef4444' : 'inherit'}">${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>`;
+                let html = `<tr>`+
+                    `<td class="rg-col-nd col-sticky">${ndTag}</td>`+
+                    `<td class="rg-col-vprev right"><span class="rg-val previsto">R$ ${fmtBR(previsto)}</span></td>`+
+                    `<td class="rg-col-vreal right"><span class="rg-val realizado">R$ ${fmtBR(realizado)}</span></td>`+
+                    `<td class="rg-col-saldo right"><span class="rg-val saldo ${saldoCls}">R$ ${fmtBR(saldo)}</span></td>`;
 
-                meses.forEach((_, i) => {
-                    const val = mapaMes.get(i);
-                    const cellBg = val ? '#e0f2fe' : 'transparent';
-                    const display = (val !== undefined && val !== null && val !== '') ? (parseFloat(val) < 0 ? `<span style="color:#ef4444">${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : val.toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
-                    html += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem; cursor:pointer;" onclick="editarValorRecursoGeral('${ndDisplay}', ${i})" title="Clique para ver detalhes">${display}</td>`;
-                });
-
-                html += '</tr>';
+                if (monthsExpanded) {
+                    meses.forEach((m,i) => {
+                        const val=mapaMes.get(i);
+                        let cls='month-cell month-col-recGeral';
+                        if(m.isFirstOfYear) cls+=' first';
+                        if(m.isCurrent)     cls+=' current';
+                        if(m.isFuture)      cls+=' future';
+                        if(val>0.005)        cls+=' has-value';
+                        if(val<-0.005)       cls+=' has-value neg';
+                        const display=val?fmtBR(val):'';
+                        html+=`<td class="${cls}" onclick="editarValorRecursoGeral('${ndDisplay}',${i})" title="Clique para ver detalhes">${display}</td>`;
+                    });
+                }
+                html+='</tr>';
                 return html;
             }).join('');
 
-            const totalSaldo = totalPrevisto - totalRealizado;
+            // ── Linha TOTAL ──────────────────────────────────────────────────
+            const totalSaldo=totalPrevisto-totalRealizado;
+            const tSaldoCls=totalSaldo>0.01?'alert':(Math.abs(totalSaldo)<0.01?'ok':'neg');
+            let totalRow=`<tr class="rg-total-row">`+
+                `<td class="rg-col-nd col-sticky">TOTAL</td>`+
+                `<td class="rg-col-vprev right"><span class="rg-val previsto">R$ ${fmtBR(totalPrevisto)}</span></td>`+
+                `<td class="rg-col-vreal right"><span class="rg-val realizado">R$ ${fmtBR(totalRealizado)}</span></td>`+
+                `<td class="rg-col-saldo right"><span class="rg-val saldo ${tSaldoCls}">R$ ${fmtBR(totalSaldo)}</span></td>`;
+            if (monthsExpanded) {
+                meses.forEach((m,idx) => {
+                    const val=totalMeses.get(idx);
+                    let cls='month-cell month-col-recGeral';
+                    if(m.isFirstOfYear) cls+=' first';
+                    if(m.isCurrent)     cls+=' current';
+                    if(m.isFuture)      cls+=' future';
+                    if(val>0.005)        cls+=' has-value';
+                    if(val<-0.005)       cls+=' has-value neg';
+                    totalRow+=`<td class="${cls}">${val?fmtBR(val):''}</td>`;
+                });
+            }
+            totalRow+='</tr>';
 
-            // Linha de total
-            let totalRow = '<tr class="linha-total">';
-            totalRow += '<td class="col-nd">TOTAL</td>';
-            totalRow += `<td class="col-valor">${totalPrevisto.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += `<td class="col-valor">${totalRealizado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
-            totalRow += `<td class="col-saldo"><span style="font-weight:700;color:${totalSaldo < 0 ? '#ef4444' : 'inherit'}">${totalSaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></td>`;
-            meses.forEach((_, idx) => {
-                const val = totalMeses.get(idx);
-                const cellBg = val ? '#e0f2fe' : 'transparent';
-                const display = (val !== undefined && val !== null && val !== '') ? (parseFloat(val) < 0 ? `<span style="color:#ef4444">${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : val.toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
-                totalRow += `<td style="text-align:right; background:${cellBg}; font-size:0.7rem;">${display}</td>`;
-            });
-            totalRow += '</tr>';
-
-            // Linhas anuais (mesmo molde do Cadastro Financeiro: células mescladas por ano)
-            const fmt = (v) => {
-                const n = parseFloat(v) || 0;
-                if (n < 0) return `<span style="color:#ef4444">${n.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
-                return n.toLocaleString('pt-BR',{minimumFractionDigits:2});
-            };
-
-            const previstoByAno = {};
-            const recebidoByAno = {};
-            const devolvidoByAno = {};
-
-            // Agrupar previsto por ano considerando apenas NDs filtradas
-            (cad || []).forEach(f => {
-                const ndNorm = normalizarND(f.numero);
-                if (ndsFiltrados.length && !ndsFiltrados.includes(ndNorm)) return;
-                const ano = parseInt(f.anoDesc, 10);
-                if (!isNaN(ano)) previstoByAno[ano] = (previstoByAno[ano] || 0) + (parseFloat(f.valor) || 0);
-            });
-
-            // Agrupar realizado/devolvido por ano considerando apenas NDs filtradas
-            (recs || []).forEach(r => {
-                const ndNorm = normalizarND(r.nd);
-                if (ndsFiltrados.length && !ndsFiltrados.includes(ndNorm)) return;
-                if (!r.data) return;
-                const ano = new Date(r.data + 'T00:00:00').getFullYear();
-                if (isNaN(ano)) return;
-                const valor = parseFloat(r.valor) || 0;
-                if (valor > 0) recebidoByAno[ano] = (recebidoByAno[ano] || 0) + valor;
-                if (valor < 0) devolvidoByAno[ano] = (devolvidoByAno[ano] || 0) + valor; // soma dos negativos
-            });
-
-            const cellsByAno = (calcFn) => anos.map(a => {
-                const valor = calcFn(a.ano);
-                return `<td colspan="${a.count}" style="background:#dbeafe; text-align:center; font-weight:700;">${fmt(valor)}</td>`;
-            }).join('');
-
-            const rowPrevistoAnual = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Previsto Anual</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0))}</tr>`;
-            const anosOrdem = anos.map(a => a.ano);
-            const saldoAtualByAno = {};
-            const aReceberAnteriorByAno = {};
-            anosOrdem.forEach((ano, idx) => {
-                saldoAtualByAno[ano] = (recebidoByAno[ano] || 0) + (devolvidoByAno[ano] || 0);
-                if (idx === 0) {
-                    aReceberAnteriorByAno[ano] = 0;
-                } else {
-                    const anoPrev = anosOrdem[idx - 1];
-                    aReceberAnteriorByAno[ano] = (previstoByAno[anoPrev] || 0) + (aReceberAnteriorByAno[anoPrev] || 0) - (saldoAtualByAno[anoPrev] || 0);
+            // ── Linhas consolidadas ──────────────────────────────────────────
+            const anosOrdem=anos.map(a=>a.ano);
+            const saldoAtualByAno={}, aReceberAnteriorByAno={};
+            anosOrdem.forEach((ano,idx) => {
+                saldoAtualByAno[ano]=(recebidoByAno[ano]||0)+(devolvidoByAno[ano]||0);
+                if(idx===0) { aReceberAnteriorByAno[ano]=0; }
+                else {
+                    const anoPrev=anosOrdem[idx-1];
+                    aReceberAnteriorByAno[ano]=(previstoByAno[anoPrev]||0)+(aReceberAnteriorByAno[anoPrev]||0)-(saldoAtualByAno[anoPrev]||0);
                 }
             });
 
-            const rowReceberAnterior = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">A Receber (ano anterior)</td>${cellsByAno((ano)=> (aReceberAnteriorByAno[ano] || 0))}</tr>`;
-            const rowTotalAReceber   = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Total a Receber (Previsto + A Receber ano anterior)</td>${cellsByAno((ano)=> (previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0))}</tr>`;
-            const rowRecebidoAnual   = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Recebido Anual</td>${cellsByAno((ano)=> (recebidoByAno[ano] || 0))}</tr>`;
-            const rowDevolvido       = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Devolvido / Recolhido</td>${cellsByAno((ano)=> (devolvidoByAno[ano] || 0))}</tr>`;
-            const rowSaldoAnual      = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Saldo Anual (Recebido - Devolvido)</td>${cellsByAno((ano)=> (saldoAtualByAno[ano] || 0))}</tr>`;
-            const rowResultado       = `<tr class="linha-total"><td colspan="4" style="text-align:left; font-weight:700;">Resultado (Total a Receber - Devolvido / Recolhido)</td>${cellsByAno((ano)=> ((previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0) - (saldoAtualByAno[ano] || 0)) * -1)}</tr>`;
+            const anoAtual=today.getFullYear();
+            const iconHtml=(name)=>`<i data-lucide="${name}" style="width:13px;height:13px;"></i>`;
+            const consYearCells=(calcFn,colorFn)=>anos.map(a=>{
+                if(!monthsExpanded) return '';
+                const val=calcFn(a.ano);
+                const isFut=!anosComDados.has(a.ano);
+                const isCurr=a.ano===anoAtual;
+                let cls='year-total month-col-recGeral';
+                if(isCurr)  cls+=' year-current';
+                if(isFut)   cls+=' future';
+                const colorCls=colorFn?colorFn(val):(val<-0.01?'neg':val===0?'zero':'');
+                if(colorCls) cls+=` ${colorCls}`;
+                return `<td colspan="${a.count}" class="${cls}">R$ ${fmtBR(val)}</td>`;
+            }).join('');
 
-            tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
+            const consRow=(tipo,icon,label,formula,calcFn,colorFn)=>{
+                const cells=monthsExpanded?consYearCells(calcFn,colorFn):'';
+                const fmlaHtml=formula?`<span class="formula">${formula}</span>`:'';
+                const emptyFixed='<td></td>'.repeat(colFixas-1);
+                return `<tr class="cons ${tipo}">`+
+                    `<td class="col-sticky label-cell"><span class="icon">${iconHtml(icon)}</span><span>${label}${fmlaHtml}</span></td>`+
+                    emptyFixed+cells+`</tr>`;
+            };
+
+            const rowPrevistoAnual   = consRow('previsto','target','Previsto Anual',null, (ano)=>previstoByAno[ano]||0);
+            const rowReceberAnterior = consRow('areceber','rotate-cw','A Receber (ano anterior)',null, (ano)=>aReceberAnteriorByAno[ano]||0, (v)=>v<-0.01?'neg':v===0?'zero':'');
+            const rowTotalAReceber   = consRow('total','plus-circle','Total a Receber','= Previsto + A Receber ano anterior', (ano)=>(previstoByAno[ano]||0)+(aReceberAnteriorByAno[ano]||0));
+            const rowRecebidoAnual   = consRow('recebido','wallet','Recebido Anual',null, (ano)=>recebidoByAno[ano]||0, (v)=>v>0.01?'green':'zero');
+            const rowDevolvido       = consRow('devolvido','rotate-ccw','Devolvido / Recolhido',null, (ano)=>devolvidoByAno[ano]||0, (v)=>v<-0.01?'neg':'zero');
+            const rowSaldoAnual      = consRow('saldo-row','equal','Saldo Anual','= Recebido − Devolvido', (ano)=>saldoAtualByAno[ano]||0);
+            const rowResultado       = consRow('resultado','alert-circle','Resultado','= Total a Receber − Devolvido − Recebido', (ano)=>((previstoByAno[ano]||0)+(aReceberAnteriorByAno[ano]||0)-(saldoAtualByAno[ano]||0))*-1);
+
+            tbody.innerHTML = linhas+totalRow+rowPrevistoAnual+rowReceberAnterior+rowTotalAReceber+rowRecebidoAnual+rowDevolvido+rowSaldoAnual+rowResultado;
+
+            // ── KPIs ────────────────────────────────────────────────────────
+            try {
+                // Maior ND por previsto
+                let maiorNd='', maiorVal=0;
+                sortedNDs.forEach(ndNorm=>{
+                    const v=cad.filter(f=>normalizarND(f.numero)===ndNorm).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                    if(v>maiorVal){maiorVal=v;maiorNd=ndDisplayMap[ndNorm]||ndNorm;}
+                });
+                const pct=totalPrevisto>0?totalRealizado/totalPrevisto:0;
+                _recgeralRenderKpis({totalPrevisto,totalRealizado,totalSaldo,pct,maiorNd,maiorVal,nItens:recs.length,nNds:sortedNDs.length});
+            } catch(e){}
+
+            // ── Banner de insight ────────────────────────────────────────────
+            try {
+                const insightEl=document.getElementById('recgeral-insight-container');
+                if(insightEl){
+                    const anosComSaldo=anosOrdem.filter(ano=>!anosComDados.has(ano)&&(aReceberAnteriorByAno[ano]||0)>0.01);
+                    if(anosComSaldo.length){
+                        const totalSaldoFuturo=anosComSaldo.reduce((s,a)=>s+(aReceberAnteriorByAno[a]||0),0);
+                        const anosStr=anosComSaldo.join('/');
+                        const vigencia=window.tedSelecionado.dataFim||window.tedSelecionado.vigencia||'';
+                        const vigStr=vigencia?` antes do fim de vigência <b>(${vigencia})</b>`:'';
+                        insightEl.innerHTML=`<div class="rg-insight-banner"><i data-lucide="alert-triangle" style="width:14px;height:14px;color:#854F0B;flex-shrink:0;margin-top:1px;"></i><span><b>R$ ${fmtBR(totalSaldoFuturo)} ficaram "a receber" para ${anosStr}.</b> Como o cronograma do TED não prevê novas descentralizações nesses anos, esse saldo precisa de atenção administrativa${vigStr}.</span></div>`;
+                    } else {
+                        insightEl.innerHTML='';
+                    }
+                }
+            } catch(e){}
+
+            // ── Ajustar wrapper e table-layout ──────────────────────────────
+            try {
+                const btn=document.getElementById('toggle-months-recGeral');
+                const tbl=document.getElementById('tabelaRecursosGeraisTable');
+                const wrapper=document.getElementById('wrapperRecGeral');
+                const sec=btn?.closest('.detalhe-secao');
+                if(sec&&tbl){
+                    if(!monthsExpanded){
+                        tbl.style.minWidth='0'; tbl.style.width='auto'; tbl.style.tableLayout='fixed';
+                        if(wrapper) wrapper.style.width='fit-content';
+                        sec.classList.add('cadFin-collapsed');
+                    } else {
+                        const nMeses=tbl.querySelectorAll('thead th.month-col').length||60;
+                        tbl.style.minWidth=(550+nMeses*82)+'px';
+                        tbl.style.width=''; tbl.style.tableLayout='fixed';
+                        if(wrapper) wrapper.style.width='';
+                        sec.classList.remove('cadFin-collapsed');
+                    }
+                }
+            } catch(e){}
+
+            try { initLucideIcons(); } catch(e){}
+        }
+
+        function _recgeralRenderKpis(data) {
+            const container=document.getElementById('recgeral-kpis-container');
+            if(!container) return;
+            if(!data){ container.innerHTML=''; return; }
+            const {totalPrevisto,totalRealizado,totalSaldo,pct,maiorNd,maiorVal,nItens,nNds}=data;
+            const fmtBR=(v)=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+            const barW=Math.min(100,Math.max(0,(pct||0)*100)).toFixed(1);
+            container.innerHTML=`<div class="execfin-kpis" style="margin-bottom:14px;">
+              <div class="execfin-kpi lead-blue">
+                <div class="execfin-kpi-label">Previsto Total</div>
+                <div class="execfin-kpi-val"><span class="cur">R$</span>${fmtBR(totalPrevisto)}</div>
+                <div class="execfin-kpi-sub">${nItens} lançamento(s) · ${nNds} ND(s)</div>
+              </div>
+              <div class="execfin-kpi lead-green">
+                <div class="execfin-kpi-label">Realizado Total</div>
+                <div class="execfin-kpi-val green"><span class="cur">R$</span>${fmtBR(totalRealizado)}</div>
+                <div class="execfin-kpi-sub">${barW}% do previsto</div>
+                <div class="execfin-kpi-bar"><div class="execfin-kpi-bar-fill" style="width:${barW}%;background:#639922;"></div></div>
+              </div>
+              <div class="execfin-kpi lead-red">
+                <div class="execfin-kpi-label">Saldo a Receber</div>
+                <div class="execfin-kpi-val red"><span class="cur">R$</span>${fmtBR(totalSaldo)}</div>
+                <div class="execfin-kpi-sub">${(100-parseFloat(barW)).toFixed(1)}% pendente</div>
+              </div>
+              <div class="execfin-kpi lead-amber">
+                <div class="execfin-kpi-label">Maior ND</div>
+                <div class="execfin-kpi-val" style="font-size:14px;font-family:inherit;">${maiorNd}</div>
+                <div class="execfin-kpi-sub">R$ ${fmtBR(maiorVal)} previsto</div>
+              </div>
+            </div>`;
         }
 
         // Atualizar tabelas em cascata após alteração de dados
