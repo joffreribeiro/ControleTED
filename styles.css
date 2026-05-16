@@ -4537,6 +4537,10 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaExecFinanceiraTable col.col-saldo  { width: 130px; }
 #tabelaExecFinanceiraTable col.col-status { width: 90px; }
 
+/* ND column alinhado à esquerda (igual CadFin) */
+#tabelaExecFinanceiraTable th.col-nd,
+#tabelaExecFinanceiraTable td.col-nd { text-align: left; }
+
 /* thead base — herda tabela-padrao, mas garante centralizacao e border */
 .execfin-table thead th {
   text-align: center;
