@@ -7514,29 +7514,7 @@
                 aReceberAnteriorByAno[ano] = Math.max(0, previstoAnoAnterior + aReceberAnoAnterior - saldoAtualAnoAnterior);
             });
 
-            // Helper de formatação
             const fmt = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
-            // Resumo Anual: renderizar em grid transposto (rótulos + colunas por ano)
-            // Montamos dinamicamente `grid-template-columns` com 200px + N x 1fr
-            const cols = ['260px'].concat(anosOrdenados.map(()=>'1fr')).join(' ');
-            let html = `<div class="resumo-fin-scroll"><div class="resumo-anual-card"><div class="resumo-anual-grid" style="grid-template-columns: ${cols};">`;
-
-            // Cabeçalho
-            html += `<div class="resumo-header"></div>`; // espaço para rótulo
-            anosOrdenados.forEach(ano => { html += `<div class="resumo-header">${ano}</div>`; });
-
-            // Função auxiliar para criar uma linha (label + valores)
-            const renderRow = (label, values = {}, options = {}) => {
-                const isSaldo = options.saldo === true;
-                html += `<div class="resumo-label${isSaldo? ' saldo':''}">${label}</div>`;
-                anosOrdenados.forEach(ano => {
-                    const v = values[ano] || 0;
-                    const cls = (options.negative && v > 0) ? 'resumo-value negative' : (isSaldo? 'resumo-value saldo' : 'resumo-value');
-                    const disp = (options.negative && v > 0) ? ('-' + fmt(v)) : fmt(v);
-                    html += `<div class="${cls}">${disp}</div>`;
-                });
-            };
 
             // Calcular Total a Receber por ano (Previsto + A Receber ano anterior)
             const totalAReceberByAno = {};
@@ -7550,16 +7528,100 @@
                 resultadoByAno[ano] = ((totalAReceberByAno[ano] || 0) - (saldoAtualByAno[ano] || 0)) * -1;
             });
 
-            renderRow('Previsto Anual', previstoByAno);
-            renderRow('A Receber (ano anterior)', aReceberAnteriorByAno);
-            renderRow('Total a Receber (Previsto + A Receber ano anterior)', totalAReceberByAno);
-            renderRow('Recebido Anual', recebidoByAno);
-            renderRow('Devolvido / Recolhido', devolvidoByAno, { negative: true });
-            renderRow('Saldo Anual (Recebido - Devolvido)', saldoAtualByAno, { saldo: true });
-            renderRow('Resultado (Total a Receber - Devolvido / Recolhido)', resultadoByAno, { saldo: true });
+            // --- KPIs ---
+            const totalPrevisto = anosOrdenados.reduce((s,a)=>s+(previstoByAno[a]||0),0);
+            const totalRecebido = anosOrdenados.reduce((s,a)=>s+(recebidoByAno[a]||0),0);
+            const totalDevolvido = anosOrdenados.reduce((s,a)=>s+(devolvidoByAno[a]||0),0);
+            const totalResultado = anosOrdenados.reduce((s,a)=>s+(resultadoByAno[a]||0),0);
+            const recPerc = totalPrevisto > 0 ? Math.min(100,(totalRecebido/totalPrevisto)*100) : 0;
 
-            html += `</div></div></div>`;
-            resumoContainer.innerHTML = html;
+            const kpiHtml = `<div class="ra-kpis">
+              <div class="ra-kpi blue">
+                <div class="ra-kpi-label">Previsto Total</div>
+                <div class="ra-kpi-value">R$ ${fmt(totalPrevisto)}</div>
+              </div>
+              <div class="ra-kpi green">
+                <div class="ra-kpi-label">Recebido Total</div>
+                <div class="ra-kpi-value">R$ ${fmt(totalRecebido)}</div>
+                <div class="ra-kpi-bar"><div class="ra-kpi-fill" style="width:${recPerc.toFixed(1)}%"></div></div>
+                <div class="ra-kpi-sub">${recPerc.toFixed(1)}% do previsto</div>
+              </div>
+              <div class="ra-kpi amber">
+                <div class="ra-kpi-label">Total Devolvido</div>
+                <div class="ra-kpi-value">R$ ${fmt(totalDevolvido)}</div>
+              </div>
+              <div class="ra-kpi ${totalResultado < -0.01 ? 'red' : 'ok'}">
+                <div class="ra-kpi-label">Resultado Total</div>
+                <div class="ra-kpi-value">R$ ${fmt(Math.abs(totalResultado))}</div>
+                <div class="ra-kpi-sub">${totalResultado < -0.01 ? 'Saldo positivo' : totalResultado > 0.01 ? 'Pendente' : 'Equilibrado'}</div>
+              </div>
+            </div>`;
+
+            // --- Tabela ---
+            const iconHtml = (name) => `<i data-lucide="${name}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`;
+            const fml = (s) => `<span class="ra-formula">${s}</span>`;
+
+            const rows = [
+                { label: 'Previsto Anual',         icon: 'calendar',      formula: '',                                   map: previstoByAno,      cls: '' },
+                { label: 'A Receber (ano ant.)',    icon: 'arrow-left',    formula: fml('carry-over'),                    map: aReceberAnteriorByAno, cls: '' },
+                { label: 'Total a Receber',         icon: 'sigma',         formula: fml('Prev + A Receber'),              map: totalAReceberByAno, cls: 'ra-row-total' },
+                { label: 'Recebido Anual',          icon: 'arrow-down-circle', formula: '',                              map: recebidoByAno,      cls: '' },
+                { label: 'Devolvido / Recolhido',   icon: 'arrow-up-circle',   formula: '',                             map: devolvidoByAno,     cls: '', negative: true },
+                { label: 'Saldo Anual',             icon: 'minus-circle',  formula: fml('Recebido − Devolvido'),          map: saldoAtualByAno,    cls: '' },
+                { label: 'Resultado',               icon: 'trending-up',   formula: fml('Total a Receber − Saldo'),       map: resultadoByAno,     cls: 'ra-row-resultado', isResultado: true },
+            ];
+
+            // Detect future years (no previsto and no recebido/devolvido)
+            const futurosSet = new Set(anosOrdenados.filter(ano =>
+                !(previstoByAno[ano] || 0) && !(recebidoByAno[ano] || 0) && !(devolvidoByAno[ano] || 0)
+            ));
+
+            let thead = `<thead><tr>
+              <th class="ra-th-label"></th>`;
+            anosOrdenados.forEach(ano => {
+                const isCurr = ano === anoAtual;
+                const isFut = futurosSet.has(ano);
+                let cls = 'ra-th-ano';
+                if (isCurr) cls += ' current';
+                if (isFut) cls += ' future';
+                thead += `<th class="${cls}">${ano}${isCurr ? '<span class="ra-atual-badge">ATUAL</span>' : ''}</th>`;
+            });
+            thead += `</tr></thead>`;
+
+            let tbody = '<tbody>';
+            rows.forEach(row => {
+                tbody += `<tr class="ra-row ${row.cls}">`;
+                tbody += `<td class="ra-td-label">${iconHtml(row.icon)}<span>${row.label}</span>${row.formula}</td>`;
+                anosOrdenados.forEach(ano => {
+                    const isCurr = ano === anoAtual;
+                    const isFut = futurosSet.has(ano);
+                    const raw = row.map[ano] || 0;
+                    const v = row.negative ? -raw : raw;
+                    const disp = row.negative && raw > 0 ? `−R$ ${fmt(raw)}` : `R$ ${fmt(raw)}`;
+                    let cls = 'ra-td-val';
+                    if (isCurr) cls += ' current';
+                    if (isFut) cls += ' future';
+                    if (row.isResultado) {
+                        if (v < -0.01) cls += ' pos';
+                        else if (v > 0.01) cls += ' neg';
+                        else cls += ' zero';
+                    }
+                    const isEmpty = Math.abs(raw) < 0.01;
+                    tbody += `<td class="${cls}">${isEmpty && isFut ? '—' : disp}</td>`;
+                });
+                tbody += '</tr>';
+            });
+            tbody += '</tbody>';
+
+            const tableHtml = `<div class="ra-table-wrap">
+              <table class="ra-table">
+                ${thead}
+                ${tbody}
+              </table>
+            </div>`;
+
+            resumoContainer.innerHTML = kpiHtml + tableHtml;
+            if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
         }
 
         // --- Entregas chart (por objeto) ---
@@ -8286,29 +8348,81 @@
                     ? fisicos.filter(f => f.objeto === nomeObj).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0)
                     : objetos.filter(o => o.objeto === nomeObj).reduce((s, o) => s + (parseNumber(o.qtde) || 0), 0);
                 const perc = planejado > 0 ? (entregues / planejado) * 100 : 0;
-                return { nome: nomeObj, entregues, planejado, perc };
+                // Valor unitário para exibir valor financeiro do objeto
+                const objDef = objetos.find(o => o.objeto === nomeObj);
+                const valorUnit = objDef ? (parseNumber(objDef.valorUnitario) || 0) : 0;
+                // Fases cadastradas para este objeto
+                const fasesCad = fisicos.filter(f => f.objeto === nomeObj).map(f => f.fase).filter(f => f != null);
+                // Última execução para indicar "última entrega"
+                const execsObj = execsFiltrados.filter(e => e.objeto === nomeObj).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+                const ultimaData = execsObj.length ? execsObj[execsObj.length-1].data : null;
+                return { nome: nomeObj, entregues, planejado, perc, valorUnit, fasesCad, ultimaData };
             });
 
-            // Render as responsive cards grid
-            let html = '<div class="entregas-cards-grid">';
+            // KPIs globais
+            const totalItens = items.length;
+            const concluidos = items.filter(it => it.perc >= 100).length;
+            const totalPlanejado = items.reduce((s,it)=>s+it.planejado,0);
+            const totalEntregue = items.reduce((s,it)=>s+it.entregues,0);
+            const percGeral = totalPlanejado > 0 ? Math.min(100,(totalEntregue/totalPlanejado)*100) : 0;
+
+            const kpiHtml = `<div class="ent-kpis">
+              <div class="ent-kpi blue">
+                <div class="ent-kpi-label">Objetos</div>
+                <div class="ent-kpi-value">${totalItens}</div>
+                <div class="ent-kpi-sub">${concluidos} concluído${concluidos!==1?'s':''}</div>
+              </div>
+              <div class="ent-kpi green">
+                <div class="ent-kpi-label">Entregue</div>
+                <div class="ent-kpi-value">${totalEntregue.toLocaleString('pt-BR')} / ${totalPlanejado.toLocaleString('pt-BR')}</div>
+                <div class="ent-kpi-bar"><div class="ent-kpi-fill" style="width:${percGeral.toFixed(1)}%"></div></div>
+                <div class="ent-kpi-sub">${percGeral.toFixed(1)}% do total</div>
+              </div>
+              <div class="ent-kpi ${concluidos === totalItens && totalItens > 0 ? 'ok' : 'amber'}">
+                <div class="ent-kpi-label">Situação</div>
+                <div class="ent-kpi-value">${concluidos === totalItens && totalItens > 0 ? 'Concluído' : 'Em andamento'}</div>
+                <div class="ent-kpi-sub">${totalItens - concluidos} pendente${(totalItens-concluidos)!==1?'s':''}</div>
+              </div>
+            </div>`;
+
+            // Cards ricos
+            let cardsHtml = '<div class="ent-grid">';
             items.forEach(it => {
                 const perc = Number(it.perc) || 0;
                 const fillPct = Math.min(100, Math.max(0, perc));
-                let percColor = '#854F0B';
+                let statusCls = 'andamento';
                 let statusLabel = 'Em andamento';
-                if (perc === 100) { percColor = '#3B6D11'; statusLabel = 'Concluído'; }
-                else if (perc > 100) { percColor = '#A32D2D'; statusLabel = 'Acima'; }
+                if (perc > 100) { statusCls = 'acima'; statusLabel = 'Acima do planejado'; }
+                else if (perc >= 100) { statusCls = 'concluido'; statusLabel = 'Concluído'; }
+                else if (perc === 0) { statusCls = 'pendente'; statusLabel = 'Não iniciado'; }
 
-                html += `<div class="entrega-card">`;
-                html += `<div class="entrega-nome">${it.nome}</div>`;
-                html += `<div class="entrega-perc" style="color:${percColor}">${perc.toFixed(2)}%</div>`;
-                html += `<div class="entrega-progress"><div class="entrega-fill" style="width:${fillPct}%; background:${percColor};"></div></div>`;
-                html += `<div class="entrega-badge"><span class="badge" style="background:${percColor};">${statusLabel}</span></div>`;
-                html += `</div>`;
+                const fmtN = (n) => Number(n||0).toLocaleString('pt-BR');
+                const valorStr = it.valorUnit > 0
+                    ? `<span class="ent-card-meta-item"><i data-lucide="dollar-sign" style="width:11px;height:11px;"></i> R$ ${it.valorUnit.toLocaleString('pt-BR',{minimumFractionDigits:2})} / un.</span>`
+                    : '';
+                const ultimaStr = it.ultimaData
+                    ? `<span class="ent-card-meta-item"><i data-lucide="clock" style="width:11px;height:11px;"></i> Última: ${it.ultimaData.split('-').reverse().join('/')}</span>`
+                    : '';
+                const fasesStr = it.fasesCad.length
+                    ? `<div class="ent-card-fases">${it.fasesCad.map(f=>`<span class="ent-fase-badge">Fase ${f}</span>`).join('')}</div>`
+                    : '';
+
+                cardsHtml += `<div class="ent-card ${statusCls}">
+                  <div class="ent-card-header">
+                    <div class="ent-card-nome">${it.nome}</div>
+                    <span class="ent-status-pill ${statusCls}">${statusLabel}</span>
+                  </div>
+                  <div class="ent-card-fracao">${fmtN(it.entregues)} <span class="ent-frac-sep">/</span> ${fmtN(it.planejado)}</div>
+                  <div class="ent-card-perc-label">${perc.toFixed(1)}%</div>
+                  <div class="ent-card-progress"><div class="ent-card-fill ${statusCls}" style="width:${fillPct}%"></div></div>
+                  <div class="ent-card-meta">${valorStr}${ultimaStr}</div>
+                  ${fasesStr}
+                </div>`;
             });
-            html += '</div>';
+            cardsHtml += '</div>';
 
-            container.innerHTML = html;
+            container.innerHTML = kpiHtml + cardsHtml;
+            if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
         }
 
         // --- Resumo Financeiro (lado do dashboard) ---
