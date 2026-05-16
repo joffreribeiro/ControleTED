@@ -4487,6 +4487,13 @@ table.ef-table tbody td.right  { text-align: right; }
    EXECUÇÃO FINANCEIRA — REDESIGN (execfin-*)
    ============================================================ */
 
+#wrapperExecFin {
+    display: inline-block;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
 /* KPI strip */
 .execfin-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
 @media (max-width: 900px) { .execfin-kpis { grid-template-columns: repeat(2,1fr); } }

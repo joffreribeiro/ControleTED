@@ -9311,17 +9311,20 @@
             try {
                 const btn = document.getElementById('toggle-months-execFin');
                 const tbl = document.getElementById('tabelaExecFinanceiraTable');
+                const wrapper = document.getElementById('wrapperExecFin');
                 const sec = btn?.closest('.detalhe-secao');
                 const expanded = btn?.getAttribute('data-expanded') === '1';
                 if (sec && tbl) {
                     if (!expanded) {
                         tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'fixed';
+                        if (wrapper) wrapper.style.width = 'fit-content';
                         sec.classList.add('cadFin-collapsed');
                     } else {
                         // 700px fixas + ~80px por mês visível
                         const nMeses = tbl.querySelectorAll('thead th.month-col').length || 60;
                         tbl.style.minWidth = (700 + nMeses * 82) + 'px';
                         tbl.style.width = ''; tbl.style.tableLayout = '';
+                        if (wrapper) wrapper.style.width = '';
                         sec.classList.remove('cadFin-collapsed');
                     }
                 }
