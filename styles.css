@@ -3056,6 +3056,7 @@
         #wrapperCadFin {
             display: inline-block;
             width: fit-content;
+            min-width: 730px;
             max-width: 100%;
             overflow-x: auto;
         }
@@ -4491,6 +4492,7 @@ table.ef-table tbody td.right  { text-align: right; }
 #wrapperExecFin {
     display: inline-block;
     width: fit-content;
+    min-width: 730px;
     max-width: 100%;
     overflow-x: auto;
 }
@@ -4538,13 +4540,9 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaExecFinanceiraTable col.col-saldo  { width: 130px; }
 #tabelaExecFinanceiraTable col.col-status { width: 90px; }
 
-/* ND column alinhado à esquerda (igual CadFin) */
+/* ND e UP — alinhamento igual ao CadFin */
 #tabelaExecFinanceiraTable th.col-nd,
-#tabelaExecFinanceiraTable td.col-nd { text-align: left; }
-
-/* UP column — mesma largura do CadFin (padding compacto) */
-#tabelaExecFinanceiraTable th.col-up,
-#tabelaExecFinanceiraTable td.col-up { padding-left: 6px !important; padding-right: 6px !important; }
+#tabelaExecFinanceiraTable td.col-nd { text-align: center; }
 
 /* thead base — herda tabela-padrao, mas garante centralizacao e border */
 .execfin-table thead th {
@@ -4588,7 +4586,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr:hover td { background: #FAFBFC; }
 .execfin-table tbody tr:hover .col-sticky { background: #FAFBFC; }
 .execfin-table tbody td {
-  padding: 9px 12px !important; font-size: 12.5px; vertical-align: middle; color: #1a1a1a;
+  padding: 9px 12px !important; font-size: 13px; vertical-align: middle; color: #1a1a1a;
   white-space: nowrap;
 }
 .execfin-table tbody td.right  { text-align: right; }
@@ -4771,7 +4769,7 @@ table.ef-table tbody td.right  { text-align: right; }
    ============================================================ */
 
 #wrapperRecGeral {
-  display: inline-block; width: fit-content; max-width: 100%; overflow-x: auto;
+  display: inline-block; width: fit-content; min-width: 730px; max-width: 100%; overflow-x: auto;
 }
 
 /* Main table */
