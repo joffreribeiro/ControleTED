@@ -1917,6 +1917,14 @@
         /* Corpo da seção (formulário + tabela) */
         #detalhes #tedsDetalheContainer .detalhe-secao-body {
             padding: 1.25rem 1.5rem;
+            overflow-x: auto;
+        }
+
+        /* Wrappers das tabelas ocupam toda a largura do detalhe-secao-body */
+        #wrapperCadFin,
+        #wrapperExecFin,
+        #wrapperRecGeral {
+            width: 100%;
         }
 
         /* Form groups dentro das seções: labels mais legíveis */
@@ -3054,8 +3062,7 @@
         #tabelaFinanceiraCompleta col.col-acao    { width: 80px; }
         /* Container: encolhe ao tamanho da tabela, scroll quando necessário */
         #wrapperCadFin {
-            display: inline-block;
-            width: fit-content;
+            display: block;
             min-width: 730px;
             max-width: 100%;
             overflow-x: auto;
@@ -4490,8 +4497,7 @@ table.ef-table tbody td.right  { text-align: right; }
    ============================================================ */
 
 #wrapperExecFin {
-    display: inline-block;
-    width: fit-content;
+    display: block;
     min-width: 730px;
     max-width: 100%;
     overflow-x: auto;
@@ -4769,7 +4775,7 @@ table.ef-table tbody td.right  { text-align: right; }
    ============================================================ */
 
 #wrapperRecGeral {
-  display: inline-block; width: fit-content; min-width: 730px; max-width: 100%; overflow-x: auto;
+  display: block; min-width: 730px; max-width: 100%; overflow-x: auto;
 }
 
 /* Main table */
