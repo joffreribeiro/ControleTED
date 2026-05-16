@@ -4522,34 +4522,37 @@ table.ef-table tbody td.right  { text-align: right; }
   min-width: 900px;
 }
 
-/* Header — igual ao tabela-padrao thead th */
+/* Larguras das colunas fixas da ExecFin (espelha o colgroup do CadFin) */
+#tabelaExecFinanceiraTable col.col-nd     { width: 120px; }
+#tabelaExecFinanceiraTable col.col-up     { width: 80px; }
+#tabelaExecFinanceiraTable col.col-vprev  { width: 150px; }
+#tabelaExecFinanceiraTable col.col-vreal  { width: 150px; }
+#tabelaExecFinanceiraTable col.col-saldo  { width: 130px; }
+#tabelaExecFinanceiraTable col.col-status { width: 90px; }
+
+/* thead base — herda tabela-padrao, mas garante centralizacao e border */
 .execfin-table thead th {
-  background: #F4F4F2; color: #1a1a1a;
-  font-size: 11px; font-weight: 600;
-  letter-spacing: 0.03em;
-  padding: 10px 12px; text-align: center;
-  border-bottom: 2px solid #85B7EB;
-  white-space: nowrap; vertical-align: middle;
-  position: sticky; top: 0; z-index: 120;
+  text-align: center;
 }
-.execfin-table thead th.right  { text-align: right; }
-.execfin-table thead th.center { text-align: center; }
+.execfin-table thead th.right { text-align: right; }
 
-/* Year group header */
+/* Year group header — fundo azul + borda esquerda marcando separação de ano */
 .execfin-table thead th.year-group {
-  background: #E6F1FB; color: #0C447C; text-align: center;
+  background: #E6F1FB; color: #0C447C;
   font-weight: 700; border-left: 2px solid #185FA5;
-  font-size: 11px;
+  border-bottom: 2px solid #85B7EB;
 }
 
-/* Month column headers */
+/* Linha de meses — mesmo azul do CadFin .header-meses */
 .execfin-table thead th.month-col {
-  min-width: 80px; text-align: center;
+  min-width: 80px;
   background: #E6F1FB; color: #0C447C;
+  border-bottom: 2px solid #85B7EB;
 }
 .execfin-table thead th.month-col.first { border-left: 2px solid #185FA5; }
 .execfin-table thead th.month-col.current {
   background: #185FA5; color: #fff;
+  border-bottom: 2px solid #185FA5;
 }
 .execfin-table thead th.month-col.current::after {
   content: 'ATUAL'; display: block;
@@ -4562,14 +4565,14 @@ table.ef-table tbody td.right  { text-align: right; }
   position: sticky; left: 0;
   background: #fff; z-index: 2;
 }
-.execfin-table thead .col-sticky { background: #F4F4F2; z-index: 3; }
+.execfin-table thead .col-sticky { background: #F4F4F2; z-index: 130; }
 
 /* Body */
 .execfin-table tbody tr { border-bottom: 1px solid rgba(0,0,0,0.04); }
 .execfin-table tbody tr:hover td { background: #FAFBFC; }
 .execfin-table tbody tr:hover .col-sticky { background: #FAFBFC; }
 .execfin-table tbody td {
-  padding: 9px 10px; font-size: 12.5px; vertical-align: middle; color: #1a1a1a;
+  padding: 9px 12px !important; font-size: 12.5px; vertical-align: middle; color: #1a1a1a;
   white-space: nowrap;
 }
 .execfin-table tbody td.right  { text-align: right; }
