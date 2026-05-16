@@ -3044,6 +3044,12 @@
             border-top: 1px solid rgba(0,0,0,0.12);
         }
 
+        /* CadFin: largura determinada pelo colgroup, não estica para preencher wrapper */
+        #tabelaFinanceiraCompleta {
+            width: auto;
+            table-layout: fixed;
+        }
+
         /* Cadastro Financeiro: quando meses ocultos a tabela tem largura fixa (~620px) */
         #tabelaFinanceiraCompleta.months-collapsed {
             width: auto !important;
@@ -4539,10 +4545,10 @@ table.ef-table tbody td.right  { text-align: right; }
 /* Table wrapper */
 .execfin-table-wrap { overflow-x: auto; background: #fff; }
 
-/* Main table */
+/* Main table — largura determinada pelo colgroup, não estica para preencher wrapper */
 .execfin-table {
-  width: 100%; border-collapse: separate; border-spacing: 0;
-  min-width: 900px; table-layout: fixed;
+  width: auto; border-collapse: separate; border-spacing: 0;
+  min-width: 720px; table-layout: fixed;
 }
 
 /* Larguras das colunas fixas da ExecFin (espelha o colgroup do CadFin) */
@@ -4787,7 +4793,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Main table */
 .rg-table {
-  width: 100%; border-collapse: separate; border-spacing: 0;
+  width: auto; border-collapse: separate; border-spacing: 0;
   min-width: 550px; table-layout: fixed;
 }
 
