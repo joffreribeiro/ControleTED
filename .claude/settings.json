@@ -6,7 +6,9 @@
       "Bash(cp dados/ted-sistema.json backup/ted-sistema.json)",
       "Bash(git merge *)",
       "Bash(git stash *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git reset *)",
+      "Bash(git push *)"
     ]
   }
 }
