@@ -4548,8 +4548,31 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Main table — largura determinada pelo colgroup, não estica para preencher wrapper */
 .execfin-table {
-  width: auto; border-collapse: separate; border-spacing: 0;
-  min-width: 720px; table-layout: fixed;
+    width: auto;
+    border-collapse: collapse;
+    min-width: 720px;
+    table-layout: fixed;
+}
+
+/* Forçar mesmo modelo de borda da Cadastro Financeiro na tabela Execução Financeira */
+#tabelaExecFinanceiraTable {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+}
+
+/* Garantir box-sizing consistente nas células das duas tabelas envolvidas */
+#tabelaFinanceiraCompleta th,
+#tabelaFinanceiraCompleta td,
+#tabelaExecFinanceiraTable th,
+#tabelaExecFinanceiraTable td {
+    box-sizing: border-box !important;
+}
+
+/* Padronizar padding/margin dos wrappers das duas seções */
+#wrapperCadFin,
+#wrapperExecFin {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
 }
 
 /* Larguras das colunas fixas da ExecFin (espelha o colgroup do CadFin) */
