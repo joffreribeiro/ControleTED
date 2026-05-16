@@ -1165,7 +1165,7 @@
                         </div>
                     </div>
 
-                    <!-- EXECU→fO FINANCEIRA -->
+                    <!-- EXECUÇÃO FINANCEIRA -->
                     <div class="detalhe-secao cadFin-collapsed">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira <span class="section-count-badge" id="count-execfin">0</span></h3>
@@ -1176,7 +1176,10 @@
                         </div>
                         <div class="detalhe-secao-body">
 
-                        <div class="table-freeze-wrapper auto-style-015" style="display: inline-block; width: fit-content; max-width: 100%;">
+                        <!-- KPIs de Execução Financeira (preenchidos por JS) -->
+                        <div id="execfin-kpis-container"></div>
+
+                        <div class="table-freeze-wrapper auto-style-015" style="width:100%;max-width:100%;overflow-x:auto;">
                             <!-- Filtros Execução Financeira -->
                             <div class="filter-bar" id="filterBarExecFin">
                                 <span class="filter-bar-label">Filtrar:</span>
@@ -1190,15 +1193,15 @@
                                     <div class="filter-menu" id="filterUpExecMenu"></div>
                                 </div>
                             </div>
-                            <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 700px;">
+                            <table id="tabelaExecFinanceiraTable" class="execfin-table">
                                 <thead>
                                     <tr>
-                                        <th class="col-nd">ND</th>
+                                        <th class="col-sticky col-nd">ND</th>
                                         <th class="col-up">UP</th>
-                                        <th class="col-valor">Valor Previsto</th>
-                                        <th class="col-valor">Valor Realizado</th>
-                                        <th class="col-saldo">Saldo</th>
-                                        <th class="col-status">Status</th>
+                                        <th class="col-valor right">Valor Previsto</th>
+                                        <th class="col-valor right">Valor Realizado</th>
+                                        <th class="col-saldo right">Saldo</th>
+                                        <th class="col-status center">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaExecFinanceira">

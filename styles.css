@@ -4482,3 +4482,229 @@ table.ef-table tbody td.right  { text-align: right; }
   color: var(--text-muted);
   font-size: 0.85rem;
 }
+
+/* ============================================================
+   EXECUÇÃO FINANCEIRA — REDESIGN (execfin-*)
+   ============================================================ */
+
+/* KPI strip */
+.execfin-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+@media (max-width: 900px) { .execfin-kpis { grid-template-columns: repeat(2,1fr); } }
+.execfin-kpi {
+  background: #fff; border: 0.5px solid rgba(0,0,0,0.10);
+  border-radius: 11px; padding: 13px 16px;
+}
+.execfin-kpi.lead-blue  { border-left: 3px solid #185FA5; }
+.execfin-kpi.lead-green { border-left: 3px solid #639922; }
+.execfin-kpi.lead-amber { border-left: 3px solid #c07a1c; }
+.execfin-kpi.lead-red   { border-left: 3px solid #A32D2D; }
+.execfin-kpi-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 5px;
+}
+.execfin-kpi-val {
+  font-size: 17px; font-weight: 600; font-family: 'IBM Plex Mono', monospace;
+  color: #1a1a1a; line-height: 1.15;
+}
+.execfin-kpi-val .cur { font-size: 11px; color: #94a3b8; margin-right: 3px; font-weight: 500; }
+.execfin-kpi-val.red   { color: #A32D2D; }
+.execfin-kpi-val.green { color: #3B6D11; }
+.execfin-kpi-sub { font-size: 11.5px; color: #64748b; margin-top: 3px; }
+.execfin-kpi-bar { height: 4px; background: #F7F9FC; border-radius: 3px; margin-top: 7px; overflow: hidden; }
+.execfin-kpi-bar-fill { height: 100%; border-radius: 3px; }
+
+/* Table wrapper */
+.execfin-table-wrap { overflow-x: auto; background: #fff; }
+
+/* Main table */
+.execfin-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  min-width: 900px;
+}
+
+/* Header */
+.execfin-table thead th {
+  background: #F4F4F2; color: #64748b;
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 8px 10px; text-align: left;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  white-space: nowrap;
+}
+.execfin-table thead th.right  { text-align: right; }
+.execfin-table thead th.center { text-align: center; }
+
+/* Year group header */
+.execfin-table thead th.year-group {
+  background: #E6F1FB; color: #0C447C; text-align: center;
+  font-weight: 700; border-left: 2px solid #185FA5;
+  padding: 4px 8px; font-size: 11px;
+}
+
+/* Month column headers */
+.execfin-table thead th.month-col {
+  font-size: 10px; padding: 6px 6px; min-width: 80px;
+  background: #F7F9FC; text-align: right;
+}
+.execfin-table thead th.month-col.first { border-left: 2px solid #185FA5; }
+.execfin-table thead th.month-col.current {
+  background: #185FA5; color: #fff;
+}
+.execfin-table thead th.month-col.current::after {
+  content: 'ATUAL'; display: block;
+  font-size: 8px; color: #fff; opacity: 0.85;
+  margin-top: 1px; letter-spacing: 0.06em;
+}
+
+/* Sticky first columns */
+.execfin-table .col-sticky {
+  position: sticky; left: 0;
+  background: #fff; z-index: 2;
+}
+.execfin-table thead .col-sticky { background: #F4F4F2; z-index: 3; }
+
+/* Body */
+.execfin-table tbody tr { border-bottom: 1px solid rgba(0,0,0,0.04); }
+.execfin-table tbody tr:hover td { background: #FAFBFC; }
+.execfin-table tbody tr:hover .col-sticky { background: #FAFBFC; }
+.execfin-table tbody td {
+  padding: 9px 10px; font-size: 12.5px; vertical-align: middle; color: #1a1a1a;
+  white-space: nowrap;
+}
+.execfin-table tbody td.right  { text-align: right; }
+.execfin-table tbody td.center { text-align: center; }
+
+/* Monthly value cells */
+.execfin-table tbody td.month-cell {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  text-align: right; border-left: 1px solid rgba(0,0,0,0.03);
+  color: #475569; background: #FCFDFE; cursor: pointer;
+}
+.execfin-table tbody td.month-cell.first { border-left: 1px solid rgba(24,95,165,0.18); }
+.execfin-table tbody td.month-cell.has-value {
+  background: #EAF3DE; color: #2D5A0A; font-weight: 600;
+}
+.execfin-table tbody td.month-cell.current { background: #EDF4FD; }
+.execfin-table tbody td.month-cell.current.has-value {
+  background: linear-gradient(135deg, #EAF3DE 0%, #E6F1FB 100%);
+}
+
+/* TOTAL row */
+.execfin-table tbody tr.execfin-total-row td {
+  background: #F0F4F9 !important;
+  border-top: 2px solid #185FA5;
+  border-bottom: 2px solid #185FA5;
+  padding: 11px 10px; font-weight: 700; color: #0C447C;
+}
+.execfin-table tbody tr.execfin-total-row .col-sticky {
+  background: #F0F4F9 !important;
+}
+.execfin-table tbody tr.execfin-total-row td.month-cell {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;
+}
+.execfin-table tbody tr.execfin-total-row td.month-cell.has-value {
+  background: linear-gradient(135deg, #DDE9F4 0%, #C8DCE9 100%) !important;
+  color: #0C447C;
+}
+
+/* ND tag with dot */
+.execfin-nd-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 600;
+  font-size: 11.5px; padding: 3px 8px; border-radius: 5px;
+}
+.execfin-nd-tag.invest  { background: #E6F1FB; color: #0C447C; }
+.execfin-nd-tag.custeio { background: #FEF3C7; color: #92400E; }
+.execfin-nd-tag.outros  { background: #F3F4F6; color: #374151; }
+.execfin-nd-tag .dot {
+  width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+}
+.execfin-nd-tag.invest .dot  { background: #185FA5; }
+.execfin-nd-tag.custeio .dot { background: #B45309; }
+.execfin-nd-tag.outros .dot  { background: #94a3b8; }
+
+/* UP pill */
+.execfin-up-pill {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px;
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.04em;
+}
+.execfin-up-pill.fi { background: #EAF3DE; color: #3B6D11; }
+.execfin-up-pill.ua { background: #FCE7F3; color: #9D174D; }
+.execfin-up-pill.outros { background: #F3F4F6; color: #374151; }
+
+/* Value cells */
+.execfin-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.execfin-val.previsto  { color: #475569; }
+.execfin-val.realizado { color: #1a1a1a; font-weight: 600; }
+.execfin-val.saldo     { color: #1a1a1a; font-weight: 600; }
+.execfin-val.saldo.alert { color: #A32D2D; }
+.execfin-val.saldo.ok    { color: #3B6D11; }
+.execfin-val.saldo.neg   { color: #A32D2D; }
+.execfin-val.zero { color: #94a3b8; }
+
+/* Status pill */
+.execfin-status {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.execfin-status .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.execfin-status.abaixo   { background: #FCEBEB; color: #A32D2D; }
+.execfin-status.abaixo .dot { background: #A32D2D; }
+.execfin-status.regular  { background: #EAF3DE; color: #3B6D11; }
+.execfin-status.regular .dot { background: #639922; }
+.execfin-status.acima    { background: #EAF3DE; color: #3B6D11; }
+.execfin-status.acima .dot { background: #639922; }
+.execfin-status.critico  { background: #FCEBEB; color: #A32D2D; }
+.execfin-status.critico .dot { background: #A32D2D; }
+
+/* Consolidated annual rows */
+.execfin-table tbody tr.cons { background: #FAFBFC; }
+.execfin-table tbody tr.cons:hover td { background: #F4F8FE; }
+.execfin-table tbody tr.cons td {
+  padding: 11px 14px; font-size: 12px; color: #1a1a1a;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.execfin-table tbody tr.cons td.label-cell {
+  font-weight: 600; font-style: normal;
+  display: flex; align-items: center; gap: 8px;
+}
+.execfin-table tbody tr.cons td.label-cell .icon {
+  width: 22px; height: 22px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.execfin-table tbody tr.cons.previsto  td.label-cell .icon { background: #E6F1FB; color: #0C447C; }
+.execfin-table tbody tr.cons.areceber  td.label-cell .icon { background: #FAEEDA; color: #854F0B; }
+.execfin-table tbody tr.cons.total     td.label-cell .icon { background: #F1F5F9; color: #475569; }
+.execfin-table tbody tr.cons.recebido  td.label-cell .icon { background: #EAF3DE; color: #3B6D11; }
+.execfin-table tbody tr.cons.devolvido td.label-cell .icon { background: #FCEBEB; color: #A32D2D; }
+.execfin-table tbody tr.cons.saldo-row td.label-cell .icon { background: #E6F1FB; color: #185FA5; }
+.execfin-table tbody tr.cons.resultado {
+  background: #FCEBEB !important;
+}
+.execfin-table tbody tr.cons.resultado td {
+  color: #A32D2D !important; font-weight: 700; font-style: normal;
+  border-top: 2px solid #A32D2D; border-bottom: 2px solid #A32D2D;
+  padding: 13px 14px;
+}
+.execfin-table tbody tr.cons.resultado td.label-cell .icon { background: #A32D2D; color: #fff; }
+.execfin-table tbody tr.cons td .formula {
+  display: block; font-size: 10px; color: #94a3b8;
+  font-style: italic; font-weight: 400; margin-top: 1px;
+}
+.execfin-table tbody tr.cons.resultado td .formula { color: rgba(163,45,45,0.7); }
+
+/* Year-total cells in consolidated rows */
+.execfin-table tbody tr.cons td.year-total {
+  text-align: center; font-family: 'IBM Plex Mono', monospace;
+  font-style: normal; font-weight: 600; font-size: 12.5px; color: #1a1a1a;
+  background: rgba(24,95,165,0.05); border-left: 1px solid rgba(24,95,165,0.15);
+  vertical-align: middle;
+}
+.execfin-table tbody tr.cons td.year-total.zero  { color: #c0c8d4; font-weight: 400; }
+.execfin-table tbody tr.cons td.year-total.neg   { color: #A32D2D; }
+.execfin-table tbody tr.cons td.year-total.green { color: #3B6D11; }
+.execfin-table tbody tr.cons td.year-total.year-current { background: rgba(24,95,165,0.10); }
+.execfin-table tbody tr.cons.resultado td.year-total { color: #A32D2D !important; }
