@@ -3,7 +3,10 @@
     "allow": [
       "Bash(git checkout *)",
       "Bash(mkdir -p backup)",
-      "Bash(cp dados/ted-sistema.json backup/ted-sistema.json)"
+      "Bash(cp dados/ted-sistema.json backup/ted-sistema.json)",
+      "Bash(git merge *)",
+      "Bash(git stash *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
