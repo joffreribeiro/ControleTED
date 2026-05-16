@@ -4079,9 +4079,9 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* ND tags */
 .nd-tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 600; font-family: monospace; white-space: nowrap; }
-.nd-tag.invest  { background: #dbeafe; color: #1d4ed8; }
-.nd-tag.custeio { background: #fef3c7; color: #92400e; }
-.nd-tag.outros  { background: #f3f4f6; color: #374151; }
+.nd-tag.invest  { background: transparent; color: #1d4ed8; }
+.nd-tag.custeio { background: transparent; color: #92400e; }
+.nd-tag.outros  { background: transparent; color: #374151; }
 
 /* UP pills */
 .up-pill { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 11px; font-weight: 600; white-space: nowrap; }
@@ -4817,10 +4817,10 @@ table.ef-table tbody td.right  { text-align: right; }
   font-family: 'IBM Plex Mono', monospace; font-weight: 600;
   font-size: 11px; padding: 2px 7px; border-radius: 5px;
 }
-.rg-nd-tag.invest  { background: #E6F1FB; color: #0C447C; }
-.rg-nd-tag.invest2 { background: #FBEAFE; color: #6B21A8; }
-.rg-nd-tag.custeio { background: #FEF3C7; color: #92400E; }
-.rg-nd-tag.outros  { background: #F3F4F6; color: #374151; }
+.rg-nd-tag.invest  { background: transparent; color: #0C447C; }
+.rg-nd-tag.invest2 { background: transparent; color: #6B21A8; }
+.rg-nd-tag.custeio { background: transparent; color: #92400E; }
+.rg-nd-tag.outros  { background: transparent; color: #374151; }
 
 /* Valores */
 .rg-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
