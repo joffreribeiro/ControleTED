@@ -9042,14 +9042,24 @@
 
                 const colFixas = 6; // ND UP Previsto Realizado Saldo Status
 
+                // definição das 6 colunas fixas (usada em todas as linhas do thead)
+                const fixedCols = [
+                    {label:'ND',              cls:'col-nd col-sticky'},
+                    {label:'UP',              cls:'col-up'},
+                    {label:'Valor Previsto',  cls:'col-valor right'},
+                    {label:'Valor Realizado', cls:'col-valor right'},
+                    {label:'Saldo',           cls:'col-saldo right'},
+                    {label:'Status',          cls:'col-status center'},
+                ];
+
                 if (monthsExpanded) {
-                    // Linha 1: agrupadores de ano (apenas para as colunas de mês)
+                    // Linha 1: 6 th fixos vazios + agrupadores de ano
                     const tr1 = thead.insertRow();
-                    // célula vazia cobrindo as 6 colunas fixas (sem rowspan — só espaçador)
-                    const thSpacer1 = document.createElement('th');
-                    thSpacer1.colSpan = colFixas;
-                    thSpacer1.style.background = '#F4F4F2';
-                    tr1.appendChild(thSpacer1);
+                    fixedCols.forEach(() => {
+                        const th = document.createElement('th');
+                        th.style.background = '#F4F4F2';
+                        tr1.appendChild(th);
+                    });
                     anos.forEach(a => {
                         const th = document.createElement('th');
                         th.colSpan = a.count;
@@ -9058,12 +9068,13 @@
                         tr1.appendChild(th);
                     });
 
-                    // Linha 2: meses
+                    // Linha 2: 6 th fixos vazios + meses individuais
                     const tr2 = thead.insertRow();
-                    const thSpacer2 = document.createElement('th');
-                    thSpacer2.colSpan = colFixas;
-                    thSpacer2.style.background = '#F4F4F2';
-                    tr2.appendChild(thSpacer2);
+                    fixedCols.forEach(() => {
+                        const th = document.createElement('th');
+                        th.style.background = '#F4F4F2';
+                        tr2.appendChild(th);
+                    });
                     meses.forEach(m => {
                         const th = document.createElement('th');
                         th.className = 'month-col-execFin month-col' +
@@ -9076,14 +9087,6 @@
 
                 // Última linha: rótulos das colunas fixas + espaçador de meses (se expandido)
                 const tr3 = thead.insertRow();
-                const fixedCols = [
-                    {label:'ND',             cls:'col-nd col-sticky'},
-                    {label:'UP',             cls:'col-up'},
-                    {label:'Valor Previsto', cls:'col-valor right'},
-                    {label:'Valor Realizado',cls:'col-valor right'},
-                    {label:'Saldo',          cls:'col-saldo right'},
-                    {label:'Status',         cls:'col-status center'},
-                ];
                 fixedCols.forEach(c => {
                     const th = document.createElement('th');
                     th.className = c.cls;
@@ -9233,11 +9236,14 @@
                 const consRow = (tipo, icon, label, formula, calcFn, colorFn) => {
                     const cells = monthsExpanded ? consYearCells(calcFn, colorFn) : '';
                     const fmlaHtml = formula ? `<span class="formula">${formula}</span>` : '';
+                    // Primeira célula: ícone + label (sticky), demais células fixas vazias
+                    const emptyFixedCells = '<td></td>'.repeat(colFixas - 1);
                     return `<tr class="cons ${tipo}">` +
-                        `<td class="col-sticky label-cell" colspan="${colFixas}">` +
+                        `<td class="col-sticky label-cell" colspan="1">` +
                             `<span class="icon">${iconHtml(icon)}</span>` +
                             `<span>${label}${fmlaHtml}</span>` +
                         `</td>` +
+                        emptyFixedCells +
                         cells +
                         `</tr>`;
                 };

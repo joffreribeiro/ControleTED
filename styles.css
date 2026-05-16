@@ -4669,6 +4669,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr.cons td.label-cell {
   font-weight: 600; font-style: normal;
   display: flex; align-items: center; gap: 8px;
+  min-width: 180px; white-space: nowrap;
 }
 .execfin-table tbody tr.cons td.label-cell .icon {
   width: 22px; height: 22px; border-radius: 6px;
