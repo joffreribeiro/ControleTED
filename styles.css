@@ -1922,6 +1922,7 @@
 
         /* Wrappers e KPI containers ocupam toda a largura do detalhe-secao-body */
         #wrapperCadFin,
+        #wrapperExecFin,
         #wrapperRecGeral,
         #cfKpiWrap,
         #execfin-kpis-container,
@@ -4510,7 +4511,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 #wrapperExecFin {
     display: block;
-    min-width: 730px;
+    width: 100%;
     max-width: 100%;
     overflow-x: auto;
 }
@@ -4557,6 +4558,10 @@ table.ef-table tbody td.right  { text-align: right; }
     border-collapse: collapse !important;
     border-spacing: 0 !important;
     width: auto !important;
+}
+
+#wrapperExecFin table {
+    width: auto;
 }
 
 /* Garantir box-sizing consistente nas células das duas tabelas envolvidas */
