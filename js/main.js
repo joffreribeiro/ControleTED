@@ -9494,15 +9494,13 @@
                 const expanded = btn?.getAttribute('data-expanded') === '1';
                 if (sec && tbl) {
                     if (!expanded) {
-                        tbl.style.minWidth = '0'; tbl.style.width = '100%'; tbl.style.tableLayout = 'fixed';
-                        if (wrapper) { wrapper.style.width = '100%'; wrapper.style.minWidth = '0'; wrapper.style.overflowX = 'visible'; }
+                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'fixed';
                         sec.classList.add('cadFin-collapsed');
                     } else {
                         // 700px fixas + ~80px por mês visível
                         const nMeses = tbl.querySelectorAll('thead th.month-col').length || 60;
                         tbl.style.minWidth = (700 + nMeses * 82) + 'px';
                         tbl.style.width = ''; tbl.style.tableLayout = 'fixed';
-                        if (wrapper) { wrapper.style.width = ''; wrapper.style.minWidth = ''; wrapper.style.overflowX = ''; }
                         sec.classList.remove('cadFin-collapsed');
                     }
                 }
