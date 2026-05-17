@@ -4511,7 +4511,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 #wrapperExecFin {
     display: block !important;
-    width: 100% !important;
+    width: 100%;
     min-width: 730px;
     max-width: 100%;
     overflow-x: auto;
