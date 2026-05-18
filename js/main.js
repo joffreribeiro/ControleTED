@@ -9494,7 +9494,7 @@
                 const expanded = btn?.getAttribute('data-expanded') === '1';
                 if (sec && tbl) {
                     if (!expanded) {
-                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'fixed';
+                        tbl.style.minWidth = '0'; tbl.style.width = '100%'; tbl.style.tableLayout = 'fixed';
                         sec.classList.add('cadFin-collapsed');
                     } else {
                         // 700px fixas + ~80px por mês visível
