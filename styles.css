@@ -4511,8 +4511,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 #wrapperExecFin {
     display: block;
-    width: auto;
-    min-width: 730px;
+    width: 100%;
     max-width: 100%;
     overflow-x: auto;
 }
@@ -4558,11 +4557,11 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaExecFinanceiraTable {
     border-collapse: collapse !important;
     border-spacing: 0 !important;
-    width: 100% !important;
+    width: auto !important;
 }
 
 #wrapperExecFin table {
-    width: 100%;
+    width: auto;
 }
 
 /* Garantir box-sizing consistente nas células das duas tabelas envolvidas */
