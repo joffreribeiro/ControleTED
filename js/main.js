@@ -6105,16 +6105,8 @@
                     aditPill = `<div class="ef-adit-pill">Aditivo: era M${mIniOrig}→M${mFinOrig}</div>`;
                 }
 
-                // objeto: mostrar "↳ idem" se igual ao anterior
-                const fAnterior = i > 0 ? fisicosSorted[i-1] : null;
-                let objetoHtml;
-                if (fAnterior && fAnterior.objeto === f.objeto) {
-                    objetoHtml = `<span class="ef-obj-idem">↳ idem</span>`;
-                } else if (fAnterior && fAnterior.objeto !== f.objeto && i > 0) {
-                    objetoHtml = `<span style="font-weight:500;">${f.objeto}</span> <span class="ef-obj-distinct">objeto diferente</span>`;
-                } else {
-                    objetoHtml = `<span style="font-weight:500;">${f.objeto || '—'}</span>`;
-                }
+                // objeto: sempre mostrar o nome do objeto
+                let objetoHtml = `<span style="font-weight:500;">${f.objeto || '—'}</span>`;
                 if (isAdded) objetoHtml += ` <span class="ef-obj-distinct">novo (aditivo)</span>`;
 
                 // status icon
