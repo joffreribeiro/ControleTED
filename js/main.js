@@ -3033,10 +3033,11 @@
                 const badgeClass = isAditivo ? '' : ' apostilamento';
                 const chips = _buildAditivoChips(a);
                 const viewBtn = `<button class="btn-icon-action" onclick="abrirModalAlteracao(${idx}, true)" title="Ver"><i data-lucide="eye" class="inline-icon-sm"></i></button>`;
-                const editBtn = `<button class="btn-icon-action edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>`;
-                const delBtn = `<button class="btn-icon-action delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
-                const restoreBtn = `<button class="btn-icon-action restore" onclick="restaurarAlteracao(${idx})" title="Restaurar"><i data-lucide="corner-down-left" class="inline-icon-sm"></i></button>`;
-                const actions = window._readOnlyMode ? viewBtn : (a.excluido ? `${viewBtn}${restoreBtn}` : `${viewBtn}${editBtn}${delBtn}`);
+                const editBtn = `<button class="btn-icon-action edit aditivo-edit-btn" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>`;
+                const delBtn = `<button class="btn-icon-action delete aditivo-del-btn" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
+                const restoreBtn = `<button class="btn-icon-action restore aditivo-restore-btn" onclick="restaurarAlteracao(${idx})" title="Restaurar"><i data-lucide="corner-down-left" class="inline-icon-sm"></i></button>`;
+                // Sempre renderizar todos os botões; visibilidade controlada via CSS/enableEditButtons
+                const actions = a.excluido ? `${viewBtn}${restoreBtn}` : `${viewBtn}${editBtn}${delBtn}`;
                 const excTag = a.excluido ? `<span style="font-size:9px;font-weight:600;color:#94a3b8;letter-spacing:.04em;margin-left:6px;">EXCLUÍDO</span>` : '';
                 return `<div class="aditivo-card-new${a.excluido ? ' excluido' : ''}">
                     <div class="aditivo-num-badge${badgeClass}${a.excluido ? ' excluido' : ''}">${ordinal}</div>
@@ -12669,6 +12670,10 @@
                 '.btn-add-aditivo',
                 '[onclick*="confirmarAlteracao"]',
                 '[onclick*="removerAlteracao"]',
+                '[onclick*="restaurarAlteracao"]',
+                '.aditivo-edit-btn',
+                '.aditivo-del-btn',
+                '.aditivo-restore-btn',
                 '[onclick*="abrirModalAditivo"]',
                 '[onclick*="confirmarAditivo"]',
                 '[onclick*="removerAditivo"]',
