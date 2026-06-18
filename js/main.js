@@ -5252,11 +5252,22 @@
             const removida = ted.alteracoes[index];
             removida.excluido = true;
 
-            // Reconstruir apenas campos simples (vigência, valor, planoTrabalho…)
-            // SEM alterar as tabelas (financeiros, objetos, fisicos, metas) — elas ficam intactas
+            // Salvar snapshot dos arrays de tabelas ANTES de qualquer processamento
+            const _snapFinanceiros = JSON.parse(JSON.stringify(ted.financeiros || []));
+            const _snapObjetos     = JSON.parse(JSON.stringify(ted.objetos     || []));
+            const _snapFisicos     = JSON.parse(JSON.stringify(ted.fisicos     || []));
+            const _snapMetas       = JSON.parse(JSON.stringify(ted.metas       || []));
+
+            // Reconstruir campos simples (vigência, valor, camposAlterados)
             restaurarCamposSimplesSemTabelas(ted, index, removida);
 
-            // Sincronizar arrays legados
+            // Restaurar tabelas ao estado anterior (sem modificação)
+            ted.financeiros = _snapFinanceiros;
+            ted.objetos     = _snapObjetos;
+            ted.fisicos     = _snapFisicos;
+            ted.metas       = _snapMetas;
+
+            // Sincronizar arrays legados (aditivos/apostilamentos sem excluídos)
             sincronizarAlteracoesParaArraysLegado(ted);
 
             // valor TED é derivado do cadastro de objetos
