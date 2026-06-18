@@ -5253,60 +5253,56 @@
             removida.excluido = true;
 
             console.log('[EXCLUIR] tabelasAlteradas:', JSON.stringify(removida.tabelasAlteradas));
+            console.log('[EXCLUIR] snapshot keys:', removida.snapshot ? Object.keys(removida.snapshot) : 'sem snapshot');
             console.log('[EXCLUIR] financeiros antes:', ted.financeiros && ted.financeiros.length);
 
-            // Reverter nas tabelas o que este aditivo/apostilamento havia aplicado:
-            // - itens que ele REMOVEU da tabela → devolvê-los
-            // - itens que ele ADICIONOU à tabela → removê-los
-            // - itens que ele MODIFICOU → restaurar valor anterior
-            if (removida.tabelasAlteradas) {
+            // Reverter tabelas usando diffs registrados no apostilamento/aditivo
+            const getId = (item) => (item && item.id != null) ? String(item.id) : null;
+
+            if (removida.tabelasAlteradas && Object.keys(removida.tabelasAlteradas).length > 0) {
+                // Caminho 1: tabelasAlteradas disponível — reverter diffs precisamente
                 ADITIVO_TABELAS_CLONE.forEach(tabDef => {
                     const diffs = removida.tabelasAlteradas[tabDef.key];
                     if (!diffs) return;
                     let arr = JSON.parse(JSON.stringify(ted[tabDef.key] || []));
-                    const getId = (item) => (item && item.id != null) ? String(item.id) : null;
                     const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
 
-                    // 1. Restaurar itens que foram REMOVIDOS por este apostilamento/aditivo
+                    // Devolver itens que foram REMOVIDOS
                     (diffs.removidos || []).forEach(rem => {
                         const item = rem.item || rem;
-                        const id = getId(item);
-                        const mk = matchKey(item);
-                        const jaExiste = id
-                            ? arr.some(a => getId(a) === id)
-                            : arr.some(a => matchKey(a) === mk);
+                        const id = getId(item); const mk = matchKey(item);
+                        const jaExiste = id ? arr.some(a => getId(a) === id) : arr.some(a => matchKey(a) === mk);
                         if (!jaExiste) arr.push(JSON.parse(JSON.stringify(item)));
                     });
-
-                    // 2. Remover itens que foram ADICIONADOS por este apostilamento/aditivo
+                    // Remover itens que foram ADICIONADOS
                     (diffs.adicionados || []).forEach(add => {
                         const item = add.item || add;
-                        const id = getId(item);
-                        const mk = matchKey(item);
-                        arr = arr.filter(a => {
-                            if (id && getId(a) === id) return false;
-                            if (!id && matchKey(a) === mk) return false;
-                            return true;
-                        });
+                        const id = getId(item); const mk = matchKey(item);
+                        arr = arr.filter(a => id ? getId(a) !== id : matchKey(a) !== mk);
                     });
-
-                    // 3. Reverter campos MODIFICADOS por este apostilamento/aditivo
+                    // Reverter campos MODIFICADOS
                     (diffs.modificados || []).forEach(mod => {
-                        const original = mod.original || {};
-                        const id = getId(original);
-                        const mk = matchKey(original);
-                        const idx = id
-                            ? arr.findIndex(a => getId(a) === id)
-                            : arr.findIndex(a => matchKey(a) === mk);
+                        const orig = mod.original || {};
+                        const id = getId(orig); const mk = matchKey(orig);
+                        const idx = id ? arr.findIndex(a => getId(a) === id) : arr.findIndex(a => matchKey(a) === mk);
                         if (idx >= 0 && mod.camposAlterados) {
-                            Object.keys(mod.camposAlterados).forEach(field => {
-                                arr[idx][field] = mod.camposAlterados[field].de;
-                            });
+                            Object.keys(mod.camposAlterados).forEach(f => { arr[idx][f] = mod.camposAlterados[f].de; });
                         }
                     });
-
                     ted[tabDef.key] = arr;
+                    console.log('[EXCLUIR] tabela', tabDef.key, 'após reversão diffs:', arr.length);
                 });
+            } else if (removida.snapshot) {
+                // Caminho 2: sem diffs mas tem snapshot — restaurar tabelas do snapshot
+                console.log('[EXCLUIR] usando fallback por snapshot');
+                ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                    if (removida.snapshot[tabDef.key] !== undefined) {
+                        ted[tabDef.key] = JSON.parse(JSON.stringify(removida.snapshot[tabDef.key]));
+                        console.log('[EXCLUIR] tabela', tabDef.key, 'restaurada do snapshot:', ted[tabDef.key].length);
+                    }
+                });
+            } else {
+                console.warn('[EXCLUIR] sem tabelasAlteradas e sem snapshot — não é possível reverter tabelas');
             }
 
             console.log('[EXCLUIR] financeiros depois da reversão:', ted.financeiros && ted.financeiros.length);
