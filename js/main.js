@@ -2852,7 +2852,6 @@
             const fmtBr = (d) => d.toLocaleDateString('pt-BR');
 
             const origPct = hasPror ? pct(dFimOrig) : 100;
-            const prorPct = hasPror ? (100 - origPct) : 0;
             const hojePct = pct(dHoje);
             const descPct = dDesc ? pct(dDesc) : null;
 
@@ -2869,102 +2868,97 @@
                 });
             }
 
-            // ── Montar lista de pins e atribuir níveis para evitar sobreposição ──
-            // Cada pin: { p (0-100), color, label, sublabel, side ('above'|'below') }
-            // Regra: pins muito próximos (<6%) alternam above/below
-            const BARLINE = 54; // top da barra em px
-            const LABEL_W_PCT = 6; // largura estimada de um label em % (para detecção de colisão)
+            // ── SVG timeline ──────────────────────────────────────────────────
+            // Layout fixo: W=100% via viewBox escalável, H=90px
+            // Barra fica em Y=52. Acima: dois níveis (Y=8 e Y=28). Abaixo: Y=68 e Y=80.
+            const SVG_H = 90;
+            const BAR_Y = 52;
+            const BAR_H = 8;
+            // Níveis de label (cy do ponto de ancoragem na barra):
+            const LEVELS = [
+                { labelY: 6,  subY: 18, stemY1: 22, stemY2: BAR_Y },        // nível 0: mais alto
+                { labelY: 24, subY: 36, stemY1: 40, stemY2: BAR_Y },        // nível 1: médio
+                { labelY: BAR_Y + BAR_H + 14, subY: BAR_Y + BAR_H + 25, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 10 }, // nível 2: abaixo
+            ];
 
-            const pins = [];
-            // Início
-            pins.push({ p: 0,       color: '#185FA5', label: fmtBr(dInicio),   sublabel: 'Início', priority: 0 });
-            // Fim original (só se prorrogado)
-            if (hasPror) {
-                pins.push({ p: origPct, color: '#c07a1c', label: fmtBr(dFimOrig), sublabel: 'Orig.',  priority: 1 });
-            }
-            // Aditivos
-            aditivoPoints.forEach(({ ai, p, dataStr, meses }) => {
-                pins.push({ p, color: '#2563EB', label: dataStr, sublabel: `${ai+1}º Adit. +${meses}m`, priority: 2 });
-            });
-            // 1ª Desc
-            if (descPct !== null) {
-                pins.push({ p: descPct, color: '#3B7A0E', label: fmtBr(dDesc), sublabel: '1ª Desc.', priority: 2 });
-            }
-            // Fim total
-            pins.push({ p: 100, color: '#185FA5', label: fmtBr(dFimTotal), sublabel: 'Fim', priority: 0 });
+            // Monta lista de eventos ordenados por posição
+            const events = [];
+            events.push({ p: 0,        color: '#185FA5', label: fmtBr(dInicio),   sub: 'Início' });
+            if (hasPror)
+                events.push({ p: origPct,  color: '#B45309', label: fmtBr(dFimOrig), sub: 'Fim orig.' });
+            aditivoPoints.forEach(({ ai, p, dataStr, meses }) =>
+                events.push({ p, color: '#2563EB', label: dataStr, sub: `${ai+1}º Adit. +${meses}m` })
+            );
+            if (descPct !== null)
+                events.push({ p: descPct, color: '#3B7A0E', label: fmtBr(dDesc), sub: '1ª Desc.' });
+            events.push({ p: 100, color: '#185FA5', label: fmtBr(dFimTotal), sub: 'Fim' });
+            events.sort((a, b) => a.p - b.p);
 
-            // Ordenar por posição e atribuir side: above/below alternando quando há colisão
-            pins.sort((a, b) => a.p - b.p);
-            // Dois níveis acima: stemH1=34px (label mais alto), stemH2=18px (label mais baixo)
-            // Abaixo da barra: stemH=14px
-            // Atribuir: first pass — todos 'above-far', depois ajustar vizinhos próximos para 'above-near' ou 'below'
-            const LEVELS = ['above-far', 'above-near', 'below'];
-            pins.forEach((pin, i) => {
-                pin.side = 'above-far'; // padrão
-            });
-            // Se dois pins estão a menos de LABEL_W_PCT% um do outro, alternar níveis
-            for (let i = 1; i < pins.length; i++) {
-                const prev = pins[i-1];
-                const cur  = pins[i];
-                if ((cur.p - prev.p) < LABEL_W_PCT) {
-                    if (prev.side === 'above-far') cur.side = 'above-near';
-                    else if (prev.side === 'above-near') cur.side = 'below';
-                    else cur.side = 'above-far';
+            // Atribuir nível evitando colisão: gap mínimo de 7% entre labels no mesmo nível
+            const GAP = 7;
+            const levelLastP = [null, null, null];
+            events.forEach(ev => {
+                let assigned = -1;
+                for (let li = 0; li < 3; li++) {
+                    if (levelLastP[li] === null || (ev.p - levelLastP[li]) >= GAP) {
+                        assigned = li; break;
+                    }
                 }
-            }
+                if (assigned === -1) assigned = (events.indexOf(ev)) % 3;
+                ev.level = assigned;
+                levelLastP[assigned] = ev.p;
+            });
 
-            // Configurações visuais por nível
-            // above-far: dot no topo da barra, stem longa, label bem acima
-            // above-near: dot no topo da barra, stem curta, label logo acima
-            // below: dot na base da barra, sem stem, label abaixo
-            function pinHtml(pin) {
-                const isAboveFar  = pin.side === 'above-far';
-                const isAboveNear = pin.side === 'above-near';
-                const isBelow     = pin.side === 'below';
+            // Gera defs para hachura da prorrogação
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="${SVG_H}" style="display:block;overflow:visible;">
+  <defs>
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#EAF3DE"/>
+      <rect x="0" y="0" width="4" height="8" fill="#C8E0A2"/>
+    </pattern>
+    <clipPath id="barClip"><rect x="0%" y="${BAR_Y}" width="100%" height="${BAR_H}" rx="4"/></clipPath>
+  </defs>`;
 
-                let stemTop, stemH, dotTop, labelTop, sublabelTop;
-                if (isAboveFar) {
-                    dotTop      = BARLINE - 36;  // 18px acima da barra
-                    stemTop     = BARLINE - 36 + 7;
-                    stemH       = 36 - 7;
-                    labelTop    = BARLINE - 52;
-                    sublabelTop = BARLINE - 41;
-                } else if (isAboveNear) {
-                    dotTop      = BARLINE - 20;
-                    stemTop     = BARLINE - 20 + 7;
-                    stemH       = 20 - 7;
-                    labelTop    = BARLINE - 36;
-                    sublabelTop = BARLINE - 25;
-                } else { // below
-                    dotTop      = BARLINE + 10 + 2; // logo abaixo da barra
-                    stemTop     = BARLINE + 10 + 9;
-                    stemH       = 10;
-                    labelTop    = BARLINE + 10 + 19;
-                    sublabelTop = BARLINE + 10 + 30;
-                }
+            // Fundo da barra
+            svg += `<rect x="0%" y="${BAR_Y}" width="100%" height="${BAR_H}" rx="4" fill="#F0F4F8" stroke="rgba(0,0,0,0.06)" stroke-width="0.5"/>`;
+            // Segmento original
+            svg += `<rect x="0%" y="${BAR_Y}" width="${origPct}%" height="${BAR_H}" rx="${hasPror?'4 0 0 4':'4'}" fill="url(#vigGrad)" clip-path="url(#barClip)"/>`;
+            // Segmento prorrogação
+            if (hasPror)
+                svg += `<rect x="${origPct}%" y="${BAR_Y}" width="${100-origPct}%" height="${BAR_H}" rx="0 4 4 0" fill="url(#hatch)" clip-path="url(#barClip)"/>`;
 
-                return `<div class="vig-pin" style="left:${pin.p}%;color:${pin.color};">
-                    <div class="vig-pin-dot"  style="position:absolute;top:${dotTop}px;left:50%;transform:translateX(-50%);"></div>
-                    <div class="vig-pin-stem" style="position:absolute;top:${stemTop}px;left:50%;transform:translateX(-50%);height:${stemH}px;"></div>
-                    <div class="vig-pin-label"    style="top:${labelTop}px;color:${pin.color};">${pin.label}</div>
-                    <div class="vig-pin-sublabel" style="top:${sublabelTop}px;color:${pin.color};">${pin.sublabel}</div>
-                </div>`;
-            }
+            // Gradiente (definido inline no defs)
+            svg = svg.replace('<defs>', `<defs><linearGradient id="vigGrad" x1="0" x2="1" y1="0" y2="0"><stop offset="0%" stop-color="#C8DEFF"/><stop offset="100%" stop-color="#7BAEE8"/></linearGradient>`);
 
-            wrap.style.height = '';
-
-            let html = `<div class="vig-bar-track"></div>`;
-            html += `<div class="vig-bar-orig${hasPror?' with-pror':''}" style="width:${origPct}%;"></div>`;
-            if (hasPror) {
-                html += `<div class="vig-bar-pror" style="left:${origPct}%;width:${prorPct}%;"></div>`;
-            }
-            // Pins
-            pins.forEach(pin => { html += pinHtml(pin); });
-            // Linha hoje
+            // Linha "Hoje"
             if (hojePct >= 0 && hojePct <= 100) {
-                html += `<div class="vig-today" style="left:${hojePct}%"><div class="vig-today-label">Hoje</div></div>`;
+                const hx = `${hojePct}%`;
+                svg += `<line x1="${hx}" y1="${BAR_Y - 12}" x2="${hx}" y2="${BAR_Y + BAR_H + 4}" stroke="#A32D2D" stroke-width="2"/>`;
+                svg += `<rect x="${hojePct}%" y="${BAR_Y - 26}" width="36" height="14" rx="3" fill="#A32D2D" transform="translate(-18,0)"/>`;
+                svg += `<text x="${hojePct}%" y="${BAR_Y - 16}" text-anchor="middle" fill="#fff" font-size="9" font-family="IBM Plex Mono,monospace" font-weight="700">Hoje</text>`;
             }
-            wrap.innerHTML = html;
+
+            // Pins: stem + dot + labels
+            events.forEach(ev => {
+                const lv = LEVELS[ev.level];
+                const x = `${ev.p}%`;
+                const isBelow = ev.level === 2;
+                // Stem
+                svg += `<line x1="${x}" y1="${lv.stemY1}" x2="${x}" y2="${lv.stemY2}" stroke="${ev.color}" stroke-width="1.5" opacity="0.5"/>`;
+                // Dot na barra
+                const dotY = isBelow ? BAR_Y + BAR_H : BAR_Y;
+                svg += `<circle cx="${x}" cy="${dotY}" r="3.5" fill="${ev.color}" stroke="#fff" stroke-width="1.5"/>`;
+                // Label data
+                svg += `<text x="${x}" y="${lv.labelY}" text-anchor="middle" fill="${ev.color}" font-size="9.5" font-family="IBM Plex Mono,monospace" font-weight="700">${ev.label}</text>`;
+                // Sub-label
+                svg += `<text x="${x}" y="${lv.subY}" text-anchor="middle" fill="${ev.color}" font-size="8.5" font-family="IBM Plex Mono,monospace" opacity="0.8">${ev.sub}</text>`;
+            });
+
+            svg += `</svg>`;
+
+            wrap.style.height = SVG_H + 'px';
+            wrap.style.pointerEvents = 'none';
+            wrap.innerHTML = svg;
 
             // legenda
             let legHtml = `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:linear-gradient(to right,#E6F1FB,#B3D1EF);"></span>Vigência original (${vigOrigMeses}m)</span>`;

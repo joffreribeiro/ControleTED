@@ -3798,6 +3798,7 @@
 .vig-card {
   background: #fff; border: 0.5px solid rgba(0,0,0,0.10);
   border-radius: 12px; padding: 16px 20px; margin-bottom: 14px;
+  overflow: visible;
 }
 .vig-head {
   display: flex; justify-content: space-between; align-items: center;
@@ -3812,67 +3813,12 @@
   padding: 2px 8px; border-radius: 999px; letter-spacing: 0.04em;
 }
 .vig-meta { font-size: 11px; color: #64748b; font-family: 'IBM Plex Mono', monospace; }
-/* ── Timeline de Vigência ─────────────────────────────────────────── */
+/* ── Timeline de Vigência (SVG) ───────────────────────────────────── */
 .vig-bar-wrap {
-  position: relative; height: 120px; margin: 0 4px;
-  overflow: visible; pointer-events: none;
+  display: block; margin: 0 4px;
+  pointer-events: none;
 }
-/* Barra fica a top:54px para dar espaço a dois níveis de rótulo acima */
-.vig-bar-track {
-  position: absolute; left: 0; right: 0; top: 54px; height: 10px;
-  background: #F7F9FC; border-radius: 5px; border: 1px solid rgba(0,0,0,0.06);
-}
-.vig-bar-orig {
-  position: absolute; left: 0; top: 54px; height: 10px;
-  background: linear-gradient(to right, #E6F1FB, #B3D1EF);
-  border-radius: 5px;
-}
-.vig-bar-orig.with-pror { border-radius: 5px 0 0 5px; }
-.vig-bar-pror {
-  position: absolute; top: 54px; height: 10px;
-  background: repeating-linear-gradient(
-    45deg, #EAF3DE, #EAF3DE 4px, #C8E0A2 4px, #C8E0A2 8px
-  );
-  border-right: 1px dashed #639922; border-radius: 0 5px 5px 0;
-}
-/* Marcador genérico: linha vertical + rótulo via data-attribute */
-.vig-pin {
-  position: absolute; transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center;
-  overflow: visible;
-}
-.vig-pin-stem {
-  width: 1.5px; background: currentColor; opacity: 0.5;
-}
-.vig-pin-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: currentColor; flex-shrink: 0;
-  box-shadow: 0 0 0 2px #fff;
-}
-.vig-pin-label {
-  position: absolute; white-space: nowrap;
-  font-size: 9.5px; font-family: 'IBM Plex Mono', monospace;
-  font-weight: 700; transform: translateX(-50%); line-height: 1.25;
-  text-align: center;
-}
-.vig-pin-sublabel {
-  position: absolute; white-space: nowrap;
-  font-size: 8.5px; font-family: 'IBM Plex Mono', monospace;
-  font-weight: 500; transform: translateX(-50%); opacity: 0.75;
-  text-align: center;
-}
-/* Linha "Hoje" */
-.vig-today {
-  position: absolute; top: 42px; bottom: 0;
-  width: 2px; background: #A32D2D; transform: translateX(-50%);
-  box-shadow: 0 0 0 3px rgba(163,45,45,0.10);
-}
-.vig-today-label {
-  position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-  background: #A32D2D; color: #fff; font-size: 9px; font-weight: 700;
-  padding: 2px 6px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace;
-  white-space: nowrap;
-}
+.vig-bar-wrap svg { display: block; overflow: visible; }
 .vig-legend {
   display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;
   font-size: 10.5px; color: #64748b;
@@ -3911,7 +3857,7 @@
 .change-chip-new .ch-arrow { color: #94a3b8; margin: 0 2px; }
 .change-chip-new .ch-new  { color: #3B6D11; font-weight: 600; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
 .change-chip-new.amber .ch-new { color: #854F0B; }
-.aditivo-card-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+.aditivo-card-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; pointer-events: auto; position: relative; z-index: 10; }
 
 /* Estilo para aditivos/apostilamentos excluídos: exibir riscado e diminuir destaque */
 .aditivo-card-new.excluido { opacity: 0.6; background: #fafafa; }
