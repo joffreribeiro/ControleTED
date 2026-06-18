@@ -5252,43 +5252,68 @@
             const removida = ted.alteracoes[index];
             removida.excluido = true;
 
-            // Congelar tabelas: interceptar qualquer tentativa de sobrescrever durante o processo
-            const _finBefore = JSON.parse(JSON.stringify(ted.financeiros || []));
-            const _objBefore = JSON.parse(JSON.stringify(ted.objetos     || []));
-            const _fisBefore = JSON.parse(JSON.stringify(ted.fisicos     || []));
-            const _metBefore = JSON.parse(JSON.stringify(ted.metas       || []));
-            const _finLen = _finBefore.length;
+            // Reverter nas tabelas o que este aditivo/apostilamento havia aplicado:
+            // - itens que ele REMOVEU da tabela → devolvê-los
+            // - itens que ele ADICIONOU à tabela → removê-los
+            // - itens que ele MODIFICOU → restaurar valor anterior
+            if (removida.tabelasAlteradas) {
+                ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                    const diffs = removida.tabelasAlteradas[tabDef.key];
+                    if (!diffs) return;
+                    let arr = JSON.parse(JSON.stringify(ted[tabDef.key] || []));
+                    const getId = (item) => (item && item.id != null) ? String(item.id) : null;
+                    const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
 
-            // Instalar watchdog: qualquer atribuição a ted.financeiros é interceptada e revertida
-            let _finProtected = _finBefore;
-            Object.defineProperty(ted, 'financeiros', {
-                configurable: true, enumerable: true,
-                get: () => _finProtected,
-                set: (v) => {
-                    console.warn('[WATCHDOG] ted.financeiros foi sobrescrito! stack:', new Error().stack.split('\n').slice(1,4).join(' | '));
-                    _finProtected = v; // deixar passar para logar, mas vamos restaurar depois
-                }
-            });
+                    // 1. Restaurar itens que foram REMOVIDOS por este apostilamento/aditivo
+                    (diffs.removidos || []).forEach(rem => {
+                        const item = rem.item || rem;
+                        const id = getId(item);
+                        const mk = matchKey(item);
+                        const jaExiste = id
+                            ? arr.some(a => getId(a) === id)
+                            : arr.some(a => matchKey(a) === mk);
+                        if (!jaExiste) arr.push(JSON.parse(JSON.stringify(item)));
+                    });
 
+                    // 2. Remover itens que foram ADICIONADOS por este apostilamento/aditivo
+                    (diffs.adicionados || []).forEach(add => {
+                        const item = add.item || add;
+                        const id = getId(item);
+                        const mk = matchKey(item);
+                        arr = arr.filter(a => {
+                            if (id && getId(a) === id) return false;
+                            if (!id && matchKey(a) === mk) return false;
+                            return true;
+                        });
+                    });
+
+                    // 3. Reverter campos MODIFICADOS por este apostilamento/aditivo
+                    (diffs.modificados || []).forEach(mod => {
+                        const original = mod.original || {};
+                        const id = getId(original);
+                        const mk = matchKey(original);
+                        const idx = id
+                            ? arr.findIndex(a => getId(a) === id)
+                            : arr.findIndex(a => matchKey(a) === mk);
+                        if (idx >= 0 && mod.camposAlterados) {
+                            Object.keys(mod.camposAlterados).forEach(field => {
+                                arr[idx][field] = mod.camposAlterados[field].de;
+                            });
+                        }
+                    });
+
+                    ted[tabDef.key] = arr;
+                });
+            }
+
+            // Reconstruir campos simples (vigência, valor, camposAlterados) sem tocar nas tabelas
             restaurarCamposSimplesSemTabelas(ted, index, removida);
+
+            // Sincronizar arrays legados
             sincronizarAlteracoesParaArraysLegado(ted);
 
-            // Remover watchdog e restaurar garantidamente
-            try { delete ted.financeiros; } catch(e) {}
-            ted.financeiros = _finBefore;
-            ted.objetos     = _objBefore;
-            ted.fisicos     = _fisBefore;
-            ted.metas       = _metBefore;
-
-            console.log('[removerAlteracao] financeiros após restauração:', ted.financeiros.length, '(era', _finLen, ')');
-
+            // valor TED é derivado do cadastro de objetos
             atualizarValorTedFromObjetos(ted);
-
-            // Garantir que atualizarValorTedFromObjetos não apagou financeiros
-            if (ted.financeiros.length !== _finLen) {
-                console.warn('[removerAlteracao] financeiros mudou após atualizarValorTed! Restaurando...');
-                ted.financeiros = _finBefore;
-            }
 
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             exibirInformacoesTED();
@@ -5314,10 +5339,64 @@
             const item = ted.alteracoes[index];
             if (!item.excluido) return;
             item.excluido = false;
-            // Reaplicar snapshots/reconstruir TED com o item restaurado
-            restaurarDadosAposRemocao(ted, null, item);
-            // sincronizar e salvar
+
+            // Reaplicar nas tabelas o que este item havia feito (inverso da exclusão):
+            // - itens que ele havia REMOVIDO → removê-los novamente
+            // - itens que ele havia ADICIONADO → devolvê-los
+            // - itens que ele havia MODIFICADO → reaplicar o valor novo
+            if (item.tabelasAlteradas) {
+                ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                    const diffs = item.tabelasAlteradas[tabDef.key];
+                    if (!diffs) return;
+                    let arr = JSON.parse(JSON.stringify(ted[tabDef.key] || []));
+                    const getId = (i) => (i && i.id != null) ? String(i.id) : null;
+                    const matchKey = (i) => tabDef.matchFields.map(f => String(i[f] == null ? '' : i[f])).join('||');
+
+                    // Reaplicar remoções
+                    (diffs.removidos || []).forEach(rem => {
+                        const it = rem.item || rem;
+                        const id = getId(it); const mk = matchKey(it);
+                        arr = arr.filter(a => id ? getId(a) !== id : matchKey(a) !== mk);
+                    });
+                    // Reaplicar adições
+                    (diffs.adicionados || []).forEach(add => {
+                        const it = add.item || add;
+                        const id = getId(it); const mk = matchKey(it);
+                        const jaExiste = id ? arr.some(a => getId(a) === id) : arr.some(a => matchKey(a) === mk);
+                        if (!jaExiste) arr.push(JSON.parse(JSON.stringify(it)));
+                    });
+                    // Reaplicar modificações
+                    (diffs.modificados || []).forEach(mod => {
+                        const atual = mod.atual || {};
+                        const id = getId(atual); const mk = matchKey(atual);
+                        const idx = id ? arr.findIndex(a => getId(a) === id) : arr.findIndex(a => matchKey(a) === mk);
+                        if (idx >= 0 && mod.camposAlterados) {
+                            Object.keys(mod.camposAlterados).forEach(field => {
+                                arr[idx][field] = mod.camposAlterados[field].para;
+                            });
+                        }
+                    });
+                    ted[tabDef.key] = arr;
+                });
+            }
+
+            // Reaplicar campos simples
+            if (item.camposAlterados) {
+                Object.keys(item.camposAlterados).forEach(key => {
+                    ted[key] = item.camposAlterados[key].para;
+                });
+            }
+            if (item.tipo === 'aditivo' && item.meses) {
+                ted.vigencia = (parseInt(ted.vigencia) || 0) + (parseInt(item.meses) || 0);
+                if (ted.inicioVigencia) {
+                    const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    const dF = new Date(dI); dF.setMonth(dF.getMonth() + parseInt(ted.vigencia));
+                    ted.fimVigencia = `${dF.getFullYear()}-${String(dF.getMonth()+1).padStart(2,'0')}-${String(dF.getDate()).padStart(2,'0')}`;
+                }
+            }
+
             sincronizarAlteracoesParaArraysLegado(ted);
+            atualizarValorTedFromObjetos(ted);
             try { atualizarTabelasEmCascata('ted'); } catch(e) {}
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             exibirInformacoesTED();
