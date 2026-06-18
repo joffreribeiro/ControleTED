@@ -4393,7 +4393,20 @@
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
                 const arr = ted[tabDef.key] || [];
 
-                html += `<div class="aditivo-section-title">${tabDef.label} (<span id="${prefix}_count_${tabDef.key}">${arr.length}</span> ${arr.length === 1 ? 'item' : 'itens'})</div>`;
+                // Construir set de IDs/matchKeys removidos neste apostilamento (para marcar tachado ao reabrir)
+                const removidosNesseAlt = new Set();
+                if (existente && existente.tabelasAlteradas && existente.tabelasAlteradas[tabDef.key]) {
+                    const diffs = existente.tabelasAlteradas[tabDef.key];
+                    (diffs.removidos || []).forEach(rem => {
+                        const item = rem.item || rem;
+                        if (item.id != null) removidosNesseAlt.add(String(item.id));
+                        const mk = tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
+                        if (mk) removidosNesseAlt.add('mk:' + mk);
+                    });
+                }
+
+                const countAtivo = arr.length - removidosNesseAlt.size;
+                html += `<div class="aditivo-section-title">${tabDef.label} (<span id="${prefix}_count_${tabDef.key}">${countAtivo}</span> ${countAtivo === 1 ? 'item' : 'itens'})</div>`;
                 html += `<div class="table-wrapper" style="max-width:100%; overflow-x:auto; margin-bottom:0.5rem;"><table class="aditivo-clone-table" id="${prefix}_tabela_${tabDef.key}"><thead><tr>`;
                 tabDef.colunas.forEach(col => {
                     html += `<th>${col.label}</th>`;
@@ -4434,7 +4447,12 @@
                 }
                 indices.forEach(kidx => {
                     const item = arr[kidx];
-                    html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}">`;
+                    const itemId = (item && item.id != null) ? String(item.id) : null;
+                    const itemMk = 'mk:' + tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
+                    const jaRemovido = itemId && removidosNesseAlt.has(itemId) || removidosNesseAlt.has(itemMk);
+                    const removidoAttr = jaRemovido ? ' data-removido="1"' : '';
+                    const removidoStyle = jaRemovido ? ' style="text-decoration:line-through;opacity:0.4;"' : '';
+                    html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}"${removidoAttr}${removidoStyle}>`;
                     tabDef.colunas.forEach(col => {
                         let rawVal = item[col.field];
                         // sanitizar entrada textual primeiro
