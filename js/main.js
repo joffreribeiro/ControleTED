@@ -4952,15 +4952,44 @@
             // Coletar dados das tabelas editadas no modal
             const dadosTabelas = coletarDadosTabelasModal('alt');
 
-            // Aplicar dados das tabelas ao TED
+            // Comparar tabelas entre snapshot e estado do modal para registrar diffs
+            // Usamos uma cópia temporária com os dados do modal para gerar o diff
+            const tedParaDiff = Object.assign({}, ted);
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
-                if (dadosTabelas[tabDef.key]) {
-                    ted[tabDef.key] = dadosTabelas[tabDef.key];
-                }
+                if (dadosTabelas[tabDef.key]) tedParaDiff[tabDef.key] = dadosTabelas[tabDef.key];
             });
+            const tabelasAlteradas = compararTabelasAditivo(snapshot, tedParaDiff);
 
-            // Comparar tabelas entre snapshot e estado atual
-            const tabelasAlteradas = compararTabelasAditivo(snapshot, ted);
+            // Aplicar nas tabelas reais apenas adições e modificações — NUNCA remover fisicamente
+            // Remoções ficam apenas no diff (tabelasAlteradas) para exibição tachada
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                if (!dadosTabelas[tabDef.key]) return;
+                const diffs = tabelasAlteradas[tabDef.key];
+                let arr = JSON.parse(JSON.stringify(ted[tabDef.key] || []));
+                const getId = (item) => (item && item.id != null) ? String(item.id) : null;
+                const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
+
+                if (diffs) {
+                    // Aplicar adições
+                    (diffs.adicionados || []).forEach(add => {
+                        const item = add.item || add;
+                        const id = getId(item); const mk = matchKey(item);
+                        const jaExiste = id ? arr.some(a => getId(a) === id) : arr.some(a => matchKey(a) === mk);
+                        if (!jaExiste) arr.push(JSON.parse(JSON.stringify(item)));
+                    });
+                    // Aplicar modificações
+                    (diffs.modificados || []).forEach(mod => {
+                        const atual = mod.atual || {};
+                        const id = getId(atual); const mk = matchKey(atual);
+                        const idx = id ? arr.findIndex(a => getId(a) === id) : arr.findIndex(a => matchKey(a) === mk);
+                        if (idx >= 0 && mod.camposAlterados) {
+                            Object.keys(mod.camposAlterados).forEach(f => { arr[idx][f] = mod.camposAlterados[f].para; });
+                        }
+                    });
+                    // Remoções: NÃO remover — ficam no diff para exibição tachada
+                }
+                ted[tabDef.key] = arr;
+            });
 
             // Construir objeto da alteração
             const altObj = { tipo, data, obs };
