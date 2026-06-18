@@ -4999,6 +4999,19 @@
             });
             const tabelasAlteradas = compararTabelasAditivo(snapshot, tedParaDiff);
 
+            // [DIAG] Log do diff de financeiros para depurar exclusões de ND no apostilamento
+            try {
+                const _dFin = tabelasAlteradas.financeiros || {};
+                console.log('[APOST] financeiros diff →',
+                    'snapshot:', (snapshot.financeiros || []).length,
+                    '| modal:', (tedParaDiff.financeiros || []).length,
+                    '| removidos:', (_dFin.removidos || []).length,
+                    '| adicionados:', (_dFin.adicionados || []).length,
+                    '| modificados:', (_dFin.modificados || []).length,
+                    '| snapIds:', (snapshot.financeiros || []).map(f => f.id),
+                    '| modalIds:', (tedParaDiff.financeiros || []).map(f => f.id));
+            } catch(e) {}
+
             // Aplicar nas tabelas reais apenas adições e modificações — NUNCA remover fisicamente
             // Remoções ficam apenas no diff (tabelasAlteradas) para exibição tachada
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
