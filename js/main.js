@@ -2856,57 +2856,111 @@
             const hojePct = pct(dHoje);
             const descPct = dDesc ? pct(dDesc) : null;
 
-            // Calcular pontos de cada aditivo (data de início do segmento do aditivo)
+            // Calcular pontos de cada aditivo
             const aditivoPoints = [];
             {
                 let acumMeses = vigOrigMeses;
                 aditivos.filter(a => !a.excluido && (a.meses || 0) > 0).forEach((a, ai) => {
-                    const dAditivoInicio = new Date(dInicio); dAditivoInicio.setMonth(dAditivoInicio.getMonth() + acumMeses);
-                    const dAditivoFim = new Date(dInicio); dAditivoFim.setMonth(dAditivoFim.getMonth() + acumMeses + (a.meses || 0));
-                    const p = pct(dAditivoInicio);
-                    const dataStr = a.data ? fmtBr(new Date(a.data + 'T00:00:00')) : '';
-                    aditivoPoints.push({ ai, p, dAditivoInicio, dAditivoFim, dataStr, meses: a.meses });
+                    const dAditivoInicio = new Date(dInicio);
+                    dAditivoInicio.setMonth(dAditivoInicio.getMonth() + acumMeses);
+                    const dataStr = a.data ? fmtBr(new Date(a.data + 'T00:00:00')) : fmtBr(dAditivoInicio);
+                    aditivoPoints.push({ ai, p: pct(dAditivoInicio), dataStr, meses: a.meses });
                     acumMeses += (a.meses || 0);
                 });
             }
 
-            // Altura da barra aumentada para acomodar rótulos alternados (acima e abaixo)
-            wrap.style.height = aditivoPoints.length > 0 ? '100px' : '82px';
+            // ── Montar lista de pins e atribuir níveis para evitar sobreposição ──
+            // Cada pin: { p (0-100), color, label, sublabel, side ('above'|'below') }
+            // Regra: pins muito próximos (<6%) alternam above/below
+            const BARLINE = 54; // top da barra em px
+            const LABEL_W_PCT = 6; // largura estimada de um label em % (para detecção de colisão)
+
+            const pins = [];
+            // Início
+            pins.push({ p: 0,       color: '#185FA5', label: fmtBr(dInicio),   sublabel: 'Início', priority: 0 });
+            // Fim original (só se prorrogado)
+            if (hasPror) {
+                pins.push({ p: origPct, color: '#c07a1c', label: fmtBr(dFimOrig), sublabel: 'Orig.',  priority: 1 });
+            }
+            // Aditivos
+            aditivoPoints.forEach(({ ai, p, dataStr, meses }) => {
+                pins.push({ p, color: '#2563EB', label: dataStr, sublabel: `${ai+1}º Adit. +${meses}m`, priority: 2 });
+            });
+            // 1ª Desc
+            if (descPct !== null) {
+                pins.push({ p: descPct, color: '#3B7A0E', label: fmtBr(dDesc), sublabel: '1ª Desc.', priority: 2 });
+            }
+            // Fim total
+            pins.push({ p: 100, color: '#185FA5', label: fmtBr(dFimTotal), sublabel: 'Fim', priority: 0 });
+
+            // Ordenar por posição e atribuir side: above/below alternando quando há colisão
+            pins.sort((a, b) => a.p - b.p);
+            // Dois níveis acima: stemH1=34px (label mais alto), stemH2=18px (label mais baixo)
+            // Abaixo da barra: stemH=14px
+            // Atribuir: first pass — todos 'above-far', depois ajustar vizinhos próximos para 'above-near' ou 'below'
+            const LEVELS = ['above-far', 'above-near', 'below'];
+            pins.forEach((pin, i) => {
+                pin.side = 'above-far'; // padrão
+            });
+            // Se dois pins estão a menos de LABEL_W_PCT% um do outro, alternar níveis
+            for (let i = 1; i < pins.length; i++) {
+                const prev = pins[i-1];
+                const cur  = pins[i];
+                if ((cur.p - prev.p) < LABEL_W_PCT) {
+                    if (prev.side === 'above-far') cur.side = 'above-near';
+                    else if (prev.side === 'above-near') cur.side = 'below';
+                    else cur.side = 'above-far';
+                }
+            }
+
+            // Configurações visuais por nível
+            // above-far: dot no topo da barra, stem longa, label bem acima
+            // above-near: dot no topo da barra, stem curta, label logo acima
+            // below: dot na base da barra, sem stem, label abaixo
+            function pinHtml(pin) {
+                const isAboveFar  = pin.side === 'above-far';
+                const isAboveNear = pin.side === 'above-near';
+                const isBelow     = pin.side === 'below';
+
+                let stemTop, stemH, dotTop, labelTop, sublabelTop;
+                if (isAboveFar) {
+                    dotTop      = BARLINE - 36;  // 18px acima da barra
+                    stemTop     = BARLINE - 36 + 7;
+                    stemH       = 36 - 7;
+                    labelTop    = BARLINE - 52;
+                    sublabelTop = BARLINE - 41;
+                } else if (isAboveNear) {
+                    dotTop      = BARLINE - 20;
+                    stemTop     = BARLINE - 20 + 7;
+                    stemH       = 20 - 7;
+                    labelTop    = BARLINE - 36;
+                    sublabelTop = BARLINE - 25;
+                } else { // below
+                    dotTop      = BARLINE + 10 + 2; // logo abaixo da barra
+                    stemTop     = BARLINE + 10 + 9;
+                    stemH       = 10;
+                    labelTop    = BARLINE + 10 + 19;
+                    sublabelTop = BARLINE + 10 + 30;
+                }
+
+                return `<div class="vig-pin" style="left:${pin.p}%;color:${pin.color};">
+                    <div class="vig-pin-dot"  style="position:absolute;top:${dotTop}px;left:50%;transform:translateX(-50%);"></div>
+                    <div class="vig-pin-stem" style="position:absolute;top:${stemTop}px;left:50%;transform:translateX(-50%);height:${stemH}px;"></div>
+                    <div class="vig-pin-label"    style="top:${labelTop}px;color:${pin.color};">${pin.label}</div>
+                    <div class="vig-pin-sublabel" style="top:${sublabelTop}px;color:${pin.color};">${pin.sublabel}</div>
+                </div>`;
+            }
+
+            wrap.style.height = '';
 
             let html = `<div class="vig-bar-track"></div>`;
             html += `<div class="vig-bar-orig${hasPror?' with-pror':''}" style="width:${origPct}%;"></div>`;
             if (hasPror) {
                 html += `<div class="vig-bar-pror" style="left:${origPct}%;width:${prorPct}%;"></div>`;
             }
-            // tick início
-            html += `<div class="vig-tick start" style="left:0%"><div class="vig-tick-label top">${fmtBr(dInicio)}</div><div class="vig-tick-label">Início</div></div>`;
-            // tick fim original (com data) — só se houver prorrogação
-            if (hasPror) {
-                html += `<div class="vig-tick original-end" style="left:${origPct}%"><div class="vig-tick-label top" style="color:#c07a1c;font-weight:600;">${fmtBr(dFimOrig)}</div><div class="vig-tick-label" style="color:#c07a1c;font-weight:600;">Orig</div></div>`;
-            }
-            // tick fim total
-            html += `<div class="vig-tick end" style="left:100%"><div class="vig-tick-label top">${fmtBr(dFimTotal)}</div><div class="vig-tick-label">Fim</div></div>`;
-            // marcadores de aditivos com data (alternando acima/abaixo)
-            aditivoPoints.forEach(({ ai, p, dAditivoInicio, meses, dataStr }) => {
-                const labelData = dataStr || fmtBr(dAditivoInicio);
-                const labelAdit = `${ai+1}º Adit.`;
-                const labelMeses = `+${meses}m`;
-                const isAbove = ai % 2 === 0;
-                const topLabel = isAbove
-                    ? `<div class="vig-tick-label top" style="color:#2563EB;font-weight:700;">${labelData}</div>`
-                    : '';
-                const botLabel = isAbove
-                    ? `<div class="vig-tick-label" style="color:#2563EB;font-weight:600;">${labelAdit} ${labelMeses}</div>`
-                    : `<div class="vig-tick-label" style="color:#2563EB;font-weight:600;bottom:-16px;">${labelData}<br>${labelAdit} ${labelMeses}</div>`;
-                html += `<div class="vig-tick" style="left:${p}%;background:#2563EB;height:28px;top:22px;">${topLabel}${botLabel}</div>`;
-            });
-            // marcador 1ª desc com data
-            if (descPct !== null) {
-                html += `<div class="vig-desc-marker" style="left:${descPct}%" title="1ª Descentralização: ${fmtBr(dDesc)}">
-                    <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9.5px;font-family:'IBM Plex Mono',monospace;color:#3B6D11;font-weight:700;line-height:1.3;text-align:center;">${fmtBr(dDesc)}<br>1ª Desc.</div>
-                </div>`;
-            }
-            // linha hoje
+            // Pins
+            pins.forEach(pin => { html += pinHtml(pin); });
+            // Linha hoje
             if (hojePct >= 0 && hojePct <= 100) {
                 html += `<div class="vig-today" style="left:${hojePct}%"><div class="vig-today-label">Hoje</div></div>`;
             }
@@ -2964,14 +3018,22 @@
                 container.innerHTML = `<div style="text-align:center;padding:1.2rem;color:#94a3b8;font-size:12.5px;">Nenhum aditivo / apostilamento cadastrado</div>`;
                 return;
             }
+            // Pré-calcular ordinals reais (contando apenas ativos, na ordem original)
             let contAdit = 0, contApost = 0;
+            const ordinals = alteracoes.map(a => {
+                if (!a.excluido) {
+                    if (a.tipo === 'aditivo') contAdit++; else contApost++;
+                    return a.tipo === 'aditivo' ? contAdit : contApost;
+                }
+                // Para excluídos: calcular qual seria o ordinal na posição deles
+                const snap = a.tipo === 'aditivo' ? contAdit + 1 : contApost + 1;
+                return snap;
+            });
+
+            const temExcluidos = alteracoes.some(a => a.excluido);
             const html = alteracoes.map((a, idx) => {
                 const isAditivo = a.tipo === 'aditivo';
-                // incrementar ordinal apenas para itens não-excluídos
-                if (!a.excluido) {
-                    if (isAditivo) contAdit++; else contApost++;
-                }
-                const ordinal = isAditivo ? contAdit : contApost;
+                const ordinal = ordinals[idx];
                 const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
                 const dataStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
                 const badgeClass = isAditivo ? '' : ' apostilamento';
@@ -2981,11 +3043,12 @@
                 const delBtn = `<button class="btn-icon-action delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
                 const restoreBtn = `<button class="btn-icon-action restore" onclick="restaurarAlteracao(${idx})" title="Restaurar"><i data-lucide="corner-down-left" class="inline-icon-sm"></i></button>`;
                 const actions = window._readOnlyMode ? viewBtn : (a.excluido ? `${viewBtn}${restoreBtn}` : `${viewBtn}${editBtn}${delBtn}`);
+                const excTag = a.excluido ? `<span style="font-size:9px;font-weight:600;color:#94a3b8;letter-spacing:.04em;margin-left:6px;">EXCLUÍDO</span>` : '';
                 return `<div class="aditivo-card-new${a.excluido ? ' excluido' : ''}">
-                    <div class="aditivo-num-badge${badgeClass}">${ordinal}</div>
+                    <div class="aditivo-num-badge${badgeClass}${a.excluido ? ' excluido' : ''}">${ordinal}</div>
                     <div class="aditivo-card-body">
                         <div class="aditivo-card-line1">
-                            <span class="aditivo-card-tipo">${tipoLabel}</span>
+                            <span class="aditivo-card-tipo">${tipoLabel}</span>${excTag}
                             <span class="aditivo-card-date">${dataStr}</span>
                         </div>
                         <div class="change-chips">${chips}</div>
