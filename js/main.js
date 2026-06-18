@@ -5252,26 +5252,43 @@
             const removida = ted.alteracoes[index];
             removida.excluido = true;
 
-            // Salvar snapshot dos arrays de tabelas ANTES de qualquer processamento
-            const _snapFinanceiros = JSON.parse(JSON.stringify(ted.financeiros || []));
-            const _snapObjetos     = JSON.parse(JSON.stringify(ted.objetos     || []));
-            const _snapFisicos     = JSON.parse(JSON.stringify(ted.fisicos     || []));
-            const _snapMetas       = JSON.parse(JSON.stringify(ted.metas       || []));
+            // Congelar tabelas: interceptar qualquer tentativa de sobrescrever durante o processo
+            const _finBefore = JSON.parse(JSON.stringify(ted.financeiros || []));
+            const _objBefore = JSON.parse(JSON.stringify(ted.objetos     || []));
+            const _fisBefore = JSON.parse(JSON.stringify(ted.fisicos     || []));
+            const _metBefore = JSON.parse(JSON.stringify(ted.metas       || []));
+            const _finLen = _finBefore.length;
 
-            // Reconstruir campos simples (vigência, valor, camposAlterados)
+            // Instalar watchdog: qualquer atribuição a ted.financeiros é interceptada e revertida
+            let _finProtected = _finBefore;
+            Object.defineProperty(ted, 'financeiros', {
+                configurable: true, enumerable: true,
+                get: () => _finProtected,
+                set: (v) => {
+                    console.warn('[WATCHDOG] ted.financeiros foi sobrescrito! stack:', new Error().stack.split('\n').slice(1,4).join(' | '));
+                    _finProtected = v; // deixar passar para logar, mas vamos restaurar depois
+                }
+            });
+
             restaurarCamposSimplesSemTabelas(ted, index, removida);
-
-            // Restaurar tabelas ao estado anterior (sem modificação)
-            ted.financeiros = _snapFinanceiros;
-            ted.objetos     = _snapObjetos;
-            ted.fisicos     = _snapFisicos;
-            ted.metas       = _snapMetas;
-
-            // Sincronizar arrays legados (aditivos/apostilamentos sem excluídos)
             sincronizarAlteracoesParaArraysLegado(ted);
 
-            // valor TED é derivado do cadastro de objetos
+            // Remover watchdog e restaurar garantidamente
+            try { delete ted.financeiros; } catch(e) {}
+            ted.financeiros = _finBefore;
+            ted.objetos     = _objBefore;
+            ted.fisicos     = _fisBefore;
+            ted.metas       = _metBefore;
+
+            console.log('[removerAlteracao] financeiros após restauração:', ted.financeiros.length, '(era', _finLen, ')');
+
             atualizarValorTedFromObjetos(ted);
+
+            // Garantir que atualizarValorTedFromObjetos não apagou financeiros
+            if (ted.financeiros.length !== _finLen) {
+                console.warn('[removerAlteracao] financeiros mudou após atualizarValorTed! Restaurando...');
+                ted.financeiros = _finBefore;
+            }
 
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             exibirInformacoesTED();
