@@ -2316,6 +2316,9 @@
             window.tedSelecionado.fisicos = window.tedSelecionado.fisicos || [];
             window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas || [];
             window.tedSelecionado.financeiros = window.tedSelecionado.financeiros || [];
+            // Garantir IDs em itens financeiros sem ID (dados legados)
+            let _nextFinId = Date.now();
+            window.tedSelecionado.financeiros.forEach(f => { if (f && f.id == null) f.id = _nextFinId++; });
             window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras || [];
             window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
             // Migrar aditivos/apostilamentos para lista unificada
@@ -4750,6 +4753,24 @@
             overlay._snapshotOriginal = (isEdit && existente && existente.snapshot)
                 ? JSON.parse(JSON.stringify(existente.snapshot))
                 : capturarSnapshotTed(ted);
+            // Garantir IDs no snapshot de financeiros: itens sem ID recebem ID do item vivo correspondente
+            // (necessário para que compararArrayTabela use o caminho por ID em vez do fallback por matchKey)
+            try {
+                const snapFin = overlay._snapshotOriginal && overlay._snapshotOriginal.financeiros;
+                const liveFin = ted.financeiros || [];
+                if (snapFin && snapFin.some(f => f && f.id == null)) {
+                    snapFin.forEach(sf => {
+                        if (!sf || sf.id != null) return;
+                        const match = liveFin.find(lf =>
+                            String(lf.numero || '') === String(sf.numero || '') &&
+                            String(lf.up || lf.ug || '') === String(sf.up || sf.ug || '') &&
+                            String(lf.m ?? '') === String(sf.m ?? '') &&
+                            Math.abs((parseNumber(lf.valor) || 0) - (parseNumber(sf.valor) || 0)) < 0.01
+                        );
+                        if (match) sf.id = match.id;
+                    });
+                }
+            } catch(e) { /* non-fatal */ }
             overlay._existente = existente;
 
             // Se editando, preencher automaticamente o formulário
@@ -7325,7 +7346,8 @@
             let rowsHtml = '';
             grupoOrdem.forEach(chave => {
                 const grp = grupos[chave];
-                const subTotal = grp.items.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
+                const activeItems = grp.items.filter(f => f.id == null || !excludedFinIds.has(String(f.id)));
+                const subTotal = activeItems.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
                 const subFmt = subTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 const grpId = 'cfgrp_' + chave;
                 // group header row (fixed cols + Gantt spacers)
@@ -7336,7 +7358,7 @@
                             <div class="cf-grp-head-left">
                                 <span class="cf-grp-toggle open" id="${grpId}_arrow">▶</span>
                                 <span class="mes-pill">${grp.label}</span>
-                                <span class="cf-grp-count">${grp.items.length} lançamento${grp.items.length !== 1 ? 's' : ''}</span>
+                                <span class="cf-grp-count">${activeItems.length} lançamento${activeItems.length !== 1 ? 's' : ''}</span>
                             </div>
                             <span class="cf-grp-subtotal">R$ ${subFmt}</span>
                         </div>
