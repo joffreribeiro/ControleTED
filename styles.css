@@ -2657,6 +2657,9 @@
         .celula-alterada-aditivo .val-novo { color: #16a34a; font-weight: 700; display: inline-block; }
         tr.linha-adicionada-aditivo { background: rgba(34,197,94,0.08) !important; }
         tr.linha-adicionada-aditivo td:first-child::before { content: '+'; color: #16a34a; font-weight: 700; margin-right: 4px; font-size: 12px; }
+        tr.linha-excluida-aditivo { background: rgba(239,68,68,0.05) !important; opacity: 0.6; }
+        tr.linha-excluida-aditivo td { text-decoration: line-through; color: #94a3b8 !important; }
+        tr.linha-excluida-aditivo td:first-child::before { content: '×'; color: #ef4444; font-weight: 700; margin-right: 4px; font-size: 12px; }
         tr.linha-removida-aditivo { background: rgba(239,68,68,0.06) !important; }
         tr.linha-removida-aditivo td { text-decoration: line-through; color: var(--text-muted) !important; opacity: 0.6; }
         /* Entregas - novo layout de cards */
@@ -3883,6 +3886,10 @@
 }
 .obj-row-new:last-child { border-bottom: none; }
 .obj-row-new.linha-adicionada-aditivo { background: #f0fdf4; }
+.obj-row-new.linha-excluida-aditivo { background: rgba(239,68,68,0.04); opacity: 0.6; }
+.obj-row-new.linha-excluida-aditivo .obj-name-new,
+.obj-row-new.linha-excluida-aditivo .obj-num-new,
+.obj-row-new.linha-excluida-aditivo .obj-total-new { text-decoration: line-through; color: #94a3b8; }
 .obj-name-new { font-weight: 600; color: #1a1a1a; }
 .obj-sub-new  { font-size: 10.5px; color: #94a3b8; margin-top: 1px; }
 .obj-num-new  { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #64748b; text-align: right; white-space: nowrap; }
@@ -4137,6 +4144,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* aditivo changed row highlight inside cf-grp-table */
 .cf-grp-table tbody tr.linha-adicionada-aditivo td { background: #f0fdf4; }
+.cf-grp-table tbody tr.linha-excluida-aditivo td { background: rgba(239,68,68,0.04) !important; text-decoration: line-through; color: #94a3b8 !important; opacity: 0.65; }
 
 /* ============================================================
    ABAS INTERNAS — DETALHES TED (dt-tab-*)

@@ -3333,6 +3333,8 @@
 
             try { calcularPrazoRelatorio(); } catch(e) {}
             try { atualizarStatusPorEntregaRelatorio(); } catch(e) {}
+
+            try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) {}
         }
 
         // Variável para backup dos dados originais
@@ -3710,12 +3712,13 @@
             const tabDefObj = ADITIVO_TABELAS_CLONE.find(t => t.key === 'objetos');
             const { modMap: modMapObj, addSet: addSetObj } = criarMapaAlteracoes(altObjetos, tabDefObj);
             const matchKeyObj = (item) => tabDefObj ? tabDefObj.matchFields.map(f => String(item[f] || '')).join('||') : '';
+            const excludedObjIds = getExcludedItemIds('objetos');
 
             let totalValor = 0;
             objetos.forEach(obj => {
                 const qt = parseNumber(obj.qtde); const vu = parseNumber(obj.valorUnitario);
                 obj.valorTotal = qt * vu;
-                totalValor += obj.valorTotal;
+                if (!isItemExcluded(obj, excludedObjIds, 'objetos')) totalValor += obj.valorTotal;
             });
 
             const rowsHtml = objetos.map(obj => {
@@ -3727,6 +3730,7 @@
                 const mKey = matchKeyObj(obj);
                 const mods = modMapObj[mKey];
                 const isAdded = addSetObj.has(mKey);
+                const isExcluded = isItemExcluded(obj, excludedObjIds, 'objetos');
 
                 // consistência com Cadastro Físico
                 const somaFisico = (window.tedSelecionado.fisicos || [])
@@ -3747,7 +3751,7 @@
                 const editBtn = !window._readOnlyMode ? `<button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>` : '';
                 const delBtn = !window._readOnlyMode ? `<button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>` : '';
 
-                return `<div class="obj-row-new${isAdded?' linha-adicionada-aditivo':''}">
+                return `<div class="obj-row-new${isExcluded?' linha-excluida-aditivo':isAdded?' linha-adicionada-aditivo':''}">
                     <div>
                         <div class="obj-name-new">${obj.objeto || '—'}</div>
                         <div class="obj-share-bar-new"><div class="obj-share-fill-new" style="width:${sharePct.toFixed(1)}%;"></div></div>
@@ -5003,6 +5007,78 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+        // Retorna um Set de IDs de itens que foram adicionados por aditivos/apostilamentos EXCLUÍDOS
+        function getExcludedItemIds(tabelaKey) {
+            const ids = new Set();
+            ((window.tedSelecionado && window.tedSelecionado.alteracoes) || []).forEach(alt => {
+                if (!alt.excluido) return;
+                const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas[tabelaKey];
+                if (!diffs) return;
+                (diffs.adicionados || []).forEach(add => {
+                    const item = add.item || add;
+                    if (item.id != null) ids.add(String(item.id));
+                    // fallback por matchKey para tabelas sem id numérico
+                    const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+                    if (tabDef) {
+                        const mk = tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+                        if (mk) ids.add('mk:' + mk);
+                    }
+                });
+            });
+            return ids;
+        }
+
+        // Verifica se um item de tabela está em excludedIds (por id ou matchKey)
+        function isItemExcluded(item, excludedIds, tabelaKey) {
+            if (!excludedIds || excludedIds.size === 0) return false;
+            if (item.id != null && excludedIds.has(String(item.id))) return true;
+            const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+            if (tabDef) {
+                const mk = tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+                if (mk && excludedIds.has('mk:' + mk)) return true;
+            }
+            return false;
+        }
+
+        // Recalcula apenas campos simples (vigência, valor, camposAlterados) ignorando tabelas.
+        // Usado no soft-delete para não apagar linhas de tabelas financeiras/físicas.
+        function restaurarCamposSimplesSemTabelas(ted, removedIndex, removedItem) {
+            const eventos = (ted.alteracoes || []).filter(a => !a.excluido && a.snapshot);
+            const usarRemovido = typeof removedIndex === 'number' && removedIndex === 0 && removedItem && removedItem.snapshot;
+            const snapBase = usarRemovido ? removedItem.snapshot : (eventos[0] && eventos[0].snapshot);
+
+            // Restaurar campos simples do snapshot-base
+            if (snapBase) {
+                ADITIVO_CAMPOS_CLONE.forEach(c => {
+                    if (snapBase[c.key] !== undefined) ted[c.key] = snapBase[c.key];
+                });
+                if (snapBase.valorTed !== undefined) ted.valorTed = snapBase.valorTed;
+                if (snapBase.vigencia !== undefined) ted.vigencia = snapBase.vigencia;
+                if (snapBase.inicioVigencia !== undefined) ted.inicioVigencia = snapBase.inicioVigencia;
+                if (snapBase.fimVigencia !== undefined) ted.fimVigencia = snapBase.fimVigencia;
+                if (snapBase.primeiraDescentralizacao !== undefined) ted.primeiraDescentralizacao = snapBase.primeiraDescentralizacao;
+            }
+
+            // Reaplicar apenas camposAlterados (não tabelasAlteradas)
+            eventos.forEach(ev => {
+                if (ev.camposAlterados) {
+                    Object.keys(ev.camposAlterados).forEach(key => {
+                        ted[key] = ev.camposAlterados[key].para;
+                    });
+                }
+                // Vigência acumulada dos aditivos
+                if (ev.tipo === 'aditivo' && ev.meses) {
+                    const mesesAtuais = parseInt(ted.vigencia) || 0;
+                    ted.vigencia = mesesAtuais + (parseInt(ev.meses) || 0);
+                    if (ted.inicioVigencia) {
+                        const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                        const dF = new Date(dI); dF.setMonth(dF.getMonth() + parseInt(ted.vigencia));
+                        ted.fimVigencia = `${dF.getFullYear()}-${String(dF.getMonth()+1).padStart(2,'0')}-${String(dF.getDate()).padStart(2,'0')}`;
+                    }
+                }
+            });
+        }
+
         // Função auxiliar: restaurar dados do TED a partir dos snapshots das alterações restantes
         function restaurarDadosAposRemocao(ted, removedIndex, removedItem) {
             // Coletar todas as alterações com snapshot, em ordem (ignorar itens excluídos)
@@ -5172,19 +5248,13 @@
             const extra = isAditivo ? ` (+${item.meses || 0} meses)` : '';
             confirmarAcao(`Remover ${tipoLabel}${extra}?`, function() {
 
-            // Marcar como excluído (manter registro na tabela, mas ignorar nos cálculos)
+            // Marcar como excluído (manter registro visível, mas ignorar nos cálculos)
             const removida = ted.alteracoes[index];
             removida.excluido = true;
 
-            // Recalcular TED a partir dos snapshots das alterações não-excluídas
-            restaurarDadosAposRemocao(ted, index, removida);
-
-            // Recalcular valor total dos objetos após restauração
-            (ted.objetos || []).forEach(obj => {
-                const qt = parseNumber(obj.qtde) || 0;
-                const vu = parseNumber(obj.valorUnitario) || 0;
-                obj.valorTotal = qt * vu;
-            });
+            // Reconstruir apenas campos simples (vigência, valor, planoTrabalho…)
+            // SEM alterar as tabelas (financeiros, objetos, fisicos, metas) — elas ficam intactas
+            restaurarCamposSimplesSemTabelas(ted, index, removida);
 
             // Sincronizar arrays legados
             sincronizarAlteracoesParaArraysLegado(ted);
@@ -5712,6 +5782,7 @@
             const tabDefMeta = ADITIVO_TABELAS_CLONE.find(t => t.key === 'metas');
             const { modMap: modMapMeta, addSet: addSetMeta } = criarMapaAlteracoes(altMetas, tabDefMeta);
             const matchKeyMeta = (item) => tabDefMeta ? tabDefMeta.matchFields.map(f => String(item[f] || '')).join('||') : '';
+            const excludedMetaIds = getExcludedItemIds('metas');
 
             tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => {
                 let inicioStr = '';
@@ -5737,7 +5808,8 @@
                 const mKey = matchKeyMeta(meta);
                 const mods = modMapMeta[mKey];
                 const isAdded = addSetMeta.has(mKey);
-                const trClass = isAdded ? ' class="linha-adicionada-aditivo"' : '';
+                const isExcluded = isItemExcluded(meta, excludedMetaIds, 'metas');
+                const trClass = isExcluded ? ' class="linha-excluida-aditivo"' : (isAdded ? ' class="linha-adicionada-aditivo"' : '');
                 const tdDescricao = mods && mods.descricao ? formatarCelulaAlterada(meta.descricao || '', mods.descricao.de, '') : (meta.descricao || '');
                 const tdMInicio = mods && mods.mInicio ? formatarCelulaAlterada(meta.mInicio, mods.mInicio.de, 'number') : meta.mInicio;
                 const tdMFinal = mods && mods.mFinal ? formatarCelulaAlterada(meta.mFinal, mods.mFinal.de, 'number') : meta.mFinal;
@@ -6076,6 +6148,7 @@
             const tabDefFis = ADITIVO_TABELAS_CLONE.find(t => t.key === 'fisicos');
             const { modMap: modMapFis, addSet: addSetFis } = criarMapaAlteracoes(altFisicos, tabDefFis);
             const matchKeyFis = (item) => tabDefFis ? tabDefFis.matchFields.map(f => String(item[f] || '')).join('||') : '';
+            const excludedFisIds = getExcludedItemIds('fisicos');
 
             // ── KPIs ────────────────────────────────────────────────────────
             const efWrap = document.getElementById('efCadFisWrap');
@@ -6159,6 +6232,7 @@
                 const mKey = matchKeyFis(f);
                 const mods = modMapFis[mKey];
                 const isAdded = addSetFis.has(mKey);
+                const isExcluded = isItemExcluded(f, excludedFisIds, 'fisicos');
 
                 // status
                 const statusEnt = entregas_getStatus(f);
@@ -6228,6 +6302,8 @@
                     ? `<button class="ef-confirm" onclick="entregas_toggleExpandir(event,'${f.id}')" title="Ver/Registrar entregas"><i data-lucide="check" style="width:12px;height:12px;"></i></button>`
                     : `<button onclick="entregas_toggleExpandir(event,'${f.id}')" title="Ver entregas" style="background:#EAF3DE;color:#3B6D11;border-color:rgba(99,153,34,0.3);"><i data-lucide="eye" style="width:12px;height:12px;"></i></button>`;
 
+                if (isExcluded) rowClass = (rowClass ? rowClass + ' ' : '') + 'linha-excluida-aditivo';
+                else if (isAdded) rowClass = (rowClass ? rowClass + ' ' : '') + 'linha-adicionada-aditivo';
                 let html = `<tr class="${rowClass}" data-fisico-id="${f.id}" data-ef-status="${estado}" data-ef-aditivo="${temAditivo ? '1' : '0'}">
                     <td class="center"><span class="ef-row-status ${statusClass}">${statusIcon}</span></td>
                     <td class="center"><span class="ef-fase-badge">F${f.fase}</span></td>
@@ -7040,7 +7116,8 @@
               </div>
             </div>`;
         }
-        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody) {
+        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds) {
+            excludedFinIds = excludedFinIds || new Set();
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
             // Pré-calcular % Part. recebida por linha (ND+UP sequencial)
@@ -7113,7 +7190,8 @@
                     const mKey = matchKeyFin(f);
                     const mods = modMapFin[mKey];
                     const isAdded = addSetFin.has(mKey);
-                    const trClass = isAdded ? ' linha-adicionada-aditivo' : '';
+                    const isExcluded = f.id != null && excludedFinIds.has(String(f.id));
+                    const trClass = isExcluded ? ' linha-excluida-aditivo' : (isAdded ? ' linha-adicionada-aditivo' : '');
                     const ndCat = _cfNdCategoria(numeroDisplay);
                     const upCat = _cfUpCategoria(f.up || f.ug || '');
                     const upRaw = String(f.up || f.ug || '');
@@ -7325,26 +7403,39 @@
             const { modMap: modMapFin, addSet: addSetFin } = criarMapaAlteracoes(altFinanc, tabDefFin);
             const matchKeyFin = (item) => tabDefFin ? tabDefFin.matchFields.map(f => String(item[f] || '')).join('||') : '';
 
-            // Calcular totais por mês e total geral com base nos dados filtrados
+            // Construir conjunto de IDs de linhas adicionadas por aditivos/apostilamentos EXCLUÍDOS
+            const excludedFinIds = new Set();
+            (window.tedSelecionado.alteracoes || []).forEach(alt => {
+                if (!alt.excluido) return;
+                const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas['financeiros'];
+                if (!diffs) return;
+                (diffs.adicionados || []).forEach(add => {
+                    const item = add.item || add;
+                    if (item.id != null) excludedFinIds.add(String(item.id));
+                });
+            });
+
+            // Calcular totais por mês ignorando linhas de aditivos excluídos
             totalValor = 0;
             const totaisPorMes = new Array(meses.length).fill(0);
             dadosFiltrados.forEach(f => {
+                if (f.id != null && excludedFinIds.has(String(f.id))) return; // excluído: não soma
                 const valorNum = parseNumber(f.valor) || 0;
                 totalValor += valorNum;
                 const mesIdx = meses.findIndex(m => m.mes === (parseInt(f.mesDesc) || 0) && m.fullYear === (parseInt(f.anoDesc) || 0));
                 if (mesIdx >= 0) totaisPorMes[mesIdx] += valorNum;
             });
 
-            // Renderizar KPIs
+            // Renderizar KPIs (excluindo linhas de aditivos excluídos)
             window._cfStartDate = startDate;
             try {
                 const cfKpiWrap = document.getElementById('cfKpiWrap');
-                const kpis = _cfCalcKPIs(dadosFiltrados);
+                const kpis = _cfCalcKPIs(dadosFiltrados.filter(f => f.id == null || !excludedFinIds.has(String(f.id))));
                 _cfRenderKPIs(kpis, cfKpiWrap);
             } catch(e) { console.warn('cf kpis error', e); }
 
             // Renderizar linhas agrupadas por Mês Desc.
-            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody);
+            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds);
 
             // Se não houver linhas visíveis, mostrar placeholder
             tbody.innerHTML = rowsHtml || '<tr><td colspan="67" class="auto-style-014">Nenhum cadastro financeiro</td></tr>';
@@ -12635,6 +12726,12 @@
 
             // Botões de edição: habilitados para admin e editor
             enableEditButtons(canEdit);
+
+            // Re-renderizar cards de aditivos/apostilamentos se houver TED selecionado,
+            // pois o innerHTML é recriado e perde o estado aplicado por enableEditButtons
+            if (window.tedSelecionado) {
+                try { exibirInformacoesTED(); } catch(e) {}
+            }
 
             // Restrição por UP: se editor com upRestrita definida
             if (canEdit && !isAdminRole && profile && profile.upRestrita) {
