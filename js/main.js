@@ -2856,6 +2856,23 @@
             const hojePct = pct(dHoje);
             const descPct = dDesc ? pct(dDesc) : null;
 
+            // Calcular pontos de cada aditivo (data de início do segmento do aditivo)
+            const aditivoPoints = [];
+            {
+                let acumMeses = vigOrigMeses;
+                aditivos.filter(a => !a.excluido && (a.meses || 0) > 0).forEach((a, ai) => {
+                    const dAditivoInicio = new Date(dInicio); dAditivoInicio.setMonth(dAditivoInicio.getMonth() + acumMeses);
+                    const dAditivoFim = new Date(dInicio); dAditivoFim.setMonth(dAditivoFim.getMonth() + acumMeses + (a.meses || 0));
+                    const p = pct(dAditivoInicio);
+                    const dataStr = a.data ? fmtBr(new Date(a.data + 'T00:00:00')) : '';
+                    aditivoPoints.push({ ai, p, dAditivoInicio, dAditivoFim, dataStr, meses: a.meses });
+                    acumMeses += (a.meses || 0);
+                });
+            }
+
+            // Altura da barra aumentada para acomodar rótulos alternados (acima e abaixo)
+            wrap.style.height = aditivoPoints.length > 0 ? '100px' : '82px';
+
             let html = `<div class="vig-bar-track"></div>`;
             html += `<div class="vig-bar-orig${hasPror?' with-pror':''}" style="width:${origPct}%;"></div>`;
             if (hasPror) {
@@ -2863,15 +2880,31 @@
             }
             // tick início
             html += `<div class="vig-tick start" style="left:0%"><div class="vig-tick-label top">${fmtBr(dInicio)}</div><div class="vig-tick-label">Início</div></div>`;
-            // tick fim original (só se houver prorrogação)
+            // tick fim original (com data) — só se houver prorrogação
             if (hasPror) {
-                html += `<div class="vig-tick original-end" style="left:${origPct}%"><div class="vig-tick-label" style="color:#c07a1c;font-weight:600;">Orig</div></div>`;
+                html += `<div class="vig-tick original-end" style="left:${origPct}%"><div class="vig-tick-label top" style="color:#c07a1c;font-weight:600;">${fmtBr(dFimOrig)}</div><div class="vig-tick-label" style="color:#c07a1c;font-weight:600;">Orig</div></div>`;
             }
             // tick fim total
             html += `<div class="vig-tick end" style="left:100%"><div class="vig-tick-label top">${fmtBr(dFimTotal)}</div><div class="vig-tick-label">Fim</div></div>`;
-            // marcador 1ª desc
+            // marcadores de aditivos com data (alternando acima/abaixo)
+            aditivoPoints.forEach(({ ai, p, dAditivoInicio, meses, dataStr }) => {
+                const labelData = dataStr || fmtBr(dAditivoInicio);
+                const labelAdit = `${ai+1}º Adit.`;
+                const labelMeses = `+${meses}m`;
+                const isAbove = ai % 2 === 0;
+                const topLabel = isAbove
+                    ? `<div class="vig-tick-label top" style="color:#2563EB;font-weight:700;">${labelData}</div>`
+                    : '';
+                const botLabel = isAbove
+                    ? `<div class="vig-tick-label" style="color:#2563EB;font-weight:600;">${labelAdit} ${labelMeses}</div>`
+                    : `<div class="vig-tick-label" style="color:#2563EB;font-weight:600;bottom:-16px;">${labelData}<br>${labelAdit} ${labelMeses}</div>`;
+                html += `<div class="vig-tick" style="left:${p}%;background:#2563EB;height:28px;top:22px;">${topLabel}${botLabel}</div>`;
+            });
+            // marcador 1ª desc com data
             if (descPct !== null) {
-                html += `<div class="vig-desc-marker" style="left:${descPct}%" title="1ª Descentralização: ${fmtBr(dDesc)}"></div>`;
+                html += `<div class="vig-desc-marker" style="left:${descPct}%" title="1ª Descentralização: ${fmtBr(dDesc)}">
+                    <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9.5px;font-family:'IBM Plex Mono',monospace;color:#3B6D11;font-weight:700;line-height:1.3;text-align:center;">${fmtBr(dDesc)}<br>1ª Desc.</div>
+                </div>`;
             }
             // linha hoje
             if (hojePct >= 0 && hojePct <= 100) {
@@ -2881,8 +2914,8 @@
 
             // legenda
             let legHtml = `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:linear-gradient(to right,#E6F1FB,#B3D1EF);"></span>Vigência original (${vigOrigMeses}m)</span>`;
-            if (hasPror) legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:repeating-linear-gradient(45deg,#EAF3DE,#EAF3DE 3px,#C8E0A2 3px,#C8E0A2 6px);"></span>Prorrogação (+${totalMesesAdic}m)</span>`;
-            if (descPct !== null) legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:#639922;border-radius:50%;"></span>1ª Descentralização</span>`;
+            if (hasPror) legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:repeating-linear-gradient(45deg,#EAF3DE,#EAF3DE 3px,#C8E0A2 3px,#C8E0A2 6px);"></span>Prorrogação (+${totalMesesAdic}m · ${aditivos.filter(a=>!a.excluido&&a.meses>0).length} aditivo${aditivos.filter(a=>!a.excluido&&a.meses>0).length>1?'s':''})</span>`;
+            if (descPct !== null) legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:#639922;border-radius:50%;"></span>1ª Descentralização (${fmtBr(dDesc)})</span>`;
             legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:#A32D2D;width:3px;border-radius:2px;"></span>Hoje</span>`;
             if (legend) legend.innerHTML = legHtml;
 
@@ -2934,7 +2967,10 @@
             let contAdit = 0, contApost = 0;
             const html = alteracoes.map((a, idx) => {
                 const isAditivo = a.tipo === 'aditivo';
-                if (isAditivo) contAdit++; else contApost++;
+                // incrementar ordinal apenas para itens não-excluídos
+                if (!a.excluido) {
+                    if (isAditivo) contAdit++; else contApost++;
+                }
                 const ordinal = isAditivo ? contAdit : contApost;
                 const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
                 const dataStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
@@ -2943,8 +2979,9 @@
                 const viewBtn = `<button class="btn-icon-action" onclick="abrirModalAlteracao(${idx}, true)" title="Ver"><i data-lucide="eye" class="inline-icon-sm"></i></button>`;
                 const editBtn = `<button class="btn-icon-action edit" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>`;
                 const delBtn = `<button class="btn-icon-action delete" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
-                const actions = window._readOnlyMode ? viewBtn : `${viewBtn}${editBtn}${delBtn}`;
-                return `<div class="aditivo-card-new">
+                const restoreBtn = `<button class="btn-icon-action restore" onclick="restaurarAlteracao(${idx})" title="Restaurar"><i data-lucide="corner-down-left" class="inline-icon-sm"></i></button>`;
+                const actions = window._readOnlyMode ? viewBtn : (a.excluido ? `${viewBtn}${restoreBtn}` : `${viewBtn}${editBtn}${delBtn}`);
+                return `<div class="aditivo-card-new${a.excluido ? ' excluido' : ''}">
                     <div class="aditivo-num-badge${badgeClass}">${ordinal}</div>
                     <div class="aditivo-card-body">
                         <div class="aditivo-card-line1">
@@ -2975,7 +3012,7 @@
             migrarParaAlteracoesUnificadas(ted);
             const alteracoes = ted.alteracoes || [];
             const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
-            const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
+            const totalAditivoMeses = aditivos.filter(a => !a.excluido).reduce((s, a) => s + (a.meses || 0), 0);
             const vigOrigMeses = parseInt(ted.vigencia) || 0;
             const vigTotalMeses = vigOrigMeses + totalAditivoMeses;
 
@@ -3154,7 +3191,7 @@
             // Exibir valor do TED com aditivo (campo legado info_valorTed — pode não existir no novo layout)
             const infoValorEl = document.getElementById('info_valorTed');
             if (infoValorEl) {
-                const adivosComValorLeg = aditivos.filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
+                const adivosComValorLeg = aditivos.filter(a => !a.excluido && typeof a.valorTed !== 'undefined' && a.valorTed !== null);
                 if (adivosComValorLeg.length) {
                     const lastA = adivosComValorLeg[adivosComValorLeg.length - 1];
                     const pN = Number(lastA.prevValorTed || 0); const nN = Number(lastA.valorTed || 0);
@@ -3165,8 +3202,8 @@
             }
 
             // ── ADITIVOS CARDS ───────────────────────────────────
-            const nAditivos = aditivos.length;
-            const nApost = alteracoes.filter(a => a.tipo === 'apostilamento').length;
+            const nAditivos = aditivos.filter(a => !a.excluido).length;
+            const nApost = alteracoes.filter(a => a.tipo === 'apostilamento' && !a.excluido).length;
             const adCountEl = document.getElementById('aditivosCounter');
             if (adCountEl) {
                 const parts = [];
@@ -3791,8 +3828,9 @@
         // Recomputar ted.aditivos e ted.apostilamentos a partir de ted.alteracoes (sync de volta)
         function sincronizarAlteracoesParaArraysLegado(ted) {
             if (!ted || !ted.alteracoes) return;
-            ted.aditivos = ted.alteracoes.filter(a => a.tipo === 'aditivo');
-            ted.apostilamentos = ted.alteracoes.filter(a => a.tipo === 'apostilamento');
+            // Incluir apenas alterações não excluídas nas listas legadas
+            ted.aditivos = ted.alteracoes.filter(a => a.tipo === 'aditivo' && !a.excluido);
+            ted.apostilamentos = ted.alteracoes.filter(a => a.tipo === 'apostilamento' && !a.excluido);
         }
 
         // Retornar contagem ordinal (nº) de um item na lista unificada, contando apenas itens do mesmo tipo
@@ -3801,7 +3839,7 @@
             const tipo = ted.alteracoes[idx].tipo;
             let count = 0;
             for (let i = 0; i <= idx; i++) {
-                if (ted.alteracoes[i].tipo === tipo) count++;
+                if (ted.alteracoes[i].tipo === tipo && !ted.alteracoes[i].excluido) count++;
             }
             return count;
         }
@@ -4909,9 +4947,10 @@
 
         // Função auxiliar: restaurar dados do TED a partir dos snapshots das alterações restantes
         function restaurarDadosAposRemocao(ted, removedIndex, removedItem) {
-            // Coletar todas as alterações com snapshot, em ordem
+            // Coletar todas as alterações com snapshot, em ordem (ignorar itens excluídos)
             const eventos = [];
             (ted.alteracoes || []).forEach((a, i) => {
+                if (a.excluido) return; // ignorar
                 if (a.snapshot) eventos.push({ tipo: a.tipo, idx: i, data: a.data || '', obj: a });
             });
 
@@ -5075,27 +5114,12 @@
             const extra = isAditivo ? ` (+${item.meses || 0} meses)` : '';
             confirmarAcao(`Remover ${tipoLabel}${extra}?`, function() {
 
+            // Marcar como excluído (manter registro na tabela, mas ignorar nos cálculos)
             const removida = ted.alteracoes[index];
-            ted.alteracoes.splice(index, 1);
+            removida.excluido = true;
 
-            // Restaurar dados do TED baseado nos snapshots restantes
-            if ((ted.alteracoes || []).length === 0 && removida && removida.snapshot) {
-                const snap = removida.snapshot;
-                ADITIVO_CAMPOS_CLONE.forEach(c => {
-                    if (snap[c.key] !== undefined) ted[c.key] = snap[c.key];
-                });
-                ADITIVO_TABELAS_CLONE.forEach(t => {
-                    if (snap[t.key]) ted[t.key] = JSON.parse(JSON.stringify(snap[t.key]));
-                });
-                // Restaurar campos relacionados à vigência/valor que também são capturados no snapshot
-                if (snap.valorTed !== undefined) ted.valorTed = snap.valorTed;
-                if (snap.vigencia !== undefined) ted.vigencia = snap.vigencia;
-                if (snap.inicioVigencia !== undefined) ted.inicioVigencia = snap.inicioVigencia;
-                if (snap.fimVigencia !== undefined) ted.fimVigencia = snap.fimVigencia;
-                if (snap.primeiraDescentralizacao !== undefined) ted.primeiraDescentralizacao = snap.primeiraDescentralizacao;
-            } else {
-                restaurarDadosAposRemocao(ted, index, removida);
-            }
+            // Recalcular TED a partir dos snapshots das alterações não-excluídas
+            restaurarDadosAposRemocao(ted, index, removida);
 
             // Recalcular valor total dos objetos após restauração
             (ted.objetos || []).forEach(obj => {
@@ -5126,6 +5150,23 @@
         function fecharModalApostilamento() { fecharModalAlteracao(); }
         function removerAditivo(index) { removerAlteracao(index); }
         function removerApostilamento(index) { removerAlteracao(index); }
+
+        // Restaurar alteração previamente excluída
+        function restaurarAlteracao(index) {
+            const ted = window.tedSelecionado;
+            if (!ted || !ted.alteracoes || !ted.alteracoes[index]) return;
+            const item = ted.alteracoes[index];
+            if (!item.excluido) return;
+            item.excluido = false;
+            // Reaplicar snapshots/reconstruir TED com o item restaurado
+            restaurarDadosAposRemocao(ted, null, item);
+            // sincronizar e salvar
+            sincronizarAlteracoesParaArraysLegado(ted);
+            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            exibirInformacoesTED();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
 
         // Compatibilidade: valor TED agora é sempre derivado do cadastro de objetos
         function recomputeValorTedFromAditivos(ted) {
@@ -13555,7 +13596,7 @@
                 const alteracoes = t.alteracoes || [...(t.aditivos || []), ...(t.apostilamentos || [])];
                 const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
                 const apostilamentos = alteracoes.filter(a => a.tipo === 'apostilamento');
-                const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
+                const totalAditivoMeses = aditivos.filter(a => !a.excluido).reduce((s, a) => s + (a.meses || 0), 0);
 
                 const vigenciaMeses = (parseInt(t.vigencia) || 0) + totalAditivoMeses;
 
@@ -13575,10 +13616,10 @@
                 const valRecebido = (t.recursosGerais || []).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
                 const valSaldo = valPrev - valRecebido;
 
-                const numAlt = aditivos.length + apostilamentos.length;
+                const numAlt = aditivos.filter(a => !a.excluido).length + apostilamentos.filter(a => !a.excluido).length;
                 const altResumo = numAlt === 0 ? '—'
-                    : [aditivos.length > 0 ? `${aditivos.length} aditivo${aditivos.length > 1 ? 's' : ''} (+${totalAditivoMeses} meses)` : '',
-                       apostilamentos.length > 0 ? `${apostilamentos.length} apostilamento${apostilamentos.length > 1 ? 's' : ''}` : '']
+                    : [aditivos.filter(a => !a.excluido).length > 0 ? `${aditivos.filter(a => !a.excluido).length} aditivo${aditivos.filter(a => !a.excluido).length > 1 ? 's' : ''} (+${totalAditivoMeses} meses)` : '',
+                       apostilamentos.filter(a => !a.excluido).length > 0 ? `${apostilamentos.filter(a => !a.excluido).length} apostilamento${apostilamentos.filter(a => !a.excluido).length > 1 ? 's' : ''}` : '']
                       .filter(Boolean).join(', ');
 
                 html += `

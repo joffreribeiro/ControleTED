@@ -3812,7 +3812,7 @@
   padding: 2px 8px; border-radius: 999px; letter-spacing: 0.04em;
 }
 .vig-meta { font-size: 11px; color: #64748b; font-family: 'IBM Plex Mono', monospace; }
-.vig-bar-wrap { position: relative; height: 82px; margin: 0 4px; }
+.vig-bar-wrap { position: relative; height: 82px; margin: 0 4px; overflow: visible; }
 .vig-bar-track {
   position: absolute; left: 0; right: 0; top: 32px; height: 10px;
   background: #F7F9FC; border-radius: 5px; border: 1px solid rgba(0,0,0,0.06);
@@ -3834,9 +3834,10 @@
   position: absolute; top: 18px;
   transform: translateX(-50%);
   width: 2px; height: 40px; background: rgba(0,0,0,0.12);
+  overflow: visible;
 }
 .vig-tick.start, .vig-tick.end { background: #185FA5; }
-.vig-tick.original-end { background: #c07a1c; height: 22px; top: 29px; }
+.vig-tick.original-end { background: #c07a1c; height: 28px; top: 18px; overflow: visible; }
 .vig-tick-label {
   position: absolute; bottom: 2px; transform: translateX(-50%);
   font-size: 9.5px; color: #64748b; font-family: 'IBM Plex Mono', monospace;
@@ -3859,7 +3860,7 @@
 .vig-desc-marker {
   position: absolute; top: 32px; width: 10px; height: 10px;
   background: #639922; transform: translateX(-50%);
-  border-radius: 0 0 5px 5px;
+  border-radius: 0 0 5px 5px; overflow: visible;
 }
 .vig-legend {
   display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;
@@ -3900,6 +3901,14 @@
 .change-chip-new .ch-new  { color: #3B6D11; font-weight: 600; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
 .change-chip-new.amber .ch-new { color: #854F0B; }
 .aditivo-card-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+
+/* Estilo para aditivos/apostilamentos excluídos: exibir riscado e diminuir destaque */
+.aditivo-card-new.excluido { opacity: 0.55; }
+.aditivo-card-new.excluido .aditivo-card-tipo,
+.aditivo-card-new.excluido .aditivo-card-date,
+.aditivo-card-new.excluido .change-chip-new .ch-field,
+.aditivo-card-new.excluido .change-chip-new .ch-new { text-decoration: line-through; }
+.aditivo-card-new.excluido .change-chip-new .ch-old { text-decoration: line-through; color: #b8c2cc; }
 
 /* Objetos com share-bar */
 .obj-card-new {
