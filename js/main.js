@@ -5252,6 +5252,9 @@
             const removida = ted.alteracoes[index];
             removida.excluido = true;
 
+            console.log('[EXCLUIR] tabelasAlteradas:', JSON.stringify(removida.tabelasAlteradas));
+            console.log('[EXCLUIR] financeiros antes:', ted.financeiros && ted.financeiros.length);
+
             // Reverter nas tabelas o que este aditivo/apostilamento havia aplicado:
             // - itens que ele REMOVEU da tabela → devolvê-los
             // - itens que ele ADICIONOU à tabela → removê-los
@@ -5305,6 +5308,8 @@
                     ted[tabDef.key] = arr;
                 });
             }
+
+            console.log('[EXCLUIR] financeiros depois da reversão:', ted.financeiros && ted.financeiros.length);
 
             // Reconstruir campos simples (vigência, valor, camposAlterados) sem tocar nas tabelas
             restaurarCamposSimplesSemTabelas(ted, index, removida);
