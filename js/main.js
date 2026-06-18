@@ -5036,23 +5036,29 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        // Retorna um Set de IDs de itens que foram adicionados por aditivos/apostilamentos EXCLUÍDOS
+        // Retorna um Set de IDs/matchKeys de itens que devem aparecer tachados e fora dos cálculos:
+        // - Linhas ADICIONADAS por aditivos/apostilamentos EXCLUÍDOS
+        // - Linhas REMOVIDAS por aditivos/apostilamentos ATIVOS (ficaram no array mas foram removidas logicamente)
         function getExcludedItemIds(tabelaKey) {
             const ids = new Set();
+            const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
             ((window.tedSelecionado && window.tedSelecionado.alteracoes) || []).forEach(alt => {
-                if (!alt.excluido) return;
                 const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas[tabelaKey];
                 if (!diffs) return;
-                (diffs.adicionados || []).forEach(add => {
-                    const item = add.item || add;
+                const addToSet = (item) => {
                     if (item.id != null) ids.add(String(item.id));
-                    // fallback por matchKey para tabelas sem id numérico
-                    const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
                     if (tabDef) {
                         const mk = tabDef.matchFields.map(f => String(item[f] || '')).join('||');
                         if (mk) ids.add('mk:' + mk);
                     }
-                });
+                };
+                if (alt.excluido) {
+                    // Apostilamento excluído: itens que ele ADICIONOU ficam tachados
+                    (diffs.adicionados || []).forEach(add => addToSet(add.item || add));
+                } else {
+                    // Apostilamento ativo: itens que ele REMOVEU ficam tachados
+                    (diffs.removidos || []).forEach(rem => addToSet(rem.item || rem));
+                }
             });
             return ids;
         }
@@ -7540,16 +7546,26 @@
             const { modMap: modMapFin, addSet: addSetFin } = criarMapaAlteracoes(altFinanc, tabDefFin);
             const matchKeyFin = (item) => tabDefFin ? tabDefFin.matchFields.map(f => String(item[f] || '')).join('||') : '';
 
-            // Construir conjunto de IDs de linhas adicionadas por aditivos/apostilamentos EXCLUÍDOS
+            // Construir conjunto de IDs de linhas que devem aparecer tachadas e fora dos cálculos:
+            // 1. Linhas ADICIONADAS por aditivos/apostilamentos que foram excluídos (soft-delete)
+            // 2. Linhas REMOVIDAS no modal de aditivos/apostilamentos ativos (ficaram no array mas foram "removidas" logicamente)
             const excludedFinIds = new Set();
             (window.tedSelecionado.alteracoes || []).forEach(alt => {
-                if (!alt.excluido) return;
                 const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas['financeiros'];
                 if (!diffs) return;
-                (diffs.adicionados || []).forEach(add => {
-                    const item = add.item || add;
-                    if (item.id != null) excludedFinIds.add(String(item.id));
-                });
+                if (alt.excluido) {
+                    // Aditivo/apostilamento excluído: itens que ele ADICIONOU ficam tachados
+                    (diffs.adicionados || []).forEach(add => {
+                        const item = add.item || add;
+                        if (item.id != null) excludedFinIds.add(String(item.id));
+                    });
+                } else {
+                    // Aditivo/apostilamento ativo: itens que ele REMOVEU ficam tachados
+                    (diffs.removidos || []).forEach(rem => {
+                        const item = rem.item || rem;
+                        if (item.id != null) excludedFinIds.add(String(item.id));
+                    });
+                }
             });
 
             // Calcular totais por mês ignorando linhas de aditivos excluídos
