@@ -2883,33 +2883,57 @@
                 { labelY: BAR_Y + BAR_H + 16, subY: BAR_Y + BAR_H + 28, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 12 }, // nível 3: abaixo
             ];
 
-            // Monta lista de eventos ordenados por posição
-            const events = [];
-            events.push({ p: 0,        color: '#185FA5', label: fmtBr(dInicio),   sub: 'Início' });
-            if (hasPror)
-                events.push({ p: origPct,  color: '#B45309', label: fmtBr(dFimOrig), sub: 'Fim orig.' });
-            aditivoPoints.forEach(({ ai, p, dataStr, meses }) =>
-                events.push({ p, color: '#2563EB', label: dataStr, sub: `${ai+1}º Adit. +${meses}m` })
-            );
-            if (descPct !== null)
-                events.push({ p: descPct, color: '#3B7A0E', label: fmtBr(dDesc), sub: '1ª Desc.' });
-            events.push({ p: 100, color: '#185FA5', label: fmtBr(dFimTotal), sub: 'Fim' });
-            events.sort((a, b) => a.p - b.p);
+            // Eventos ACIMA da barra: Início, Fim orig., Fim
+            // Eventos ABAIXO da barra: 1ª Desc., Aditivos
+            const eventsAbove = [];
+            const eventsBelow = [];
 
-            // Atribuir nível evitando colisão: gap mínimo de 12% entre labels no mesmo nível
+            eventsAbove.push({ p: 0,       color: '#185FA5', label: fmtBr(dInicio),   sub: 'Início' });
+            if (hasPror)
+                eventsAbove.push({ p: origPct, color: '#B45309', label: fmtBr(dFimOrig), sub: 'Fim orig.' });
+            eventsAbove.push({ p: 100,     color: '#185FA5', label: fmtBr(dFimTotal), sub: 'Fim' });
+
+            if (descPct !== null)
+                eventsBelow.push({ p: descPct, color: '#3B7A0E', label: fmtBr(dDesc), sub: '1ª Desc.' });
+            aditivoPoints.forEach(({ ai, p, dataStr, meses }) =>
+                eventsBelow.push({ p, color: '#2563EB', label: dataStr, sub: `${ai+1}º Adit. +${meses}m` })
+            );
+
+            // Níveis acima (3 níveis, do mais alto ao mais próximo da barra)
+            const ABOVE = [
+                { labelY: 8,  subY: 20, stemY1: 24, stemY2: BAR_Y },
+                { labelY: 28, subY: 40, stemY1: 44, stemY2: BAR_Y },
+                { labelY: 48, subY: 60, stemY1: 64, stemY2: BAR_Y },
+            ];
+            // Níveis abaixo (2 níveis)
+            const BELOW = [
+                { labelY: BAR_Y + BAR_H + 14, subY: BAR_Y + BAR_H + 26, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 10 },
+                { labelY: BAR_Y + BAR_H + 34, subY: BAR_Y + BAR_H + 46, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 30 },
+            ];
+
             const GAP = 12;
-            const levelLastP = [null, null, null, null];
-            events.forEach(ev => {
-                let assigned = -1;
-                for (let li = 0; li < 4; li++) {
-                    if (levelLastP[li] === null || (ev.p - levelLastP[li]) >= GAP) {
-                        assigned = li; break;
-                    }
+            // Atribuir nível nos eventos acima
+            const aboveLast = [null, null, null];
+            eventsAbove.sort((a,b) => a.p - b.p).forEach(ev => {
+                let li = 0;
+                for (; li < ABOVE.length; li++) {
+                    if (aboveLast[li] === null || (ev.p - aboveLast[li]) >= GAP) break;
                 }
-                if (assigned === -1) assigned = (events.indexOf(ev)) % 4;
-                ev.level = assigned;
-                levelLastP[assigned] = ev.p;
+                if (li >= ABOVE.length) li = ABOVE.length - 1;
+                ev.lv = ABOVE[li]; aboveLast[li] = ev.p; ev.below = false;
             });
+            // Atribuir nível nos eventos abaixo
+            const belowLast = [null, null];
+            eventsBelow.sort((a,b) => a.p - b.p).forEach(ev => {
+                let li = 0;
+                for (; li < BELOW.length; li++) {
+                    if (belowLast[li] === null || (ev.p - belowLast[li]) >= GAP) break;
+                }
+                if (li >= BELOW.length) li = BELOW.length - 1;
+                ev.lv = BELOW[li]; belowLast[li] = ev.p; ev.below = true;
+            });
+
+            const events = [...eventsAbove, ...eventsBelow];
 
             // Gera defs para hachura da prorrogação
             let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="${SVG_H}" style="display:block;overflow:visible;">
@@ -2940,17 +2964,12 @@
 
             // Pins: stem + dot + labels
             events.forEach(ev => {
-                const lv = LEVELS[ev.level];
+                const lv = ev.lv;
                 const x = `${ev.p}%`;
-                const isBelow = ev.level === 2;
-                // Stem
+                const dotY = ev.below ? BAR_Y + BAR_H : BAR_Y;
                 svg += `<line x1="${x}" y1="${lv.stemY1}" x2="${x}" y2="${lv.stemY2}" stroke="${ev.color}" stroke-width="1.5" opacity="0.5"/>`;
-                // Dot na barra
-                const dotY = isBelow ? BAR_Y + BAR_H : BAR_Y;
                 svg += `<circle cx="${x}" cy="${dotY}" r="3.5" fill="${ev.color}" stroke="#fff" stroke-width="1.5"/>`;
-                // Label data
                 svg += `<text x="${x}" y="${lv.labelY}" text-anchor="middle" fill="${ev.color}" font-size="9.5" font-family="IBM Plex Mono,monospace" font-weight="700">${ev.label}</text>`;
-                // Sub-label
                 svg += `<text x="${x}" y="${lv.subY}" text-anchor="middle" fill="${ev.color}" font-size="8.5" font-family="IBM Plex Mono,monospace" opacity="0.8">${ev.sub}</text>`;
             });
 
