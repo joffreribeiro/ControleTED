@@ -1946,14 +1946,6 @@
             box-sizing: border-box;
         }
 
-        /* ExecFin e RecGeral: forçar largura 100% para alinhar com CadFin */
-        #wrapperExecFin,
-        #wrapperRecGeral {
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
         /* Form groups dentro das seções: labels mais legíveis */
         #detalhes #tedsDetalheContainer .detalhe-secao .form-group label {
             font-size: 0.78rem;
