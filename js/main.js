@@ -7315,7 +7315,8 @@
                     table.classList.remove('months-collapsed');
                     if (detalhe) detalhe.classList.remove('cadFin-collapsed');
                     if (section === 'cadFin') table.style.minWidth = '1400px';
-                    else if (section === 'cadFis' || section === 'execFis') table.style.minWidth = '850px';
+                    else if (section === 'cadFis') table.style.minWidth = '850px';
+                    else if (section === 'execFis') table.style.minWidth = '2000px';
                     else table.style.minWidth = '';
                     table.style.width = '';
                     table.style.tableLayout = '';
