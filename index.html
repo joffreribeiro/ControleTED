@@ -1103,6 +1103,16 @@
                         </div>
                     </div>
 
+                    <!-- Seção de gráficos completa (Entregas) -->
+                    <div class="detalhe-secao">
+                        <h3 class="detalhe-secao-titulo"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h3>
+                        <div class="detalhe-secao-body">
+                        <div id="entregasChartFull">
+                            <p style="color:var(--text);">Selecione um TED para ver o gráfico de entregas (visão completa).</p>
+                        </div>
+                        </div>
+                    </div>
+
                     </div><!-- /dt-tab-panel physical -->
 
                     <!-- PAINEL 3: EXECUÇÃO FINANCEIRA -->
@@ -1271,15 +1281,6 @@
                         <div class="detalhe-secao-body">
                         <div id="resumoAnualPorAno" style="overflow-x: auto;">
                             <!-- Será preenchido dinamicamente -->
-                        </div>
-                        </div>
-                    </div>
-                    <!-- Seção de gráficos completa (após Resumo Anual) -->
-                    <div class="detalhe-secao">
-                        <h3 class="detalhe-secao-titulo"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h3>
-                        <div class="detalhe-secao-body">
-                        <div id="entregasChartFull">
-                            <p style="color:var(--text);">Selecione um TED para ver o gráfico de entregas (visão completa).</p>
                         </div>
                         </div>
                     </div>
@@ -1758,7 +1759,7 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260618g"></script>
+    <script src="js/main.js?v=20260618n"></script>
 
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js"></script>
