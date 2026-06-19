@@ -3327,7 +3327,7 @@
     text-align: left;
 }
 .rel-ndupano-tabela th.col-rel-ano {
-    text-align: right;
+    text-align: center;
     min-width: 110px;
 }
 .rel-ndupano-tabela td {
@@ -3995,7 +3995,7 @@
   white-space: nowrap;
 }
 .ef-table thead th.center { text-align: center; }
-.ef-table thead th.right  { text-align: right; }
+.ef-table thead th.right  { text-align: center; }
 .ef-table tbody tr { border-bottom: 1px solid rgba(0,0,0,0.05); transition: background 0.1s; }
 .ef-table tbody tr:last-child { border-bottom: none; }
 .ef-table tbody tr:hover { background: #FAFBFC; }
@@ -4065,7 +4065,7 @@
 /* sobrescrever tabela padrão quando ef-table está ativo */
 table.ef-table thead th { padding: 9px 12px; }
 table.ef-table thead th.center { text-align: center; }
-table.ef-table thead th.right  { text-align: right; }
+table.ef-table thead th.right  { text-align: center; }
 table.ef-table tbody td.center { text-align: center; }
 table.ef-table tbody td.right  { text-align: right; }
 
@@ -4634,7 +4634,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table thead th {
   text-align: center;
 }
-.execfin-table thead th.right { text-align: right; }
+.execfin-table thead th.right { text-align: center; }
 
 /* Year group header — fundo azul + borda esquerda marcando separação de ano */
 .execfin-table thead th.year-group {
@@ -4916,7 +4916,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* thead */
 .rg-table thead th { text-align: center; }
-.rg-table thead th.right { text-align: right; }
+.rg-table thead th.right { text-align: center; }
 
 /* Year group header */
 .rg-table thead th.year-group {
@@ -5038,7 +5038,7 @@ table.ef-table tbody td.right  { text-align: right; }
   background: #F7F9FC; border-bottom: 2px solid #e2e8f0; min-width: 220px;
 }
 .ra-table .ra-th-ano {
-  text-align: right; padding: 8px 10px; font-weight: 700; font-size: 12px;
+  text-align: center; padding: 8px 10px; font-weight: 700; font-size: 12px;
   background: #F7F9FC; border-bottom: 2px solid #e2e8f0; min-width: 130px;
   white-space: nowrap; position: relative;
 }

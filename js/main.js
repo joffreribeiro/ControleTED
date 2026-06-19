@@ -6400,7 +6400,7 @@
             let headerHTML = '<th class="center" style="width:40px;"></th>';
             headerHTML += '<th class="center" style="width:56px;">Fase</th>';
             headerHTML += '<th>Objeto</th>';
-            headerHTML += '<th class="right" style="width:140px;">Qtde / Entregue</th>';
+            headerHTML += '<th style="width:140px;">Qtde / Entregue</th>';
             headerHTML += '<th style="width:190px;">Período (meses)</th>';
             headerHTML += '<th style="width:150px;">Datas previstas</th>';
             headerHTML += '<th class="center" style="width:96px;">Ações</th>';
@@ -9655,9 +9655,9 @@
                 const fixedCols = [
                     {label:'ND',              cls:'col-nd col-sticky'},
                     {label:'UP',              cls:'col-up'},
-                    {label:'Valor Previsto',  cls:'col-valor right'},
-                    {label:'Valor Realizado', cls:'col-valor right'},
-                    {label:'Saldo',           cls:'col-saldo right'},
+                    {label:'Valor Previsto',  cls:'col-valor'},
+                    {label:'Valor Realizado', cls:'col-valor'},
+                    {label:'Saldo',           cls:'col-saldo'},
                 ];
 
                 // Linha 1: fixas com rowspan=2 + agrupadores de ano (igual ao Cadastro Financeiro)
