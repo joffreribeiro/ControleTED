@@ -4026,12 +4026,18 @@
     max-width: 100%;
     overflow-x: auto;
 }
-#tabelaCadFisTable,
-#tabelaExecFisTable {
+#tabelaCadFisTable {
     width: 100%;
     table-layout: fixed;
     min-width: 0;
 }
+#tabelaExecFisTable {
+    width: 100%;
+    table-layout: auto;
+    min-width: 0;
+}
+#tabelaExecFisTable .col-objeto { width: 130px; max-width: 160px; }
+#tabelaExecFisTable .col-percent { width: 80px; max-width: 100px; }
 
 .ef-table { width: 100%; border-collapse: collapse; }
 .ef-table thead th {
