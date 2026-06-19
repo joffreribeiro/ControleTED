@@ -4625,8 +4625,8 @@ table.ef-table tbody td.right  { text-align: right; }
 /* tabela — table-layout:fixed + width:max-content garante que o browser
    respeite os px do colgroup sem esticar para o container pai */
 #tabelaExecFinanceiraTable {
-    width: max-content;
-    min-width: 0;
+    width: 100%;
+    min-width: 550px;
     table-layout: fixed;
     border-collapse: collapse;
     border-spacing: 0;
@@ -4897,8 +4897,8 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* tabela — width:max-content garante respeito aos px do colgroup */
 #tabelaRecursosGeraisTable {
-    width: max-content;
-    min-width: 0;
+    width: 100%;
+    min-width: 550px;
     table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0;
