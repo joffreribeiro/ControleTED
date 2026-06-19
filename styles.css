@@ -1947,6 +1947,11 @@
             width: 100%;
             box-sizing: border-box;
         }
+        /* ExecFin e RecGeral usam table-freeze-wrapper (inline-block) — forçar block para ocupar 100% como CadFin */
+        #wrapperExecFin,
+        #wrapperRecGeral {
+            display: block !important;
+        }
 
         /* Form groups dentro das seções: labels mais legíveis */
         #detalhes #tedsDetalheContainer .detalhe-secao .form-group label {
