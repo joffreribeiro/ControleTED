@@ -6520,7 +6520,18 @@
                             <div class="ef-periodo-meses">${periodoHtml}</div>
                         </div>
                     </td>
-                    <td><div class="ef-periodo"><div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div></div></td>
+                    <td><div class="ef-periodo">${(() => {
+                        if (mods && (mods.mInicio || mods.mFinal) && baseDate) {
+                            const mIniOrig = mods.mInicio ? Number(mods.mInicio.de) : mIni;
+                            const mFinOrig = mods.mFinal  ? Number(mods.mFinal.de)  : mFin;
+                            const dIO = new Date(baseDate); dIO.setMonth(dIO.getMonth() + mIniOrig);
+                            const dFO = new Date(baseDate); dFO.setMonth(dFO.getMonth() + mFinOrig);
+                            const inicioOrig = `${mesesNomes[dIO.getMonth()]}/${dIO.getFullYear()}`;
+                            const finalOrig  = `${mesesNomes[dFO.getMonth()]}/${dFO.getFullYear()}`;
+                            return `<div class="ef-periodo-datas"><span class="val-antigo">${inicioOrig} → ${finalOrig}</span></div><div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div>`;
+                        }
+                        return `<div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div>`;
+                    })()}</div></td>
                     <td class="center"><span class="ef-row-actions">${editBtn}${delBtn}${entBtn}</span></td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal e renderizar entregas por mês (empilhadas)
