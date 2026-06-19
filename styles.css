@@ -2666,7 +2666,8 @@
         .aditivo-clone-table td[contenteditable="true"] { cursor: text; outline: none; }
         .aditivo-clone-table td[contenteditable="true"]:focus { background: rgba(59,130,246,0.06); outline: 2px solid rgba(59,130,246,0.2); border-radius: 2px; }
         .aditivo-clone-table tr:hover { background: rgba(59,130,246,0.03); }
-        .aditivo-clone-table tr[data-removido="1"] td { text-decoration: line-through; color: var(--text-muted); }
+        .aditivo-clone-table tr[data-removido="1"] td,
+        .aditivo-clone-table tr[data-removido="1"] td * { text-decoration: line-through !important; text-decoration-color: #ef4444 !important; text-decoration-thickness: 2px !important; color: #64748b !important; }
         /* Destaque de células alteradas via aditivo/apostilamento nas tabelas principais */
         .celula-alterada-aditivo { position: relative; white-space: nowrap; }
         .celula-alterada-aditivo .val-antigo { text-decoration: line-through; color: var(--text-muted); font-size: 0.92em; opacity: 0.75; display: inline-block; margin-right:6px; }
@@ -2679,7 +2680,8 @@
         tr.linha-excluida-aditivo td * { text-decoration: line-through !important; text-decoration-color: #ef4444 !important; text-decoration-thickness: 2px !important; color: #64748b !important; }
         tr.linha-excluida-aditivo td:first-child::before { content: '×'; color: #ef4444; font-weight: 700; margin-right: 4px; font-size: 15px; text-decoration: none !important; display: inline-block; }
         tr.linha-removida-aditivo { background: rgba(239,68,68,0.06) !important; }
-        tr.linha-removida-aditivo td { text-decoration: line-through; color: var(--text-muted) !important; opacity: 0.6; }
+        tr.linha-removida-aditivo td,
+        tr.linha-removida-aditivo td * { text-decoration: line-through !important; text-decoration-color: #ef4444 !important; text-decoration-thickness: 2px !important; color: #64748b !important; }
         /* Entregas - novo layout de cards */
         .entregas-controls { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem; }
         .entrega-grid, [class*="entregas-grid"], [class*="entrega-cards"], .entregas-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; width: 100%; padding:1.125rem; }
@@ -3874,7 +3876,7 @@
   padding: 2px 8px; border-radius: 6px; font-size: 11px;
 }
 .change-chip-new .ch-field { color: #64748b; font-weight: 500; }
-.change-chip-new .ch-old  { text-decoration: line-through; color: #94a3b8; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
+.change-chip-new .ch-old  { text-decoration: line-through; text-decoration-color: #ef4444; text-decoration-thickness: 2px; color: #64748b; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
 .change-chip-new .ch-arrow { color: #94a3b8; margin: 0 2px; }
 .change-chip-new .ch-new  { color: #3B6D11; font-weight: 600; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
 .change-chip-new.amber .ch-new { color: #854F0B; }
@@ -3886,8 +3888,8 @@
 .aditivo-card-new.excluido .aditivo-card-tipo,
 .aditivo-card-new.excluido .aditivo-card-date,
 .aditivo-card-new.excluido .change-chip-new .ch-field,
-.aditivo-card-new.excluido .change-chip-new .ch-new { text-decoration: line-through; }
-.aditivo-card-new.excluido .change-chip-new .ch-old { text-decoration: line-through; color: #b8c2cc; }
+.aditivo-card-new.excluido .change-chip-new .ch-new { text-decoration: line-through; text-decoration-color: #ef4444; text-decoration-thickness: 2px; }
+.aditivo-card-new.excluido .change-chip-new .ch-old { text-decoration: line-through; text-decoration-color: #ef4444; text-decoration-thickness: 2px; color: #64748b; }
 
 /* Objetos com share-bar */
 .obj-card-new {
@@ -3904,10 +3906,11 @@
 }
 .obj-row-new:last-child { border-bottom: none; }
 .obj-row-new.linha-adicionada-aditivo { background: #f0fdf4; }
-.obj-row-new.linha-excluida-aditivo { background: rgba(239,68,68,0.04); opacity: 0.6; }
+.obj-row-new.linha-excluida-aditivo { background: rgba(239,68,68,0.06); }
 .obj-row-new.linha-excluida-aditivo .obj-name-new,
 .obj-row-new.linha-excluida-aditivo .obj-num-new,
-.obj-row-new.linha-excluida-aditivo .obj-total-new { text-decoration: line-through; color: #94a3b8; }
+.obj-row-new.linha-excluida-aditivo .obj-sub-new,
+.obj-row-new.linha-excluida-aditivo .obj-total-new { text-decoration: line-through; text-decoration-color: #ef4444; text-decoration-thickness: 2px; color: #64748b; }
 .obj-name-new { font-weight: 600; color: #1a1a1a; }
 .obj-sub-new  { font-size: 10.5px; color: #94a3b8; margin-top: 1px; }
 .obj-num-new  { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #64748b; text-align: right; white-space: nowrap; }
@@ -4146,11 +4149,35 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-grp-table tbody td.right { text-align: right; }
 .cf-grp-table tbody td.center { text-align: center; }
 
-/* val-share mini bar — coluna % Part. separada */
+/* val-share mini bar — mantido para compatibilidade */
 .val-share { display: flex; align-items: center; gap: 5px; width: 100%; }
 .val-share-bar { flex: 1; height: 5px; border-radius: 99px; background: #e5e7eb; overflow: hidden; min-width: 30px; }
 .val-share-fill { height: 100%; border-radius: 99px; background: #3b82f6; }
 .val-share-pct { font-size: 11px; color: #374151; white-space: nowrap; min-width: 36px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
+
+/* coluna "A Receber" — formato diferenciado do valor da ND */
+.saldo-receber {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-weight: 500;
+    color: #b45309;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    padding: 2px 6px;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+.saldo-receber--zero {
+    color: #15803d;
+    background: #dcfce7;
+    border-color: #86efac;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0;
+}
 
 /* total footer card */
 .cf-total-card {

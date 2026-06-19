@@ -4464,8 +4464,8 @@
                     const itemNk = tabDef.key === 'financeiros' ? finNatKeyMod(item) : null;
                     const jaRemovido = (itemId && removidosNesseAlt.has(itemId)) || removidosNesseAlt.has(itemMk) || (itemNk && removidosNesseAlt.has(itemNk));
                     const removidoAttr = jaRemovido ? ' data-removido="1"' : '';
-                    const removidoStyle = jaRemovido ? ' style="text-decoration:line-through;opacity:0.4;"' : '';
-                    html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}"${removidoAttr}${removidoStyle}>`;
+                    // O tachado vermelho vem do CSS (.aditivo-clone-table tr[data-removido="1"]).
+                    html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}"${removidoAttr}>`;
                     tabDef.colunas.forEach(col => {
                         let rawVal = item[col.field];
                         // sanitizar entrada textual primeiro
@@ -4564,8 +4564,7 @@
                     }
                     return;
                 }
-                tr.style.textDecoration = 'line-through';
-                tr.style.opacity = '0.4';
+                // O tachado vermelho vem do CSS via data-removido="1"
                 tr.dataset.removido = '1';
                 btn.disabled = true;
                 // Atualizar contador
@@ -7435,7 +7434,8 @@
                     const upCat = _cfUpCategoria(f.up || f.ug || '');
                     const upRaw = String(f.up || f.ug || '');
                     const pct = pctRecebidoMap.get(f) ?? 0;
-                    const pctFmt = pct.toFixed(1);
+                    const valorFaltante = Math.max(0, valorNum * (1 - pct / 100));
+                    const faltanteFmt = valorFaltante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     const tdValor = mods && mods.valor
                         ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '')
                         : renderValorRealFmt(valorNum);
@@ -7453,10 +7453,9 @@
                         <td class="col-mes">${mesDescStr}</td>
                         <td class="col-valor" style="text-align:right;">${tdValor}</td>
                         <td class="col-percent">
-                            <div class="val-share">
-                                <div class="val-share-bar"><div class="val-share-fill" style="width:${Math.min(pct,100)}%;${pct>=100?'background:#16a34a;':''}"></div></div>
-                                <span class="val-share-pct">${pctFmt}%</span>
-                            </div>
+                            ${valorFaltante <= 0
+                                ? '<span class="saldo-receber saldo-receber--zero">Recebido</span>'
+                                : `<span class="saldo-receber">R$ ${faltanteFmt}</span>`}
                         </td>
                         <td class="col-acao">
                             <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
@@ -7609,7 +7608,7 @@
             headerHTML += '<th rowspan="2" class="col-m">M</th>';
             headerHTML += '<th rowspan="2" class="col-mes">Mês Desc.</th>';
             headerHTML += '<th rowspan="2" class="col-valor">Valor</th>';
-            headerHTML += '<th rowspan="2" class="col-percent">% Part.</th>';
+            headerHTML += '<th rowspan="2" class="col-percent">A Receber</th>';
             headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
 
             const today = new Date();
