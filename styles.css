@@ -4835,7 +4835,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .rg-table tbody tr.cons.resultado td.col-sticky {
   background: #FFF1F1 !important;
   color: #A32D2D !important; font-weight: 700;
-  border-top: 2px solid #FCBFBF; border-bottom: 2px solid #FCBFBF;
+  border-top: 2px solid #FCBFBF !important; border-bottom: 2px solid #FCBFBF !important;
 }
 .execfin-table tbody tr.cons.resultado .cons-formula,
 .rg-table tbody tr.cons.resultado .cons-formula { color: rgba(163,45,45,0.65); }

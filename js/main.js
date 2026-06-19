@@ -2925,10 +2925,10 @@
             // Fundo da barra
             svg += `<rect x="0%" y="${BAR_Y}" width="100%" height="${BAR_H}" rx="4" fill="#F0F4F8" stroke="rgba(0,0,0,0.06)" stroke-width="0.5"/>`;
             // Segmento original
-            svg += `<rect x="0%" y="${BAR_Y}" width="${origPct}%" height="${BAR_H}" rx="${hasPror?'4 0 0 4':'4'}" fill="url(#vigGrad)" clip-path="url(#barClip)"/>`;
+            svg += `<rect x="0%" y="${BAR_Y}" width="${origPct}%" height="${BAR_H}" rx="4" fill="url(#vigGrad)" clip-path="url(#barClip)"/>`;
             // Segmento prorrogação
             if (hasPror)
-                svg += `<rect x="${origPct}%" y="${BAR_Y}" width="${100-origPct}%" height="${BAR_H}" rx="0 4 4 0" fill="url(#hatch)" clip-path="url(#barClip)"/>`;
+                svg += `<rect x="${origPct}%" y="${BAR_Y}" width="${100-origPct}%" height="${BAR_H}" rx="4" fill="url(#hatch)" clip-path="url(#barClip)"/>`;
 
             // Gradiente (definido inline no defs)
             svg = svg.replace('<defs>', `<defs><linearGradient id="vigGrad" x1="0" x2="1" y1="0" y2="0"><stop offset="0%" stop-color="#C8DEFF"/><stop offset="100%" stop-color="#7BAEE8"/></linearGradient>`);
