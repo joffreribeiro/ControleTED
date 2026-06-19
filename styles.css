@@ -4816,18 +4816,24 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr.cons .label-cell-inner,
 .rg-table tbody tr.cons .label-cell-inner { gap: 5px; }
 
-/* Total a Receber — destaque azul */
+/* Total a Receber — destaque azul (inclui a celula sticky de label) */
 .execfin-table tbody tr.cons.total td,
-.rg-table tbody tr.cons.total td {
+.execfin-table tbody tr.cons.total td.col-sticky,
+.rg-table tbody tr.cons.total td,
+.rg-table tbody tr.cons.total td.col-sticky {
   background: #F0F4F9 !important; font-weight: 700; color: #0C447C;
   border-top: 1px solid #B3D1EF; border-bottom: 1px solid #B3D1EF;
 }
 
-/* Resultado — destaque vermelho */
+/* Resultado — destaque vermelho (o fundo precisa estar no TD, nao so no TR,
+   senao a celula sticky de label pinta branco por cima) */
 .execfin-table tbody tr.cons.resultado,
 .rg-table tbody tr.cons.resultado { background: #FFF1F1 !important; }
 .execfin-table tbody tr.cons.resultado td,
-.rg-table tbody tr.cons.resultado td {
+.execfin-table tbody tr.cons.resultado td.col-sticky,
+.rg-table tbody tr.cons.resultado td,
+.rg-table tbody tr.cons.resultado td.col-sticky {
+  background: #FFF1F1 !important;
   color: #A32D2D !important; font-weight: 700;
   border-top: 2px solid #FCBFBF; border-bottom: 2px solid #FCBFBF;
 }
