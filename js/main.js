@@ -9855,8 +9855,9 @@
                     const disp = negative && totalVal > 0 ? `−R$ ${fmtBR(totalVal)}` : `R$ ${fmtBR(totalVal)}`;
                     const monthCells = monthsExpanded ? consYearCells(calcFn, colorFn) : '';
                     const emptyFixed = monthsExpanded ? '<td></td>'.repeat(colFixas - 1) : '';
-                    const valCell = monthsExpanded ? '' : `<td class="cons-val-cell ${colorCls}">${disp}</td>`;
-                    const labelColspan = monthsExpanded ? 1 : colFixas - 1;
+                    // Colapsado: só o rótulo (sem coluna de valor); label ocupa toda a largura.
+                    const valCell = '';
+                    const labelColspan = monthsExpanded ? 1 : colFixas;
                     return `<tr class="cons ${tipo}">` +
                         `<td class="col-sticky label-cell" colspan="${labelColspan}">` +
                             `<span class="icon"><i data-lucide="${icon}" style="width:13px;height:13px;"></i></span>` +
@@ -9874,9 +9875,7 @@
                 const rowSaldoAnual       = consRow('saldo-row', 'minus-circle',      'Saldo Anual',          'Recebido − Devolvido',          (a)=>saldoAtualByAno[a]||0);
                 const rowResultado        = consRow('resultado', 'trending-up',       'Resultado',            'Total a Receber − Saldo',       (a)=>((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1, (v)=>v<-0.01?'neg':v===0?'zero':'');
 
-                // Linha TOTAL só faz sentido com os meses expandidos (totais por coluna);
-                // colapsado ela duplica os KPIs/consolidado, então é omitida.
-                tbody.innerHTML = linhas + (monthsExpanded ? totalRow : '') + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
+                tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
 
                 // re-inicializar ícones Lucide
                 try { if (window.lucide) lucide.createIcons(); } catch(e) {}
@@ -10773,8 +10772,9 @@
                 const colorCls=colorFn?colorFn(v):'';
                 const disp=negative&&totalVal>0?`−R$ ${fmtBR(totalVal)}`:`R$ ${fmtBR(totalVal)}`;
                 const monthCells=monthsExpanded?consYearCells(calcFn,colorFn):'';
-                const valCell=monthsExpanded?'':`<td class="cons-val-cell ${colorCls}">${disp}</td>`;
-                const labelColspan=monthsExpanded?1:colFixas-1;
+                // Colapsado: só o rótulo (sem coluna de valor); label ocupa toda a largura.
+                const valCell='';
+                const labelColspan=monthsExpanded?1:colFixas;
                 return `<tr class="cons ${tipo}">`+
                     `<td class="col-sticky label-cell" colspan="${labelColspan}">`+
                         `<span class="icon"><i data-lucide="${icon}" style="width:13px;height:13px;"></i></span>`+
@@ -10792,8 +10792,7 @@
             const rowSaldoAnualRg      = consRowRg('saldo-row', 'minus-circle',      'Saldo Anual',          'Recebido − Devolvido', (a)=>saldoAtualByAno[a]||0);
             const rowResultadoRg       = consRowRg('resultado', 'trending-up',       'Resultado',            'Total a Receber − Saldo',(a)=>((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1, (v)=>v<-0.01?'neg':v===0?'zero':'');
 
-            // Linha TOTAL só com meses expandidos (colapsada duplica KPIs/consolidado).
-            tbody.innerHTML=linhas+(monthsExpanded?totalRow:'')+rowPrevistoAnualRg+rowReceberAnteriorRg+rowTotalAReceberRg+rowRecebidoAnualRg+rowDevolvidoRg+rowSaldoAnualRg+rowResultadoRg;
+            tbody.innerHTML=linhas+totalRow+rowPrevistoAnualRg+rowReceberAnteriorRg+rowTotalAReceberRg+rowRecebidoAnualRg+rowDevolvidoRg+rowSaldoAnualRg+rowResultadoRg;
 
             // ── KPIs ────────────────────────────────────────────────────────
             try {
