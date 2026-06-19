@@ -7311,8 +7311,12 @@
               </div>
             </div>`;
         }
-        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds) {
+        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded) {
             excludedFinIds = excludedFinIds || new Set();
+            // Fallback: se não vier o casamento robusto, usa só o ID (comportamento antigo)
+            if (typeof isFinExcluded !== 'function') {
+                isFinExcluded = (f) => f.id != null && excludedFinIds.has(String(f.id));
+            }
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
             // Pré-calcular % Part. recebida por linha (ND+UP sequencial)
@@ -7359,7 +7363,7 @@
             let rowsHtml = '';
             grupoOrdem.forEach(chave => {
                 const grp = grupos[chave];
-                const activeItems = grp.items.filter(f => f.id == null || !excludedFinIds.has(String(f.id)));
+                const activeItems = grp.items.filter(f => !isFinExcluded(f));
                 const subTotal = activeItems.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
                 const subFmt = subTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 const grpId = 'cfgrp_' + chave;
@@ -7386,7 +7390,7 @@
                     const mKey = matchKeyFin(f);
                     const mods = modMapFin[mKey];
                     const isAdded = addSetFin.has(mKey);
-                    const isExcluded = f.id != null && excludedFinIds.has(String(f.id));
+                    const isExcluded = isFinExcluded(f);
                     const trClass = isExcluded ? ' linha-excluida-aditivo' : (isAdded ? ' linha-adicionada-aditivo' : '');
                     const ndCat = _cfNdCategoria(numeroDisplay);
                     const upCat = _cfUpCategoria(f.up || f.ug || '');
@@ -7602,30 +7606,42 @@
             // Construir conjunto de IDs de linhas que devem aparecer tachadas e fora dos cálculos:
             // 1. Linhas ADICIONADAS por aditivos/apostilamentos que foram excluídos (soft-delete)
             // 2. Linhas REMOVIDAS no modal de aditivos/apostilamentos ativos (ficaram no array mas foram "removidas" logicamente)
+            // Casamento robusto: por ID e também por chave natural (ND+UP+M+valor),
+            // porque o ID do item em "removidos" (vindo do snapshot) pode divergir do ID
+            // da linha viva na tabela. A chave natural garante o tachado mesmo nesse caso.
+            const finNatKey = (f) => [
+                String(f.numero || f.nd || '').replace(/\D/g, ''),
+                String(f.up || f.ug || ''),
+                String(f.m ?? ''),
+                String(Math.round((parseNumber(f.valor) || 0) * 100))
+            ].join('|');
             const excludedFinIds = new Set();
+            const excludedFinKeys = new Set();
             (window.tedSelecionado.alteracoes || []).forEach(alt => {
                 const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas['financeiros'];
                 if (!diffs) return;
-                if (alt.excluido) {
-                    // Aditivo/apostilamento excluído: itens que ele ADICIONOU ficam tachados
-                    (diffs.adicionados || []).forEach(add => {
-                        const item = add.item || add;
-                        if (item.id != null) excludedFinIds.add(String(item.id));
-                    });
-                } else {
-                    // Aditivo/apostilamento ativo: itens que ele REMOVEU ficam tachados
-                    (diffs.removidos || []).forEach(rem => {
-                        const item = rem.item || rem;
-                        if (item.id != null) excludedFinIds.add(String(item.id));
-                    });
-                }
+                // Apostilamento excluído → itens que ADICIONOU ficam tachados.
+                // Apostilamento ativo → itens que REMOVEU ficam tachados.
+                const lista = alt.excluido ? (diffs.adicionados || []) : (diffs.removidos || []);
+                lista.forEach(entry => {
+                    const item = entry.item || entry;
+                    if (item.id != null) excludedFinIds.add(String(item.id));
+                    excludedFinKeys.add(finNatKey(item));
+                });
             });
+            const isFinExcluded = (f) => (f.id != null && excludedFinIds.has(String(f.id))) || excludedFinKeys.has(finNatKey(f));
+
+            // [DIAG] Conferir quais linhas vivas serão tachadas
+            try {
+                const _struck = (window.tedSelecionado.financeiros || []).filter(f => isFinExcluded(f)).map(f => ({ id: f.id, nd: f.numero, up: f.up, valor: f.valor }));
+                console.log('[APOST-RENDER] ids:', [...excludedFinIds], '| keys:', [...excludedFinKeys], '| linhas tachadas:', _struck);
+            } catch(e) {}
 
             // Calcular totais por mês ignorando linhas de aditivos excluídos
             totalValor = 0;
             const totaisPorMes = new Array(meses.length).fill(0);
             dadosFiltrados.forEach(f => {
-                if (f.id != null && excludedFinIds.has(String(f.id))) return; // excluído: não soma
+                if (isFinExcluded(f)) return; // excluído: não soma
                 const valorNum = parseNumber(f.valor) || 0;
                 totalValor += valorNum;
                 const mesIdx = meses.findIndex(m => m.mes === (parseInt(f.mesDesc) || 0) && m.fullYear === (parseInt(f.anoDesc) || 0));
@@ -7636,12 +7652,12 @@
             window._cfStartDate = startDate;
             try {
                 const cfKpiWrap = document.getElementById('cfKpiWrap');
-                const kpis = _cfCalcKPIs(dadosFiltrados.filter(f => f.id == null || !excludedFinIds.has(String(f.id))));
+                const kpis = _cfCalcKPIs(dadosFiltrados.filter(f => !isFinExcluded(f)));
                 _cfRenderKPIs(kpis, cfKpiWrap);
             } catch(e) { console.warn('cf kpis error', e); }
 
             // Renderizar linhas agrupadas por Mês Desc.
-            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds);
+            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded);
 
             // Se não houver linhas visíveis, mostrar placeholder
             tbody.innerHTML = rowsHtml || '<tr><td colspan="67" class="auto-style-014">Nenhum cadastro financeiro</td></tr>';
