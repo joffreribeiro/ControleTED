@@ -2096,6 +2096,13 @@
         #detalhes #tedsDetalheContainer .tabela-padrao tbody .sticky-freeze * {
             color: #0f172a !important; /* cor escura para leitura */
         }
+        /* Exceção: linha Resultado nas tabelas cons — fonte vermelha */
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.resultado td,
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.resultado td *,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado td,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado td * {
+            color: #A32D2D !important;
+        }
 
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover td {
             box-shadow: inset 0 0 0 9999px rgba(29, 78, 216, 0.04);
