@@ -4625,11 +4625,11 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaExecFinanceiraTable {
     border-collapse: collapse !important;
     border-spacing: 0 !important;
-    width: auto !important;
+    width: 100% !important;
 }
 
 #wrapperExecFin table {
-    width: auto;
+    width: 100%;
 }
 
 /* Garantir box-sizing consistente nas células das duas tabelas envolvidas */
@@ -4904,7 +4904,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Main table */
 .rg-table {
-  width: auto; border-collapse: separate; border-spacing: 0;
+  width: 100%; border-collapse: separate; border-spacing: 0;
   min-width: 550px; table-layout: fixed;
 }
 
