@@ -4906,7 +4906,7 @@ table.ef-table tbody td.right  { text-align: right; }
 #wrapperRecGeral {
   display: block !important;
   width: 100% !important;
-  min-width: 730px; max-width: 100%; overflow-x: auto;
+  max-width: 100%; overflow-x: auto;
 }
 
 /* Main table */
