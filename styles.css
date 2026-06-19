@@ -4806,7 +4806,9 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr.cons.resultado td,
 .execfin-table tbody tr.cons.resultado td.col-sticky,
 .rg-table tbody tr.cons.resultado td,
-.rg-table tbody tr.cons.resultado td.col-sticky {
+.rg-table tbody tr.cons.resultado td.col-sticky,
+#detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.resultado td,
+#detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado td {
   background: #FFF1F1 !important;
   color: #A32D2D !important; font-weight: 700;
 }
