@@ -10034,9 +10034,9 @@
                     const hl = consHl(tipo);
                     const hlAttr = hl ? ` style="${hl}"` : '';
                     const monthCells = monthsExpanded ? consYearCells(calcFn, colorFn, hl) : '';
-                    // Colapsado: rótulo + valor total na última coluna.
-                    const valCell = monthsExpanded ? '' : `<td class="cons-val-cell ${colorCls}"${hlAttr}>${disp}</td>`;
-                    const labelColspan = monthsExpanded ? 1 : colFixas - 1;
+                    // Colapsado: rótulo mesclado em toda a largura, sem coluna de total.
+                    const valCell = '';
+                    const labelColspan = monthsExpanded ? 1 : colFixas;
                     return `<tr class="cons ${tipo}">` +
                         `<td class="col-sticky label-cell" colspan="${labelColspan}"${hlAttr}>` +
                             `<span class="label-cell-inner">` +
