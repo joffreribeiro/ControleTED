@@ -1937,20 +1937,13 @@
             overflow-x: auto;
         }
 
-        /* Wrappers e KPI containers ocupam toda a largura do detalhe-secao-body */
+        /* KPI containers e CadFin ocupam toda a largura */
         #wrapperCadFin,
-        #wrapperExecFin,
-        #wrapperRecGeral,
         #cfKpiWrap,
         #execfin-kpis-container,
         #recgeral-kpis-container {
             width: 100%;
             box-sizing: border-box;
-        }
-        /* ExecFin e RecGeral usam table-freeze-wrapper (inline-block) — forçar block para ocupar 100% como CadFin */
-        #wrapperExecFin,
-        #wrapperRecGeral {
-            display: block !important;
         }
 
         /* Form groups dentro das seções: labels mais legíveis */
@@ -4584,7 +4577,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 #wrapperExecFin {
     display: block;
-    width: 100%;
+    width: auto;
     max-width: 100%;
     overflow-x: auto;
 }
@@ -4631,12 +4624,12 @@ table.ef-table tbody td.right  { text-align: right; }
     border-collapse: collapse !important;
     border-spacing: 0 !important;
     width: auto !important;
-    min-width: 100%;
+    min-width: 0 !important;
 }
 
 #wrapperExecFin table {
     width: auto;
-    min-width: 100%;
+    min-width: 0;
 }
 
 /* Garantir box-sizing consistente nas células das duas tabelas envolvidas */
@@ -4905,14 +4898,14 @@ table.ef-table tbody td.right  { text-align: right; }
 
 #wrapperRecGeral {
   display: block !important;
-  width: 100% !important;
+  width: auto !important;
   max-width: 100%; overflow-x: auto;
 }
 
 /* Main table */
 .rg-table {
   width: auto; border-collapse: separate; border-spacing: 0;
-  min-width: 100%; table-layout: fixed;
+  min-width: 0; table-layout: fixed;
 }
 
 /* Larguras das colunas fixas — soma=630px igual à ExecFin (4 colunas em vez de 5) */
