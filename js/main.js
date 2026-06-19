@@ -10007,7 +10007,14 @@
 
                 // helper para montar célula de ano nas linhas consolidadas
                 const anoAtual = today.getFullYear();
-                const consYearCells = (calcFn, colorFn) => anos.map(a => {
+                // Destaque inline (vence zebra/sticky): Total a Receber azul, Resultado vermelho.
+                const consHl = (tipo) => tipo === 'total'
+                    ? 'background:#F0F4F9 !important;border-top:1px solid #B3D1EF !important;border-bottom:1px solid #B3D1EF !important;color:#0C447C;font-weight:700;'
+                    : tipo === 'resultado'
+                    ? 'background:#FFF1F1 !important;border-top:2px solid #FCBFBF !important;border-bottom:2px solid #FCBFBF !important;color:#A32D2D;font-weight:700;'
+                    : '';
+
+                const consYearCells = (calcFn, colorFn, cellStyle) => anos.map(a => {
                     if (!monthsExpanded) return '';
                     const val    = calcFn(a.ano);
                     const isCurr = a.ano === anoAtual;
@@ -10015,10 +10022,8 @@
                     if (isCurr) cls += ' year-current';
                     const colorCls = colorFn ? colorFn(val) : (val < -0.01 ? 'neg' : val === 0 ? 'zero' : '');
                     if (colorCls) cls += ` ${colorCls}`;
-                    return `<td colspan="${a.count}" class="${cls}">R$ ${fmtBR(val)}</td>`;
+                    return `<td colspan="${a.count}" class="${cls}"${cellStyle ? ` style="${cellStyle}"` : ''}>R$ ${fmtBR(val)}</td>`;
                 }).join('');
-
-                const iconHtml = (name) => `<i data-lucide="${name}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`;
 
                 const fml = (s) => `<span class="cons-formula">${s}</span>`;
                 const consRow = (tipo, icon, label, formula, calcFn, colorFn, negative) => {
@@ -10026,13 +10031,14 @@
                     const v = negative ? -totalVal : totalVal;
                     const colorCls = colorFn ? colorFn(v) : '';
                     const disp = negative && totalVal > 0 ? `−R$ ${fmtBR(totalVal)}` : `R$ ${fmtBR(totalVal)}`;
-                    const monthCells = monthsExpanded ? consYearCells(calcFn, colorFn) : '';
-                    const emptyFixed = monthsExpanded ? '<td></td>'.repeat(colFixas - 1) : '';
-                    // Colapsado: só o rótulo (sem coluna de valor); label ocupa toda a largura.
-                    const valCell = '';
-                    const labelColspan = monthsExpanded ? 1 : colFixas;
+                    const hl = consHl(tipo);
+                    const hlAttr = hl ? ` style="${hl}"` : '';
+                    const monthCells = monthsExpanded ? consYearCells(calcFn, colorFn, hl) : '';
+                    // Colapsado: rótulo + valor total na última coluna.
+                    const valCell = monthsExpanded ? '' : `<td class="cons-val-cell ${colorCls}"${hlAttr}>${disp}</td>`;
+                    const labelColspan = monthsExpanded ? 1 : colFixas - 1;
                     return `<tr class="cons ${tipo}">` +
-                        `<td class="col-sticky label-cell" colspan="${labelColspan}">` +
+                        `<td class="col-sticky label-cell" colspan="${labelColspan}"${hlAttr}>` +
                             `<span class="label-cell-inner">` +
                                 `<span class="icon"><i data-lucide="${icon}" style="width:13px;height:13px;"></i></span>` +
                                 `<span class="cons-label-text">${label}${formula ? fml(formula) : ''}</span>` +
@@ -10042,19 +10048,16 @@
                         `</tr>`;
                 };
 
-                // Tabela só com os lançamentos + linha TOTAL; o resumo consolidado
-                // é renderizado separadamente no formato do Resumo Anual (.ra-table).
-                tbody.innerHTML = linhas + totalRow;
+                const rowPrevistoAnual    = consRow('previsto',  'calendar',          'Previsto Anual',       '',                              (a)=>previstoByAno[a]||0);
+                const rowReceberAnterior  = consRow('areceber',  'arrow-left',        'A Receber (ano ant.)', 'carry-over',                    (a)=>aReceberAnteriorByAno[a]||0,  (v)=>v<-0.01?'neg':v===0?'zero':'');
+                const rowTotalAReceber    = consRow('total',     'sigma',             'Total a Receber',      'Prev + A Receber',              (a)=>(previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0));
+                const rowRecebidoAnual    = consRow('recebido',  'arrow-down-circle', 'Recebido Anual',       '',                              (a)=>recebidoByAno[a]||0,          (v)=>v>0.01?'green':v===0?'zero':'');
+                const rowDevolvido        = consRow('devolvido', 'arrow-up-circle',   'Devolvido / Recolhido','',                              (a)=>devolvidoByAno[a]||0,         (v)=>v<-0.01?'neg':'zero', true);
+                const rowSaldoAnual       = consRow('saldo-row', 'minus-circle',      'Saldo Anual',          'Recebido − Devolvido',          (a)=>saldoAtualByAno[a]||0);
+                const rowResultado        = consRow('resultado', 'trending-up',       'Resultado',            'Total a Receber − Saldo',       (a)=>((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1, (v)=>v<-0.01?'neg':v===0?'zero':'');
 
-                try {
-                    const _devolvidoAbs = {};
-                    anosOrdem.forEach(a => { _devolvidoAbs[a] = Math.abs(devolvidoByAno[a] || 0); });
-                    const _wrap = document.getElementById('resumoExecFinRa');
-                    if (_wrap) _wrap.innerHTML = buildResumoRaHtml({
-                        previstoByAno, aReceberAnteriorByAno, recebidoByAno,
-                        devolvidoAbsByAno: _devolvidoAbs, saldoByAno: saldoAtualByAno
-                    }, anosOrdem, anoAtual);
-                } catch(e) { console.warn('resumo ra execfin', e); }
+                // Resumo consolidado integrado na tabela (valores de cada ano sob a coluna do ano).
+                tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
 
                 // re-inicializar ícones Lucide
                 try { if (window.lucide) lucide.createIcons(); } catch(e) {}
@@ -10930,8 +10933,13 @@
             });
 
             const anoAtual=today.getFullYear();
-            const iconHtml=(name)=>`<i data-lucide="${name}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`;
-            const consYearCells=(calcFn,colorFn)=>anos.map(a=>{
+            // Destaque inline (vence zebra/sticky): Total a Receber azul, Resultado vermelho.
+            const consHl = (tipo) => tipo === 'total'
+                ? 'background:#F0F4F9 !important;border-top:1px solid #B3D1EF !important;border-bottom:1px solid #B3D1EF !important;color:#0C447C;font-weight:700;'
+                : tipo === 'resultado'
+                ? 'background:#FFF1F1 !important;border-top:2px solid #FCBFBF !important;border-bottom:2px solid #FCBFBF !important;color:#A32D2D;font-weight:700;'
+                : '';
+            const consYearCells=(calcFn,colorFn,cellStyle)=>anos.map(a=>{
                 if(!monthsExpanded) return '';
                 const val=calcFn(a.ano);
                 const isFut=!anosComDados.has(a.ano);
@@ -10941,7 +10949,7 @@
                 if(isFut)   cls+=' future';
                 const colorCls=colorFn?colorFn(val):(val<-0.01?'neg':val===0?'zero':'');
                 if(colorCls) cls+=` ${colorCls}`;
-                return `<td colspan="${a.count}" class="${cls}">R$ ${fmtBR(val)}</td>`;
+                return `<td colspan="${a.count}" class="${cls}"${cellStyle?` style="${cellStyle}"`:''}>R$ ${fmtBR(val)}</td>`;
             }).join('');
 
             const fmlRg=(s)=>`<span class="cons-formula">${s}</span>`;
@@ -10950,12 +10958,13 @@
                 const v=negative?-totalVal:totalVal;
                 const colorCls=colorFn?colorFn(v):'';
                 const disp=negative&&totalVal>0?`−R$ ${fmtBR(totalVal)}`:`R$ ${fmtBR(totalVal)}`;
-                const monthCells=monthsExpanded?consYearCells(calcFn,colorFn):'';
-                // Colapsado: só o rótulo (sem coluna de valor); label ocupa toda a largura.
-                const valCell='';
-                const labelColspan=monthsExpanded?1:colFixas;
+                const hl=consHl(tipo);
+                const hlAttr=hl?` style="${hl}"`:'';
+                const monthCells=monthsExpanded?consYearCells(calcFn,colorFn,hl):'';
+                const valCell=monthsExpanded?'':`<td class="cons-val-cell ${colorCls}"${hlAttr}>${disp}</td>`;
+                const labelColspan=monthsExpanded?1:colFixas-1;
                 return `<tr class="cons ${tipo}">`+
-                    `<td class="col-sticky label-cell" colspan="${labelColspan}">`+
+                    `<td class="col-sticky label-cell" colspan="${labelColspan}"${hlAttr}>`+
                         `<span class="label-cell-inner">`+
                             `<span class="icon"><i data-lucide="${icon}" style="width:13px;height:13px;"></i></span>`+
                             `<span class="cons-label-text">${label}${formula?fmlRg(formula):''}</span>`+
@@ -10965,20 +10974,16 @@
                     `</tr>`;
             };
 
-            // Tabela só com os lançamentos + linha TOTAL; o resumo consolidado
-            // é renderizado separadamente no formato do Resumo Anual (.ra-table).
-            tbody.innerHTML=linhas+totalRow;
+            const rowPrevistoAnualRg   = consRowRg('previsto',  'calendar',          'Previsto Anual',       '',                     (a)=>previstoByAno[a]||0);
+            const rowReceberAnteriorRg = consRowRg('areceber',  'arrow-left',        'A Receber (ano ant.)', 'carry-over',           (a)=>aReceberAnteriorByAno[a]||0, (v)=>v<-0.01?'neg':v===0?'zero':'');
+            const rowTotalAReceberRg   = consRowRg('total',     'sigma',             'Total a Receber',      'Prev + A Receber',     (a)=>(previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0));
+            const rowRecebidoAnualRg   = consRowRg('recebido',  'arrow-down-circle', 'Recebido Anual',       '',                     (a)=>recebidoByAno[a]||0, (v)=>v>0.01?'green':v===0?'zero':'');
+            const rowDevolvidoRg       = consRowRg('devolvido', 'arrow-up-circle',   'Devolvido / Recolhido','',                     (a)=>devolvidoByAno[a]||0, (v)=>v<-0.01?'neg':'zero', true);
+            const rowSaldoAnualRg      = consRowRg('saldo-row', 'minus-circle',      'Saldo Anual',          'Recebido − Devolvido', (a)=>saldoAtualByAno[a]||0);
+            const rowResultadoRg       = consRowRg('resultado', 'trending-up',       'Resultado',            'Total a Receber − Saldo',(a)=>((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1, (v)=>v<-0.01?'neg':v===0?'zero':'');
 
-            try {
-                const _devolvidoAbs = {};
-                anosOrdem.forEach(a => { _devolvidoAbs[a] = Math.abs(devolvidoByAno[a] || 0); });
-                const _wrap = document.getElementById('resumoRecGeralRa');
-                if (_wrap) _wrap.innerHTML = buildResumoRaHtml({
-                    previstoByAno, aReceberAnteriorByAno, recebidoByAno,
-                    devolvidoAbsByAno: _devolvidoAbs, saldoByAno: saldoAtualByAno
-                }, anosOrdem, anoAtual);
-                if (window.lucide) lucide.createIcons();
-            } catch(e) { console.warn('resumo ra recgeral', e); }
+            // Resumo consolidado integrado na tabela (valores de cada ano sob a coluna do ano).
+            tbody.innerHTML=linhas+totalRow+rowPrevistoAnualRg+rowReceberAnteriorRg+rowTotalAReceberRg+rowRecebidoAnualRg+rowDevolvidoRg+rowSaldoAnualRg+rowResultadoRg;
 
             // ── KPIs ────────────────────────────────────────────────────────
             try {
