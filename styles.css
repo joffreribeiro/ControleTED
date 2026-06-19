@@ -4063,9 +4063,9 @@
 .ef-qty-bar-fill      { height: 100%; background: #639922; border-radius: 2px; }
 .ef-qty-bar-fill.amber { background: #c07a1c; }
 
-.ef-periodo { font-size: 12.5px; }
-.ef-periodo-meses { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #1a1a1a; font-weight: 500; }
-.ef-periodo-datas { font-size: 11.5px; color: #64748b; margin-top: 2px; }
+.ef-periodo { font-size: 12.5px; text-align: center; }
+.ef-periodo-meses { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #1a1a1a; font-weight: 500; text-align: center; }
+.ef-periodo-datas { font-size: 11.5px; color: #64748b; margin-top: 2px; text-align: center; }
 .ef-adit-pill {
   display: inline-flex; align-items: center; gap: 3px;
   background: #FAEEDA; color: #854F0B;
