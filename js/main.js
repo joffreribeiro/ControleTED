@@ -10795,7 +10795,7 @@
                 let cg = tableEl.querySelector('colgroup');
                 if (!cg) { cg=document.createElement('colgroup'); tableEl.prepend(cg); }
                 cg.innerHTML='';
-                [{cls:'rg-col-nd',w:'80px'},{cls:'rg-col-vprev',w:'157px'},{cls:'rg-col-vreal',w:'157px'},{cls:'rg-col-saldo',w:'156px'}]
+                [{cls:'rg-col-nd',w:'100px'},{cls:'rg-col-vprev',w:'150px'},{cls:'rg-col-vreal',w:'150px'},{cls:'rg-col-saldo',w:'150px'}]
                     .forEach(({cls,w})=>{ const col=document.createElement('col'); col.className=cls; col.style.width=w; cg.appendChild(col); });
                 if (monthsExpanded) meses.forEach(()=>{ const col=document.createElement('col'); col.className='month-col-recGeral'; col.style.width='80px'; cg.appendChild(col); });
             }
