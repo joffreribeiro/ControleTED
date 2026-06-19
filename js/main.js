@@ -6694,11 +6694,11 @@
             const monthsExpandedExecFis = document.getElementById('toggle-months-execFis')?.getAttribute('data-expanded') === '1';
             const mmHideExecFis = monthsExpandedExecFis ? '' : ' display:none;';
 
-            let headerHTML = '<th rowspan="2" class="col-objeto col-texto">Objeto</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde">Qtd Prevista</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde">Qtd Entregue</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde">Saldo</th>';
-            headerHTML += '<th rowspan="2" class="col-percent">Execução (%)</th>';
+            let headerHTML = '<th rowspan="2" class="col-objeto col-texto" style="text-transform:uppercase;text-align:center;">Objeto</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="text-transform:uppercase;text-align:center;">Qtd Prevista</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="text-transform:uppercase;text-align:center;">Qtd Entregue</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="text-transform:uppercase;text-align:center;">Saldo</th>';
+            headerHTML += '<th rowspan="2" class="col-percent" style="text-transform:uppercase;text-align:center;">Execução (%)</th>';
             let firstAnoExecFis = true;
             anos.forEach(a => {
                 firstAnoExecFis = false;
