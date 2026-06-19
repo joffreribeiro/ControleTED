@@ -9869,11 +9869,11 @@
                     if (!cg) { cg = document.createElement('colgroup'); tableEl.prepend(cg); }
                     cg.innerHTML = '';
                     const fixedColDefs = [
-                        {cls:'col-nd',    w:'120px'},
-                        {cls:'col-up',    w:'80px'},
+                        {cls:'col-nd',    w:'80px'},
+                        {cls:'col-up',    w:'20px'},
                         {cls:'col-vprev', w:'150px'},
                         {cls:'col-vreal', w:'150px'},
-                        {cls:'col-saldo', w:'130px'},
+                        {cls:'col-saldo', w:'150px'},
                     ];
                     fixedColDefs.forEach(({cls, w}) => {
                         const col = document.createElement('col');
@@ -10795,7 +10795,7 @@
                 let cg = tableEl.querySelector('colgroup');
                 if (!cg) { cg=document.createElement('colgroup'); tableEl.prepend(cg); }
                 cg.innerHTML='';
-                [{cls:'rg-col-nd',w:'120px'},{cls:'rg-col-vprev',w:'170px'},{cls:'rg-col-vreal',w:'170px'},{cls:'rg-col-saldo',w:'170px'}]
+                [{cls:'rg-col-nd',w:'80px'},{cls:'rg-col-vprev',w:'157px'},{cls:'rg-col-vreal',w:'157px'},{cls:'rg-col-saldo',w:'156px'}]
                     .forEach(({cls,w})=>{ const col=document.createElement('col'); col.className=cls; col.style.width=w; cg.appendChild(col); });
                 if (monthsExpanded) meses.forEach(()=>{ const col=document.createElement('col'); col.className='month-col-recGeral'; col.style.width='80px'; cg.appendChild(col); });
             }
