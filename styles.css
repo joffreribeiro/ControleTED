@@ -3132,8 +3132,8 @@
         }
         /* Card da seção encolhe junto quando meses ocultos */
         .detalhe-secao.cadFin-collapsed {
-            display: table;
-            width: auto;
+            display: block;
+            width: 100%;
             min-width: 0;
             max-width: 100%;
         }
