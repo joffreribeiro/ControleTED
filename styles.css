@@ -4915,11 +4915,11 @@ table.ef-table tbody td.right  { text-align: right; }
   min-width: 100%; table-layout: fixed;
 }
 
-/* Larguras das colunas fixas */
-#tabelaRecursosGeraisTable col.rg-col-nd    { width: 120px; }
-#tabelaRecursosGeraisTable col.rg-col-vprev { width: 150px; }
-#tabelaRecursosGeraisTable col.rg-col-vreal { width: 150px; }
-#tabelaRecursosGeraisTable col.rg-col-saldo { width: 130px; }
+/* Larguras das colunas fixas — soma=720px igual à ExecFin */
+#tabelaRecursosGeraisTable col.rg-col-nd    { width: 163px; }
+#tabelaRecursosGeraisTable col.rg-col-vprev { width: 186px; }
+#tabelaRecursosGeraisTable col.rg-col-vreal { width: 186px; }
+#tabelaRecursosGeraisTable col.rg-col-saldo { width: 185px; }
 #tabelaRecursosGeraisTable td.rg-col-nd { text-align: center; }
 
 /* thead */
