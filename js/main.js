@@ -6400,10 +6400,10 @@
             const rs = monthsExpandedCadFis ? ' rowspan="2"' : '';
             let headerHTML = `<th class="center" style="width:40px;"${rs}></th>`;
             headerHTML += `<th class="center" style="width:56px;"${rs}>Fase</th>`;
-            headerHTML += `<th${rs}>Objeto</th>`;
-            headerHTML += `<th style="width:140px;"${rs}>Qtde / Entregue</th>`;
-            headerHTML += `<th style="width:190px;"${rs}>Período (meses)</th>`;
-            headerHTML += `<th style="width:150px;"${rs}>Datas previstas</th>`;
+            headerHTML += `<th class="center"${rs}>Objeto</th>`;
+            headerHTML += `<th class="center" style="width:140px;"${rs}>Qtde / Entregue</th>`;
+            headerHTML += `<th class="center" style="width:190px;"${rs}>Período (meses)</th>`;
+            headerHTML += `<th class="center" style="width:150px;"${rs}>Datas previstas</th>`;
             headerHTML += `<th class="center" style="width:96px;"${rs}>Ações</th>`;
             anos.forEach(a => {
                 headerHTML += `<th class="month-col-cadFis" style="text-align:center;${mmHideCadFis}" colspan="${a.count}">${a.ano}</th>`;
@@ -6471,7 +6471,7 @@
                 if (mods && (mods.mInicio || mods.mFinal)) {
                     const mIniOrig = mods.mInicio ? mods.mInicio.de : mIni;
                     const mFinOrig = mods.mFinal  ? mods.mFinal.de  : mFin;
-                    periodoHtml = formatarCelulaAlterada(`M${mIni} → M${mFin}`, `M${mIniOrig} → M${mFinOrig}`, '');
+                    periodoHtml = `<span class="val-antigo">M${mIniOrig} → M${mFinOrig}</span><br><span style="color:#1a1a1a;">M${mIni} → M${mFin}</span>`;
                 } else {
                     periodoHtml = periodoMesesStr;
                 }
