@@ -3119,18 +3119,18 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        /* Larguras fixas em px para as 6 colunas que ficam visíveis */
-        #tabelaFinanceiraCompleta col.col-nd  { width: 120px; }
-        #tabelaFinanceiraCompleta col.col-up  { width: 80px; }
-        #tabelaFinanceiraCompleta col.col-m   { width: 60px; }
-        #tabelaFinanceiraCompleta col.col-mes { width: 120px; }
-        #tabelaFinanceiraCompleta col.col-valor   { width: 160px; }
-        #tabelaFinanceiraCompleta col.col-percent { width: 110px; }
-        #tabelaFinanceiraCompleta col.col-acao    { width: 80px; }
+        /* Larguras fixas em px para as 6 colunas que ficam visíveis — soma=630px igual à ExecFin */
+        #tabelaFinanceiraCompleta col.col-nd  { width: 110px; }
+        #tabelaFinanceiraCompleta col.col-up  { width: 70px; }
+        #tabelaFinanceiraCompleta col.col-m   { width: 50px; }
+        #tabelaFinanceiraCompleta col.col-mes { width: 110px; }
+        #tabelaFinanceiraCompleta col.col-valor   { width: 140px; }
+        #tabelaFinanceiraCompleta col.col-percent { width: 100px; }
+        #tabelaFinanceiraCompleta col.col-acao    { width: 50px; }
         /* Container: encolhe ao tamanho da tabela, scroll quando necessário */
         #wrapperCadFin {
             display: block;
-            min-width: 730px;
+            min-width: 630px;
             max-width: 100%;
             overflow-x: auto;
             border: 1px solid #ddd;
@@ -4915,11 +4915,11 @@ table.ef-table tbody td.right  { text-align: right; }
   min-width: 100%; table-layout: fixed;
 }
 
-/* Larguras das colunas fixas — soma=720px igual à ExecFin */
-#tabelaRecursosGeraisTable col.rg-col-nd    { width: 163px; }
-#tabelaRecursosGeraisTable col.rg-col-vprev { width: 186px; }
-#tabelaRecursosGeraisTable col.rg-col-vreal { width: 186px; }
-#tabelaRecursosGeraisTable col.rg-col-saldo { width: 185px; }
+/* Larguras das colunas fixas — soma=630px igual à ExecFin (4 colunas em vez de 5) */
+#tabelaRecursosGeraisTable col.rg-col-nd    { width: 120px; }
+#tabelaRecursosGeraisTable col.rg-col-vprev { width: 170px; }
+#tabelaRecursosGeraisTable col.rg-col-vreal { width: 170px; }
+#tabelaRecursosGeraisTable col.rg-col-saldo { width: 170px; }
 #tabelaRecursosGeraisTable td.rg-col-nd { text-align: center; }
 
 /* thead */
