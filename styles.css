@@ -2104,14 +2104,18 @@
             color: #A32D2D !important; font-style: normal !important;
         }
         /* Exceção: linha Total a Receber nas tabelas cons — fundo e fonte azul */
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.total,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total {
+            box-shadow: 0 -1px 0 #B3D1EF, 0 1px 0 #B3D1EF;
+        }
         #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.total td,
         #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.total td *,
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td,
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td * {
             background: #F0F4F9 !important;
             color: #0C447C !important; font-style: normal !important;
-            border-top: 1px solid #B3D1EF !important;
-            border-bottom: 1px solid #B3D1EF !important;
+            border-top: none !important;
+            border-bottom: none !important;
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover td {
@@ -4814,12 +4818,16 @@ table.ef-table tbody td.right  { text-align: right; }
 }
 
 /* Total a Receber — azul, igual ao ra-row-total */
+.execfin-table tbody tr.cons.total,
+.rg-table tbody tr.cons.total {
+  box-shadow: 0 -1px 0 #B3D1EF, 0 1px 0 #B3D1EF;
+}
 .execfin-table tbody tr.cons.total td,
 .execfin-table tbody tr.cons.total td.col-sticky,
 .rg-table tbody tr.cons.total td,
 .rg-table tbody tr.cons.total td.col-sticky {
   background: #F0F4F9 !important; font-weight: 700; color: #0C447C;
-  border-top: 1px solid #B3D1EF !important; border-bottom: 1px solid #B3D1EF !important;
+  border-top: none !important; border-bottom: none !important;
 }
 
 /* Resultado — vermelho, igual ao ra-row-resultado.
