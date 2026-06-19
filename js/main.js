@@ -4396,15 +4396,6 @@
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
                 const arr = ted[tabDef.key] || [];
 
-                // Chave natural para financeiros (ND+UP+M+valor): casa a linha removida mesmo
-                // quando o ID do snapshot difere do ID da linha viva (ids podem ter derivado).
-                const natKeyFin = (item) => 'nat:' + [
-                    String(item.numero || item.nd || '').replace(/\D/g, ''),
-                    String(item.up || item.ug || ''),
-                    String(item.m == null ? '' : item.m),
-                    String(Math.round((parseNumber(item.valor) || 0) * 100))
-                ].join('|');
-
                 // Construir set de IDs/matchKeys removidos neste apostilamento (para marcar tachado ao reabrir)
                 const removidosNesseAlt = new Set();
                 if (existente && existente.tabelasAlteradas && existente.tabelasAlteradas[tabDef.key]) {
@@ -4414,7 +4405,6 @@
                         if (item.id != null) removidosNesseAlt.add(String(item.id));
                         const mk = tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
                         if (mk) removidosNesseAlt.add('mk:' + mk);
-                        if (tabDef.key === 'financeiros') removidosNesseAlt.add(natKeyFin(item));
                     });
                 }
 
@@ -4462,7 +4452,7 @@
                     const item = arr[kidx];
                     const itemId = (item && item.id != null) ? String(item.id) : null;
                     const itemMk = 'mk:' + tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
-                    const jaRemovido = (itemId && removidosNesseAlt.has(itemId)) || removidosNesseAlt.has(itemMk) || (tabDef.key === 'financeiros' && removidosNesseAlt.has(natKeyFin(item)));
+                    const jaRemovido = itemId && removidosNesseAlt.has(itemId) || removidosNesseAlt.has(itemMk);
                     const removidoAttr = jaRemovido ? ' data-removido="1"' : '';
                     const removidoStyle = jaRemovido ? ' style="text-decoration:line-through;opacity:0.4;"' : '';
                     html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}"${removidoAttr}${removidoStyle}>`;
@@ -5008,19 +4998,6 @@
                 if (dadosTabelas[tabDef.key]) tedParaDiff[tabDef.key] = dadosTabelas[tabDef.key];
             });
             const tabelasAlteradas = compararTabelasAditivo(snapshot, tedParaDiff);
-
-            // [DIAG] Log do diff de financeiros para depurar exclusões de ND no apostilamento
-            try {
-                const _dFin = tabelasAlteradas.financeiros || {};
-                console.log('[APOST] financeiros diff →',
-                    'snapshot:', (snapshot.financeiros || []).length,
-                    '| modal:', (tedParaDiff.financeiros || []).length,
-                    '| removidos:', (_dFin.removidos || []).length,
-                    '| adicionados:', (_dFin.adicionados || []).length,
-                    '| modificados:', (_dFin.modificados || []).length,
-                    '| snapIds:', (snapshot.financeiros || []).map(f => f.id),
-                    '| modalIds:', (tedParaDiff.financeiros || []).map(f => f.id));
-            } catch(e) {}
 
             // Aplicar nas tabelas reais apenas adições e modificações — NUNCA remover fisicamente
             // Remoções ficam apenas no diff (tabelasAlteradas) para exibição tachada
@@ -6917,7 +6894,7 @@
             let html = '';
             valores.forEach(v => {
                 const checked = selecionados.includes(v) ? 'checked' : '';
-                html += `<label><input type="checkbox" value="${v}" ${checked} onchange="onFiltroChange('${tipo}', '${campo}', '${v}', this.checked)">${v}</label>`;
+                html += `<label onclick="event.stopPropagation()"><input type="checkbox" value="${v}" ${checked} onchange="onFiltroChange('${tipo}', '${campo}', '${v}', this.checked, event)">${v}</label>`;
             });
             html += `<button class="filter-clear-btn" onclick="limparFiltro('${tipo}', '${campo}')">Limpar</button>`;
             menu.innerHTML = html;
@@ -6926,22 +6903,34 @@
         }
 
         // Handler de mudança de filtro
-        function onFiltroChange(tipo, campo, valor, checked) {
+        function onFiltroChange(tipo, campo, valor, checked, event) {
+            if (event) event.stopPropagation();
             const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
-            
+
             if (checked) {
                 if (!filtros[campo].includes(valor)) filtros[campo].push(valor);
             } else {
                 filtros[campo] = filtros[campo].filter(v => v !== valor);
             }
-            
+
             atualizarLabelFiltro(tipo, campo);
-            
-            // Re-renderizar tabela
+
+            // Re-renderizar tabela sem fechar o menu
+            const menuAberto = tipo === 'cadFin'
+                ? document.querySelector('.filter-menu.open')
+                : document.querySelector('.filter-menu.open');
+            const menuAbertoId = menuAberto ? menuAberto.id : null;
+
             if (tipo === 'cadFin') {
                 atualizarTabelaFinanceira();
             } else {
                 atualizarTabelaExecFinanceira();
+            }
+
+            // Restaurar menu aberto após re-renderização
+            if (menuAbertoId) {
+                const m = document.getElementById(menuAbertoId);
+                if (m) m.classList.add('open');
             }
         }
 
@@ -6989,12 +6978,29 @@
                     const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
                     let vals = (filtros && filtros[campo]) ? filtros[campo] : [];
                     if (tipo === 'execFin' && campo === 'nd' && (!vals || !vals.length)) {
-                        // Talvez o filtro de ND esteja vindo de aplicarFiltroNdExecFin (array), mas manter vazio
                         vals = window.filtrosExecFin && window.filtrosExecFin.nd ? window.filtrosExecFin.nd : [];
                     }
                     btn.title = vals && vals.length ? `${campo.toUpperCase()} selecionado(s): ${vals.join(', ')}` : `Filtrar por ${campo.toUpperCase()}`;
                 } catch(e) {}
             }
+            // Mostrar/ocultar botão "Limpar filtros" do Cadastro Financeiro
+            if (tipo === 'cadFin') {
+                const btnLimpar = document.getElementById('btnLimparTodosFiltrosCadFin');
+                if (btnLimpar) {
+                    const f = window.filtrosCadFin;
+                    const temFiltro = (f.nd && f.nd.length) || (f.up && f.up.length) || (f.m && f.m.length);
+                    btnLimpar.style.display = temFiltro ? '' : 'none';
+                }
+            }
+        }
+
+        // Limpar todos os filtros do Cadastro Financeiro (ND + UP + M)
+        function limparTodosFiltrosCadFin() {
+            window.filtrosCadFin = { nd: [], up: [], m: [] };
+            popularFiltrosCadFin();
+            atualizarTabelaFinanceira();
+            const btnLimpar = document.getElementById('btnLimparTodosFiltrosCadFin');
+            if (btnLimpar) btnLimpar.style.display = 'none';
         }
 
         // Aplicar seleção rápida de ND a partir dos selects de criação/edição
@@ -7273,7 +7279,7 @@
             const byUp = {};
             const meses = {};
             const hoje = new Date();
-            let proxMes = null, proxMesVal = 0;
+            let proxMes = null;
             financeiros.forEach(f => {
                 const v = parseNumber(f.valor) || 0;
                 total += v;
@@ -7286,9 +7292,17 @@
                 if (f.anoDesc && f.mesDesc) {
                     const d = new Date(parseInt(f.anoDesc), parseInt(f.mesDesc) - 1, 1);
                     const isNextOrCurrent = d >= new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-                    if (isNextOrCurrent && (!proxMes || d < proxMes)) { proxMes = d; proxMesVal = meses[key]; }
+                    if (isNextOrCurrent && (!proxMes || d < proxMes)) { proxMes = d; }
                 }
             });
+            // Somar todos os lançamentos do próximo período encontrado
+            const proxMesVal = proxMes
+                ? Object.entries(meses).reduce((acc, [key, v]) => {
+                    const [m, a] = key.split('/');
+                    const d = new Date(parseInt(a), parseInt(m) - 1, 1);
+                    return (d.getFullYear() === proxMes.getFullYear() && d.getMonth() === proxMes.getMonth()) ? acc + v : acc;
+                  }, 0)
+                : 0;
             Object.entries(byNd).forEach(([nd, v]) => { if (v > maxNd.val) { maxNd = { val: v, nd }; } });
             const upCount = Object.keys(byUp).length;
             return { total, maxNd, upCount, proxMes, proxMesVal };
@@ -7321,12 +7335,8 @@
               </div>
             </div>`;
         }
-        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded) {
+        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds) {
             excludedFinIds = excludedFinIds || new Set();
-            // Fallback: se não vier o casamento robusto, usa só o ID (comportamento antigo)
-            if (typeof isFinExcluded !== 'function') {
-                isFinExcluded = (f) => f.id != null && excludedFinIds.has(String(f.id));
-            }
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
             // Pré-calcular % Part. recebida por linha (ND+UP sequencial)
@@ -7373,7 +7383,7 @@
             let rowsHtml = '';
             grupoOrdem.forEach(chave => {
                 const grp = grupos[chave];
-                const activeItems = grp.items.filter(f => !isFinExcluded(f));
+                const activeItems = grp.items.filter(f => f.id == null || !excludedFinIds.has(String(f.id)));
                 const subTotal = activeItems.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
                 const subFmt = subTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 const grpId = 'cfgrp_' + chave;
@@ -7400,7 +7410,7 @@
                     const mKey = matchKeyFin(f);
                     const mods = modMapFin[mKey];
                     const isAdded = addSetFin.has(mKey);
-                    const isExcluded = isFinExcluded(f);
+                    const isExcluded = f.id != null && excludedFinIds.has(String(f.id));
                     const trClass = isExcluded ? ' linha-excluida-aditivo' : (isAdded ? ' linha-adicionada-aditivo' : '');
                     const ndCat = _cfNdCategoria(numeroDisplay);
                     const upCat = _cfUpCategoria(f.up || f.ug || '');
@@ -7616,42 +7626,30 @@
             // Construir conjunto de IDs de linhas que devem aparecer tachadas e fora dos cálculos:
             // 1. Linhas ADICIONADAS por aditivos/apostilamentos que foram excluídos (soft-delete)
             // 2. Linhas REMOVIDAS no modal de aditivos/apostilamentos ativos (ficaram no array mas foram "removidas" logicamente)
-            // Casamento robusto: por ID e também por chave natural (ND+UP+M+valor),
-            // porque o ID do item em "removidos" (vindo do snapshot) pode divergir do ID
-            // da linha viva na tabela. A chave natural garante o tachado mesmo nesse caso.
-            const finNatKey = (f) => [
-                String(f.numero || f.nd || '').replace(/\D/g, ''),
-                String(f.up || f.ug || ''),
-                String(f.m ?? ''),
-                String(Math.round((parseNumber(f.valor) || 0) * 100))
-            ].join('|');
             const excludedFinIds = new Set();
-            const excludedFinKeys = new Set();
             (window.tedSelecionado.alteracoes || []).forEach(alt => {
                 const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas['financeiros'];
                 if (!diffs) return;
-                // Apostilamento excluído → itens que ADICIONOU ficam tachados.
-                // Apostilamento ativo → itens que REMOVEU ficam tachados.
-                const lista = alt.excluido ? (diffs.adicionados || []) : (diffs.removidos || []);
-                lista.forEach(entry => {
-                    const item = entry.item || entry;
-                    if (item.id != null) excludedFinIds.add(String(item.id));
-                    excludedFinKeys.add(finNatKey(item));
-                });
+                if (alt.excluido) {
+                    // Aditivo/apostilamento excluído: itens que ele ADICIONOU ficam tachados
+                    (diffs.adicionados || []).forEach(add => {
+                        const item = add.item || add;
+                        if (item.id != null) excludedFinIds.add(String(item.id));
+                    });
+                } else {
+                    // Aditivo/apostilamento ativo: itens que ele REMOVEU ficam tachados
+                    (diffs.removidos || []).forEach(rem => {
+                        const item = rem.item || rem;
+                        if (item.id != null) excludedFinIds.add(String(item.id));
+                    });
+                }
             });
-            const isFinExcluded = (f) => (f.id != null && excludedFinIds.has(String(f.id))) || excludedFinKeys.has(finNatKey(f));
-
-            // [DIAG] Conferir quais linhas vivas serão tachadas
-            try {
-                const _struck = (window.tedSelecionado.financeiros || []).filter(f => isFinExcluded(f)).map(f => ({ id: f.id, nd: f.numero, up: f.up, valor: f.valor }));
-                console.log('[APOST-RENDER] ids:', [...excludedFinIds], '| keys:', [...excludedFinKeys], '| linhas tachadas:', _struck);
-            } catch(e) {}
 
             // Calcular totais por mês ignorando linhas de aditivos excluídos
             totalValor = 0;
             const totaisPorMes = new Array(meses.length).fill(0);
             dadosFiltrados.forEach(f => {
-                if (isFinExcluded(f)) return; // excluído: não soma
+                if (f.id != null && excludedFinIds.has(String(f.id))) return; // excluído: não soma
                 const valorNum = parseNumber(f.valor) || 0;
                 totalValor += valorNum;
                 const mesIdx = meses.findIndex(m => m.mes === (parseInt(f.mesDesc) || 0) && m.fullYear === (parseInt(f.anoDesc) || 0));
@@ -7662,12 +7660,12 @@
             window._cfStartDate = startDate;
             try {
                 const cfKpiWrap = document.getElementById('cfKpiWrap');
-                const kpis = _cfCalcKPIs(dadosFiltrados.filter(f => !isFinExcluded(f)));
+                const kpis = _cfCalcKPIs(dadosFiltrados.filter(f => f.id == null || !excludedFinIds.has(String(f.id))));
                 _cfRenderKPIs(kpis, cfKpiWrap);
             } catch(e) { console.warn('cf kpis error', e); }
 
             // Renderizar linhas agrupadas por Mês Desc.
-            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded);
+            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds);
 
             // Se não houver linhas visíveis, mostrar placeholder
             tbody.innerHTML = rowsHtml || '<tr><td colspan="67" class="auto-style-014">Nenhum cadastro financeiro</td></tr>';
