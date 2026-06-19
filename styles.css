@@ -2101,7 +2101,7 @@
         #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.resultado td *,
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado td,
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado td * {
-            color: #A32D2D !important;
+            color: #A32D2D !important; font-style: normal !important;
         }
         /* Exceção: linha Total a Receber nas tabelas cons — fundo e fonte azul */
         #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.total td,
@@ -2109,7 +2109,7 @@
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td,
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td * {
             background: #F0F4F9 !important;
-            color: #0C447C !important;
+            color: #0C447C !important; font-style: normal !important;
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover td {
@@ -2120,6 +2120,14 @@
             color: #5b6b86;
             font-style: italic;
             background: #f8fbff;
+        }
+        /* Linhas cons: cancelar itálico e cor acinzentada do td[colspan] */
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons td,
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons td *,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons td,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons td * {
+            font-style: normal !important;
+            color: #374151 !important;
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao .col-acao {
