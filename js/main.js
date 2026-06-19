@@ -6414,9 +6414,10 @@
             if (headerRow2) headerRow2.remove();
             headerRow2 = document.createElement('tr');
             headerRow2.className = 'header-meses';
+            headerRow2.style.display = monthsExpandedCadFis ? '' : 'none';
             // 7 células fixas (vazias) + meses
             headerRow2.innerHTML = '<th></th><th></th><th></th><th></th><th></th><th></th><th></th>' +
-                meses.map(m => `<th class="month-col-cadFis" style="${mmHideCadFis}">${m.label}</th>`).join('');
+                meses.map(m => `<th class="month-col-cadFis">${m.label}</th>`).join('');
             tableElement.querySelector('thead').appendChild(headerRow2);
 
             // aplicar classe ef-table
@@ -7271,6 +7272,13 @@
             document.querySelectorAll('.month-col-' + section).forEach(col => {
                 col.style.display = newExpanded ? '' : 'none';
             });
+
+            // ocultar/mostrar a linha inteira de meses do cadFis
+            if (section === 'cadFis') {
+                const tbl = document.querySelector('#tabelaFisicos')?.closest('table');
+                const headerMeses = tbl?.querySelector('thead tr.header-meses');
+                if (headerMeses) headerMeses.style.display = newExpanded ? '' : 'none';
+            }
 
             if (newExpanded) {
                 if (table) {
