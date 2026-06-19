@@ -4990,6 +4990,14 @@ table.ef-table tbody td.right  { text-align: right; }
   margin: 14px 0 4px; display: flex; align-items: flex-start; gap: 8px;
 }
 
+/* Container de resumo consolidado abaixo das tabelas ExecFin/RecGeral */
+.cons-resumo-wrap {
+  margin: 12px 0 4px;
+  border-top: 2px solid #e2e8f0;
+  padding-top: 10px;
+}
+.cons-resumo-wrap .ra-table-wrap { overflow-x: auto; }
+
 /* ===== RESUMO ANUAL — REDESIGN ===== */
 .ra-kpis {
   display: flex; flex-wrap: wrap; gap: 10px; padding: 0 0 14px 0;

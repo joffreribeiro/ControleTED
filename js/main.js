@@ -9847,63 +9847,53 @@
 
                 const iconHtml = (name) => `<i data-lucide="${name}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`;
 
-                const consRow = (tipo, icon, label, formula, calcFn, colorFn) => {
-                    const fmlaHtml = formula ? `<span class="formula">${formula}</span>` : '';
-                    if (monthsExpanded) {
-                        const cells = consYearCells(calcFn, colorFn);
-                        const emptyFixedCells = '<td></td>'.repeat(colFixas - 1);
-                        return `<tr class="cons ${tipo}">` +
-                            `<td class="col-sticky label-cell">` +
-                                `<span class="icon">${iconHtml(icon)}</span>` +
-                                `<span>${label}${fmlaHtml}</span>` +
-                            `</td>` +
-                            emptyFixedCells + cells +
-                            `</tr>`;
-                    }
-                    // Modo compacto: label ocupa (colFixas-1) colunas, valor total na última coluna fixa
-                    const totalVal = anosOrdem.reduce((s, ano) => s + (calcFn(ano) || 0), 0);
-                    const colorCls = colorFn ? colorFn(totalVal) : (totalVal < -0.01 ? 'neg' : totalVal === 0 ? 'zero' : '');
-                    const valDisp = totalVal < 0 ? `−R$ ${fmtBR(Math.abs(totalVal))}` : `R$ ${fmtBR(totalVal)}`;
-                    return `<tr class="cons ${tipo}">` +
-                        `<td class="col-sticky label-cell" colspan="${colFixas - 1}">` +
-                            `<span class="icon">${iconHtml(icon)}</span>` +
-                            `<span>${label}${fmlaHtml}</span>` +
-                        `</td>` +
-                        `<td class="cons-val-cell ${colorCls}">${valDisp}</td>` +
-                        `</tr>`;
-                };
+                tbody.innerHTML = linhas + totalRow;
 
-                const rowPrevistoAnual = consRow('previsto','target','Previsto Anual', null,
-                    (ano) => previstoByAno[ano]||0);
+                // ── Tabela de resumo consolidado (estilo ra-table) ──────────
+                const fml = (s) => `<span class="ra-formula">${s}</span>`;
+                const consRows = [
+                    { label:'Previsto Anual',        icon:'calendar',          formula:'',                                    map: previstoByAno,      cls:'' },
+                    { label:'A Receber (ano ant.)',   icon:'arrow-left',        formula:fml('carry-over'),                     map: aReceberAnteriorByAno, cls:'', colorFn:(v)=>v<-0.01?'neg':v===0?'zero':'' },
+                    { label:'Total a Receber',        icon:'sigma',             formula:fml('Prev + A Receber'),               map: Object.fromEntries(anosOrdem.map(a=>([a,(previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)]))), cls:'ra-row-total' },
+                    { label:'Recebido Anual',         icon:'arrow-down-circle', formula:'',                                    map: recebidoByAno,      cls:'', colorFn:(v)=>v>0.01?'green':v===0?'zero':'' },
+                    { label:'Devolvido / Recolhido',  icon:'arrow-up-circle',   formula:'',                                    map: devolvidoByAno,     cls:'', negative:true },
+                    { label:'Saldo Anual',            icon:'minus-circle',      formula:fml('Recebido − Devolvido'),           map: saldoAtualByAno,    cls:'' },
+                    { label:'Resultado',              icon:'trending-up',       formula:fml('Total a Receber − Saldo'),        map: Object.fromEntries(anosOrdem.map(a=>([a,((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1]))), cls:'ra-row-resultado', isResultado:true },
+                ];
+                const anoAtualNum = today.getFullYear();
+                const futurosSetExec = new Set(anosOrdem.filter(ano=>!(previstoByAno[ano]||0)&&!(recebidoByAno[ano]||0)&&!(devolvidoByAno[ano]||0)));
+                let raThead = `<thead><tr><th class="ra-th-label"></th>`;
+                anosOrdem.forEach(ano => {
+                    let cls = 'ra-th-ano';
+                    if (ano === anoAtualNum) cls += ' current';
+                    if (futurosSetExec.has(ano)) cls += ' future';
+                    raThead += `<th class="${cls}">${ano}${ano===anoAtualNum?'<span class="ra-atual-badge">ATUAL</span>':''}</th>`;
+                });
+                raThead += `</tr></thead>`;
+                let raTbody = '<tbody>';
+                consRows.forEach(row => {
+                    raTbody += `<tr class="ra-row ${row.cls}">`;
+                    raTbody += `<td class="ra-td-label"><i data-lucide="${row.icon}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i><span>${row.label}</span>${row.formula}</td>`;
+                    anosOrdem.forEach(ano => {
+                        const raw = row.map[ano] || 0;
+                        const v = row.negative ? -raw : raw;
+                        const disp = row.negative && raw > 0 ? `−R$ ${fmtBR(raw)}` : `R$ ${fmtBR(raw)}`;
+                        let cls = 'ra-td-val';
+                        if (ano === anoAtualNum) cls += ' current';
+                        if (futurosSetExec.has(ano)) cls += ' future';
+                        if (row.colorFn) { const c = row.colorFn(v); if(c) cls += ` ${c}`; }
+                        if (row.isResultado) { if(v<-0.01) cls+=' pos'; else if(v>0.01) cls+=' neg'; else cls+=' zero'; }
+                        raTbody += `<td class="${cls}">${Math.abs(raw)<0.01&&futurosSetExec.has(ano)?'—':disp}</td>`;
+                    });
+                    raTbody += '</tr>';
+                });
+                raTbody += '</tbody>';
+                const resumoWrap = document.getElementById('execfin-resumo-wrap');
+                if (resumoWrap) {
+                    resumoWrap.innerHTML = `<div class="ra-table-wrap" style="margin-top:8px;"><table class="ra-table">${raThead}${raTbody}</table></div>`;
+                }
 
-                const rowReceberAnterior = consRow('areceber','rotate-cw','A Receber (ano anterior)', null,
-                    (ano) => aReceberAnteriorByAno[ano]||0,
-                    (v)   => v < -0.01 ? 'neg' : v === 0 ? 'zero' : '');
-
-                const rowTotalAReceber = consRow('total','plus-circle','Total a Receber',
-                    '= Previsto + A Receber ano anterior',
-                    (ano) => (previstoByAno[ano]||0) + (aReceberAnteriorByAno[ano]||0));
-
-                const rowRecebidoAnual = consRow('recebido','wallet','Recebido Anual', null,
-                    (ano) => recebidoByAno[ano]||0,
-                    (v)   => v > 0.01 ? 'green' : 'zero');
-
-                const rowDevolvido = consRow('devolvido','rotate-ccw','Devolvido / Recolhido', null,
-                    (ano) => devolvidoByAno[ano]||0,
-                    (v)   => v < -0.01 ? 'neg' : 'zero');
-
-                const rowSaldoAnual = consRow('saldo-row','equal','Saldo Anual',
-                    '= Recebido − Devolvido',
-                    (ano) => saldoAtualByAno[ano]||0);
-
-                const rowResultado = consRow('resultado','alert-circle','Resultado',
-                    '= Total a Receber − Devolvido − Recebido',
-                    (ano) => ((previstoByAno[ano]||0) + (aReceberAnteriorByAno[ano]||0) - (saldoAtualByAno[ano]||0)) * -1,
-                    (v)   => v < -0.01 ? 'neg' : 'zero');
-
-                tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
-
-                // re-inicializar ícones Lucide no tbody
+                // re-inicializar ícones Lucide
                 try { if (window.lucide) lucide.createIcons(); } catch(e) {}
 
                 // ── resumo do lado esquerdo (resExec*) ──────────────────────
@@ -10791,34 +10781,53 @@
                 return `<td colspan="${a.count}" class="${cls}">R$ ${fmtBR(val)}</td>`;
             }).join('');
 
-            const consRow=(tipo,icon,label,formula,calcFn,colorFn)=>{
-                const fmlaHtml=formula?`<span class="formula">${formula}</span>`:'';
-                if(monthsExpanded){
-                    const cells=consYearCells(calcFn,colorFn);
-                    const emptyFixed='<td></td>'.repeat(colFixas-1);
-                    return `<tr class="cons ${tipo}">`+
-                        `<td class="col-sticky label-cell"><span class="icon">${iconHtml(icon)}</span><span>${label}${fmlaHtml}</span></td>`+
-                        emptyFixed+cells+`</tr>`;
+            tbody.innerHTML = linhas+totalRow;
+
+            // ── Tabela de resumo consolidado (estilo ra-table) ──────────────
+            {
+                const fmlR = (s) => `<span class="ra-formula">${s}</span>`;
+                const rgConsRows = [
+                    { label:'Previsto Anual',        icon:'calendar',          formula:'',                                    map: previstoByAno,      cls:'' },
+                    { label:'A Receber (ano ant.)',   icon:'arrow-left',        formula:fmlR('carry-over'),                    map: aReceberAnteriorByAno, cls:'', colorFn:(v)=>v<-0.01?'neg':v===0?'zero':'' },
+                    { label:'Total a Receber',        icon:'sigma',             formula:fmlR('Prev + A Receber'),              map: Object.fromEntries(anosOrdem.map(a=>([a,(previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)]))), cls:'ra-row-total' },
+                    { label:'Recebido Anual',         icon:'arrow-down-circle', formula:'',                                    map: recebidoByAno,      cls:'', colorFn:(v)=>v>0.01?'green':v===0?'zero':'' },
+                    { label:'Devolvido / Recolhido',  icon:'arrow-up-circle',   formula:'',                                    map: devolvidoByAno,     cls:'', negative:true },
+                    { label:'Saldo Anual',            icon:'minus-circle',      formula:fmlR('Recebido − Devolvido'),          map: saldoAtualByAno,    cls:'' },
+                    { label:'Resultado',              icon:'trending-up',       formula:fmlR('Total a Receber − Saldo'),       map: Object.fromEntries(anosOrdem.map(a=>([a,((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1]))), cls:'ra-row-resultado', isResultado:true },
+                ];
+                const anoAtualRg = today.getFullYear();
+                const futurosSetRg = new Set(anosOrdem.filter(ano=>!anosComDados.has(ano)&&!(previstoByAno[ano]||0)));
+                let raThead = `<thead><tr><th class="ra-th-label"></th>`;
+                anosOrdem.forEach(ano => {
+                    let cls='ra-th-ano';
+                    if(ano===anoAtualRg) cls+=' current';
+                    if(futurosSetRg.has(ano)) cls+=' future';
+                    raThead+=`<th class="${cls}">${ano}${ano===anoAtualRg?'<span class="ra-atual-badge">ATUAL</span>':''}</th>`;
+                });
+                raThead+=`</tr></thead>`;
+                let raTbody='<tbody>';
+                rgConsRows.forEach(row=>{
+                    raTbody+=`<tr class="ra-row ${row.cls}">`;
+                    raTbody+=`<td class="ra-td-label"><i data-lucide="${row.icon}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i><span>${row.label}</span>${row.formula}</td>`;
+                    anosOrdem.forEach(ano=>{
+                        const raw=row.map[ano]||0;
+                        const v=row.negative?-raw:raw;
+                        const disp=row.negative&&raw>0?`−R$ ${fmtBR(raw)}`:`R$ ${fmtBR(raw)}`;
+                        let cls='ra-td-val';
+                        if(ano===anoAtualRg) cls+=' current';
+                        if(futurosSetRg.has(ano)) cls+=' future';
+                        if(row.colorFn){const c=row.colorFn(v);if(c)cls+=` ${c}`;}
+                        if(row.isResultado){if(v<-0.01)cls+=' pos';else if(v>0.01)cls+=' neg';else cls+=' zero';}
+                        raTbody+=`<td class="${cls}">${Math.abs(raw)<0.01&&futurosSetRg.has(ano)?'—':disp}</td>`;
+                    });
+                    raTbody+='</tr>';
+                });
+                raTbody+='</tbody>';
+                const rgResumoWrap=document.getElementById('recgeral-resumo-wrap');
+                if(rgResumoWrap){
+                    rgResumoWrap.innerHTML=`<div class="ra-table-wrap" style="margin-top:8px;"><table class="ra-table">${raThead}${raTbody}</table></div>`;
                 }
-                // Modo compacto: label em (colFixas-1) colunas, valor na última coluna fixa
-                const totalVal=anosOrdem.reduce((s,ano)=>s+(calcFn(ano)||0),0);
-                const colorCls=colorFn?colorFn(totalVal):(totalVal<-0.01?'neg':totalVal===0?'zero':'');
-                const valDisp=totalVal<0?`−R$ ${fmtBR(Math.abs(totalVal))}`:(`R$ ${fmtBR(totalVal)}`);
-                return `<tr class="cons ${tipo}">`+
-                    `<td class="col-sticky label-cell" colspan="${colFixas-1}"><span class="icon">${iconHtml(icon)}</span><span>${label}${fmlaHtml}</span></td>`+
-                    `<td class="cons-val-cell ${colorCls}">${valDisp}</td>`+
-                    `</tr>`;
-            };
-
-            const rowPrevistoAnual   = consRow('previsto','target','Previsto Anual',null, (ano)=>previstoByAno[ano]||0);
-            const rowReceberAnterior = consRow('areceber','rotate-cw','A Receber (ano anterior)',null, (ano)=>aReceberAnteriorByAno[ano]||0, (v)=>v<-0.01?'neg':v===0?'zero':'');
-            const rowTotalAReceber   = consRow('total','plus-circle','Total a Receber','= Previsto + A Receber ano anterior', (ano)=>(previstoByAno[ano]||0)+(aReceberAnteriorByAno[ano]||0));
-            const rowRecebidoAnual   = consRow('recebido','wallet','Recebido Anual',null, (ano)=>recebidoByAno[ano]||0, (v)=>v>0.01?'green':'zero');
-            const rowDevolvido       = consRow('devolvido','rotate-ccw','Devolvido / Recolhido',null, (ano)=>devolvidoByAno[ano]||0, (v)=>v<-0.01?'neg':'zero');
-            const rowSaldoAnual      = consRow('saldo-row','equal','Saldo Anual','= Recebido − Devolvido', (ano)=>saldoAtualByAno[ano]||0);
-            const rowResultado       = consRow('resultado','alert-circle','Resultado','= Total a Receber − Devolvido − Recebido', (ano)=>((previstoByAno[ano]||0)+(aReceberAnteriorByAno[ano]||0)-(saldoAtualByAno[ano]||0))*-1);
-
-            tbody.innerHTML = linhas+totalRow+rowPrevistoAnual+rowReceberAnterior+rowTotalAReceber+rowRecebidoAnual+rowDevolvido+rowSaldoAnual+rowResultado;
+            }
 
             // ── KPIs ────────────────────────────────────────────────────────
             try {
