@@ -4874,7 +4874,12 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr.cons td.year-total.year-current,
 .rg-table tbody tr.cons td.year-total.year-current { background: rgba(24,95,165,0.10); }
 .execfin-table tbody tr.cons.resultado td.year-total,
-.rg-table tbody tr.cons.resultado td.year-total { color: #A32D2D !important; }
+.rg-table tbody tr.cons.resultado td.year-total {
+  color: #A32D2D !important;
+  background: #FFF1F1 !important;
+  border-top: 2px solid #FCBFBF !important;
+  border-bottom: 2px solid #FCBFBF !important;
+}
 
 /* ============================================================
    CADASTRO FINANCEIRO — cabeçalho de meses padronizado
