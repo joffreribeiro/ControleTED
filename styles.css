@@ -4800,6 +4800,16 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr.cons.resultado td.label-cell .icon,
 .rg-table tbody tr.cons.resultado td.label-cell .icon { background: #A32D2D; color: #fff; }
 
+/* Padronizar com o Resumo Anual (ra-*): ícone simples inline, sem badge colorido.
+   A cor segue a cor da linha (normal #374151, total #0C447C, resultado #A32D2D). */
+.execfin-table tbody tr.cons td.label-cell .icon,
+.rg-table tbody tr.cons td.label-cell .icon {
+  width: auto; height: auto; border-radius: 0;
+  background: transparent !important; color: inherit !important;
+}
+.execfin-table tbody tr.cons td.label-cell,
+.rg-table tbody tr.cons td.label-cell { gap: 5px; }
+
 /* Total a Receber — destaque azul */
 .execfin-table tbody tr.cons.total td,
 .rg-table tbody tr.cons.total td {
