@@ -1847,7 +1847,7 @@
         .tabela-padrao .col-mes { width: 90px; text-align: center; }
         .tabela-padrao .col-qtde { width: 75px; min-width: 75px; text-align: center; white-space: nowrap; }
         .tabela-padrao .col-valor { width: 100px; text-align: right; }
-        .tabela-padrao .col-percent { min-width: 110px; text-align: center; white-space: nowrap; }
+        .tabela-padrao .col-percent { min-width: 90px; text-align: center; white-space: nowrap; }
         .tabela-padrao .col-nd { min-width: 60px; text-align: center; }
         .tabela-padrao .col-up { min-width: 60px; text-align: center; }
         .tabela-padrao .col-fase { width: 80px; text-align: center; }

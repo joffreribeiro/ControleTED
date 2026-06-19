@@ -6694,11 +6694,12 @@
             const monthsExpandedExecFis = document.getElementById('toggle-months-execFis')?.getAttribute('data-expanded') === '1';
             const mmHideExecFis = monthsExpandedExecFis ? '' : ' display:none;';
 
-            let headerHTML = '<th rowspan="2" class="col-objeto col-texto" style="text-transform:uppercase;text-align:center;">Objeto</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde" style="text-transform:uppercase;text-align:center;">Qtd Prevista</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde" style="text-transform:uppercase;text-align:center;">Qtd Entregue</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde" style="text-transform:uppercase;text-align:center;">Saldo</th>';
-            headerHTML += '<th rowspan="2" class="col-percent" style="text-transform:uppercase;text-align:center;">Execução (%)</th>';
+            const thStyle = 'text-transform:uppercase;text-align:center;white-space:nowrap;';
+            let headerHTML = '<th rowspan="2" class="col-objeto col-texto" style="' + thStyle + '">Objeto</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + '">Qtd Prev.</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + '">Qtd Entr.</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + '">Saldo</th>';
+            headerHTML += '<th rowspan="2" class="col-percent" style="' + thStyle + 'min-width:90px;">Exec. (%)</th>';
             let firstAnoExecFis = true;
             anos.forEach(a => {
                 firstAnoExecFis = false;
