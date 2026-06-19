@@ -2899,16 +2899,16 @@
                 eventsBelow.push({ p, color: '#2563EB', label: dataStr, sub: `${ai+1}º Adit. +${meses}m` })
             );
 
-            // Níveis acima (3 níveis, do mais alto ao mais próximo da barra)
+            // Níveis acima — próximos da barra (stem curto)
             const ABOVE = [
-                { labelY: 8,  subY: 20, stemY1: 24, stemY2: BAR_Y },
-                { labelY: 28, subY: 40, stemY1: 44, stemY2: BAR_Y },
-                { labelY: 48, subY: 60, stemY1: 64, stemY2: BAR_Y },
+                { labelY: BAR_Y - 38, subY: BAR_Y - 26, stemY1: BAR_Y - 22, stemY2: BAR_Y },
+                { labelY: BAR_Y - 18, subY: BAR_Y -  6, stemY1: BAR_Y -  4, stemY2: BAR_Y },
+                { labelY: BAR_Y - 58, subY: BAR_Y - 46, stemY1: BAR_Y - 42, stemY2: BAR_Y },
             ];
-            // Níveis abaixo (2 níveis)
+            // Níveis abaixo — um pouco mais distantes da barra
             const BELOW = [
-                { labelY: BAR_Y + BAR_H + 14, subY: BAR_Y + BAR_H + 26, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 10 },
-                { labelY: BAR_Y + BAR_H + 34, subY: BAR_Y + BAR_H + 46, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 30 },
+                { labelY: BAR_Y + BAR_H + 22, subY: BAR_Y + BAR_H + 34, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 18 },
+                { labelY: BAR_Y + BAR_H + 46, subY: BAR_Y + BAR_H + 58, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 42 },
             ];
 
             const GAP = 12;
