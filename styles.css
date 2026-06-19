@@ -4826,16 +4826,19 @@ table.ef-table tbody td.right  { text-align: right; }
 }
 
 /* Resultado — destaque vermelho (o fundo precisa estar no TD, nao so no TR,
-   senao a celula sticky de label pinta branco por cima) */
+   senao a celula sticky de label pinta branco por cima).
+   box-shadow no TR contorna o border-collapse que cancela border-top/bottom. */
 .execfin-table tbody tr.cons.resultado,
-.rg-table tbody tr.cons.resultado { background: #FFF1F1 !important; }
+.rg-table tbody tr.cons.resultado {
+  background: #FFF1F1 !important;
+  box-shadow: 0 -2px 0 #FCBFBF, 0 2px 0 #FCBFBF;
+}
 .execfin-table tbody tr.cons.resultado td,
 .execfin-table tbody tr.cons.resultado td.col-sticky,
 .rg-table tbody tr.cons.resultado td,
 .rg-table tbody tr.cons.resultado td.col-sticky {
   background: #FFF1F1 !important;
   color: #A32D2D !important; font-weight: 700;
-  border-top: 2px solid #FCBFBF !important; border-bottom: 2px solid #FCBFBF !important;
 }
 .execfin-table tbody tr.cons.resultado .cons-formula,
 .rg-table tbody tr.cons.resultado .cons-formula { color: rgba(163,45,45,0.65); }
