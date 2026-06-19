@@ -5086,68 +5086,137 @@ table.ef-table tbody td.right  { text-align: right; }
 .ra-table .ra-row-resultado .ra-td-val.future  { background: rgba(163,45,45,0.04) !important; color: #c0c8d4; }
 .ra-table tbody tr:hover td { filter: brightness(0.97); }
 
-/* ===== ENTREGAS — REDESIGN ===== */
-.ent-kpis {
-  display: flex; flex-wrap: wrap; gap: 10px; padding: 0 0 14px 0;
-}
-.ent-kpi {
-  background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
-  padding: 10px 14px; min-width: 160px; flex: 1 1 160px;
-}
-.ent-kpi.blue  { border-left: 4px solid #185FA5; }
-.ent-kpi.green { border-left: 4px solid #3B6D11; }
-.ent-kpi.amber { border-left: 4px solid #92400E; }
-.ent-kpi.ok    { border-left: 4px solid #3B6D11; }
-.ent-kpi-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
-.ent-kpi-value { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 700; color: #0f172a; margin: 2px 0; }
-.ent-kpi-sub   { font-size: 10.5px; color: #94a3b8; }
-.ent-kpi-bar   { height: 4px; background: #f1f5f9; border-radius: 2px; margin: 4px 0 2px; }
-.ent-kpi-fill  { height: 4px; background: #3B6D11; border-radius: 2px; transition: width 0.4s; }
+/* ===== ENTREGAS — REDESIGN v2 ===== */
 
-.ent-grid {
+/* Header */
+.ent2-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 0 14px 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 16px;
+}
+.ent2-header-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 700; color: #0f172a;
+}
+.ent2-header-meta {
+  font-size: 11px; font-weight: 600; color: #185FA5;
+  background: #EFF6FF; border-radius: 20px; padding: 2px 10px;
+}
+
+/* Grid de cards */
+.ent2-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
 }
-.ent-card {
-  background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
-  padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;
-  transition: box-shadow 0.15s;
-}
-.ent-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-.ent-card.concluido { border-left: 4px solid #3B6D11; }
-.ent-card.andamento { border-left: 4px solid #185FA5; }
-.ent-card.pendente  { border-left: 4px solid #94a3b8; }
-.ent-card.acima     { border-left: 4px solid #A32D2D; }
 
-.ent-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.ent-card-nome { font-size: 12.5px; font-weight: 600; color: #0f172a; line-height: 1.3; }
-.ent-status-pill {
-  font-size: 10px; font-weight: 600; border-radius: 20px;
-  padding: 2px 8px; white-space: nowrap; flex-shrink: 0;
+/* Card */
+.ent2-card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+  padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;
+  transition: box-shadow 0.15s; border-left: 4px solid #94a3b8;
 }
-.ent-status-pill.concluido { background: #D1FAE5; color: #3B6D11; }
-.ent-status-pill.andamento { background: #DBEAFE; color: #185FA5; }
-.ent-status-pill.pendente  { background: #F1F5F9; color: #64748b; }
-.ent-status-pill.acima     { background: #FEE2E2; color: #A32D2D; }
+.ent2-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.ent2-card.concluido { border-left-color: #3B6D11; }
+.ent2-card.andamento { border-left-color: #185FA5; }
+.ent2-card.pendente  { border-left-color: #d97706; }
 
-.ent-card-fracao { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 700; color: #0f172a; }
-.ent-frac-sep { color: #94a3b8; font-weight: 400; margin: 0 2px; }
-.ent-card-perc-label { font-size: 11px; color: #64748b; }
-.ent-card-progress { height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
-.ent-card-fill { height: 6px; border-radius: 3px; transition: width 0.4s; }
-.ent-card-fill.concluido { background: #3B6D11; }
-.ent-card-fill.andamento { background: #185FA5; }
-.ent-card-fill.pendente  { background: #94a3b8; }
-.ent-card-fill.acima     { background: #A32D2D; }
+/* Parte superior do card */
+.ent2-card-top { display: flex; flex-direction: column; gap: 4px; }
+.ent2-card-nome-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ent2-card-nome { font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+.ent2-perc-ted {
+  font-size: 10.5px; font-weight: 600; color: #64748b;
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px;
+  padding: 1px 8px; white-space: nowrap; flex-shrink: 0;
+}
+.ent2-card-sub { font-size: 11px; color: #64748b; margin-bottom: 2px; }
+.ent2-meta-valor { font-weight: 600; color: #334155; }
 
-.ent-card-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
-.ent-card-meta-item {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 10.5px; color: #64748b;
+/* Percentual grande */
+.ent2-perc-big {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 36px; font-weight: 700; line-height: 1;
+  margin: 4px 0 0 0; color: #0f172a;
 }
-.ent-card-fases { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
-.ent-fase-badge {
-  font-size: 10px; padding: 1px 6px; border-radius: 4px;
-  background: #F1F5F9; color: #475569; border: 1px solid #e2e8f0;
+.ent2-perc-big.concluido { color: #3B6D11; }
+.ent2-perc-big.andamento { color: #B45309; }
+.ent2-perc-big.pendente  { color: #64748b; }
+
+/* Fração */
+.ent2-fracao {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px; color: #475569; margin: 2px 0 6px 0;
 }
+.ent2-frac-sep { color: #94a3b8; margin: 0 3px; }
+.ent2-frac-un  { color: #94a3b8; font-size: 11px; margin-left: 2px; }
+
+/* Barra de progresso */
+.ent2-progress-bar {
+  height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden;
+}
+.ent2-progress-fill { height: 8px; border-radius: 4px; transition: width 0.4s; background: #94a3b8; }
+.ent2-progress-fill.concluido { background: #3B6D11; }
+.ent2-progress-fill.andamento { background: #185FA5; }
+.ent2-progress-fill.pendente  { background: #d1d5db; }
+
+/* Datas */
+.ent2-card-datas {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding-top: 10px; border-top: 1px solid #f1f5f9;
+}
+.ent2-data-label {
+  font-size: 10px; font-weight: 600; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px;
+}
+.ent2-data-val { font-size: 12.5px; color: #1e293b; }
+.ent2-data-val strong { font-weight: 700; }
+.ent2-nenhuma { color: #94a3b8; font-style: italic; }
+
+/* Status row */
+.ent2-card-status-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.ent2-status-pill {
+  font-size: 11px; font-weight: 600; border-radius: 20px;
+  padding: 3px 10px; white-space: nowrap;
+}
+.ent2-status-pill.concluido { background: #D1FAE5; color: #3B6D11; }
+.ent2-status-pill.andamento { background: #DBEAFE; color: #185FA5; }
+.ent2-status-pill.pendente  { background: #FEF3C7; color: #92400E; }
+.ent2-restam { font-size: 11px; color: #64748b; text-align: right; }
+.ent2-restam strong { color: #ef4444; font-weight: 700; }
+
+/* Cronograma de fases */
+.ent2-card-cronograma {
+  padding-top: 10px; border-top: 1px solid #f1f5f9;
+}
+.ent2-cronograma-label {
+  font-size: 9.5px; font-weight: 600; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+}
+.ent2-fases-row {
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+}
+.ent2-fase-dot {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 26px; border-radius: 6px;
+  font-size: 10px; font-weight: 700; cursor: default;
+  transition: transform 0.1s;
+}
+.ent2-fase-dot:hover { transform: scale(1.1); }
+.ent2-fase-dot.concluido { background: #3B6D11; color: #fff; }
+.ent2-fase-dot.atual     { background: #FFF3CD; color: #92400E; border: 2px solid #d97706; }
+.ent2-fase-dot.futuro    { background: #F1F5F9; color: #94a3b8; border: 1px solid #e2e8f0; }
+.ent2-fase-unica-label {
+  font-size: 11px; color: #94a3b8; font-style: italic; margin-left: 6px;
+}
+
+/* Insight bar */
+.ent2-insight {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px;
+  padding: 10px 14px; font-size: 12px; color: #78350F; line-height: 1.5;
+}
+.ent2-insight i { color: #D97706; margin-top: 1px; }
+.ent2-insight strong { color: #92400E; }

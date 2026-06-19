@@ -8871,8 +8871,9 @@
 
             // Base planejada deve ser idêntica à tabela de Execução Física: soma da qtde do Cadastro Físico por objeto.
             let objetosBase = [];
+            let fisicosOrdered = [];
             if (fisicos.length) {
-                const fisicosOrdered = Array.from(fisicos);
+                fisicosOrdered = Array.from(fisicos);
                 fisicosOrdered.sort((a, b) => {
                     const aVal = a && a.fase != null ? a.fase : '';
                     const bVal = b && b.fase != null ? b.fase : '';
@@ -8894,83 +8895,189 @@
                     .filter(e => e.objeto === nomeObj)
                     .reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
                 const planejado = fisicos.length
-                    ? fisicos.filter(f => f.objeto === nomeObj).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0)
+                    ? fisicosOrdered.filter(f => f.objeto === nomeObj).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0)
                     : objetos.filter(o => o.objeto === nomeObj).reduce((s, o) => s + (parseNumber(o.qtde) || 0), 0);
                 const perc = planejado > 0 ? (entregues / planejado) * 100 : 0;
-                // Valor unitário para exibir valor financeiro do objeto
                 const objDef = objetos.find(o => o.objeto === nomeObj);
                 const valorUnit = objDef ? (parseNumber(objDef.valorUnitario) || 0) : 0;
-                // Fases cadastradas para este objeto
-                const fasesCad = fisicos.filter(f => f.objeto === nomeObj).map(f => f.fase).filter(f => f != null);
-                // Última execução para indicar "última entrega"
                 const execsObj = execsFiltrados.filter(e => e.objeto === nomeObj).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
                 const ultimaData = execsObj.length ? execsObj[execsObj.length-1].data : null;
-                return { nome: nomeObj, entregues, planejado, perc, valorUnit, fasesCad, ultimaData };
+                return { nome: nomeObj, entregues, planejado, perc, valorUnit, ultimaData };
             });
 
-            // KPIs globais
-            const totalItens = items.length;
-            const concluidos = items.filter(it => it.perc >= 100).length;
-            const totalPlanejado = items.reduce((s,it)=>s+it.planejado,0);
-            const totalEntregue = items.reduce((s,it)=>s+it.entregues,0);
-            const percGeral = totalPlanejado > 0 ? Math.min(100,(totalEntregue/totalPlanejado)*100) : 0;
+            // Totais para o header
+            const totalFases = fisicos.length;
+            const totalObjetos = items.length;
+            const hoje = new Date();
+            const nomesMeses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            const fmtMesAno = (dataStr) => {
+                if (!dataStr) return null;
+                const d = new Date(dataStr + 'T00:00:00');
+                return `${nomesMeses[d.getMonth()]}/${d.getFullYear()}`;
+            };
+            const fmtN = (n) => Number(n||0).toLocaleString('pt-BR');
 
-            const kpiHtml = `<div class="ent-kpis">
-              <div class="ent-kpi blue">
-                <div class="ent-kpi-label">Objetos</div>
-                <div class="ent-kpi-value">${totalItens}</div>
-                <div class="ent-kpi-sub">${concluidos} concluído${concluidos!==1?'s':''}</div>
+            // Calcular data prevista de uma fase
+            const dataPrevistaFase = (f, ted) => {
+                if (f.anoFinal && f.mesFinal) return new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
+                if (f.mFinal != null) {
+                    const base = ted && ted.primeiraDescentralizacao
+                        ? new Date(ted.primeiraDescentralizacao + 'T00:00:00')
+                        : (ted && ted.primeiroAnoDesc && ted.primeiroMesDesc ? new Date(ted.primeiroAnoDesc, ted.primeiroMesDesc - 1, 1) : null);
+                    if (base) { const d = new Date(base); d.setMonth(d.getMonth() + parseInt(f.mFinal)); return d; }
+                }
+                return null;
+            };
+            const tedRef = tedsSelected[0];
+
+            // Enriquecer items com dados de próxima fase e estado de cada fase
+            items.forEach(it => {
+                const fasesDoObj = fisicosOrdered.filter(f => f.objeto === it.nome);
+                // Calcular % do TED
+                const totalObjetosValor = objetos.reduce((s,o) => s + (parseNumber(o.qtde)||0)*(parseNumber(o.valorUnitario)||0), 0);
+                const objDef = objetos.find(o => o.objeto === it.nome);
+                const valorObjTotal = (objDef ? (parseNumber(objDef.qtde)||0) : 0) * it.valorUnit;
+                it.percTed = totalObjetosValor > 0 ? (valorObjTotal / totalObjetosValor) * 100 : 0;
+                // Última qtde
+                const execsObj = execsFiltrados.filter(e => e.objeto === it.nome).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+                const ultimaExec = execsObj.length ? execsObj[execsObj.length - 1] : null;
+                it.ultimaQtde = ultimaExec ? (parseNumber(ultimaExec.qtde) || 0) : 0;
+                // Próxima fase
+                let qtdeAcum = 0;
+                it.proximaData = null;
+                it.proximaQtde = 0;
+                for (const f of fasesDoObj) {
+                    const qtdeFase = parseNumber(f.qtde) || 0;
+                    if (qtdeAcum + qtdeFase > it.entregues) {
+                        it.proximaQtde = qtdeFase - Math.max(0, it.entregues - qtdeAcum);
+                        const dprev = dataPrevistaFase(f, tedRef);
+                        if (dprev) it.proximaData = `${nomesMeses[dprev.getMonth()]}/${dprev.getFullYear()}`;
+                        break;
+                    }
+                    qtdeAcum += qtdeFase;
+                }
+                // Estado de cada fase
+                it.fasesStatus = fasesDoObj.map((f, idxF) => {
+                    const qtdeFase = parseNumber(f.qtde) || 0;
+                    const qtdeAcumAte = fasesDoObj.slice(0, idxF).reduce((s, ff) => s + (parseNumber(ff.qtde)||0), 0);
+                    const qtdeFaseEntregue = Math.max(0, Math.min(qtdeFase, it.entregues - qtdeAcumAte));
+                    const dprev = dataPrevistaFase(f, tedRef);
+                    let estado = 'futuro';
+                    if (qtdeFaseEntregue >= qtdeFase && qtdeFase > 0) estado = 'concluido';
+                    else if (qtdeFaseEntregue > 0 || (dprev && dprev <= hoje)) estado = 'atual';
+                    return { fase: f.fase, estado, dprev };
+                });
+            });
+
+            // Header
+            const headerHtml = `<div class="ent2-header">
+              <div class="ent2-header-title">
+                <i data-lucide="package" style="width:16px;height:16px;color:#185FA5;"></i>
+                <span>Entregas por Objeto</span>
               </div>
-              <div class="ent-kpi green">
-                <div class="ent-kpi-label">Entregue</div>
-                <div class="ent-kpi-value">${totalEntregue.toLocaleString('pt-BR')} / ${totalPlanejado.toLocaleString('pt-BR')}</div>
-                <div class="ent-kpi-bar"><div class="ent-kpi-fill" style="width:${percGeral.toFixed(1)}%"></div></div>
-                <div class="ent-kpi-sub">${percGeral.toFixed(1)}% do total</div>
-              </div>
-              <div class="ent-kpi ${concluidos === totalItens && totalItens > 0 ? 'ok' : 'amber'}">
-                <div class="ent-kpi-label">Situação</div>
-                <div class="ent-kpi-value">${concluidos === totalItens && totalItens > 0 ? 'Concluído' : 'Em andamento'}</div>
-                <div class="ent-kpi-sub">${totalItens - concluidos} pendente${(totalItens-concluidos)!==1?'s':''}</div>
-              </div>
+              <div class="ent2-header-meta">${totalObjetos} objeto${totalObjetos!==1?'s':''} · ${totalFases} fase${totalFases!==1?'s':''}</div>
             </div>`;
 
-            // Cards ricos
-            let cardsHtml = '<div class="ent-grid">';
+            // Cards
+            let cardsHtml = '<div class="ent2-grid">';
             items.forEach(it => {
                 const perc = Number(it.perc) || 0;
                 const fillPct = Math.min(100, Math.max(0, perc));
-                let statusCls = 'andamento';
-                let statusLabel = 'Em andamento';
-                if (perc > 100) { statusCls = 'acima'; statusLabel = 'Acima do planejado'; }
-                else if (perc >= 100) { statusCls = 'concluido'; statusLabel = 'Concluído'; }
-                else if (perc === 0) { statusCls = 'pendente'; statusLabel = 'Não iniciado'; }
+                const percStr = perc % 1 < 0.005 ? perc.toFixed(0) + ',00' : perc.toFixed(2).replace('.', ',');
+                let statusCls, statusLabel;
+                if (perc >= 100) { statusCls = 'concluido'; statusLabel = 'Concluído'; }
+                else if (perc === 0) { statusCls = 'pendente'; statusLabel = 'Aguardando início'; }
+                else { statusCls = 'andamento'; statusLabel = 'Em andamento'; }
 
-                const fmtN = (n) => Number(n||0).toLocaleString('pt-BR');
-                const valorStr = it.valorUnit > 0
-                    ? `<span class="ent-card-meta-item"><i data-lucide="dollar-sign" style="width:11px;height:11px;"></i> R$ ${it.valorUnit.toLocaleString('pt-BR',{minimumFractionDigits:2})} / un.</span>`
+                const percTedStr = it.percTed > 0 ? it.percTed.toFixed(1).replace('.', ',') + '% do TED' : '';
+                const valorHtml = it.valorUnit > 0
+                    ? `<span class="ent2-meta-valor">R$ ${it.valorUnit.toLocaleString('pt-BR',{minimumFractionDigits:2})} / un</span>`
                     : '';
-                const ultimaStr = it.ultimaData
-                    ? `<span class="ent-card-meta-item"><i data-lucide="clock" style="width:11px;height:11px;"></i> Última: ${it.ultimaData.split('-').reverse().join('/')}</span>`
-                    : '';
-                const fasesStr = it.fasesCad.length
-                    ? `<div class="ent-card-fases">${it.fasesCad.map(f=>`<span class="ent-fase-badge">Fase ${f}</span>`).join('')}</div>`
+                const ultimaHtml = it.ultimaData
+                    ? `<div class="ent2-data-val">${fmtMesAno(it.ultimaData)} · <strong>${fmtN(it.ultimaQtde)} un</strong></div>`
+                    : `<div class="ent2-data-val ent2-nenhuma">— Nenhuma</div>`;
+                const proximaHtml = it.proximaData
+                    ? `<div class="ent2-data-val">${it.proximaData} · <strong>${fmtN(it.proximaQtde)} un</strong></div>`
+                    : `<div class="ent2-data-val ent2-nenhuma">—</div>`;
+
+                const totalFasesObj = (it.fasesStatus || []).length;
+                const tituloFases = totalFasesObj === 1
+                    ? 'CRONOGRAMA DA ÚNICA FASE'
+                    : `CRONOGRAMA DAS ${totalFasesObj} FASES · ✓ = ENTREGUE · ▣ = ATUAL`;
+                const fasesBolinhas = (it.fasesStatus || []).map((fs, idx) => {
+                    const cls = `ent2-fase-dot ${fs.estado}`;
+                    const label = `F${fs.fase}`;
+                    const title = fs.dprev ? `Fase ${fs.fase} — previsto: ${nomesMeses[fs.dprev.getMonth()]}/${fs.dprev.getFullYear()}` : `Fase ${fs.fase}`;
+                    if (totalFasesObj === 1) {
+                        return `<span class="${cls}" title="${title}">${label}</span><span class="ent2-fase-unica-label">Entrega única no cronograma</span>`;
+                    }
+                    return `<span class="${cls}" title="${title}">${label}</span>`;
+                }).join('');
+
+                const restamQtde = Math.max(0, it.planejado - it.entregues);
+                const fasesPend = (it.fasesStatus || []).filter(f => f.estado !== 'concluido').length;
+                const restamHtml = restamQtde > 0
+                    ? `<span class="ent2-restam">Restam <strong>${fmtN(restamQtde)} un</strong> · ${fasesPend} fase${fasesPend!==1?'s':''} pendente${fasesPend!==1?'s':''}</span>`
                     : '';
 
-                cardsHtml += `<div class="ent-card ${statusCls}">
-                  <div class="ent-card-header">
-                    <div class="ent-card-nome">${it.nome}</div>
-                    <span class="ent-status-pill ${statusCls}">${statusLabel}</span>
+                cardsHtml += `<div class="ent2-card ${statusCls}">
+                  <div class="ent2-card-top">
+                    <div class="ent2-card-nome-row">
+                      <span class="ent2-card-nome">${it.nome}</span>
+                      ${percTedStr ? `<span class="ent2-perc-ted">${percTedStr}</span>` : ''}
+                    </div>
+                    ${valorHtml ? `<div class="ent2-card-sub">${valorHtml} · ${totalFasesObj} fase${totalFasesObj!==1?'s':''} no cronograma</div>` : ''}
+                    <div class="ent2-perc-big ${statusCls}">${percStr}%</div>
+                    <div class="ent2-fracao">${fmtN(it.entregues)} <span class="ent2-frac-sep">/</span> ${fmtN(it.planejado)} <span class="ent2-frac-un">un</span></div>
+                    <div class="ent2-progress-bar"><div class="ent2-progress-fill ${statusCls}" style="width:${fillPct}%"></div></div>
                   </div>
-                  <div class="ent-card-fracao">${fmtN(it.entregues)} <span class="ent-frac-sep">/</span> ${fmtN(it.planejado)}</div>
-                  <div class="ent-card-perc-label">${perc.toFixed(1)}%</div>
-                  <div class="ent-card-progress"><div class="ent-card-fill ${statusCls}" style="width:${fillPct}%"></div></div>
-                  <div class="ent-card-meta">${valorStr}${ultimaStr}</div>
-                  ${fasesStr}
+                  <div class="ent2-card-datas">
+                    <div class="ent2-data-col">
+                      <div class="ent2-data-label">ÚLTIMA ENTREGA</div>
+                      ${ultimaHtml}
+                    </div>
+                    <div class="ent2-data-col">
+                      <div class="ent2-data-label">PRÓXIMA PREVISTA</div>
+                      ${proximaHtml}
+                    </div>
+                  </div>
+                  <div class="ent2-card-status-row">
+                    <span class="ent2-status-pill ${statusCls}">● ${statusLabel}</span>
+                    ${restamHtml}
+                  </div>
+                  <div class="ent2-card-cronograma">
+                    <div class="ent2-cronograma-label">${tituloFases}</div>
+                    <div class="ent2-fases-row">${fasesBolinhas}</div>
+                  </div>
                 </div>`;
             });
             cardsHtml += '</div>';
 
-            container.innerHTML = kpiHtml + cardsHtml;
+            // Insight bar
+            const ultimaGlobal = items.map(it => it.ultimaData).filter(Boolean).sort().reverse()[0];
+            let insightPartes = [];
+            items.forEach(it => {
+                const restam = Math.max(0, it.planejado - it.entregues);
+                const fasesPend = (it.fasesStatus||[]).filter(f => f.estado !== 'concluido').length;
+                const nomeObj = it.nome.split(' ').slice(0,2).join(' ');
+                if (it.perc >= 100) {
+                    insightPartes.push(`${nomeObj} está <strong>concluído</strong>.`);
+                } else if (it.perc === 0) {
+                    const prox = it.proximaData ? ` O início previsto é <strong>${it.proximaData}</strong>.` : '';
+                    insightPartes.push(`O ${nomeObj} ainda não iniciou.${prox}`);
+                } else {
+                    insightPartes.push(`<strong>${fmtN(restam)} ${nomeObj.toLowerCase()}${restam!==1?'s':''}</strong> ainda em fabricação, divididos em ${fasesPend} fase${fasesPend!==1?'s':''} após a prorrogação do aditivo.`);
+                }
+            });
+            if (ultimaGlobal) {
+                const mesesAtras = Math.round((hoje - new Date(ultimaGlobal + 'T00:00:00')) / (1000*60*60*24*30));
+                insightPartes.push(`A última entrega registrada foi <strong>${fmtMesAno(ultimaGlobal)}</strong> — há ~${mesesAtras} mese${mesesAtras!==1?'s':''} sem novas remessas.`);
+            }
+            const insightHtml = insightPartes.length
+                ? `<div class="ent2-insight"><i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;margin-top:1px;"></i><span>${insightPartes.join(' ')}</span></div>`
+                : '';
+
+            container.innerHTML = headerHtml + cardsHtml + insightHtml;
             if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
         }
 
