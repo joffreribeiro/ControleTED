@@ -4757,80 +4757,51 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-status.critico  { background: #FCEBEB; color: #A32D2D; }
 .execfin-status.critico .dot { background: #A32D2D; }
 
-/* ── Linhas consolidadas (cons) — visual idêntico ao ra-table ── */
-.execfin-table tbody tr.cons,
-.rg-table tbody tr.cons { background: #FAFBFC; }
-/* Sem zebra nas linhas do resumo — igual ao Resumo Anual (so Total a Receber
-   fica azul e Resultado vermelho). Vence a regra de zebra .tabela-padrao. */
-#detalhes #tedsDetalheContainer .execfin-table tbody tr.cons,
-#detalhes #tedsDetalheContainer .rg-table tbody tr.cons { background: #fff; }
-.execfin-table tbody tr.cons:hover td,
-.rg-table tbody tr.cons:hover td { filter: brightness(0.97); }
+/* ── Linhas consolidadas (cons) — visual IDÊNTICO ao ra-table ── */
+
+/* Fundo branco, sem zebra, hover suave — igual ao ra-table */
 .execfin-table tbody tr.cons td,
 .rg-table tbody tr.cons td {
-  padding: 8px 10px; font-size: 12.5px; color: #374151;
+  background: #fff; color: #374151;
+  padding: 8px 10px; font-size: 12.5px;
   border-bottom: 1px solid #f1f5f9;
 }
+#detalhes #tedsDetalheContainer .execfin-table tbody tr.cons td,
+#detalhes #tedsDetalheContainer .rg-table tbody tr.cons td { background: #fff; }
+.execfin-table tbody tr.cons:hover td,
+.rg-table tbody tr.cons:hover td { filter: brightness(0.97); }
 
-/* Célula de label */
+/* Célula de label — igual ao ra-td-label */
 .execfin-table tbody tr.cons td.label-cell,
 .rg-table tbody tr.cons td.label-cell {
-  /* table-cell (não flex) para que o colspan funcione e a linha mescle até o fim,
-     com o fundo (azul/vermelho) preenchendo a largura toda. O flex vai no wrapper interno. */
   vertical-align: middle; font-weight: 400; white-space: nowrap;
+  background: #fff; color: #374151;
 }
-.cons .label-cell-inner { display: flex; align-items: center; gap: 5px; }
-.cons-label-text { display: flex; align-items: baseline; gap: 5px; }
-.cons-formula {
-  font-size: 10px; color: #94a3b8; font-style: italic; font-weight: 400;
-}
+.cons .label-cell-inner { display: flex; align-items: center; gap: 6px; }
+.cons-label-text { display: flex; align-items: baseline; gap: 5px; font-size: 12.5px; }
+.cons-formula { font-size: 10px; color: #94a3b8; font-style: italic; font-weight: 400; }
 
-/* Ícone colorido por tipo */
-.execfin-table tbody tr.cons td.label-cell .icon,
-.rg-table tbody tr.cons td.label-cell .icon {
-  width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.execfin-table tbody tr.cons.previsto  td.label-cell .icon,
-.rg-table tbody tr.cons.previsto  td.label-cell .icon { background: #E6F1FB; color: #0C447C; }
-.execfin-table tbody tr.cons.areceber  td.label-cell .icon,
-.rg-table tbody tr.cons.areceber  td.label-cell .icon { background: #FAEEDA; color: #854F0B; }
-.execfin-table tbody tr.cons.total     td.label-cell .icon,
-.rg-table tbody tr.cons.total     td.label-cell .icon { background: #E8EDF5; color: #475569; }
-.execfin-table tbody tr.cons.recebido  td.label-cell .icon,
-.rg-table tbody tr.cons.recebido  td.label-cell .icon { background: #EAF3DE; color: #3B6D11; }
-.execfin-table tbody tr.cons.devolvido td.label-cell .icon,
-.rg-table tbody tr.cons.devolvido td.label-cell .icon { background: #FCEBEB; color: #A32D2D; }
-.execfin-table tbody tr.cons.saldo-row td.label-cell .icon,
-.rg-table tbody tr.cons.saldo-row td.label-cell .icon { background: #E6F1FB; color: #185FA5; }
-.execfin-table tbody tr.cons.resultado td.label-cell .icon,
-.rg-table tbody tr.cons.resultado td.label-cell .icon { background: #A32D2D; color: #fff; }
-
-/* Padronizar com o Resumo Anual (ra-*): ícone simples inline, sem badge colorido.
-   A cor segue a cor da linha (normal #374151, total #0C447C, resultado #A32D2D). */
+/* Ícone inline sem badge — igual ao ra-table (ícone Lucide simples, cor herdada) */
 .execfin-table tbody tr.cons td.label-cell .icon,
 .rg-table tbody tr.cons td.label-cell .icon {
   width: auto; height: auto; border-radius: 0;
   background: transparent !important; color: inherit !important;
+  display: inline-flex; align-items: center;
 }
-.execfin-table tbody tr.cons .label-cell-inner,
-.rg-table tbody tr.cons .label-cell-inner { gap: 5px; }
 
-/* Total a Receber — destaque azul (inclui a celula sticky de label) */
+/* Total a Receber — azul, igual ao ra-row-total */
 .execfin-table tbody tr.cons.total td,
 .execfin-table tbody tr.cons.total td.col-sticky,
 .rg-table tbody tr.cons.total td,
 .rg-table tbody tr.cons.total td.col-sticky {
   background: #F0F4F9 !important; font-weight: 700; color: #0C447C;
-  border-top: 1px solid #B3D1EF; border-bottom: 1px solid #B3D1EF;
+  border-top: 1px solid #B3D1EF !important; border-bottom: 1px solid #B3D1EF !important;
 }
 
-/* Resultado — destaque vermelho (o fundo precisa estar no TD, nao so no TR,
-   senao a celula sticky de label pinta branco por cima).
-   box-shadow no TR contorna o border-collapse que cancela border-top/bottom. */
+/* Resultado — vermelho, igual ao ra-row-resultado.
+   box-shadow no TR simula border-top/bottom que border-collapse cancela. */
 .execfin-table tbody tr.cons.resultado,
 .rg-table tbody tr.cons.resultado {
-  background: #FFF1F1 !important;
   box-shadow: 0 -2px 0 #FCBFBF, 0 2px 0 #FCBFBF;
 }
 .execfin-table tbody tr.cons.resultado td,
@@ -4843,46 +4814,26 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr.cons.resultado .cons-formula,
 .rg-table tbody tr.cons.resultado .cons-formula { color: rgba(163,45,45,0.65); }
 
-/* Célula de valor (modo compacto, sem meses expandidos) */
-.execfin-table tbody tr.cons td.cons-val-cell,
-.rg-table tbody tr.cons td.cons-val-cell {
-  text-align: right; white-space: nowrap;
-  font-family: 'IBM Plex Mono', 'Courier New', monospace;
-  font-size: 12px; font-weight: 600; color: #374151;
-  padding: 8px 10px;
-}
-.execfin-table tbody tr.cons td.cons-val-cell.neg,
-.rg-table tbody tr.cons td.cons-val-cell.neg { color: #A32D2D; }
-.execfin-table tbody tr.cons td.cons-val-cell.green,
-.rg-table tbody tr.cons td.cons-val-cell.green { color: #3B6D11; }
-.execfin-table tbody tr.cons td.cons-val-cell.zero,
-.rg-table tbody tr.cons td.cons-val-cell.zero { color: #c0c8d4; font-weight: 400; }
-.execfin-table tbody tr.cons.resultado td.cons-val-cell,
-.rg-table tbody tr.cons.resultado td.cons-val-cell { color: #A32D2D !important; }
-
-/* Year-total cells in consolidated rows */
+/* Células de ano (meses expandidos) */
 .execfin-table tbody tr.cons td.year-total,
 .rg-table tbody tr.cons td.year-total {
-  text-align: center; font-family: 'IBM Plex Mono', monospace;
-  font-style: normal; font-weight: 600; font-size: 12.5px; color: #1a1a1a;
-  background: rgba(24,95,165,0.05); border-left: 1px solid rgba(24,95,165,0.15);
-  vertical-align: middle;
+  text-align: right; font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 400; color: #374151;
+  background: #fff; border-left: 1px solid #f1f5f9;
+  vertical-align: middle; padding: 8px 10px;
 }
 .execfin-table tbody tr.cons td.year-total.zero,
-.rg-table tbody tr.cons td.year-total.zero  { color: #c0c8d4; font-weight: 400; }
+.rg-table tbody tr.cons td.year-total.zero  { color: #c0c8d4; }
 .execfin-table tbody tr.cons td.year-total.neg,
 .rg-table tbody tr.cons td.year-total.neg   { color: #A32D2D; }
 .execfin-table tbody tr.cons td.year-total.green,
 .rg-table tbody tr.cons td.year-total.green { color: #3B6D11; }
 .execfin-table tbody tr.cons td.year-total.year-current,
-.rg-table tbody tr.cons td.year-total.year-current { background: rgba(24,95,165,0.10); }
+.rg-table tbody tr.cons td.year-total.year-current { background: #F0F6FF; }
+.execfin-table tbody tr.cons.total td.year-total,
+.rg-table tbody tr.cons.total td.year-total { background: #F0F4F9 !important; color: #0C447C !important; }
 .execfin-table tbody tr.cons.resultado td.year-total,
-.rg-table tbody tr.cons.resultado td.year-total {
-  color: #A32D2D !important;
-  background: #FFF1F1 !important;
-  border-top: 2px solid #FCBFBF !important;
-  border-bottom: 2px solid #FCBFBF !important;
-}
+.rg-table tbody tr.cons.resultado td.year-total { background: #FFF1F1 !important; color: #A32D2D !important; }
 
 /* ============================================================
    CADASTRO FINANCEIRO — cabeçalho de meses padronizado
