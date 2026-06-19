@@ -4161,7 +4161,19 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* aditivo changed row highlight inside cf-grp-table */
 .cf-grp-table tbody tr.linha-adicionada-aditivo td { background: #f0fdf4; }
-.cf-grp-table tbody tr.linha-excluida-aditivo td { background: rgba(239,68,68,0.04) !important; text-decoration: line-through; color: #94a3b8 !important; opacity: 0.65; }
+.cf-grp-table tbody tr.linha-excluida-aditivo td { background: rgba(239,68,68,0.06) !important; color: #94a3b8 !important; opacity: 0.7; }
+/* Forçar o tachado a atravessar elementos inline-block (nd-tag, up-pill, spans de valor) */
+.cf-grp-table tbody tr.linha-excluida-aditivo td,
+.cf-grp-table tbody tr.linha-excluida-aditivo td * {
+    text-decoration: line-through !important;
+    text-decoration-color: #ef4444 !important;
+    text-decoration-thickness: 2px !important;
+}
+/* Pills da ND/UP em estado "removido": dessaturar para reforçar visual */
+.cf-grp-table tbody tr.linha-excluida-aditivo td .nd-tag,
+.cf-grp-table tbody tr.linha-excluida-aditivo td .up-pill {
+    filter: grayscale(1); opacity: 0.7;
+}
 
 /* ============================================================
    ABAS INTERNAS — DETALHES TED (dt-tab-*)

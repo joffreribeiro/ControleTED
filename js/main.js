@@ -7670,14 +7670,6 @@
             });
             const isFinExcluded = (f) => (f.id != null && excludedFinIds.has(String(f.id))) || excludedFinKeys.has(finNatKey(f));
 
-            // [DIAG] Conferir quais linhas vivas serão tachadas e comparar chaves
-            try {
-                const _struck = (window.tedSelecionado.financeiros || []).filter(f => isFinExcluded(f)).map(f => ({ id: f.id, nd: f.numero, up: f.up, valor: f.valor }));
-                console.log('[APOST-RENDER] excludedIds:', [...excludedFinIds], '| excludedKeys:', [...excludedFinKeys]);
-                console.log('[APOST-RENDER] linhas tachadas:', _struck);
-                console.table((window.tedSelecionado.financeiros || []).map(f => ({ id: f.id, key: finNatKey(f) })));
-            } catch(e) {}
-
             // Calcular totais por mês ignorando linhas de aditivos excluídos
             totalValor = 0;
             const totaisPorMes = new Array(meses.length).fill(0);
