@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-        <link rel="stylesheet" href="styles.css?v=20260619af">
+        <link rel="stylesheet" href="styles.css?v=20260619ao">
     </head>
     <body>
 
@@ -1052,8 +1052,8 @@
                         <!-- KPIs + filtros (preenchidos por JS) -->
                         <div id="efCadFisWrap"></div>
 
-                        <div class="table-freeze-wrapper auto-style-015" style="display: inline-block; width: fit-content; max-width: 100%;">
-                            <table class="tabela-padrao ef-table" style="min-width: 850px;">
+                        <div id="wrapperCadFis" class="table-freeze-wrapper auto-style-015">
+                            <table id="tabelaCadFisTable" class="tabela-padrao ef-table">
                                 <thead>
                                     <tr>
                                         <th class="center" style="width:40px;"></th>
@@ -1084,8 +1084,8 @@
                         </div>
                         <div class="detalhe-secao-body">
 
-                        <div class="table-freeze-wrapper" style="border: 1px solid #ddd; border-radius: 0.25rem; display: inline-block; width: fit-content; max-width: 100%;">
-                            <table id="tabelaExecFinanceiraTable" class="tabela-padrao" style="min-width: 600px;">
+                        <div id="wrapperExecFis" class="table-freeze-wrapper auto-style-015">
+                            <table id="tabelaExecFisTable" class="tabela-padrao">
                                 <thead>
                                     <tr>
                                         <th style="text-align:center !important;text-transform:uppercase;">Objeto</th>
@@ -1759,7 +1759,7 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260619x"></script>
+    <script src="js/main.js?v=20260619z9"></script>
 
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js"></script>

@@ -2873,8 +2873,8 @@
 
             // ── SVG timeline ──────────────────────────────────────────────────
             // Layout: barra em Y=70. Acima: 3 níveis. Abaixo: 1 nível.
-            const SVG_H = 120;
-            const BAR_Y = 70;
+            const SVG_H = 132;
+            const BAR_Y = 64;
             const BAR_H = 8;
             const LEVELS = [
                 { labelY: 8,  subY: 20, stemY1: 24, stemY2: BAR_Y },        // nível 0: mais alto
@@ -2905,10 +2905,9 @@
                 { labelY: BAR_Y - 18, subY: BAR_Y -  6, stemY1: BAR_Y -  4, stemY2: BAR_Y },
                 { labelY: BAR_Y - 58, subY: BAR_Y - 46, stemY1: BAR_Y - 42, stemY2: BAR_Y },
             ];
-            // Níveis abaixo — um pouco mais distantes da barra
             const BELOW = [
-                { labelY: BAR_Y + BAR_H + 22, subY: BAR_Y + BAR_H + 34, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 18 },
-                { labelY: BAR_Y + BAR_H + 46, subY: BAR_Y + BAR_H + 58, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 42 },
+                { labelY: BAR_Y + BAR_H + 24, subY: BAR_Y + BAR_H + 36, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 10 },
+                { labelY: BAR_Y + BAR_H + 44, subY: BAR_Y + BAR_H + 56, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 30 },
             ];
 
             const GAP = 12;
@@ -2959,7 +2958,7 @@
             // Linha "Hoje" — só a linha vertical, sem badge
             if (hojePct >= 0 && hojePct <= 100) {
                 const hx = `${hojePct}%`;
-                svg += `<line x1="${hx}" y1="0" x2="${hx}" y2="${SVG_H}" stroke="#A32D2D" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.7"/>`;
+                svg += `<line x1="${hx}" y1="${BAR_Y - 4}" x2="${hx}" y2="${BAR_Y + BAR_H + 4}" stroke="#A32D2D" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.85"/>`;
             }
 
             // Pins: stem + dot + labels
@@ -3249,7 +3248,9 @@
             document.getElementById('info_primeiraDescentralizacao').textContent = _fmtData(ted.primeiraDescentralizacao);
 
             if (aditivos.length > 0) {
-                document.getElementById('info_vigencia').textContent = vigTotalMeses || '-';
+                const vigOrig = Number(ted.vigencia) || 0;
+                document.getElementById('info_vigencia').innerHTML =
+                    `<span class="vig-orig-tachado">${vigOrig}m</span><span class="vig-novo-valor">${vigTotalMeses}m</span>`;
                 let novaDataFim = '';
                 if (ted.inicioVigencia) {
                     const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
@@ -3259,9 +3260,9 @@
                     }
                 }
                 document.getElementById('info_fimVigencia').innerHTML =
-                    `<div class="fim-vigencia-current">${novaDataFim} <span class="badge-prorrogado">Prorrogado</span></div><div class="fim-vigencia-meta">Original: ${_fmtData(ted.fimVigencia)} · ${totalAditivoMeses} meses</div>`;
+                    `<span class="vig-orig-tachado">${_fmtData(ted.fimVigencia)}</span><span class="vig-novo-valor">${novaDataFim}</span>`;
             } else {
-                document.getElementById('info_vigencia').textContent = ted.vigencia || '-';
+                document.getElementById('info_vigencia').textContent = ted.vigencia ? `${ted.vigencia}m` : '-';
                 document.getElementById('info_fimVigencia').textContent = _fmtData(ted.fimVigencia);
             }
 
@@ -7292,7 +7293,7 @@
             if (!newExpanded && table) {
                 table.classList.add('months-collapsed');
                 table.style.minWidth = '0';
-                table.style.width = 'auto';
+                table.style.width = (section === 'cadFis' || section === 'execFis') ? '100%' : 'auto';
                 table.style.tableLayout = 'fixed';
                 if (detalhe) detalhe.classList.add('cadFin-collapsed');
             }
@@ -9976,6 +9977,7 @@
                             if (m.isFirstOfYear) cls += ' first';
                             if (m.isCurrent)     cls += ' current';
                             if (val)             cls += ' has-value';
+                            if (val < 0)         cls += ' has-neg';
                             const display = val ? fmtBR(val) : '';
                             html += `<td class="${cls}" onclick="editarValorExecFinanceira('${nd}','${up}',${i})" title="Clique para editar">${display}</td>`;
                         });
@@ -10000,6 +10002,7 @@
                         if (m.isFirstOfYear) cls += ' first';
                         if (m.isCurrent)     cls += ' current';
                         if (val)             cls += ' has-value';
+                        if (val < 0)         cls += ' has-neg';
                         totalRow += `<td class="${cls}">${val ? fmtBR(val) : ''}</td>`;
                     });
                 }
@@ -10142,7 +10145,7 @@
                 const expanded = btn?.getAttribute('data-expanded') === '1';
                 if (sec && tbl) {
                     if (!expanded) {
-                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'fixed';
+                        tbl.style.minWidth = '0'; tbl.style.width = '100%'; tbl.style.tableLayout = 'fixed';
                         sec.classList.add('cadFin-collapsed');
                     } else {
                         // 700px fixas + ~80px por mês visível
@@ -11026,22 +11029,7 @@
                 _recgeralRenderKpis({totalPrevisto,totalRealizado,totalSaldo,pct,maiorNd,maiorVal,nItens:recs.length,nNds:sortedNDs.length});
             } catch(e){}
 
-            // ── Banner de insight ────────────────────────────────────────────
-            try {
-                const insightEl=document.getElementById('recgeral-insight-container');
-                if(insightEl){
-                    const anosComSaldo=anosOrdem.filter(ano=>!anosComDados.has(ano)&&(aReceberAnteriorByAno[ano]||0)>0.01);
-                    if(anosComSaldo.length){
-                        const totalSaldoFuturo=anosComSaldo.reduce((s,a)=>s+(aReceberAnteriorByAno[a]||0),0);
-                        const anosStr=anosComSaldo.join('/');
-                        const vigencia=window.tedSelecionado.dataFim||window.tedSelecionado.vigencia||'';
-                        const vigStr=vigencia?` antes do fim de vigência <b>(${vigencia})</b>`:'';
-                        insightEl.innerHTML=`<div class="rg-insight-banner"><i data-lucide="alert-triangle" style="width:14px;height:14px;color:#854F0B;flex-shrink:0;margin-top:1px;"></i><span><b>R$ ${fmtBR(totalSaldoFuturo)} ficaram "a receber" para ${anosStr}.</b> Como o cronograma do TED não prevê novas descentralizações nesses anos, esse saldo precisa de atenção administrativa${vigStr}.</span></div>`;
-                    } else {
-                        insightEl.innerHTML='';
-                    }
-                }
-            } catch(e){}
+            // Banner de insight removido
 
             // ── Ajustar wrapper e table-layout ──────────────────────────────
             try {
@@ -11051,7 +11039,7 @@
                 const sec=btn?.closest('.detalhe-secao');
                 if(sec&&tbl){
                     if(!monthsExpanded){
-                        tbl.style.minWidth='0'; tbl.style.width='auto'; tbl.style.tableLayout='fixed';
+                        tbl.style.minWidth='0'; tbl.style.width='100%'; tbl.style.tableLayout='fixed';
                         sec.classList.add('cadFin-collapsed');
                     } else {
                         const nMeses=tbl.querySelectorAll('thead th.month-col').length||60;
