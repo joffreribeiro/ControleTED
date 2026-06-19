@@ -4775,9 +4775,11 @@ table.ef-table tbody td.right  { text-align: right; }
 /* Célula de label */
 .execfin-table tbody tr.cons td.label-cell,
 .rg-table tbody tr.cons td.label-cell {
-  display: flex; align-items: center; gap: 8px;
-  font-weight: 400; white-space: nowrap;
+  /* table-cell (não flex) para que o colspan funcione e a linha mescle até o fim,
+     com o fundo (azul/vermelho) preenchendo a largura toda. O flex vai no wrapper interno. */
+  vertical-align: middle; font-weight: 400; white-space: nowrap;
 }
+.cons .label-cell-inner { display: flex; align-items: center; gap: 5px; }
 .cons-label-text { display: flex; align-items: baseline; gap: 5px; }
 .cons-formula {
   font-size: 10px; color: #94a3b8; font-style: italic; font-weight: 400;
@@ -4811,8 +4813,8 @@ table.ef-table tbody td.right  { text-align: right; }
   width: auto; height: auto; border-radius: 0;
   background: transparent !important; color: inherit !important;
 }
-.execfin-table tbody tr.cons td.label-cell,
-.rg-table tbody tr.cons td.label-cell { gap: 5px; }
+.execfin-table tbody tr.cons .label-cell-inner,
+.rg-table tbody tr.cons .label-cell-inner { gap: 5px; }
 
 /* Total a Receber — destaque azul */
 .execfin-table tbody tr.cons.total td,
