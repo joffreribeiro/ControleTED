@@ -4396,6 +4396,15 @@
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
                 const arr = ted[tabDef.key] || [];
 
+                // Chave natural para financeiros (ND+UP+M+valor): casa a linha removida mesmo
+                // quando o ID do snapshot difere do ID da linha viva (ids podem ter derivado).
+                const natKeyFin = (item) => 'nat:' + [
+                    String(item.numero || item.nd || '').replace(/\D/g, ''),
+                    String(item.up || item.ug || ''),
+                    String(item.m == null ? '' : item.m),
+                    String(Math.round((parseNumber(item.valor) || 0) * 100))
+                ].join('|');
+
                 // Construir set de IDs/matchKeys removidos neste apostilamento (para marcar tachado ao reabrir)
                 const removidosNesseAlt = new Set();
                 if (existente && existente.tabelasAlteradas && existente.tabelasAlteradas[tabDef.key]) {
@@ -4405,6 +4414,7 @@
                         if (item.id != null) removidosNesseAlt.add(String(item.id));
                         const mk = tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
                         if (mk) removidosNesseAlt.add('mk:' + mk);
+                        if (tabDef.key === 'financeiros') removidosNesseAlt.add(natKeyFin(item));
                     });
                 }
 
@@ -4452,7 +4462,7 @@
                     const item = arr[kidx];
                     const itemId = (item && item.id != null) ? String(item.id) : null;
                     const itemMk = 'mk:' + tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
-                    const jaRemovido = itemId && removidosNesseAlt.has(itemId) || removidosNesseAlt.has(itemMk);
+                    const jaRemovido = (itemId && removidosNesseAlt.has(itemId)) || removidosNesseAlt.has(itemMk) || (tabDef.key === 'financeiros' && removidosNesseAlt.has(natKeyFin(item)));
                     const removidoAttr = jaRemovido ? ' data-removido="1"' : '';
                     const removidoStyle = jaRemovido ? ' style="text-decoration:line-through;opacity:0.4;"' : '';
                     html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}"${removidoAttr}${removidoStyle}>`;
