@@ -10025,7 +10025,7 @@
                     return `<td colspan="${a.count}" class="${cls}"${cellStyle ? ` style="${cellStyle}"` : ''}>R$ ${fmtBR(val)}</td>`;
                 }).join('');
 
-                const fml = (s) => `<span class="cons-formula">${s}</span>`;
+                const fml = (s) => `<span class="ra-formula">${s}</span>`;
                 const consRow = (tipo, icon, label, formula, calcFn, colorFn, negative) => {
                     const totalVal = anosOrdem.reduce((s, ano) => s + (calcFn(ano) || 0), 0);
                     const v = negative ? -totalVal : totalVal;
@@ -10034,13 +10034,11 @@
                     const hl = consHl(tipo);
                     const hlAttr = hl ? ` style="${hl}"` : '';
                     const monthCells = monthsExpanded ? consYearCells(calcFn, colorFn, hl) : '';
-                    // Label sempre mesclado por todas as colunas fixas (até Saldo inclusive).
                     return `<tr class="cons ${tipo}">` +
-                        `<td class="label-cell" colspan="${colFixas}"${hlAttr}>` +
-                            `<span class="label-cell-inner">` +
-                                `<span class="icon"><i data-lucide="${icon}" style="width:13px;height:13px;"></i></span>` +
-                                `<span class="cons-label-text">${label}${formula ? fml(formula) : ''}</span>` +
-                            `</span>` +
+                        `<td class="label-cell ra-td-label" colspan="${colFixas}"${hlAttr}>` +
+                            `<i data-lucide="${icon}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>` +
+                            `<span>${label}</span>` +
+                            (formula ? fml(formula) : '') +
                         `</td>` +
                         (monthsExpanded ? monthCells : '') +
                         `</tr>`;
@@ -10950,7 +10948,7 @@
                 return `<td colspan="${a.count}" class="${cls}"${cellStyle?` style="${cellStyle}"`:''}>R$ ${fmtBR(val)}</td>`;
             }).join('');
 
-            const fmlRg=(s)=>`<span class="cons-formula">${s}</span>`;
+            const fmlRg=(s)=>`<span class="ra-formula">${s}</span>`;
             const consRowRg=(tipo,icon,label,formula,calcFn,colorFn,negative)=>{
                 const totalVal=anosOrdem.reduce((s,ano)=>s+(calcFn(ano)||0),0);
                 const v=negative?-totalVal:totalVal;
@@ -10960,11 +10958,10 @@
                 const hlAttr=hl?` style="${hl}"`:'';
                 const monthCells=monthsExpanded?consYearCells(calcFn,colorFn,hl):'';
                 return `<tr class="cons ${tipo}">`+
-                    `<td class="label-cell" colspan="${colFixas}"${hlAttr}>`+
-                        `<span class="label-cell-inner">`+
-                            `<span class="icon"><i data-lucide="${icon}" style="width:13px;height:13px;"></i></span>`+
-                            `<span class="cons-label-text">${label}${formula?fmlRg(formula):''}</span>`+
-                        `</span>`+
+                    `<td class="label-cell ra-td-label" colspan="${colFixas}"${hlAttr}>`+
+                        `<i data-lucide="${icon}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`+
+                        `<span>${label}</span>`+
+                        (formula?fmlRg(formula):'')+
                     `</td>`+
                     (monthsExpanded?monthCells:'')+
                     `</tr>`;
