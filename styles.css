@@ -4775,7 +4775,6 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr.cons td.label-cell,
 .rg-table tbody tr.cons td.label-cell {
   vertical-align: middle; font-weight: 400; white-space: nowrap;
-  background: #fff; color: #374151;
 }
 .cons .label-cell-inner { display: flex; align-items: center; gap: 6px; }
 .cons-label-text { display: flex; align-items: baseline; gap: 5px; font-size: 12.5px; }
