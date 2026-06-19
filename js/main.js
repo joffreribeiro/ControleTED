@@ -6963,22 +6963,26 @@
 
         // Atualizar label do botão de filtro
         function atualizarLabelFiltro(tipo, campo) {
-            const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
-            const count = filtros[campo].length;
-            
+            const filtros = tipo === 'cadFin' ? window.filtrosCadFin
+                          : tipo === 'recGeral' ? window.filtrosRecGeral
+                          : window.filtrosExecFin;
+            const count = (filtros && filtros[campo]) ? filtros[campo].length : 0;
+
             let labelId, btnId;
             if (tipo === 'cadFin') {
                 if (campo === 'nd') { labelId = 'filterNdFinLabel'; btnId = 'filterNdFinBtn'; }
                 else if (campo === 'up') { labelId = 'filterUpFinLabel'; btnId = 'filterUpFinBtn'; }
                 else if (campo === 'm') { labelId = 'filterMFinLabel'; btnId = 'filterMFinBtn'; }
+            } else if (tipo === 'recGeral') {
+                if (campo === 'nd') { labelId = 'filterNdRecGeralLabel'; btnId = 'filterNdRecGeralBtn'; }
             } else {
                 if (campo === 'nd') { labelId = 'filterNdExecLabel'; btnId = 'filterNdExecBtn'; }
                 else if (campo === 'up') { labelId = 'filterUpExecLabel'; btnId = 'filterUpExecBtn'; }
             }
-            
+
             const label = document.getElementById(labelId);
             const btn = document.getElementById(btnId);
-            
+
             if (label) {
                 const nome = campo.toUpperCase();
                 label.textContent = count > 0 ? `${nome} (${count})` : nome;
@@ -6986,22 +6990,31 @@
             if (btn) {
                 if (count > 0) btn.classList.add('active');
                 else btn.classList.remove('active');
-                // Atualizar tooltip com valores selecionados
                 try {
-                    const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
-                    let vals = (filtros && filtros[campo]) ? filtros[campo] : [];
-                    if (tipo === 'execFin' && campo === 'nd' && (!vals || !vals.length)) {
-                        vals = window.filtrosExecFin && window.filtrosExecFin.nd ? window.filtrosExecFin.nd : [];
-                    }
-                    btn.title = vals && vals.length ? `${campo.toUpperCase()} selecionado(s): ${vals.join(', ')}` : `Filtrar por ${campo.toUpperCase()}`;
+                    const vals = (filtros && filtros[campo]) ? filtros[campo] : [];
+                    btn.title = vals.length ? `${campo.toUpperCase()} selecionado(s): ${vals.join(', ')}` : `Filtrar por ${campo.toUpperCase()}`;
                 } catch(e) {}
             }
-            // Mostrar/ocultar botão "Limpar filtros" do Cadastro Financeiro
+            // Mostrar/ocultar botão "Limpar filtros" conforme tabela
             if (tipo === 'cadFin') {
                 const btnLimpar = document.getElementById('btnLimparTodosFiltrosCadFin');
                 if (btnLimpar) {
                     const f = window.filtrosCadFin;
                     const temFiltro = (f.nd && f.nd.length) || (f.up && f.up.length) || (f.m && f.m.length);
+                    btnLimpar.style.display = temFiltro ? '' : 'none';
+                }
+            } else if (tipo === 'execFin') {
+                const btnLimpar = document.getElementById('btnLimparTodosFiltrosExecFin');
+                if (btnLimpar) {
+                    const f = window.filtrosExecFin;
+                    const temFiltro = (f.nd && f.nd.length) || (f.up && f.up.length);
+                    btnLimpar.style.display = temFiltro ? '' : 'none';
+                }
+            } else if (tipo === 'recGeral') {
+                const btnLimpar = document.getElementById('btnLimparTodosFiltrosRecGeral');
+                if (btnLimpar) {
+                    const f = window.filtrosRecGeral;
+                    const temFiltro = f.nd && f.nd.length;
                     btnLimpar.style.display = temFiltro ? '' : 'none';
                 }
             }
@@ -9832,20 +9845,31 @@
                     return `<td colspan="${a.count}" class="${cls}">R$ ${fmtBR(val)}</td>`;
                 }).join('');
 
-                const iconHtml = (name) => `<i data-lucide="${name}" style="width:13px;height:13px;"></i>`;
+                const iconHtml = (name) => `<i data-lucide="${name}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`;
 
                 const consRow = (tipo, icon, label, formula, calcFn, colorFn) => {
-                    const cells = monthsExpanded ? consYearCells(calcFn, colorFn) : '';
                     const fmlaHtml = formula ? `<span class="formula">${formula}</span>` : '';
-                    // 6 células individuais (não colspan) para alinhar com o colgroup
-                    const emptyFixedCells = '<td></td>'.repeat(colFixas - 1);
+                    if (monthsExpanded) {
+                        const cells = consYearCells(calcFn, colorFn);
+                        const emptyFixedCells = '<td></td>'.repeat(colFixas - 1);
+                        return `<tr class="cons ${tipo}">` +
+                            `<td class="col-sticky label-cell">` +
+                                `<span class="icon">${iconHtml(icon)}</span>` +
+                                `<span>${label}${fmlaHtml}</span>` +
+                            `</td>` +
+                            emptyFixedCells + cells +
+                            `</tr>`;
+                    }
+                    // Modo compacto: label ocupa (colFixas-1) colunas, valor total na última coluna fixa
+                    const totalVal = anosOrdem.reduce((s, ano) => s + (calcFn(ano) || 0), 0);
+                    const colorCls = colorFn ? colorFn(totalVal) : (totalVal < -0.01 ? 'neg' : totalVal === 0 ? 'zero' : '');
+                    const valDisp = totalVal < 0 ? `−R$ ${fmtBR(Math.abs(totalVal))}` : `R$ ${fmtBR(totalVal)}`;
                     return `<tr class="cons ${tipo}">` +
-                        `<td class="col-sticky label-cell">` +
+                        `<td class="col-sticky label-cell" colspan="${colFixas - 1}">` +
                             `<span class="icon">${iconHtml(icon)}</span>` +
                             `<span>${label}${fmlaHtml}</span>` +
                         `</td>` +
-                        emptyFixedCells +
-                        cells +
+                        `<td class="cons-val-cell ${colorCls}">${valDisp}</td>` +
                         `</tr>`;
                 };
 
@@ -10456,19 +10480,27 @@
             let html = '';
             valores.forEach(v => {
                 const checked = selecionados.includes(v) ? 'checked' : '';
-                html += `<label><input type="checkbox" value="${v}" ${checked} onchange="onFiltroRecGeralChange('${v}', this.checked)">${v}</label>`;
+                html += `<label onclick="event.stopPropagation()"><input type="checkbox" value="${v}" ${checked} onchange="onFiltroRecGeralChange('${v}', this.checked, event)">${v}</label>`;
             });
             html += `<button class="filter-clear-btn" onclick="limparFiltroRecGeral()">Limpar</button>`;
             menu.innerHTML = html;
         }
 
-        function onFiltroRecGeralChange(valor, checked) {
+        function onFiltroRecGeralChange(valor, checked, event) {
+            if (event) event.stopPropagation();
             if (checked) {
                 if (!window.filtrosRecGeral.nd.includes(valor)) window.filtrosRecGeral.nd.push(valor);
             } else {
                 window.filtrosRecGeral.nd = window.filtrosRecGeral.nd.filter(v => v !== valor);
             }
+            const menuAberto = document.querySelector('.filter-menu.open');
+            const menuAbertoId = menuAberto ? menuAberto.id : null;
+            atualizarLabelFiltro('recGeral', 'nd');
             atualizarTabelaRecursosGerais();
+            if (menuAbertoId) {
+                const m = document.getElementById(menuAbertoId);
+                if (m) m.classList.add('open');
+            }
         }
 
         function limparFiltroRecGeral() {
@@ -10745,7 +10777,7 @@
             });
 
             const anoAtual=today.getFullYear();
-            const iconHtml=(name)=>`<i data-lucide="${name}" style="width:13px;height:13px;"></i>`;
+            const iconHtml=(name)=>`<i data-lucide="${name}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`;
             const consYearCells=(calcFn,colorFn)=>anos.map(a=>{
                 if(!monthsExpanded) return '';
                 const val=calcFn(a.ano);
@@ -10760,12 +10792,22 @@
             }).join('');
 
             const consRow=(tipo,icon,label,formula,calcFn,colorFn)=>{
-                const cells=monthsExpanded?consYearCells(calcFn,colorFn):'';
                 const fmlaHtml=formula?`<span class="formula">${formula}</span>`:'';
-                const emptyFixed='<td></td>'.repeat(colFixas-1);
+                if(monthsExpanded){
+                    const cells=consYearCells(calcFn,colorFn);
+                    const emptyFixed='<td></td>'.repeat(colFixas-1);
+                    return `<tr class="cons ${tipo}">`+
+                        `<td class="col-sticky label-cell"><span class="icon">${iconHtml(icon)}</span><span>${label}${fmlaHtml}</span></td>`+
+                        emptyFixed+cells+`</tr>`;
+                }
+                // Modo compacto: label em (colFixas-1) colunas, valor na última coluna fixa
+                const totalVal=anosOrdem.reduce((s,ano)=>s+(calcFn(ano)||0),0);
+                const colorCls=colorFn?colorFn(totalVal):(totalVal<-0.01?'neg':totalVal===0?'zero':'');
+                const valDisp=totalVal<0?`−R$ ${fmtBR(Math.abs(totalVal))}`:(`R$ ${fmtBR(totalVal)}`);
                 return `<tr class="cons ${tipo}">`+
-                    `<td class="col-sticky label-cell"><span class="icon">${iconHtml(icon)}</span><span>${label}${fmlaHtml}</span></td>`+
-                    emptyFixed+cells+`</tr>`;
+                    `<td class="col-sticky label-cell" colspan="${colFixas-1}"><span class="icon">${iconHtml(icon)}</span><span>${label}${fmlaHtml}</span></td>`+
+                    `<td class="cons-val-cell ${colorCls}">${valDisp}</td>`+
+                    `</tr>`;
             };
 
             const rowPrevistoAnual   = consRow('previsto','target','Previsto Anual',null, (ano)=>previstoByAno[ano]||0);

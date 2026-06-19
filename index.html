@@ -1186,7 +1186,6 @@
                             <!-- Filtros Execução Financeira -->
                             <div class="filter-bar" id="filterBarExecFin">
                                 <span class="filter-bar-label">Filtrar:</span>
-                                <button type="button" class="btn btn-sm auto-style-005" onclick="limparTodosFiltrosExecFin()">Limpar todos</button>
                                 <div class="filter-btn" id="filterNdExecBtn" onclick="toggleFilterMenu('filterNdExecMenu')">
                                     <span id="filterNdExecLabel">ND</span>
                                     <div class="filter-menu" id="filterNdExecMenu"></div>
@@ -1195,6 +1194,7 @@
                                     <span id="filterUpExecLabel">UP</span>
                                     <div class="filter-menu" id="filterUpExecMenu"></div>
                                 </div>
+                                <button id="btnLimparTodosFiltrosExecFin" class="filter-clear-all-btn" onclick="limparTodosFiltrosExecFin()" style="display:none;">Limpar filtros</button>
                             </div>
                             <table id="tabelaExecFinanceiraTable" class="execfin-table tabela-padrao">
                                 <colgroup>
@@ -1239,11 +1239,11 @@
                             <!-- Filtros Recursos Gerais -->
                             <div class="filter-bar" id="filterBarRecGeral">
                                 <span class="filter-bar-label">Filtrar:</span>
-                                <button type="button" class="btn btn-sm auto-style-005" onclick="limparTodosFiltrosRecGeral()">Limpar todos</button>
                                 <div class="filter-btn" id="filterNdRecGeralBtn" onclick="toggleFilterMenu('filterNdRecGeralMenu')">
                                     <span id="filterNdRecGeralLabel">ND</span>
                                     <div class="filter-menu" id="filterNdRecGeralMenu"></div>
                                 </div>
+                                <button id="btnLimparTodosFiltrosRecGeral" class="filter-clear-all-btn" onclick="limparTodosFiltrosRecGeral()" style="display:none;">Limpar filtros</button>
                             </div>
                             <table id="tabelaRecursosGeraisTable" class="rg-table tabela-padrao">
                                 <colgroup>
