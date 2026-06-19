@@ -4760,6 +4760,10 @@ table.ef-table tbody td.right  { text-align: right; }
 /* ── Linhas consolidadas (cons) — visual idêntico ao ra-table ── */
 .execfin-table tbody tr.cons,
 .rg-table tbody tr.cons { background: #FAFBFC; }
+/* Sem zebra nas linhas do resumo — igual ao Resumo Anual (so Total a Receber
+   fica azul e Resultado vermelho). Vence a regra de zebra .tabela-padrao. */
+#detalhes #tedsDetalheContainer .execfin-table tbody tr.cons,
+#detalhes #tedsDetalheContainer .rg-table tbody tr.cons { background: #fff; }
 .execfin-table tbody tr.cons:hover td,
 .rg-table tbody tr.cons:hover td { filter: brightness(0.97); }
 .execfin-table tbody tr.cons td,

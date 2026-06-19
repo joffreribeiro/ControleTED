@@ -9874,7 +9874,9 @@
                 const rowSaldoAnual       = consRow('saldo-row', 'minus-circle',      'Saldo Anual',          'Recebido − Devolvido',          (a)=>saldoAtualByAno[a]||0);
                 const rowResultado        = consRow('resultado', 'trending-up',       'Resultado',            'Total a Receber − Saldo',       (a)=>((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1, (v)=>v<-0.01?'neg':v===0?'zero':'');
 
-                tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
+                // Linha TOTAL só faz sentido com os meses expandidos (totais por coluna);
+                // colapsado ela duplica os KPIs/consolidado, então é omitida.
+                tbody.innerHTML = linhas + (monthsExpanded ? totalRow : '') + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
 
                 // re-inicializar ícones Lucide
                 try { if (window.lucide) lucide.createIcons(); } catch(e) {}
@@ -10577,9 +10579,9 @@
 
             const fixedCols = [
                 {label:'ND',              cls:'rg-col-nd col-sticky'},
-                {label:'Valor Previsto',  cls:'rg-col-vprev right'},
-                {label:'Valor Realizado', cls:'rg-col-vreal right'},
-                {label:'Saldo',           cls:'rg-col-saldo right'},
+                {label:'Valor Previsto',  cls:'rg-col-vprev'},
+                {label:'Valor Realizado', cls:'rg-col-vreal'},
+                {label:'Saldo',           cls:'rg-col-saldo'},
             ];
 
             const tr1 = thead.insertRow();
@@ -10790,7 +10792,8 @@
             const rowSaldoAnualRg      = consRowRg('saldo-row', 'minus-circle',      'Saldo Anual',          'Recebido − Devolvido', (a)=>saldoAtualByAno[a]||0);
             const rowResultadoRg       = consRowRg('resultado', 'trending-up',       'Resultado',            'Total a Receber − Saldo',(a)=>((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1, (v)=>v<-0.01?'neg':v===0?'zero':'');
 
-            tbody.innerHTML=linhas+totalRow+rowPrevistoAnualRg+rowReceberAnteriorRg+rowTotalAReceberRg+rowRecebidoAnualRg+rowDevolvidoRg+rowSaldoAnualRg+rowResultadoRg;
+            // Linha TOTAL só com meses expandidos (colapsada duplica KPIs/consolidado).
+            tbody.innerHTML=linhas+(monthsExpanded?totalRow:'')+rowPrevistoAnualRg+rowReceberAnteriorRg+rowTotalAReceberRg+rowRecebidoAnualRg+rowDevolvidoRg+rowSaldoAnualRg+rowResultadoRg;
 
             // ── KPIs ────────────────────────────────────────────────────────
             try {
