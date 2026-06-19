@@ -4655,11 +4655,11 @@ table.ef-table tbody td.right  { text-align: right; }
 }
 
 /* Larguras das colunas fixas da ExecFin (espelha o colgroup do CadFin) */
-#tabelaExecFinanceiraTable col.col-nd     { width: 120px; }
-#tabelaExecFinanceiraTable col.col-up     { width: 80px; }
+#tabelaExecFinanceiraTable col.col-nd     { width: 80px; }
+#tabelaExecFinanceiraTable col.col-up     { width: 20px; }
 #tabelaExecFinanceiraTable col.col-vprev  { width: 150px; }
 #tabelaExecFinanceiraTable col.col-vreal  { width: 150px; }
-#tabelaExecFinanceiraTable col.col-saldo  { width: 130px; }
+#tabelaExecFinanceiraTable col.col-saldo  { width: 150px; }
 #tabelaExecFinanceiraTable col.col-status { width: 90px; }
 
 /* ND e UP — alinhamento igual ao CadFin */
@@ -4916,10 +4916,10 @@ table.ef-table tbody td.right  { text-align: right; }
 }
 
 /* Larguras das colunas fixas — soma=630px igual à ExecFin (4 colunas em vez de 5) */
-#tabelaRecursosGeraisTable col.rg-col-nd    { width: 120px; }
-#tabelaRecursosGeraisTable col.rg-col-vprev { width: 170px; }
-#tabelaRecursosGeraisTable col.rg-col-vreal { width: 170px; }
-#tabelaRecursosGeraisTable col.rg-col-saldo { width: 170px; }
+#tabelaRecursosGeraisTable col.rg-col-nd    { width: 100px; }
+#tabelaRecursosGeraisTable col.rg-col-vprev { width: 150px; }
+#tabelaRecursosGeraisTable col.rg-col-vreal { width: 150px; }
+#tabelaRecursosGeraisTable col.rg-col-saldo { width: 150px; }
 #tabelaRecursosGeraisTable td.rg-col-nd { text-align: center; }
 
 /* thead */
