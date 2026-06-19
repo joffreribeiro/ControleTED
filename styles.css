@@ -5036,6 +5036,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .ra-kpi-bar   { height: 4px; background: #f1f5f9; border-radius: 2px; margin: 4px 0 2px; }
 .ra-kpi-fill  { height: 4px; background: #3B6D11; border-radius: 2px; transition: width 0.4s; }
 
+.ra-resumo-wrap { margin-top: 12px; }
 .ra-table-wrap { overflow-x: auto; }
 .ra-table {
   border-collapse: separate; border-spacing: 0;
