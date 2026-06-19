@@ -2872,16 +2872,15 @@
             }
 
             // ── SVG timeline ──────────────────────────────────────────────────
-            // Layout fixo: W=100% via viewBox escalável, H=90px
-            // Barra fica em Y=52. Acima: dois níveis (Y=8 e Y=28). Abaixo: Y=68 e Y=80.
-            const SVG_H = 90;
-            const BAR_Y = 52;
+            // Layout: barra em Y=70. Acima: 3 níveis. Abaixo: 1 nível.
+            const SVG_H = 120;
+            const BAR_Y = 70;
             const BAR_H = 8;
-            // Níveis de label (cy do ponto de ancoragem na barra):
             const LEVELS = [
-                { labelY: 6,  subY: 18, stemY1: 22, stemY2: BAR_Y },        // nível 0: mais alto
-                { labelY: 24, subY: 36, stemY1: 40, stemY2: BAR_Y },        // nível 1: médio
-                { labelY: BAR_Y + BAR_H + 14, subY: BAR_Y + BAR_H + 25, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 10 }, // nível 2: abaixo
+                { labelY: 8,  subY: 20, stemY1: 24, stemY2: BAR_Y },        // nível 0: mais alto
+                { labelY: 28, subY: 40, stemY1: 44, stemY2: BAR_Y },        // nível 1: médio
+                { labelY: 48, subY: 60, stemY1: 64, stemY2: BAR_Y },        // nível 2: baixo (acima da barra)
+                { labelY: BAR_Y + BAR_H + 16, subY: BAR_Y + BAR_H + 28, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 12 }, // nível 3: abaixo
             ];
 
             // Monta lista de eventos ordenados por posição
@@ -2897,17 +2896,17 @@
             events.push({ p: 100, color: '#185FA5', label: fmtBr(dFimTotal), sub: 'Fim' });
             events.sort((a, b) => a.p - b.p);
 
-            // Atribuir nível evitando colisão: gap mínimo de 7% entre labels no mesmo nível
-            const GAP = 7;
-            const levelLastP = [null, null, null];
+            // Atribuir nível evitando colisão: gap mínimo de 12% entre labels no mesmo nível
+            const GAP = 12;
+            const levelLastP = [null, null, null, null];
             events.forEach(ev => {
                 let assigned = -1;
-                for (let li = 0; li < 3; li++) {
+                for (let li = 0; li < 4; li++) {
                     if (levelLastP[li] === null || (ev.p - levelLastP[li]) >= GAP) {
                         assigned = li; break;
                     }
                 }
-                if (assigned === -1) assigned = (events.indexOf(ev)) % 3;
+                if (assigned === -1) assigned = (events.indexOf(ev)) % 4;
                 ev.level = assigned;
                 levelLastP[assigned] = ev.p;
             });
@@ -2933,12 +2932,10 @@
             // Gradiente (definido inline no defs)
             svg = svg.replace('<defs>', `<defs><linearGradient id="vigGrad" x1="0" x2="1" y1="0" y2="0"><stop offset="0%" stop-color="#C8DEFF"/><stop offset="100%" stop-color="#7BAEE8"/></linearGradient>`);
 
-            // Linha "Hoje"
+            // Linha "Hoje" — só a linha vertical, sem badge
             if (hojePct >= 0 && hojePct <= 100) {
                 const hx = `${hojePct}%`;
-                svg += `<line x1="${hx}" y1="${BAR_Y - 12}" x2="${hx}" y2="${BAR_Y + BAR_H + 4}" stroke="#A32D2D" stroke-width="2"/>`;
-                svg += `<rect x="${hojePct}%" y="${BAR_Y - 26}" width="36" height="14" rx="3" fill="#A32D2D" transform="translate(-18,0)"/>`;
-                svg += `<text x="${hojePct}%" y="${BAR_Y - 16}" text-anchor="middle" fill="#fff" font-size="9" font-family="IBM Plex Mono,monospace" font-weight="700">Hoje</text>`;
+                svg += `<line x1="${hx}" y1="0" x2="${hx}" y2="${SVG_H}" stroke="#A32D2D" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.7"/>`;
             }
 
             // Pins: stem + dot + labels
