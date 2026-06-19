@@ -4397,6 +4397,14 @@
                 const arr = ted[tabDef.key] || [];
 
                 // Construir set de IDs/matchKeys removidos neste apostilamento (para marcar tachado ao reabrir)
+                // Para financeiros, matchFields é só ['id']; como o id pode divergir entre o snapshot
+                // e o item vivo, casamos também por chave natural (ND+UP+M+valor).
+                const finNatKeyMod = (it) => 'nk:' + [
+                    String(it.numero || it.nd || '').replace(/\D/g, ''),
+                    String(it.up || it.ug || ''),
+                    String(it.m ?? ''),
+                    String(Math.round((parseNumber(it.valor) || 0) * 100))
+                ].join('|');
                 const removidosNesseAlt = new Set();
                 if (existente && existente.tabelasAlteradas && existente.tabelasAlteradas[tabDef.key]) {
                     const diffs = existente.tabelasAlteradas[tabDef.key];
@@ -4405,6 +4413,7 @@
                         if (item.id != null) removidosNesseAlt.add(String(item.id));
                         const mk = tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
                         if (mk) removidosNesseAlt.add('mk:' + mk);
+                        if (tabDef.key === 'financeiros') removidosNesseAlt.add(finNatKeyMod(item));
                     });
                 }
 
@@ -4452,7 +4461,8 @@
                     const item = arr[kidx];
                     const itemId = (item && item.id != null) ? String(item.id) : null;
                     const itemMk = 'mk:' + tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
-                    const jaRemovido = itemId && removidosNesseAlt.has(itemId) || removidosNesseAlt.has(itemMk);
+                    const itemNk = tabDef.key === 'financeiros' ? finNatKeyMod(item) : null;
+                    const jaRemovido = (itemId && removidosNesseAlt.has(itemId)) || removidosNesseAlt.has(itemMk) || (itemNk && removidosNesseAlt.has(itemNk));
                     const removidoAttr = jaRemovido ? ' data-removido="1"' : '';
                     const removidoStyle = jaRemovido ? ' style="text-decoration:line-through;opacity:0.4;"' : '';
                     html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}"${removidoAttr}${removidoStyle}>`;
@@ -4477,9 +4487,13 @@
 
                         // data-orig também com valor sanitizado para ND
                         const dataOrig = (col.field === 'numero') ? String(item[col.field] || '').replace(/[^0-9]/g, '') : sanitizeString(String(item[col.field] || '')).replace(/\"/g, '&quot;');
-                        html += `<td contenteditable="true" data-field="${col.field}" data-type="${col.type || 'text'}" data-orig="${dataOrig}">${val !== undefined && val !== null ? val : ''}</td>`;
+                        // Linha já removida neste apostilamento: não editável (evita re-edição de item excluído)
+                        html += `<td contenteditable="${jaRemovido ? 'false' : 'true'}" data-field="${col.field}" data-type="${col.type || 'text'}" data-orig="${dataOrig}">${val !== undefined && val !== null ? val : ''}</td>`;
                     });
-                    html += `<td><button class="btn-icon-action delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`;
+                    // Linha já removida: botão desabilitado (não pode excluir de novo)
+                    html += jaRemovido
+                        ? `<td><button class="btn-icon-action delete" disabled title="Já removido" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.2);color:#ef4444;border-radius:4px;cursor:not-allowed;opacity:0.4;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`
+                        : `<td><button class="btn-icon-action delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`;
                     html += '</tr>';
                 });
                 html += '</tbody></table></div>';
@@ -7335,7 +7349,12 @@
               </div>
             </div>`;
         }
-        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds) {
+        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded) {
+            // Fallback: se não vier o casamento robusto, usa só o ID (comportamento antigo)
+            if (typeof isFinExcluded !== 'function') {
+                const _ids = excludedFinIds || new Set();
+                isFinExcluded = (f) => f.id != null && _ids.has(String(f.id));
+            }
             excludedFinIds = excludedFinIds || new Set();
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
@@ -7383,7 +7402,7 @@
             let rowsHtml = '';
             grupoOrdem.forEach(chave => {
                 const grp = grupos[chave];
-                const activeItems = grp.items.filter(f => f.id == null || !excludedFinIds.has(String(f.id)));
+                const activeItems = grp.items.filter(f => !isFinExcluded(f));
                 const subTotal = activeItems.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
                 const subFmt = subTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 const grpId = 'cfgrp_' + chave;
@@ -7410,7 +7429,7 @@
                     const mKey = matchKeyFin(f);
                     const mods = modMapFin[mKey];
                     const isAdded = addSetFin.has(mKey);
-                    const isExcluded = f.id != null && excludedFinIds.has(String(f.id));
+                    const isExcluded = isFinExcluded(f);
                     const trClass = isExcluded ? ' linha-excluida-aditivo' : (isAdded ? ' linha-adicionada-aditivo' : '');
                     const ndCat = _cfNdCategoria(numeroDisplay);
                     const upCat = _cfUpCategoria(f.up || f.ug || '');
@@ -7626,30 +7645,44 @@
             // Construir conjunto de IDs de linhas que devem aparecer tachadas e fora dos cálculos:
             // 1. Linhas ADICIONADAS por aditivos/apostilamentos que foram excluídos (soft-delete)
             // 2. Linhas REMOVIDAS no modal de aditivos/apostilamentos ativos (ficaram no array mas foram "removidas" logicamente)
+            // Casamento robusto: por ID e também por chave natural (ND+UP+M+valor), porque o id
+            // do item em "removidos"/"adicionados" (vindo do snapshot) pode divergir do id da linha
+            // viva na tabela. A chave natural garante o tachado mesmo nesse caso.
+            const finNatKey = (f) => [
+                String(f.numero || f.nd || '').replace(/\D/g, ''),
+                String(f.up || f.ug || ''),
+                String(f.m ?? ''),
+                String(Math.round((parseNumber(f.valor) || 0) * 100))
+            ].join('|');
             const excludedFinIds = new Set();
+            const excludedFinKeys = new Set();
             (window.tedSelecionado.alteracoes || []).forEach(alt => {
                 const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas['financeiros'];
                 if (!diffs) return;
-                if (alt.excluido) {
-                    // Aditivo/apostilamento excluído: itens que ele ADICIONOU ficam tachados
-                    (diffs.adicionados || []).forEach(add => {
-                        const item = add.item || add;
-                        if (item.id != null) excludedFinIds.add(String(item.id));
-                    });
-                } else {
-                    // Aditivo/apostilamento ativo: itens que ele REMOVEU ficam tachados
-                    (diffs.removidos || []).forEach(rem => {
-                        const item = rem.item || rem;
-                        if (item.id != null) excludedFinIds.add(String(item.id));
-                    });
-                }
+                // Apostilamento excluído → itens que ADICIONOU ficam tachados.
+                // Apostilamento ativo → itens que REMOVEU ficam tachados.
+                const lista = alt.excluido ? (diffs.adicionados || []) : (diffs.removidos || []);
+                lista.forEach(entry => {
+                    const item = entry.item || entry;
+                    if (item.id != null) excludedFinIds.add(String(item.id));
+                    excludedFinKeys.add(finNatKey(item));
+                });
             });
+            const isFinExcluded = (f) => (f.id != null && excludedFinIds.has(String(f.id))) || excludedFinKeys.has(finNatKey(f));
+
+            // [DIAG] Conferir quais linhas vivas serão tachadas e comparar chaves
+            try {
+                const _struck = (window.tedSelecionado.financeiros || []).filter(f => isFinExcluded(f)).map(f => ({ id: f.id, nd: f.numero, up: f.up, valor: f.valor }));
+                console.log('[APOST-RENDER] excludedIds:', [...excludedFinIds], '| excludedKeys:', [...excludedFinKeys]);
+                console.log('[APOST-RENDER] linhas tachadas:', _struck);
+                console.table((window.tedSelecionado.financeiros || []).map(f => ({ id: f.id, key: finNatKey(f) })));
+            } catch(e) {}
 
             // Calcular totais por mês ignorando linhas de aditivos excluídos
             totalValor = 0;
             const totaisPorMes = new Array(meses.length).fill(0);
             dadosFiltrados.forEach(f => {
-                if (f.id != null && excludedFinIds.has(String(f.id))) return; // excluído: não soma
+                if (isFinExcluded(f)) return; // excluído: não soma
                 const valorNum = parseNumber(f.valor) || 0;
                 totalValor += valorNum;
                 const mesIdx = meses.findIndex(m => m.mes === (parseInt(f.mesDesc) || 0) && m.fullYear === (parseInt(f.anoDesc) || 0));
@@ -7660,12 +7693,12 @@
             window._cfStartDate = startDate;
             try {
                 const cfKpiWrap = document.getElementById('cfKpiWrap');
-                const kpis = _cfCalcKPIs(dadosFiltrados.filter(f => f.id == null || !excludedFinIds.has(String(f.id))));
+                const kpis = _cfCalcKPIs(dadosFiltrados.filter(f => !isFinExcluded(f)));
                 _cfRenderKPIs(kpis, cfKpiWrap);
             } catch(e) { console.warn('cf kpis error', e); }
 
             // Renderizar linhas agrupadas por Mês Desc.
-            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds);
+            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded);
 
             // Se não houver linhas visíveis, mostrar placeholder
             tbody.innerHTML = rowsHtml || '<tr><td colspan="67" class="auto-style-014">Nenhum cadastro financeiro</td></tr>';
