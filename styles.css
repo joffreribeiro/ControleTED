@@ -2110,6 +2110,8 @@
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td * {
             background: #F0F4F9 !important;
             color: #0C447C !important; font-style: normal !important;
+            border-top: 1px solid #B3D1EF !important;
+            border-bottom: 1px solid #B3D1EF !important;
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover td {
