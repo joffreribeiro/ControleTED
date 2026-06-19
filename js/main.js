@@ -6466,12 +6466,14 @@
                     ? `M${mIni} → M${mFin}`
                     : '—';
 
-                // pílula de aditivo: mostrar original se houver modificação
-                let aditPill = '';
+                // período com tachado se houve alteração por aditivo
+                let periodoHtml;
                 if (mods && (mods.mInicio || mods.mFinal)) {
                     const mIniOrig = mods.mInicio ? mods.mInicio.de : mIni;
                     const mFinOrig = mods.mFinal  ? mods.mFinal.de  : mFin;
-                    aditPill = `<div class="ef-adit-pill">Aditivo: era M${mIniOrig}→M${mFinOrig}</div>`;
+                    periodoHtml = formatarCelulaAlterada(`M${mIni} → M${mFin}`, `M${mIniOrig} → M${mFinOrig}`, '');
+                } else {
+                    periodoHtml = periodoMesesStr;
                 }
 
                 // objeto: sempre mostrar o nome do objeto
@@ -6515,8 +6517,7 @@
                     </td>
                     <td>
                         <div class="ef-periodo">
-                            <div class="ef-periodo-meses">${periodoMesesStr}</div>
-                            ${aditPill}
+                            <div class="ef-periodo-meses">${periodoHtml}</div>
                         </div>
                     </td>
                     <td><div class="ef-periodo"><div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div></div></td>
