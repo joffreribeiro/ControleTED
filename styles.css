@@ -4575,11 +4575,14 @@ table.ef-table tbody td.right  { text-align: right; }
    EXECUÇÃO FINANCEIRA — REDESIGN (execfin-*)
    ============================================================ */
 
+/* wrapper — não estica, abraça a tabela */
 #wrapperExecFin {
     display: block;
-    width: auto;
+    width: fit-content;
     max-width: 100%;
     overflow-x: auto;
+    padding-left: 0;
+    margin-left: 0;
 }
 
 /* KPI strip */
@@ -4611,49 +4614,29 @@ table.ef-table tbody td.right  { text-align: right; }
 /* Table wrapper */
 .execfin-table-wrap { overflow-x: auto; background: #fff; }
 
-/* Main table — largura determinada pelo colgroup, não estica para preencher wrapper */
-.execfin-table {
-    width: auto;
-    border-collapse: collapse;
+/* tabela — table-layout:fixed + width:max-content garante que o browser
+   respeite os px do colgroup sem esticar para o container pai */
+#tabelaExecFinanceiraTable {
+    width: max-content;
     min-width: 0;
     table-layout: fixed;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 
-/* Forçar mesmo modelo de borda da Cadastro Financeiro na tabela Execução Financeira */
-#tabelaExecFinanceiraTable {
-    border-collapse: collapse !important;
-    border-spacing: 0 !important;
-    width: auto !important;
-    min-width: 0 !important;
-}
-
-#wrapperExecFin table {
-    width: auto;
-    min-width: 0;
-}
-
-/* Garantir box-sizing consistente nas células das duas tabelas envolvidas */
-#tabelaFinanceiraCompleta th,
-#tabelaFinanceiraCompleta td,
-#tabelaExecFinanceiraTable th,
-#tabelaExecFinanceiraTable td {
-    box-sizing: border-box !important;
-}
-
-/* Padronizar padding/margin dos wrappers das duas seções */
-#wrapperCadFin,
-#wrapperExecFin {
-    padding-left: 0 !important;
-    margin-left: 0 !important;
-}
-
-/* Larguras das colunas fixas da ExecFin (espelha o colgroup do CadFin) */
+/* colunas fixas — ND+UP+VPrev+VReal+Saldo = 550px */
 #tabelaExecFinanceiraTable col.col-nd     { width: 80px; }
 #tabelaExecFinanceiraTable col.col-up     { width: 20px; }
 #tabelaExecFinanceiraTable col.col-vprev  { width: 150px; }
 #tabelaExecFinanceiraTable col.col-vreal  { width: 150px; }
 #tabelaExecFinanceiraTable col.col-saldo  { width: 150px; }
 #tabelaExecFinanceiraTable col.col-status { width: 90px; }
+
+/* box-sizing nas células */
+#tabelaFinanceiraCompleta th, #tabelaFinanceiraCompleta td,
+#tabelaExecFinanceiraTable th, #tabelaExecFinanceiraTable td {
+    box-sizing: border-box;
+}
 
 /* ND e UP — alinhamento igual ao CadFin */
 #tabelaExecFinanceiraTable th.col-nd,
@@ -4896,19 +4879,24 @@ table.ef-table tbody td.right  { text-align: right; }
    RECURSOS GERAIS IMBEL — REDESIGN (rg-*)
    ============================================================ */
 
+/* wrapper — não estica, abraça a tabela */
 #wrapperRecGeral {
-  display: block !important;
-  width: auto !important;
-  max-width: 100%; overflow-x: auto;
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
 }
 
-/* Main table */
-.rg-table {
-  width: auto; border-collapse: separate; border-spacing: 0;
-  min-width: 0; table-layout: fixed;
+/* tabela — width:max-content garante respeito aos px do colgroup */
+#tabelaRecursosGeraisTable {
+    width: max-content;
+    min-width: 0;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
-/* Larguras das colunas fixas — soma=630px igual à ExecFin (4 colunas em vez de 5) */
+/* colunas fixas — ND+VPrev+VReal+Saldo = 550px */
 #tabelaRecursosGeraisTable col.rg-col-nd    { width: 100px; }
 #tabelaRecursosGeraisTable col.rg-col-vprev { width: 150px; }
 #tabelaRecursosGeraisTable col.rg-col-vreal { width: 150px; }
