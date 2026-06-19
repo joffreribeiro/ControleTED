@@ -10034,17 +10034,15 @@
                     const hl = consHl(tipo);
                     const hlAttr = hl ? ` style="${hl}"` : '';
                     const monthCells = monthsExpanded ? consYearCells(calcFn, colorFn, hl) : '';
-                    // Colapsado: rótulo mesclado em toda a largura, sem coluna de total.
-                    const valCell = '';
-                    const labelColspan = monthsExpanded ? 1 : colFixas;
+                    // Label sempre mesclado por todas as colunas fixas (até Saldo inclusive).
                     return `<tr class="cons ${tipo}">` +
-                        `<td class="col-sticky label-cell" colspan="${labelColspan}"${hlAttr}>` +
+                        `<td class="col-sticky label-cell" colspan="${colFixas}"${hlAttr}>` +
                             `<span class="label-cell-inner">` +
                                 `<span class="icon"><i data-lucide="${icon}" style="width:13px;height:13px;"></i></span>` +
                                 `<span class="cons-label-text">${label}${formula ? fml(formula) : ''}</span>` +
                             `</span>` +
                         `</td>` +
-                        (monthsExpanded ? '<td></td>'.repeat(colFixas - 1) + monthCells : valCell) +
+                        (monthsExpanded ? monthCells : '') +
                         `</tr>`;
                 };
 
