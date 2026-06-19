@@ -6397,13 +6397,14 @@
             });
 
             let headerRow1 = tableElement.querySelector('thead tr');
-            let headerHTML = '<th class="center" style="width:40px;"></th>';
-            headerHTML += '<th class="center" style="width:56px;">Fase</th>';
-            headerHTML += '<th>Objeto</th>';
-            headerHTML += '<th style="width:140px;">Qtde / Entregue</th>';
-            headerHTML += '<th style="width:190px;">Período (meses)</th>';
-            headerHTML += '<th style="width:150px;">Datas previstas</th>';
-            headerHTML += '<th class="center" style="width:96px;">Ações</th>';
+            const rs = monthsExpandedCadFis ? ' rowspan="2"' : '';
+            let headerHTML = `<th class="center" style="width:40px;"${rs}></th>`;
+            headerHTML += `<th class="center" style="width:56px;"${rs}>Fase</th>`;
+            headerHTML += `<th${rs}>Objeto</th>`;
+            headerHTML += `<th style="width:140px;"${rs}>Qtde / Entregue</th>`;
+            headerHTML += `<th style="width:190px;"${rs}>Período (meses)</th>`;
+            headerHTML += `<th style="width:150px;"${rs}>Datas previstas</th>`;
+            headerHTML += `<th class="center" style="width:96px;"${rs}>Ações</th>`;
             anos.forEach(a => {
                 headerHTML += `<th class="month-col-cadFis" style="text-align:center;${mmHideCadFis}" colspan="${a.count}">${a.ano}</th>`;
             });
@@ -6415,9 +6416,8 @@
             headerRow2 = document.createElement('tr');
             headerRow2.className = 'header-meses';
             headerRow2.style.display = monthsExpandedCadFis ? '' : 'none';
-            // 7 células fixas (vazias) + meses
-            headerRow2.innerHTML = '<th></th><th></th><th></th><th></th><th></th><th></th><th></th>' +
-                meses.map(m => `<th class="month-col-cadFis">${m.label}</th>`).join('');
+            // só os meses — as 7 colunas fixas já têm rowspan="2"
+            headerRow2.innerHTML = meses.map(m => `<th class="month-col-cadFis">${m.label}</th>`).join('');
             tableElement.querySelector('thead').appendChild(headerRow2);
 
             // aplicar classe ef-table
