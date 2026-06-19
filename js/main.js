@@ -6463,7 +6463,7 @@
                 const mFin = f.mFinal != null ? parseInt(f.mFinal) : null;
                 const durMeses = (mIni != null && mFin != null && mFin >= mIni) ? (mFin - mIni + 1) : null;
                 const periodoMesesStr = (mIni != null && mFin != null)
-                    ? `M${mIni} → M${mFin}${durMeses ? ` · ${durMeses} mês${durMeses !== 1 ? 'es' : ''}` : ''}`
+                    ? `M${mIni} → M${mFin}`
                     : '—';
 
                 // pílula de aditivo: mostrar original se houver modificação
