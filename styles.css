@@ -2103,6 +2103,14 @@
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado td * {
             color: #A32D2D !important;
         }
+        /* Exceção: linha Total a Receber nas tabelas cons — fundo e fonte azul */
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.total td,
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.total td *,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td * {
+            background: #F0F4F9 !important;
+            color: #0C447C !important;
+        }
 
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover td {
             box-shadow: inset 0 0 0 9999px rgba(29, 78, 216, 0.04);
