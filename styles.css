@@ -1847,7 +1847,7 @@
         .tabela-padrao .col-mes { width: 90px; text-align: center; }
         .tabela-padrao .col-qtde { width: 75px; min-width: 75px; text-align: center; white-space: nowrap; }
         .tabela-padrao .col-valor { width: 100px; text-align: right; }
-        .tabela-padrao .col-percent { min-width: 90px; text-align: center; white-space: nowrap; }
+        .tabela-padrao .col-percent { min-width: 90px; text-align: center; }
         .tabela-padrao .col-nd { min-width: 60px; text-align: center; }
         .tabela-padrao .col-up { min-width: 60px; text-align: center; }
         .tabela-padrao .col-fase { width: 80px; text-align: center; }
@@ -4037,7 +4037,8 @@
     min-width: 0;
 }
 #tabelaExecFisTable .col-objeto { width: 130px; max-width: 160px; }
-#tabelaExecFisTable .col-percent { width: 80px; max-width: 100px; }
+#tabelaExecFisTable .col-saldo { width: 60px; min-width: 60px; text-align: center; }
+#tabelaExecFisTable .col-percent { width: auto; min-width: 180px; max-width: none; white-space: nowrap; }
 
 .ef-table { width: 100%; border-collapse: collapse; }
 .ef-table thead th {
