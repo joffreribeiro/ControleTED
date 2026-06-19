@@ -4575,11 +4575,10 @@ table.ef-table tbody td.right  { text-align: right; }
    EXECUÇÃO FINANCEIRA — REDESIGN (execfin-*)
    ============================================================ */
 
-/* wrapper — ocupa 100% quando meses recolhidos; scroll horizontal quando expandidos */
+/* wrapper — não estica, abraça a tabela */
 #wrapperExecFin {
     display: block;
-    width: 100%;
-    min-width: fit-content;
+    width: fit-content;
     max-width: 100%;
     overflow-x: auto;
     padding-left: 0;
@@ -4880,11 +4879,10 @@ table.ef-table tbody td.right  { text-align: right; }
    RECURSOS GERAIS IMBEL — REDESIGN (rg-*)
    ============================================================ */
 
-/* wrapper — ocupa 100% quando meses recolhidos; scroll horizontal quando expandidos */
+/* wrapper — não estica, abraça a tabela */
 #wrapperRecGeral {
     display: block;
-    width: 100%;
-    min-width: fit-content;
+    width: fit-content;
     max-width: 100%;
     overflow-x: auto;
 }
