@@ -4156,13 +4156,13 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-kpi-sub   { font-size: 11px; color: #6b7280; }
 
 /* ND tags */
-.nd-tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 12px; font-weight: 600; font-family: 'Nunito Sans', -apple-system, sans-serif; white-space: nowrap; }
+.nd-tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 13px; font-weight: 600; font-family: 'Nunito Sans', -apple-system, sans-serif; white-space: nowrap; }
 .nd-tag.invest  { background: transparent; color: #1d4ed8; }
 .nd-tag.custeio { background: transparent; color: #92400e; }
 .nd-tag.outros  { background: transparent; color: #374151; }
 
 /* UP pills */
-.up-pill { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 12px; font-weight: 600; font-family: 'Nunito Sans', -apple-system, sans-serif; white-space: nowrap; }
+.up-pill { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 13px; font-weight: 600; font-family: 'Nunito Sans', -apple-system, sans-serif; white-space: nowrap; }
 .up-pill.fi { background: #dcfce7; color: #15803d; }
 .up-pill.ua { background: #fce7f3; color: #9d174d; }
 .up-pill.outros { background: #f3f4f6; color: #374151; }
@@ -4194,7 +4194,7 @@ table.ef-table tbody td.right  { text-align: right; }
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 10px;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 .cf-grp-table thead th {
   background: #f9fafb;
@@ -4788,7 +4788,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-nd-tag {
   display: inline-flex; align-items: center;
   font-family: 'Nunito Sans', -apple-system, sans-serif; font-weight: 600;
-  font-size: 12px; padding: 2px 7px; border-radius: 5px;
+  font-size: 13px; padding: 2px 7px; border-radius: 5px;
 }
 .execfin-nd-tag.invest  { background: transparent; color: #0C447C; }
 .execfin-nd-tag.custeio { background: transparent; color: #92400E; }
@@ -4796,7 +4796,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* UP pill */
 .execfin-up-pill {
-  display: inline-block; font-size: 12px; font-weight: 600;
+  display: inline-block; font-size: 13px; font-weight: 600;
   padding: 2px 7px; border-radius: 99px;
   font-family: 'Nunito Sans', -apple-system, sans-serif; letter-spacing: 0.04em;
 }
@@ -4805,7 +4805,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-up-pill.outros { background: #F3F4F6; color: #374151; }
 
 /* Value cells */
-.execfin-val { font-family: 'Nunito Sans', monospace; font-size: 12px; }
+.execfin-val { font-family: 'Nunito Sans', monospace; font-size: 13px; }
 .execfin-val.previsto  { color: #475569; }
 .execfin-val.realizado { color: #1a1a1a; font-weight: 600; }
 .execfin-val.saldo     { color: #1a1a1a; font-weight: 600; }
@@ -5001,7 +5001,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .rg-nd-tag {
   display: inline-flex; align-items: center;
   font-family: 'Nunito Sans', -apple-system, sans-serif; font-weight: 600;
-  font-size: 12px; padding: 2px 7px; border-radius: 5px;
+  font-size: 13px; padding: 2px 7px; border-radius: 5px;
 }
 .rg-nd-tag.invest  { background: transparent; color: #0C447C; }
 .rg-nd-tag.invest2 { background: transparent; color: #6B21A8; }
@@ -5009,7 +5009,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .rg-nd-tag.outros  { background: transparent; color: #374151; }
 
 /* Valores */
-.rg-val { font-family: 'Nunito Sans', monospace; font-size: 12px; }
+.rg-val { font-family: 'Nunito Sans', monospace; font-size: 13px; }
 .rg-val.previsto  { color: #475569; }
 .rg-val.realizado { color: #1a1a1a; font-weight: 600; }
 .rg-val.saldo     { font-weight: 600; }
