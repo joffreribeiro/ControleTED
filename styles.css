@@ -1892,14 +1892,14 @@
             background: #ffffff;
             border: 0.5px solid var(--color-border);
             border-radius: 12px;
-            overflow: hidden;
+            overflow: clip; /* clip mantém border-radius sem bloquear scroll do filho */
             transition: box-shadow 0.12s ease;
         }
         #detalhes #tedsDetalheContainer .detalhe-secao.months-expanded {
             overflow: visible;
         }
         #detalhes #tedsDetalheContainer .detalhe-secao.months-expanded .detalhe-secao-body {
-            overflow: visible;
+            overflow-x: auto;
         }
         #detalhes #tedsDetalheContainer .detalhe-secao:hover {
             box-shadow: 0 6px 18px rgba(12,20,35,0.06);

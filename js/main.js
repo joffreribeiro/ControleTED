@@ -7285,6 +7285,8 @@
             if (section === 'execFin') {
                 const w = document.getElementById('wrapperExecFin');
                 if (w) w.style.maxWidth = newExpanded ? 'none' : '';
+                const detalheEF = btn.closest('.detalhe-secao');
+                if (detalheEF) { detalheEF.classList.toggle('months-expanded', newExpanded); detalheEF.classList.toggle('cadFin-collapsed', !newExpanded); }
                 try { atualizarTabelaExecFinanceira(); } catch(e) { console.error(e); }
                 return;
             }
