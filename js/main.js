@@ -7294,9 +7294,10 @@
             if (!newExpanded && table) {
                 table.classList.add('months-collapsed');
                 table.style.minWidth = '0';
-                table.style.width = (section === 'cadFis' || section === 'execFis') ? '100%' : 'auto';
-                table.style.tableLayout = 'fixed';
-                if (detalhe) detalhe.classList.add('cadFin-collapsed');
+                table.style.width = 'auto';
+                table.style.tableLayout = 'auto';
+                if (wrapper) { wrapper.style.minWidth = ''; wrapper.style.width = ''; }
+                if (detalhe) { detalhe.classList.add('cadFin-collapsed'); detalhe.classList.remove('months-expanded'); }
             }
 
             document.querySelectorAll('.month-col-' + section).forEach(col => {
@@ -7313,9 +7314,9 @@
             if (newExpanded) {
                 if (table) {
                     table.classList.remove('months-collapsed');
-                    if (detalhe) detalhe.classList.remove('cadFin-collapsed');
+                    if (detalhe) { detalhe.classList.remove('cadFin-collapsed'); detalhe.classList.add('months-expanded'); }
                     if (section === 'cadFin') table.style.minWidth = '1400px';
-                    else if (section === 'cadFis') table.style.minWidth = '850px';
+                    else if (section === 'cadFis') table.style.minWidth = '2000px';
                     else if (section === 'execFis') table.style.minWidth = '2000px';
                     else table.style.minWidth = '';
                     table.style.width = '';
@@ -7837,18 +7838,21 @@
             if (tableCompleta) {
                 const monthsExpanded = document.getElementById('toggle-months-cadFin')?.getAttribute('data-expanded') === '1';
                 const secaoCadFin = document.getElementById('wrapperCadFin')?.closest('.detalhe-secao');
+                const wrapperCadFin = document.getElementById('wrapperCadFin');
                 if (!monthsExpanded) {
                     tableCompleta.classList.add('months-collapsed');
                     tableCompleta.style.minWidth = '0';
                     tableCompleta.style.width = 'auto';
-                    tableCompleta.style.tableLayout = 'fixed';
-                    if (secaoCadFin) secaoCadFin.classList.add('cadFin-collapsed');
+                    tableCompleta.style.tableLayout = 'auto';
+                    if (wrapperCadFin) { wrapperCadFin.style.minWidth = ''; wrapperCadFin.style.width = ''; }
+                    if (secaoCadFin) { secaoCadFin.classList.add('cadFin-collapsed'); secaoCadFin.classList.remove('months-expanded'); }
                 } else {
                     tableCompleta.classList.remove('months-collapsed');
                     tableCompleta.style.minWidth = '1400px';
                     tableCompleta.style.width = '';
                     tableCompleta.style.tableLayout = '';
-                    if (secaoCadFin) secaoCadFin.classList.remove('cadFin-collapsed');
+                    if (wrapperCadFin) { wrapperCadFin.style.minWidth = ''; wrapperCadFin.style.width = '100%'; }
+                    if (secaoCadFin) { secaoCadFin.classList.remove('cadFin-collapsed'); secaoCadFin.classList.add('months-expanded'); }
                 }
             }
 
@@ -10147,14 +10151,15 @@
                 const expanded = btn?.getAttribute('data-expanded') === '1';
                 if (sec && tbl) {
                     if (!expanded) {
-                        tbl.style.minWidth = '0'; tbl.style.width = '100%'; tbl.style.tableLayout = 'fixed';
-                        sec.classList.add('cadFin-collapsed');
+                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'auto';
+                        if (wrapper) { wrapper.style.minWidth = ''; wrapper.style.width = ''; }
+                        sec.classList.add('cadFin-collapsed'); sec.classList.remove('months-expanded');
                     } else {
-                        // 700px fixas + ~80px por mês visível
                         const nMeses = tbl.querySelectorAll('thead th.month-col').length || 60;
                         tbl.style.minWidth = (700 + nMeses * 82) + 'px';
                         tbl.style.width = ''; tbl.style.tableLayout = 'fixed';
-                        sec.classList.remove('cadFin-collapsed');
+                        if (wrapper) { wrapper.style.minWidth = ''; wrapper.style.width = '100%'; }
+                        sec.classList.remove('cadFin-collapsed'); sec.classList.add('months-expanded');
                     }
                 }
             } catch(e) {}
@@ -11041,13 +11046,15 @@
                 const sec=btn?.closest('.detalhe-secao');
                 if(sec&&tbl){
                     if(!monthsExpanded){
-                        tbl.style.minWidth='0'; tbl.style.width='100%'; tbl.style.tableLayout='fixed';
-                        sec.classList.add('cadFin-collapsed');
+                        tbl.style.minWidth='0'; tbl.style.width='auto'; tbl.style.tableLayout='auto';
+                        if(wrapper){wrapper.style.minWidth='';wrapper.style.width='';}
+                        sec.classList.add('cadFin-collapsed'); sec.classList.remove('months-expanded');
                     } else {
                         const nMeses=tbl.querySelectorAll('thead th.month-col').length||60;
                         tbl.style.minWidth=(550+nMeses*82)+'px';
                         tbl.style.width=''; tbl.style.tableLayout='fixed';
-                        sec.classList.remove('cadFin-collapsed');
+                        if(wrapper){wrapper.style.minWidth='';wrapper.style.width='100%';}
+                        sec.classList.remove('cadFin-collapsed'); sec.classList.add('months-expanded');
                     }
                 }
             } catch(e){}
@@ -14995,5 +15002,188 @@
                 sync();
                 new MutationObserver(sync).observe(tedTextEl, { childList: true, characterData: true, subtree: true });
             }
+
+            // ── MELHORIA 5: Rodapé de rastreabilidade ──────────────
+            _injetarRodapeAbas();
         });
+
+        // ── MELHORIA 5: TED_META e injeção de rodapés ──────────────────────
+        const TED_META = {
+            lastUpdated: '2026-05-13T14:37',
+            responsible: 'Maj Silva',
+            planVersion: '022/2025',
+        };
+
+        function _injetarRodapeAbas() {
+            const dt = new Date(TED_META.lastUpdated);
+            const dtFmt = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const html = `Última atualização: <time datetime="${TED_META.lastUpdated}">${dtFmt}</time> · Responsável: <b>${TED_META.responsible}</b> · Versão do plano: ${TED_META.planVersion}`;
+            document.querySelectorAll('.tab-footer[data-tab-footer]').forEach(el => { el.innerHTML = html; });
+        }
+
+        // ── MELHORIA 1: Painel de Saúde da Execução ────────────────────────
+        function renderPainelSaude() {
+            const el = document.getElementById('painelSaudeExecucao');
+            if (!el) return;
+            const ted = window.tedSelecionado;
+            if (!ted) { el.innerHTML = ''; return; }
+
+            // Físico
+            const fisicos = ted.fisicos || [];
+            const execs = ted.execFisicas || [];
+            const qtdeTotal = fisicos.reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+            const qtdeEntregue = execs.reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
+            const pctFisico = qtdeTotal > 0 ? (qtdeEntregue / qtdeTotal) * 100 : 0;
+
+            // Financeiro
+            const recursosGerais = ted.recursosGerais || [];
+            const totalRecebido = recursosGerais.reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+            const valorTed = parseNumber(ted.valorTed) || 0;
+            const pctFinanceiro = valorTed > 0 ? (totalRecebido / valorTed) * 100 : 0;
+
+            // Prazo consumido
+            let pctPrazo = 0;
+            if (ted.inicioVigencia) {
+                const alteracoes = ted.alteracoes || [];
+                const aditivos = alteracoes.filter(a => a.tipo === 'aditivo' && !a.excluido);
+                const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
+                const vigTotalMeses = (parseInt(ted.vigencia) || 0) + totalAditivoMeses;
+                if (vigTotalMeses > 0) {
+                    const dInicio = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    const dFim = new Date(dInicio); dFim.setMonth(dFim.getMonth() + vigTotalMeses);
+                    const hoje = new Date(); hoje.setHours(0,0,0,0);
+                    const diasTotais = Math.max(1, Math.round((dFim - dInicio) / 86400000));
+                    const diasDecorridos = Math.max(0, Math.round((hoje - dInicio) / 86400000));
+                    pctPrazo = Math.min(100, (diasDecorridos / diasTotais) * 100);
+                }
+            }
+
+            // Status automático
+            let statusHtml = '';
+            if (Math.abs(pctFisico - pctPrazo) <= 5 && Math.abs(pctFinanceiro - pctPrazo) <= 5) {
+                statusHtml = '<span class="saude-pill ritmo">No ritmo</span>';
+            } else if (pctFisico < pctPrazo - 10) {
+                statusHtml = '<span class="saude-pill atrasado">Físico atrasado em relação ao prazo</span>';
+            } else if (pctFinanceiro < pctFisico - 10) {
+                statusHtml = '<span class="saude-pill risco">Financeiro abaixo do físico</span>';
+            } else {
+                statusHtml = '<span class="saude-pill ritmo">No ritmo</span>';
+            }
+
+            const barra = (pct, cor) => `
+                <div class="saude-bar-track">
+                    <div class="saude-bar-fill" style="width:${Math.min(100,pct).toFixed(1)}%;background:${cor};"></div>
+                </div>`;
+
+            el.innerHTML = `
+                <div class="saude-card">
+                    <div class="saude-title">Saúde da Execução</div>
+                    <div class="saude-row">
+                        <span class="saude-label">Físico</span>
+                        ${barra(pctFisico, '#c07a1c')}
+                        <span class="saude-pct">${pctFisico.toFixed(1).replace('.',',')}%</span>
+                    </div>
+                    <div class="saude-row">
+                        <span class="saude-label">Financeiro</span>
+                        ${barra(pctFinanceiro, '#185FA5')}
+                        <span class="saude-pct">${pctFinanceiro.toFixed(1).replace('.',',')}%</span>
+                    </div>
+                    <div class="saude-row">
+                        <span class="saude-label">Prazo</span>
+                        ${barra(pctPrazo, '#64748b')}
+                        <span class="saude-pct">${pctPrazo.toFixed(1).replace('.',',')}%</span>
+                    </div>
+                    <div class="saude-status">${statusHtml}</div>
+                </div>`;
+        }
+
+        // Chamar renderPainelSaude após exibirInformacoesTED — hookar na função existente
+        (function() {
+            const _orig = window.exibirInformacoesTED || null;
+            // Substituímos via patch na inicialização quando a função já existe
+            const _patch = function() {
+                if (_orig) _orig.apply(this, arguments);
+                try { renderPainelSaude(); } catch(e) {}
+            };
+            // Como exibirInformacoesTED está em escopo closure, usamos MutationObserver
+            // para detectar quando o painel de KPIs é atualizado
+            const kpiGrid = document.querySelector('.kpi-grid');
+            if (kpiGrid) {
+                new MutationObserver(function() {
+                    try { renderPainelSaude(); } catch(e) {}
+                }).observe(kpiGrid, { childList: true, subtree: true, characterData: true });
+            }
+            // Também observar o container de KPI de valor (muda ao selecionar TED)
+            const obsTarget = document.getElementById('kpi_valorTed');
+            if (obsTarget) {
+                new MutationObserver(function() {
+                    try { renderPainelSaude(); } catch(e) {}
+                }).observe(obsTarget, { childList: true, subtree: true, characterData: true });
+            }
+        })();
+
+        // ── MELHORIA 2: Reconciliação Faturado × Recebido ──────────────────
+        // Injetada dentro de renderFaturamento via patch após fat-kpi-row
+        (function() {
+            const _patchFat = setInterval(function() {
+                const container = document.getElementById('faturamentoContainer');
+                if (!container) return;
+                // Observar mudanças no container de faturamento
+                clearInterval(_patchFat);
+                new MutationObserver(function() {
+                    try { _injetarReconciliacao(); } catch(e) {}
+                }).observe(container, { childList: true });
+            }, 500);
+        })();
+
+        function _injetarReconciliacao() {
+            const container = document.getElementById('faturamentoContainer');
+            if (!container) return;
+            if (container.querySelector('.reconciliacao-card')) return; // já injetado
+            const kpiRow = container.querySelector('.fat-kpi-row');
+            if (!kpiRow) return;
+
+            const ted = window.tedSelecionado;
+            if (!ted) return;
+
+            // Calcular faturamento físico
+            const linhas = computarLinhasFaturamento ? computarLinhasFaturamento(ted) : [];
+            let fatFisico = 0;
+            linhas.forEach(l => { fatFisico += (l.valorReal || 0); });
+
+            // Calcular recebimento financeiro
+            const recursosGerais = ted.recursosGerais || [];
+            const recFinanceiro = recursosGerais.reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+
+            const diff = fatFisico - recFinanceiro;
+            const fmtVal = v => Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            const card = document.createElement('div');
+            card.className = 'reconciliacao-card';
+            card.innerHTML = `
+                <div class="reconciliacao-title">Reconciliação: Faturamento Físico × Recebimento Financeiro</div>
+                <div class="reconciliacao-sub">São eixos distintos — saiba a diferença</div>
+                <div class="reconciliacao-cols">
+                    <div class="reconciliacao-col">
+                        <div class="reconciliacao-col-label">Faturamento Físico</div>
+                        <div class="reconciliacao-col-value" style="color:#3B6D11;">R$ ${fmtVal(fatFisico)}</div>
+                        <div class="reconciliacao-col-sub">Entregas registradas × valor unitário do objeto</div>
+                    </div>
+                    <div class="reconciliacao-divider"></div>
+                    <div class="reconciliacao-col">
+                        <div class="reconciliacao-col-label">Recebimento Financeiro</div>
+                        <div class="reconciliacao-col-value" style="color:#185FA5;">R$ ${fmtVal(recFinanceiro)}</div>
+                        <div class="reconciliacao-col-sub">Descentralizações recebidas (Recursos Gerais)</div>
+                    </div>
+                </div>
+                <div class="reconciliacao-diff">
+                    Diferença: <b>R$ ${fmtVal(diff)}</b>
+                    <span class="reconciliacao-diff-note"> — representa taxas, ajustes e timing entre emissão NF e liquidação SIAFI.</span>
+                </div>`;
+            kpiRow.insertAdjacentElement('afterend', card);
+        }
+
+        // ── MELHORIA 3: .status-tag unificado ──────────────────────────────
+        // As classes são injetadas via CSS (ver styles.css). Já existem .status-badge
+        // no sistema; .status-tag é adicionado como camada complementar no CSS.
     

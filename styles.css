@@ -124,7 +124,6 @@
             font-size: 0.925rem;
             line-height: 1.6;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
         /* ===== Sidebar lateral ===== */
@@ -340,7 +339,7 @@
             padding: 1.5rem;
             min-height: 100vh;
             box-sizing: border-box;
-            overflow-x: hidden;
+            overflow-x: auto;
         }
 
         /* Abas — ocultas (navegação agora é pela sidebar) */
@@ -1896,6 +1895,12 @@
             overflow: hidden;
             transition: box-shadow 0.12s ease;
         }
+        #detalhes #tedsDetalheContainer .detalhe-secao.months-expanded {
+            overflow: visible;
+        }
+        #detalhes #tedsDetalheContainer .detalhe-secao.months-expanded .detalhe-secao-body {
+            overflow: visible;
+        }
         #detalhes #tedsDetalheContainer .detalhe-secao:hover {
             box-shadow: 0 6px 18px rgba(12,20,35,0.06);
         }
@@ -3124,8 +3129,7 @@
         /* Container: encolhe ao tamanho da tabela, scroll quando necessário */
         #wrapperCadFin {
             display: block;
-            min-width: 630px;
-            max-width: 100%;
+            width: 100%;
             overflow-x: auto;
             border: 1px solid #ddd;
             border-radius: 0.25rem;
@@ -3133,15 +3137,14 @@
         }
         /* Card da seção encolhe junto quando meses ocultos */
         .detalhe-secao.cadFin-collapsed {
-            display: table;
-            width: auto;
+            display: block;
+            width: 100%;
             min-width: 0;
             max-width: 100%;
         }
         .detalhe-secao.cadFin-collapsed .detalhe-secao-header {
             display: flex;
             width: 100%;
-            min-width: max-content;
         }
 
 /* ===== Sub-entregas Cadastro Físico ===== */
@@ -4016,8 +4019,7 @@
 /* Wrappers Cadastro Físico e Execução Física — mesma largura */
 #wrapperCadFis {
     display: block;
-    width: 850px;
-    max-width: 100%;
+    width: 100%;
     overflow-x: auto;
 }
 #wrapperExecFis {
@@ -4037,7 +4039,7 @@
 }
 #tabelaExecFisTable .col-objeto { width: 130px; max-width: 160px; }
 #tabelaExecFisTable .col-saldo { width: 60px; min-width: 60px; text-align: center; }
-#tabelaExecFisTable .col-percent { width: auto; min-width: 180px; max-width: none; white-space: nowrap; }
+#tabelaExecFisTable .col-percent { width: 180px; min-width: 180px; max-width: 220px; white-space: nowrap; }
 
 .ef-table { width: 100%; border-collapse: collapse; }
 .ef-table thead th {
@@ -4606,8 +4608,7 @@ table.ef-table tbody td.right  { text-align: right; }
 /* wrapper — não estica, abraça a tabela */
 #wrapperExecFin {
     display: block;
-    width: 748px;
-    max-width: 100%;
+    width: 100%;
     overflow-x: auto;
     padding-left: 0;
     margin-left: 0;
@@ -4921,8 +4922,7 @@ table.ef-table tbody td.right  { text-align: right; }
 /* wrapper — não estica, abraça a tabela */
 #wrapperRecGeral {
     display: block;
-    width: 748px;
-    max-width: 100%;
+    width: 100%;
     overflow-x: auto;
 }
 #wrapperRecGeral #tabelaRecursosGeraisTable {
@@ -5242,3 +5242,157 @@ table.ef-table tbody td.right  { text-align: right; }
 }
 .ent2-insight i { color: #D97706; margin-top: 1px; }
 .ent2-insight strong { color: #92400E; }
+
+/* ===== MELHORIA 1: PAINEL DE SAÚDE DA EXECUÇÃO ===== */
+.saude-card {
+    background: #fff;
+    border: 1px solid rgba(30,64,175,0.12);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.05);
+}
+.saude-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+}
+.saude-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.saude-label {
+    font-size: 12px;
+    color: #475569;
+    width: 80px;
+    flex-shrink: 0;
+}
+.saude-bar-track {
+    flex: 1;
+    height: 8px;
+    background: #F1F5F9;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.saude-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+.saude-pct {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    color: #1e293b;
+    width: 50px;
+    text-align: right;
+    flex-shrink: 0;
+}
+.saude-status { margin-top: 12px; }
+.saude-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.saude-pill.ritmo   { background: #EAF3DE; color: #2D5A0A; }
+.saude-pill.atrasado { background: #FAEEDA; color: #854F0B; }
+.saude-pill.risco   { background: #FCEBEB; color: #A32D2D; }
+
+/* ===== MELHORIA 2: RECONCILIAÇÃO FATURAMENTO × RECEBIMENTO ===== */
+.reconciliacao-card {
+    background: #fff;
+    border: 1px solid rgba(30,64,175,0.12);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.05);
+}
+.reconciliacao-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+.reconciliacao-sub {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 14px;
+}
+.reconciliacao-cols {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 12px;
+}
+.reconciliacao-col {
+    flex: 1;
+    padding: 0 16px;
+}
+.reconciliacao-col:first-child { padding-left: 0; }
+.reconciliacao-col:last-child  { padding-right: 0; }
+.reconciliacao-col-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+.reconciliacao-col-value {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 4px;
+}
+.reconciliacao-col-sub {
+    font-size: 11px;
+    color: #94a3b8;
+}
+.reconciliacao-divider {
+    width: 1px;
+    height: 60px;
+    background: #e2e8f0;
+    flex-shrink: 0;
+}
+.reconciliacao-diff {
+    font-size: 12px;
+    color: #475569;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 10px;
+}
+.reconciliacao-diff b { color: #1e293b; }
+.reconciliacao-diff-note { color: #94a3b8; }
+
+/* ===== MELHORIA 3: STATUS-TAG UNIFICADO ===== */
+.status-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    display: inline-block;
+    white-space: nowrap;
+}
+.status-tag.regular  { background: #EAF3DE; color: #2D5A0A; }
+.status-tag.abaixo   { background: #E6F1FB; color: #0C447C; }
+.status-tag.acima    { background: #FAEEDA; color: #854F0B; }
+.status-tag.critico  { background: #FCEBEB; color: #A32D2D; }
+
+/* ===== MELHORIA 5: RODAPÉ DE RASTREABILIDADE ===== */
+.tab-footer {
+    font-size: 11px;
+    color: #94a3b8;
+    padding: 16px 0 8px;
+    border-top: 0.5px solid rgba(0,0,0,0.06);
+    margin-top: 24px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}

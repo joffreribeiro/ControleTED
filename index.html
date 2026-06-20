@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-        <link rel="stylesheet" href="styles.css?v=20260619au">
+        <link rel="stylesheet" href="styles.css?v=20260619bb">
     </head>
     <body>
 
@@ -837,6 +837,9 @@
                         </div>
                     </div>
 
+                    <!-- ===== PAINEL DE SAÚDE ===== -->
+                    <div id="painelSaudeExecucao"></div>
+
                     <!-- ===== VIGÊNCIA TIMELINE ===== -->
                     <div class="vig-card">
                         <div class="vig-head">
@@ -1033,6 +1036,7 @@
                         </div>
                     </div>
 
+                    <footer class="tab-footer" data-tab-footer="overview"></footer>
                     </div><!-- /dt-tab-panel overview -->
 
                     <!-- PAINEL 2: EXECUÇÃO FÍSICA -->
@@ -1113,6 +1117,7 @@
                         </div>
                     </div>
 
+                    <footer class="tab-footer" data-tab-footer="physical"></footer>
                     </div><!-- /dt-tab-panel physical -->
 
                     <!-- PAINEL 3: EXECUÇÃO FINANCEIRA -->
@@ -1285,6 +1290,7 @@
                         </div>
                     </div>
 
+                    <footer class="tab-footer" data-tab-footer="financial"></footer>
                     </div><!-- /dt-tab-panel financial -->
 
                     <!-- PAINEL 4: FATURAMENTO -->
@@ -1292,6 +1298,7 @@
                         <div id="faturamentoContainer">
                             <p class="fat-empty">Selecione um TED para ver o faturamento.</p>
                         </div>
+                    <footer class="tab-footer" data-tab-footer="billing"></footer>
                     </div><!-- /dt-tab-panel billing -->
 
                 </div><!-- /tedsDetalheContainer -->
@@ -1759,7 +1766,7 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260619z12"></script>
+    <script src="js/main.js?v=20260619z20"></script>
 
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js"></script>
