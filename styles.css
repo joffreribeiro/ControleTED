@@ -4676,6 +4676,13 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaExecFinanceiraTable th.col-nd,
 #tabelaExecFinanceiraTable td.col-nd { text-align: center; }
 
+/* Cabeçalhos das tabelas financeiras: caixa alta e centralizado */
+#tabelaFinanceiraCompleta thead th,
+#tabelaExecFinanceiraTable thead th {
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+}
 /* thead base — herda tabela-padrao, mas garante centralizacao e border */
 .execfin-table thead th {
   text-align: center;
