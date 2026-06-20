@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,500;0,6..12,600;0,6..12,700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-        <link rel="stylesheet" href="styles.css?v=20260621f">
+        <link rel="stylesheet" href="styles.css?v=20260621l">
     </head>
     <body>
 
@@ -1189,6 +1189,7 @@
                             <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira <span class="section-count-badge" id="count-execfin">0</span></h3>
                             <div class="detalhe-secao-actions">
                                 <button type="button" class="btn-toggle-months" id="toggle-months-execFin" data-expanded="0" onclick="toggleMonthCols('execFin', this)">Ver detalhes mensais</button>
+                                <button type="button" class="btn-toggle-months" id="toggle-consolidar-execFin" data-consolidado="0" onclick="toggleConsolidarExecFin(this)">Consolidar por ND</button>
                                 <button type="button" class="section-add-btn" onclick="abrirModalExecFin()">+ Adicionar</button>
                             </div>
                         </div>
@@ -1284,7 +1285,7 @@
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart" class="inline-icon-sm"></i> Resumo Anual</h3>
                         <div class="detalhe-secao-body">
-                        <div id="resumoAnualPorAno" style="overflow-x: auto;">
+                        <div id="resumoAnualPorAno" style="overflow-x: auto; max-width: 800px;">
                             <!-- Será preenchido dinamicamente -->
                         </div>
                         </div>
@@ -1766,7 +1767,7 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260620v"></script>
+    <script src="js/main.js?v=20260621k"></script>
 
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js"></script>

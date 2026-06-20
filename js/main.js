@@ -7273,6 +7273,18 @@
             return cls ? `<span class="${cls}">${raw}</span>` : raw;
         }
 
+        // ===== Helper: consolidar ExecFin por ND =====
+        function toggleConsolidarExecFin(btn) {
+            const consolidado = btn.getAttribute('data-consolidado') === '1';
+            const novoEstado = !consolidado;
+            btn.setAttribute('data-consolidado', novoEstado ? '1' : '0');
+            btn.textContent = novoEstado ? 'Detalhar por UP' : 'Consolidar por ND';
+            // esconder/mostrar filtro de UP
+            const filterUpBtn = document.getElementById('filterUpExecBtn');
+            if (filterUpBtn) filterUpBtn.style.display = novoEstado ? 'none' : '';
+            try { atualizarTabelaExecFinanceira(); } catch(e) { console.error(e); }
+        }
+
         // ===== Helper: alternar colunas de meses =====
         function toggleMonthCols(section, btn) {
             const expanded = btn.getAttribute('data-expanded') === '1';
@@ -9885,21 +9897,20 @@
 
                 // ── thead ───────────────────────────────────────────────────
                 const monthsExpanded = document.getElementById('toggle-months-execFin')?.getAttribute('data-expanded') === '1';
+                const consolidado = document.getElementById('toggle-consolidar-execFin')?.getAttribute('data-consolidado') === '1';
 
                 // apagar e recriar thead do zero
                 const thead = tableEl.querySelector('thead');
                 while (thead.rows.length > 0) thead.deleteRow(0);
 
-                const colFixas = 5; // ND UP Previsto Realizado Saldo
-
-                // definição das 5 colunas fixas
-                const fixedCols = [
-                    {label:'ND',              cls:'col-nd col-sticky'},
-                    {label:'UP',              cls:'col-up'},
-                    {label:'Valor Previsto',  cls:'col-valor'},
-                    {label:'Valor Realizado', cls:'col-valor'},
-                    {label:'Saldo',           cls:'col-saldo'},
-                ];
+                // definição das colunas fixas (sem UP quando consolidado)
+                const fixedCols = consolidado
+                    ? [ {label:'ND', cls:'col-nd col-sticky'}, {label:'Valor Previsto', cls:'col-valor'},
+                        {label:'Valor Realizado', cls:'col-valor'}, {label:'Saldo', cls:'col-saldo'} ]
+                    : [ {label:'ND', cls:'col-nd col-sticky'}, {label:'UP', cls:'col-up'},
+                        {label:'Valor Previsto', cls:'col-valor'}, {label:'Valor Realizado', cls:'col-valor'},
+                        {label:'Saldo', cls:'col-saldo'} ];
+                const colFixas = fixedCols.length; // usado pelo consRow para colspan do label
 
                 // Linha 1: fixas com rowspan=2 sempre + agrupadores de ano
                 const tr1 = thead.insertRow();
@@ -9937,8 +9948,10 @@
                     let cg = tableEl.querySelector('colgroup');
                     if (!cg) { cg = document.createElement('colgroup'); tableEl.prepend(cg); }
                     cg.innerHTML = '';
-                    // larguras definidas pelo CSS #tabelaExecFinanceiraTable col.* — não sobrescrever inline
-                    ['col-nd','col-up','col-vprev','col-vreal','col-saldo'].forEach(cls => {
+                    const colClasses = consolidado
+                        ? ['col-nd','col-vprev','col-vreal','col-saldo']
+                        : ['col-nd','col-up','col-vprev','col-vreal','col-saldo'];
+                    colClasses.forEach(cls => {
                         const col = document.createElement('col');
                         col.className = cls;
                         cg.appendChild(col);
@@ -9946,77 +9959,133 @@
                     if (monthsExpanded) {
                         meses.forEach(() => {
                             const col = document.createElement('col');
-                            col.className = 'month-col-execFin'; col.style.width = '80px';
+                            col.className = 'month-col-execFin';
+                            col.style.minWidth = '110px';
                             cg.appendChild(col);
                         });
                     }
+                    tableEl.style.tableLayout = monthsExpanded ? 'auto' : 'fixed';
                 }
 
                 // ── linhas de itens ─────────────────────────────────────────
-                const linhas = sortedChaves.map(chave => {
-                    const [nd, up] = chave.split('||');
-                    const previsto  = cad.filter(f => String(f.numero)===nd && String(f.up||f.ug)===up).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
-                    const execList  = execs.filter(e => String(e.nd||e.numero)===nd && String(e.up||e.ug)===up);
-                    const realizado = execList.reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0);
-                    const saldo     = previsto - realizado;
+                let linhas;
 
-                    const _diff = realizado - previsto;
-                    const _pct  = previsto > 0 ? Math.abs(_diff) / previsto : 0;
-                    let statusCls, statusLabel;
-                    if (Math.abs(_diff) < 1)            { statusCls = 'regular'; statusLabel = 'Regular'; }
-                    else if (_diff > 0 && _pct < 0.10)  { statusCls = 'acima';   statusLabel = 'Acima'; }
-                    else if (_diff > 0 && _pct >= 0.10) { statusCls = 'critico'; statusLabel = 'Crítico'; }
-                    else                                 { statusCls = 'abaixo';  statusLabel = 'Abaixo'; }
-
-                    const saldoCls = saldo > 0.01 ? 'alert' : (Math.abs(saldo) < 0.01 ? 'ok' : 'neg');
-                    const ndFmt    = formatarNDComPontos(nd);
-                    const cat      = ndCat(nd);
-                    const uc       = upCls(up);
-
-                    const ndTag    = `<span class="execfin-nd-tag ${cat}">${ndFmt}</span>`;
-                    const upPill   = `<span class="execfin-up-pill ${uc}">${up}</span>`;
-                    const prevFmt  = `<span class="execfin-val previsto">${fmtBR(previsto)}</span>`;
-                    const realFmt  = `<span class="execfin-val realizado">${fmtBR(realizado)}</span>`;
-                    const saldFmt  = `<span class="execfin-val saldo ${saldoCls}">${fmtBR(saldo)}</span>`;
-                    const statusBadge = `<span class="execfin-status ${statusCls}"><span class="dot"></span>${statusLabel}</span>`;
-
-                    // mapa mensal desta linha
-                    const mapaMes = new Map();
-                    execList.forEach(e => {
-                        if (!e.data) return;
-                        const d = new Date(e.data + 'T00:00:00');
-                        const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
-                        if (diff>=0 && diff<60) mapaMes.set(diff, (mapaMes.get(diff)||0)+(parseFloat(e.valor||e.valorRealizado)||0));
+                if (consolidado) {
+                    // Agrupar chaves por ND, somando previsto/realizado/meses
+                    const ndOrdem = [];
+                    const ndAgrup = new Map();
+                    sortedChaves.forEach(chave => {
+                        const [nd, up] = chave.split('||');
+                        if (!ndAgrup.has(nd)) { ndOrdem.push(nd); ndAgrup.set(nd, { previsto:0, realizado:0, meses: new Map() }); }
+                        const g = ndAgrup.get(nd);
+                        g.previsto += cad.filter(f => String(f.numero)===nd && String(f.up||f.ug)===up).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                        const execListND = execs.filter(e => String(e.nd||e.numero)===nd && String(e.up||e.ug)===up);
+                        g.realizado += execListND.reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0);
+                        execListND.forEach(e => {
+                            if (!e.data) return;
+                            const d = new Date(e.data + 'T00:00:00');
+                            const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
+                            if (diff>=0 && diff<60) g.meses.set(diff, (g.meses.get(diff)||0)+(parseFloat(e.valor||e.valorRealizado)||0));
+                        });
                     });
 
-                    let html = `<tr>` +
-                        `<td class="col-nd col-sticky">${ndTag}</td>` +
-                        `<td class="col-up">${upPill}</td>` +
-                        `<td class="col-valor right">${prevFmt}</td>` +
-                        `<td class="col-valor right">${realFmt}</td>` +
-                        `<td class="col-saldo right">${saldFmt}</td>`;
+                    linhas = ndOrdem.map(nd => {
+                        const g = ndAgrup.get(nd);
+                        const { previsto, realizado } = g;
+                        const saldo = previsto - realizado;
+                        const saldoCls = saldo > 0.01 ? 'alert' : (Math.abs(saldo) < 0.01 ? 'ok' : 'neg');
+                        const ndFmt = formatarNDComPontos(nd);
+                        const cat   = ndCat(nd);
+                        const ndTag = `<span class="execfin-nd-tag ${cat}">${ndFmt}</span>`;
+                        const prevFmt = `<span class="execfin-val previsto">${fmtBR(previsto)}</span>`;
+                        const realFmt = `<span class="execfin-val realizado">${fmtBR(realizado)}</span>`;
+                        const saldFmt = `<span class="execfin-val saldo ${saldoCls}">${fmtBR(saldo)}</span>`;
 
-                    if (monthsExpanded) {
-                        meses.forEach((m, i) => {
-                            const val = mapaMes.get(i);
-                            let cls = 'month-cell month-col-execFin';
-                            if (m.isFirstOfYear) cls += ' first';
-                            if (m.isCurrent)     cls += ' current';
-                            if (val)             cls += ' has-value';
-                            if (val < 0)         cls += ' has-neg';
-                            const display = val ? fmtBR(val) : '';
-                            html += `<td class="${cls}" onclick="editarValorExecFinanceira('${nd}','${up}',${i})" title="Clique para editar">${display}</td>`;
+                        let html = `<tr>` +
+                            `<td class="col-nd col-sticky">${ndTag}</td>` +
+                            `<td class="col-valor">${prevFmt}</td>` +
+                            `<td class="col-valor">${realFmt}</td>` +
+                            `<td class="col-saldo">${saldFmt}</td>`;
+
+                        if (monthsExpanded) {
+                            meses.forEach((m, i) => {
+                                const val = g.meses.get(i);
+                                let cls = 'month-cell month-col-execFin';
+                                if (m.isFirstOfYear) cls += ' first';
+                                if (m.isCurrent)     cls += ' current';
+                                if (val)             cls += ' has-value';
+                                if (val < 0)         cls += ' has-neg';
+                                html += `<td class="${cls}">${val ? fmtBR(val) : ''}</td>`;
+                            });
+                        }
+                        html += '</tr>';
+                        return html;
+                    }).join('');
+                } else {
+                    linhas = sortedChaves.map(chave => {
+                        const [nd, up] = chave.split('||');
+                        const previsto  = cad.filter(f => String(f.numero)===nd && String(f.up||f.ug)===up).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                        const execList  = execs.filter(e => String(e.nd||e.numero)===nd && String(e.up||e.ug)===up);
+                        const realizado = execList.reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0);
+                        const saldo     = previsto - realizado;
+
+                        const _diff = realizado - previsto;
+                        const _pct  = previsto > 0 ? Math.abs(_diff) / previsto : 0;
+                        let statusCls, statusLabel;
+                        if (Math.abs(_diff) < 1)            { statusCls = 'regular'; statusLabel = 'Regular'; }
+                        else if (_diff > 0 && _pct < 0.10)  { statusCls = 'acima';   statusLabel = 'Acima'; }
+                        else if (_diff > 0 && _pct >= 0.10) { statusCls = 'critico'; statusLabel = 'Crítico'; }
+                        else                                 { statusCls = 'abaixo';  statusLabel = 'Abaixo'; }
+
+                        const saldoCls = saldo > 0.01 ? 'alert' : (Math.abs(saldo) < 0.01 ? 'ok' : 'neg');
+                        const ndFmt    = formatarNDComPontos(nd);
+                        const cat      = ndCat(nd);
+                        const uc       = upCls(up);
+
+                        const ndTag    = `<span class="execfin-nd-tag ${cat}">${ndFmt}</span>`;
+                        const upPill   = `<span class="execfin-up-pill ${uc}">${up}</span>`;
+                        const prevFmt  = `<span class="execfin-val previsto">${fmtBR(previsto)}</span>`;
+                        const realFmt  = `<span class="execfin-val realizado">${fmtBR(realizado)}</span>`;
+                        const saldFmt  = `<span class="execfin-val saldo ${saldoCls}">${fmtBR(saldo)}</span>`;
+                        const statusBadge = `<span class="execfin-status ${statusCls}"><span class="dot"></span>${statusLabel}</span>`;
+
+                        const mapaMes = new Map();
+                        execList.forEach(e => {
+                            if (!e.data) return;
+                            const d = new Date(e.data + 'T00:00:00');
+                            const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
+                            if (diff>=0 && diff<60) mapaMes.set(diff, (mapaMes.get(diff)||0)+(parseFloat(e.valor||e.valorRealizado)||0));
                         });
-                    }
-                    html += '</tr>';
-                    return html;
-                }).join('');
+
+                        let html = `<tr>` +
+                            `<td class="col-nd col-sticky">${ndTag}</td>` +
+                            `<td class="col-up">${upPill}</td>` +
+                            `<td class="col-valor right">${prevFmt}</td>` +
+                            `<td class="col-valor right">${realFmt}</td>` +
+                            `<td class="col-saldo right">${saldFmt}</td>`;
+
+                        if (monthsExpanded) {
+                            meses.forEach((m, i) => {
+                                const val = mapaMes.get(i);
+                                let cls = 'month-cell month-col-execFin';
+                                if (m.isFirstOfYear) cls += ' first';
+                                if (m.isCurrent)     cls += ' current';
+                                if (val)             cls += ' has-value';
+                                if (val < 0)         cls += ' has-neg';
+                                const display = val ? fmtBR(val) : '';
+                                html += `<td class="${cls}" onclick="editarValorExecFinanceira('${nd}','${up}',${i})" title="Clique para editar">${display}</td>`;
+                            });
+                        }
+                        html += '</tr>';
+                        return html;
+                    }).join('');
+                }
 
                 // ── linha TOTAL ─────────────────────────────────────────────
                 const saldoCls = totalSaldo > 0.01 ? 'alert' : (Math.abs(totalSaldo) < 0.01 ? 'ok' : 'neg');
                 let totalRow = `<tr class="execfin-total-row">` +
                     `<td class="col-nd col-sticky">TOTAL</td>` +
-                    `<td class="col-up"></td>` +
+                    (!consolidado ? `<td class="col-up"></td>` : '') +
                     `<td class="col-valor"><span class="execfin-val previsto">${fmtBR(totalPrevisto)}</span></td>` +
                     `<td class="col-valor"><span class="execfin-val realizado">${fmtBR(totalRealizado)}</span></td>` +
                     `<td class="col-saldo"><span class="execfin-val saldo ${saldoCls}">${fmtBR(totalSaldo)}</span></td>`;
@@ -10864,7 +10933,8 @@
                 cg.innerHTML='';
                 ['rg-col-nd','rg-col-vprev','rg-col-vreal','rg-col-saldo']
                     .forEach(cls=>{ const col=document.createElement('col'); col.className=cls; cg.appendChild(col); });
-                if (monthsExpanded) meses.forEach(()=>{ const col=document.createElement('col'); col.className='month-col-recGeral'; col.style.width='80px'; cg.appendChild(col); });
+                if (monthsExpanded) meses.forEach(()=>{ const col=document.createElement('col'); col.className='month-col-recGeral'; col.style.minWidth='110px'; cg.appendChild(col); });
+                tableEl.style.tableLayout = monthsExpanded ? 'auto' : 'fixed';
             }
 
             // ── Dados ────────────────────────────────────────────────────────

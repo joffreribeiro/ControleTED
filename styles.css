@@ -4770,6 +4770,7 @@ table.ef-table tbody td.right  { text-align: right; }
   font-family: 'Nunito Sans', monospace; font-size: 11px;
   text-align: right; border-left: 1px solid rgba(0,0,0,0.03);
   color: #475569; background: #FCFDFE; cursor: pointer;
+  white-space: nowrap; min-width: 110px;
 }
 .execfin-table tbody td.month-cell.first { border-left: 1px solid rgba(24,95,165,0.18); }
 .execfin-table tbody td.month-cell.has-value {
@@ -5048,7 +5049,7 @@ table.ef-table tbody td.right  { text-align: right; }
   background: #FCFDFE; font-family: 'Nunito Sans', monospace;
   font-size: 11px; text-align: right; padding: 6px 6px;
   border-left: 1px solid rgba(0,0,0,0.03); color: #475569;
-  cursor: pointer;
+  cursor: pointer; white-space: nowrap; min-width: 110px;
 }
 .rg-table tbody td.month-cell.first { border-left: 1px solid rgba(24,95,165,0.18); }
 .rg-table tbody td.month-cell.first.future { border-left: 1px solid rgba(148,163,184,0.18); }
