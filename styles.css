@@ -4738,7 +4738,7 @@ table.ef-table tbody td.right  { text-align: right; }
   padding: 9px 12px !important; font-size: 13px; vertical-align: middle; color: #1a1a1a;
   white-space: nowrap;
 }
-.execfin-table tbody td.right  { text-align: right; }
+.execfin-table tbody td.right  { text-align: center; }
 .execfin-table tbody td.center { text-align: center; }
 
 /* Monthly value cells */
