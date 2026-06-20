@@ -6832,15 +6832,15 @@
             // Ajustar card conforme estado do toggle
             try {
                 const btn = document.getElementById('toggle-months-execFis');
-                const tbl = document.getElementById('tabelaExecFinanceiraTable');
+                const tbl = document.getElementById('tabelaExecFisTable');
                 const sec = btn?.closest('.detalhe-secao');
                 const expanded = btn?.getAttribute('data-expanded') === '1';
                 if (sec && tbl) {
                     if (!expanded) {
-                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'fixed';
+                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'auto';
                         sec.classList.add('cadFin-collapsed');
                     } else {
-                        tbl.style.minWidth = '850px'; tbl.style.width = ''; tbl.style.tableLayout = '';
+                        tbl.style.minWidth = '2000px'; tbl.style.width = ''; tbl.style.tableLayout = '';
                         sec.classList.remove('cadFin-collapsed');
                     }
                 }
