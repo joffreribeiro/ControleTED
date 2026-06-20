@@ -5003,7 +5003,10 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaRecursosGeraisTable col.rg-col-vprev { width: 212.15px; }
 #tabelaRecursosGeraisTable col.rg-col-vreal { width: 212.23px; }
 #tabelaRecursosGeraisTable col.rg-col-saldo { width: 213.06px; }
-#tabelaRecursosGeraisTable td.rg-col-nd { text-align: center; }
+#tabelaRecursosGeraisTable td.rg-col-nd    { text-align: center; }
+#tabelaRecursosGeraisTable td.rg-col-vprev { text-align: center; }
+#tabelaRecursosGeraisTable td.rg-col-vreal { text-align: center; }
+#tabelaRecursosGeraisTable td.rg-col-saldo { text-align: center; }
 
 /* thead */
 #tabelaRecursosGeraisTable thead th,
