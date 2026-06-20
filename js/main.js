@@ -6414,14 +6414,14 @@
             });
 
             let headerRow1 = tableElement.querySelector('thead tr');
-            const rs = monthsExpandedCadFis ? ' rowspan="2"' : '';
-            let headerHTML = `<th class="center" style="width:40px;"${rs}></th>`;
-            headerHTML += `<th class="center" style="width:56px;"${rs}>Fase</th>`;
-            headerHTML += `<th class="center"${rs}>Objeto</th>`;
-            headerHTML += `<th class="center" style="width:140px;"${rs}>Qtde / Entregue</th>`;
-            headerHTML += `<th class="center" style="width:190px;"${rs}>Período (meses)</th>`;
-            headerHTML += `<th class="center" style="width:150px;"${rs}>Datas previstas</th>`;
-            headerHTML += `<th class="center" style="width:96px;"${rs}>Ações</th>`;
+            // rowspan="2" sempre presente para que as colunas fixas ocupem as 2 linhas de cabeçalho
+            let headerHTML = `<th class="center" style="width:40px;" rowspan="2"></th>`;
+            headerHTML += `<th class="center" style="width:56px;" rowspan="2">Fase</th>`;
+            headerHTML += `<th class="center" rowspan="2">Objeto</th>`;
+            headerHTML += `<th class="center" style="width:140px;" rowspan="2">Qtde / Entregue</th>`;
+            headerHTML += `<th class="center" style="width:190px;" rowspan="2">Período (meses)</th>`;
+            headerHTML += `<th class="center" style="width:150px;" rowspan="2">Datas previstas</th>`;
+            headerHTML += `<th class="center" style="width:96px;" rowspan="2">Ações</th>`;
             anos.forEach(a => {
                 headerHTML += `<th class="month-col-cadFis" style="text-align:center;${mmHideCadFis}" colspan="${a.count}">${a.ano}</th>`;
             });
@@ -6694,12 +6694,17 @@
             const monthsExpandedExecFis = document.getElementById('toggle-months-execFis')?.getAttribute('data-expanded') === '1';
             const mmHideExecFis = monthsExpandedExecFis ? '' : ' display:none;';
 
+            // Colgroup para travar larguras das colunas fixas independente da expansão dos meses
+            let colgroup = tableElement.querySelector('colgroup');
+            if (!colgroup) { colgroup = document.createElement('colgroup'); tableElement.prepend(colgroup); }
+            colgroup.innerHTML = '<col style="width:280px;min-width:280px"><col style="width:90px;min-width:90px"><col style="width:90px;min-width:90px"><col style="width:75px;min-width:75px"><col style="width:220px;min-width:220px">';
+
             const thStyle = 'text-transform:uppercase;text-align:center;white-space:nowrap;';
-            let headerHTML = '<th rowspan="2" class="col-objeto col-texto" style="' + thStyle + '">Objeto</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + '">Qtd Prev.</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + '">Qtd Entr.</th>';
-            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + '">Saldo</th>';
-            headerHTML += '<th rowspan="2" class="col-percent" style="' + thStyle + 'min-width:90px;">Exec. (%)</th>';
+            let headerHTML = '<th rowspan="2" class="col-objeto col-texto" style="' + thStyle + 'width:280px;min-width:280px;">Objeto</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + 'width:90px;min-width:90px;">Qtd Prev.</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + 'width:90px;min-width:90px;">Qtd Entr.</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + 'width:75px;min-width:75px;">Saldo</th>';
+            headerHTML += '<th rowspan="2" class="col-percent" style="' + thStyle + 'width:220px;min-width:220px;">Exec. (%)</th>';
             let firstAnoExecFis = true;
             anos.forEach(a => {
                 firstAnoExecFis = false;
