@@ -7298,6 +7298,7 @@
                 table.style.tableLayout = 'auto';
                 if (wrapper) { wrapper.style.minWidth = ''; wrapper.style.width = ''; }
                 if (section === 'execFis') { const w = document.getElementById('wrapperExecFis'); if (w) w.style.maxWidth = ''; }
+                if (section === 'cadFis') { const w = document.getElementById('wrapperCadFis'); if (w) w.style.maxWidth = ''; }
                 if (detalhe) { detalhe.classList.add('cadFin-collapsed'); detalhe.classList.remove('months-expanded'); }
             }
 
@@ -7317,7 +7318,10 @@
                     table.classList.remove('months-collapsed');
                     if (detalhe) { detalhe.classList.remove('cadFin-collapsed'); detalhe.classList.add('months-expanded'); }
                     if (section === 'cadFin') table.style.minWidth = '1400px';
-                    else if (section === 'cadFis') table.style.minWidth = '2000px';
+                    else if (section === 'cadFis') {
+                        table.style.minWidth = '2000px';
+                        const w = document.getElementById('wrapperCadFis'); if (w) w.style.maxWidth = 'none';
+                    }
                     else if (section === 'execFis') {
                         table.style.minWidth = '2000px';
                         const w = document.getElementById('wrapperExecFis'); if (w) w.style.maxWidth = 'none';
