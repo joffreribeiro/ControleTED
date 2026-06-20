@@ -2101,6 +2101,14 @@
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado .col-sticky {
             background: #FFF1F1 !important;
         }
+        /* Resumo (cons): célula de label é congelada (sticky-freeze) e estava
+           recebendo a zebra das colunas fixas (regra tr:nth-child(even) .sticky-freeze,
+           que tem 2 IDs de especificidade). Forçar branco aqui — exceto total/resultado,
+           que mantêm suas cores próprias via regras de td acima. */
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons:not(.total):not(.resultado) td.sticky-freeze,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons:not(.total):not(.resultado) td.sticky-freeze {
+            background: #ffffff !important;
+        }
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover {
             background: #eaf2ff;
         }
@@ -4713,6 +4721,10 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaExecFinanceiraTable th.col-nd,
 #tabelaExecFinanceiraTable td.col-nd { text-align: center; }
 
+/* Centralizar colunas de valor na ExecFinanceira consolidada */
+#tabelaExecFinanceiraTable td.col-valor,
+#tabelaExecFinanceiraTable td.col-saldo { text-align: center; }
+
 /* Cabeçalhos das tabelas financeiras: fonte uniforme, caixa alta, centralizado */
 #tabelaFinanceiraCompleta thead th,
 #tabelaExecFinanceiraTable thead th,
@@ -5061,7 +5073,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Células mensais */
 .rg-table tbody td.month-cell {
-  background: #FCFDFE; font-family: 'Nunito Sans', monospace;
+  background: transparent; font-family: 'Nunito Sans', monospace;
   font-size: 11px; text-align: right; padding: 6px 6px;
   border-left: 1px solid rgba(0,0,0,0.03); color: #475569;
   cursor: pointer; white-space: nowrap; min-width: 110px;
@@ -5073,6 +5085,19 @@ table.ef-table tbody td.right  { text-align: right; }
 .rg-table tbody td.month-cell.current { background: #E6F1FB; }
 .rg-table tbody td.month-cell.current.has-value { background: linear-gradient(135deg,#EAF3DE 0%,#E6F1FB 100%); }
 .rg-table tbody td.month-cell.future { color: #c0c8d4; }
+
+/* Zebra das linhas de dados — pinta as células diretamente porque a rg-table não
+   passa pelo congelamento que copia a cor da linha (e a regra global
+   .tabela-padrao tbody tr:nth-child(even) td pinta de branco). Resumo (cons),
+   linha TOTAL e células de mês com valor mantêm suas próprias cores. */
+.rg-table tbody tr:nth-child(even):not(.cons):not(.rg-total-row) td:not(.month-cell),
+.rg-table tbody tr:nth-child(even):not(.cons):not(.rg-total-row) td.month-cell:not(.has-value):not(.current) {
+  background: #f7faff;
+}
+.rg-table tbody tr:hover:not(.cons):not(.rg-total-row) td:not(.month-cell),
+.rg-table tbody tr:hover:not(.cons):not(.rg-total-row) td.month-cell:not(.has-value):not(.current) {
+  background: #eaf2ff;
+}
 
 /* Linha TOTAL */
 .rg-table tbody tr.rg-total-row td {
