@@ -4155,13 +4155,13 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-kpi-sub   { font-size: 11px; color: #6b7280; }
 
 /* ND tags */
-.nd-tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 600; font-family: monospace; white-space: nowrap; }
+.nd-tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 12px; font-weight: 600; font-family: 'IBM Plex Sans', -apple-system, sans-serif; white-space: nowrap; }
 .nd-tag.invest  { background: transparent; color: #1d4ed8; }
 .nd-tag.custeio { background: transparent; color: #92400e; }
 .nd-tag.outros  { background: transparent; color: #374151; }
 
 /* UP pills */
-.up-pill { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.up-pill { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 12px; font-weight: 600; font-family: 'IBM Plex Sans', -apple-system, sans-serif; white-space: nowrap; }
 .up-pill.fi { background: #dcfce7; color: #15803d; }
 .up-pill.ua { background: #fce7f3; color: #9d174d; }
 .up-pill.outros { background: #f3f4f6; color: #374151; }
@@ -4786,8 +4786,8 @@ table.ef-table tbody td.right  { text-align: right; }
 /* ND tag */
 .execfin-nd-tag {
   display: inline-flex; align-items: center;
-  font-family: 'IBM Plex Mono', monospace; font-weight: 600;
-  font-size: 11px; padding: 2px 7px; border-radius: 5px;
+  font-family: 'IBM Plex Sans', -apple-system, sans-serif; font-weight: 600;
+  font-size: 12px; padding: 2px 7px; border-radius: 5px;
 }
 .execfin-nd-tag.invest  { background: transparent; color: #0C447C; }
 .execfin-nd-tag.custeio { background: transparent; color: #92400E; }
@@ -4795,9 +4795,9 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* UP pill */
 .execfin-up-pill {
-  display: inline-block; font-size: 11px; font-weight: 600;
+  display: inline-block; font-size: 12px; font-weight: 600;
   padding: 2px 7px; border-radius: 99px;
-  font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.04em;
+  font-family: 'IBM Plex Sans', -apple-system, sans-serif; letter-spacing: 0.04em;
 }
 .execfin-up-pill.fi { background: #EAF3DE; color: #3B6D11; }
 .execfin-up-pill.ua { background: #FCE7F3; color: #9D174D; }
@@ -4999,8 +4999,8 @@ table.ef-table tbody td.right  { text-align: right; }
 /* ND tag — rg-nd-tag */
 .rg-nd-tag {
   display: inline-flex; align-items: center;
-  font-family: 'IBM Plex Mono', monospace; font-weight: 600;
-  font-size: 11px; padding: 2px 7px; border-radius: 5px;
+  font-family: 'IBM Plex Sans', -apple-system, sans-serif; font-weight: 600;
+  font-size: 12px; padding: 2px 7px; border-radius: 5px;
 }
 .rg-nd-tag.invest  { background: transparent; color: #0C447C; }
 .rg-nd-tag.invest2 { background: transparent; color: #6B21A8; }
