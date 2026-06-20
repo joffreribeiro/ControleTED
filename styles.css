@@ -2078,20 +2078,27 @@
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(odd) {
             background: #ffffff;
         }
-        /* Resumo (cons): forçar fundo branco uniforme em label e valores */
+        /* Resumo (cons): fundo branco uniforme em tr, td e col-sticky */
         #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons,
         #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons td,
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons .col-sticky,
         #detalhes #tedsDetalheContainer .rg-table tbody tr.cons,
-        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons td {
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons td,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons .col-sticky {
             background: #ffffff !important;
+            box-shadow: none !important;
         }
-        /* Exceções: linhas total e resultado mantêm seus fundos */
+        /* Exceções: total e resultado mantêm seus fundos */
         #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.total td,
-        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td {
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.total .col-sticky,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total .col-sticky {
             background: #F0F4F9 !important;
         }
         #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.resultado td,
-        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado td {
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.resultado .col-sticky,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado td,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado .col-sticky {
             background: #FFF1F1 !important;
         }
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover {
