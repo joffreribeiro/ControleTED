@@ -4956,7 +4956,8 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaRecursosGeraisTable td.rg-col-nd { text-align: center; }
 
 /* thead */
-.rg-table thead th { text-align: center; }
+#tabelaRecursosGeraisTable thead th,
+.rg-table thead th { text-align: center; text-transform: uppercase; white-space: nowrap; }
 .rg-table thead th.right { text-align: center; }
 
 /* Year group header */

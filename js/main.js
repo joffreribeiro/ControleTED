@@ -10832,29 +10832,30 @@
                 const th = document.createElement('th');
                 th.className = c.cls;
                 th.textContent = c.label;
-                if (monthsExpanded) th.rowSpan = 2;
+                th.rowSpan = 2;
                 tr1.appendChild(th);
             });
-            if (monthsExpanded) {
-                anos.forEach(a => {
-                    const th = document.createElement('th');
-                    th.colSpan = a.count;
-                    th.className = 'month-col-recGeral year-group' + (a.isFuture || !anosComDados.has(a.ano) ? ' future' : '');
-                    th.textContent = String(a.ano);
-                    tr1.appendChild(th);
-                });
-                const tr2 = thead.insertRow();
-                meses.forEach(m => {
-                    const th = document.createElement('th');
-                    let cls = 'month-col-recGeral month-col';
-                    if (m.isFirstOfYear) cls += ' first';
-                    if (m.isCurrent)     cls += ' current';
-                    if (m.isFuture)      cls += ' future';
-                    th.className = cls;
-                    th.textContent = m.label;
-                    tr2.appendChild(th);
-                });
-            }
+            anos.forEach(a => {
+                const th = document.createElement('th');
+                th.colSpan = a.count;
+                th.className = 'month-col-recGeral year-group' + (a.isFuture || !anosComDados.has(a.ano) ? ' future' : '');
+                th.textContent = String(a.ano);
+                if (!monthsExpanded) th.style.display = 'none';
+                tr1.appendChild(th);
+            });
+            const tr2 = thead.insertRow();
+            tr2.className = 'header-meses';
+            if (!monthsExpanded) tr2.style.display = 'none';
+            meses.forEach(m => {
+                const th = document.createElement('th');
+                let cls = 'month-col-recGeral month-col';
+                if (m.isFirstOfYear) cls += ' first';
+                if (m.isCurrent)     cls += ' current';
+                if (m.isFuture)      cls += ' future';
+                th.className = cls;
+                th.textContent = m.label;
+                tr2.appendChild(th);
+            });
 
             // ── Reconstruir colgroup ─────────────────────────────────────────
             {
