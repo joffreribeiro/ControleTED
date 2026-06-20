@@ -9945,11 +9945,13 @@
                         col.className = cls; col.style.width = w;
                         cg.appendChild(col);
                     });
-                    meses.forEach(() => {
-                        const col = document.createElement('col');
-                        col.className = 'month-col-execFin'; col.style.width = '80px';
-                        cg.appendChild(col);
-                    });
+                    if (monthsExpanded) {
+                        meses.forEach(() => {
+                            const col = document.createElement('col');
+                            col.className = 'month-col-execFin'; col.style.width = '80px';
+                            cg.appendChild(col);
+                        });
+                    }
                 }
 
                 // ── linhas de itens ─────────────────────────────────────────
