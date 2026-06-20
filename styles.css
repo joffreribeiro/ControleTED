@@ -4311,7 +4311,6 @@ table.ef-table tbody td.right  { text-align: right; }
 }
 .dt-tab-panel { display: none; }
 .dt-tab-panel.active { display: block; }
-.dt-tab-panel[data-panel="financial"] { max-width: 800px; }
 
 /* ============================================================
    FATURAMENTO
