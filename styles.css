@@ -4900,7 +4900,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .rg-table tbody tr.cons td.year-total {
   text-align: center; font-family: 'Nunito Sans', monospace;
   font-size: 12px; font-weight: 400; color: #374151;
-  background: #fff; border-left: 1px solid #f1f5f9;
+  background: inherit; border-left: none;
   vertical-align: middle; padding: 8px 10px;
 }
 .execfin-table tbody tr.cons td.year-total.zero,
