@@ -4727,7 +4727,7 @@ table.ef-table tbody td.right  { text-align: right; }
 /* Sticky first columns */
 .execfin-table .col-sticky {
   position: sticky; left: 0;
-  background: #fff; z-index: 2;
+  background: inherit; z-index: 2;
 }
 .execfin-table thead .col-sticky { background: #F4F4F2; z-index: 130; }
 
