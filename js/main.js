@@ -7281,8 +7281,10 @@
             btn.setAttribute('data-expanded', newExpanded ? '1' : '0');
             btn.textContent = newExpanded ? 'Ocultar detalhes mensais' : 'Ver detalhes mensais';
 
-            // execFin e recGeral reconstroem o thead do zero — só re-renderiza
+            // execFin e recGeral reconstroem o thead do zero — ajustar maxWidth e re-renderizar
             if (section === 'execFin') {
+                const w = document.getElementById('wrapperExecFin');
+                if (w) w.style.maxWidth = newExpanded ? 'none' : '';
                 try { atualizarTabelaExecFinanceira(); } catch(e) { console.error(e); }
                 return;
             }
@@ -7304,6 +7306,7 @@
                 if (wrapper) { wrapper.style.minWidth = ''; wrapper.style.width = ''; }
                 if (section === 'execFis') { const w = document.getElementById('wrapperExecFis'); if (w) w.style.maxWidth = ''; }
                 if (section === 'cadFis') { const w = document.getElementById('wrapperCadFis'); if (w) w.style.maxWidth = ''; }
+                if (section === 'cadFin') { const w = document.getElementById('wrapperCadFin'); if (w) w.style.maxWidth = ''; }
                 if (detalhe) { detalhe.classList.add('cadFin-collapsed'); detalhe.classList.remove('months-expanded'); }
             }
 
@@ -7322,7 +7325,10 @@
                 if (table) {
                     table.classList.remove('months-collapsed');
                     if (detalhe) { detalhe.classList.remove('cadFin-collapsed'); detalhe.classList.add('months-expanded'); }
-                    if (section === 'cadFin') table.style.minWidth = '1400px';
+                    if (section === 'cadFin') {
+                        table.style.minWidth = '1400px';
+                        const w = document.getElementById('wrapperCadFin'); if (w) w.style.maxWidth = 'none';
+                    }
                     else if (section === 'cadFis') {
                         table.style.minWidth = '2000px';
                         const w = document.getElementById('wrapperCadFis'); if (w) w.style.maxWidth = 'none';
@@ -9889,35 +9895,36 @@
                     {label:'Saldo',           cls:'col-saldo'},
                 ];
 
-                // Linha 1: fixas com rowspan=2 + agrupadores de ano (igual ao Cadastro Financeiro)
+                // Linha 1: fixas com rowspan=2 sempre + agrupadores de ano
                 const tr1 = thead.insertRow();
                 fixedCols.forEach(c => {
                     const th = document.createElement('th');
                     th.className = c.cls;
                     th.textContent = c.label;
-                    if (monthsExpanded) th.rowSpan = 2;
+                    th.rowSpan = 2;
                     tr1.appendChild(th);
                 });
-                if (monthsExpanded) {
-                    anos.forEach(a => {
-                        const th = document.createElement('th');
-                        th.colSpan = a.count;
-                        th.className = 'month-col-execFin year-group';
-                        th.textContent = String(a.ano);
-                        tr1.appendChild(th);
-                    });
+                anos.forEach(a => {
+                    const th = document.createElement('th');
+                    th.colSpan = a.count;
+                    th.className = 'month-col-execFin year-group';
+                    th.textContent = String(a.ano);
+                    if (!monthsExpanded) th.style.display = 'none';
+                    tr1.appendChild(th);
+                });
 
-                    // Linha 2: apenas meses (fixas já têm rowspan=2)
-                    const tr2 = thead.insertRow();
-                    meses.forEach(m => {
-                        const th = document.createElement('th');
-                        th.className = 'month-col-execFin month-col' +
-                            (m.isFirstOfYear ? ' first' : '') +
-                            (m.isCurrent ? ' current' : '');
-                        th.textContent = m.label;
-                        tr2.appendChild(th);
-                    });
-                }
+                // Linha 2: apenas meses (fixas já têm rowspan=2) — sempre presente
+                const tr2 = thead.insertRow();
+                tr2.className = 'header-meses';
+                if (!monthsExpanded) tr2.style.display = 'none';
+                meses.forEach(m => {
+                    const th = document.createElement('th');
+                    th.className = 'month-col-execFin month-col' +
+                        (m.isFirstOfYear ? ' first' : '') +
+                        (m.isCurrent ? ' current' : '');
+                    th.textContent = m.label;
+                    tr2.appendChild(th);
+                });
 
                 // ── reconstruir colgroup para refletir colunas atuais ───────
                 {
@@ -9936,13 +9943,11 @@
                         col.className = cls; col.style.width = w;
                         cg.appendChild(col);
                     });
-                    if (monthsExpanded) {
-                        meses.forEach(() => {
-                            const col = document.createElement('col');
-                            col.className = 'month-col-execFin'; col.style.width = '80px';
-                            cg.appendChild(col);
-                        });
-                    }
+                    meses.forEach(() => {
+                        const col = document.createElement('col');
+                        col.className = 'month-col-execFin'; col.style.width = '80px';
+                        cg.appendChild(col);
+                    });
                 }
 
                 // ── linhas de itens ─────────────────────────────────────────

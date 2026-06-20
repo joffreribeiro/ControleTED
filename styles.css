@@ -3130,6 +3130,7 @@
         #wrapperCadFin {
             display: block;
             width: 100%;
+            max-width: 800px;
             overflow-x: auto;
             border: 1px solid #ddd;
             border-radius: 0.25rem;
@@ -4611,6 +4612,7 @@ table.ef-table tbody td.right  { text-align: right; }
 #wrapperExecFin {
     display: block;
     width: 100%;
+    max-width: 800px;
     overflow-x: auto;
     padding-left: 0;
     margin-left: 0;
