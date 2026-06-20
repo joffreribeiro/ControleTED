@@ -3099,6 +3099,7 @@
             font-weight: 600;
             font-size: 13px;
             border-top: 1px solid rgba(0,0,0,0.12);
+            text-align: center;
         }
 
         /* CadFin: largura determinada pelo colgroup, não estica para preencher wrapper */
@@ -4768,6 +4769,7 @@ table.ef-table tbody td.right  { text-align: right; }
   border-top: 2px solid #185FA5;
   border-bottom: 2px solid #185FA5;
   padding: 11px 10px; font-weight: 700; color: #0C447C;
+  text-align: center;
 }
 .execfin-table tbody tr.execfin-total-row .col-sticky {
   background: #F0F4F9 !important;
@@ -5036,7 +5038,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .rg-table tbody tr.rg-total-row td {
   background: #F0F4F9 !important; font-weight: 700; color: #0C447C;
   border-top: 2px solid #185FA5; border-bottom: 2px solid #185FA5;
-  padding: 10px 10px;
+  padding: 10px 10px; text-align: center;
 }
 .rg-table tbody tr.rg-total-row td.month-cell {
   background: #F0F4F9 !important; font-family: 'Nunito Sans', monospace; font-size: 11px;
