@@ -2078,6 +2078,22 @@
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:nth-child(odd) {
             background: #ffffff;
         }
+        /* Resumo (cons): forçar fundo branco uniforme em label e valores */
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons,
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons td,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons td {
+            background: #ffffff !important;
+        }
+        /* Exceções: linhas total e resultado mantêm seus fundos */
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.total td,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.total td {
+            background: #F0F4F9 !important;
+        }
+        #detalhes #tedsDetalheContainer .execfin-table tbody tr.cons.resultado td,
+        #detalhes #tedsDetalheContainer .rg-table tbody tr.cons.resultado td {
+            background: #FFF1F1 !important;
+        }
         #detalhes #tedsDetalheContainer .tabela-padrao tbody tr:hover {
             background: #eaf2ff;
         }
