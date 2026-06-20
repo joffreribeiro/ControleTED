@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,500;0,6..12,600;0,6..12,700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-        <link rel="stylesheet" href="styles.css?v=20260621l">
+        <link rel="stylesheet" href="styles.css?v=20260621r">
     </head>
     <body>
 
@@ -1045,18 +1045,19 @@
                     <!-- CADASTRO FÍSICO -->
                     <div class="detalhe-secao cadFin-collapsed">
                         <div class="detalhe-secao-header">
-                                <h3 class="detalhe-secao-titulo"><i data-lucide="home" class="inline-icon-sm"></i> Cadastro Físico <span class="section-count-badge" id="count-fisicos">0</span></h3>
-                                <div class="detalhe-secao-actions">
-                                    <button type="button" class="btn-toggle-months" id="toggle-months-cadFis" data-expanded="0" onclick="toggleMonthCols('cadFis', this)">Ver detalhes mensais</button>
-                                    <button type="button" class="section-add-btn" onclick="abrirModalFisicoCad()">+ Adicionar</button>
-                                </div>
-                            </div>
+                            <h3 class="detalhe-secao-titulo"><i data-lucide="home" class="inline-icon-sm"></i> Cadastro Físico <span class="section-count-badge" id="count-fisicos">0</span></h3>
+                        </div>
                         <div class="detalhe-secao-body">
 
-                        <!-- KPIs + filtros (preenchidos por JS) -->
+                        <!-- KPIs (preenchidos por JS) -->
                         <div id="efCadFisWrap"></div>
 
                         <div id="wrapperCadFis" class="table-freeze-wrapper auto-style-015">
+                            <div class="table-actions-bar">
+                                <button type="button" class="btn-toggle-months" id="toggle-months-cadFis" data-expanded="0" onclick="toggleMonthCols('cadFis', this)">Ver detalhes mensais</button>
+                                <button type="button" class="section-add-btn" onclick="abrirModalFisicoCad()">+ Adicionar</button>
+                            </div>
+                            <div id="efCadFisFilters"></div>
                             <table id="tabelaCadFisTable" class="tabela-padrao ef-table">
                                 <thead>
                                     <tr>
@@ -1077,18 +1078,18 @@
                         </div>
                     </div>
 
-                    <!-- EXECU→fO FÍSICA -->
+                    <!-- EXECUÇÃO FÍSICA -->
                     <div class="detalhe-secao cadFin-collapsed">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="trending-up" class="inline-icon-sm"></i> Execução Física <span class="section-count-badge" id="count-execfis">0</span></h3>
-                            <div class="detalhe-secao-actions">
-                                <button type="button" class="btn-toggle-months" id="toggle-months-execFis" data-expanded="0" onclick="toggleMonthCols('execFis', this)">Ver detalhes mensais</button>
-                                                                <button type="button" class="section-add-btn" onclick="showToast('Para registrar entregas, use o Cadastro Físico ↑', 'info')">+ Adicionar</button>
-                            </div>
                         </div>
                         <div class="detalhe-secao-body">
 
                         <div id="wrapperExecFis" class="table-freeze-wrapper auto-style-015">
+                            <div class="table-actions-bar">
+                                <button type="button" class="btn-toggle-months" id="toggle-months-execFis" data-expanded="0" onclick="toggleMonthCols('execFis', this)">Ver detalhes mensais</button>
+                                <button type="button" class="section-add-btn" onclick="showToast('Para registrar entregas, use o Cadastro Físico ↑', 'info')">+ Adicionar</button>
+                            </div>
                             <table id="tabelaExecFisTable" class="tabela-padrao">
                                 <thead>
                                     <tr>
@@ -1127,16 +1128,17 @@
                     <div class="detalhe-secao cadFin-collapsed">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="wallet" class="inline-icon-sm"></i> Cadastro Financeiro <span class="section-count-badge" id="count-financeiro">0</span></h3>
-                            <div class="detalhe-secao-actions">
-                                <button type="button" class="btn-toggle-months" id="toggle-months-cadFin" data-expanded="0" onclick="toggleMonthCols('cadFin', this)">Ver detalhes mensais</button>
-                                <button type="button" class="section-add-btn" onclick="abrirModalFinanceiro()">+ Adicionar</button>
-                            </div>
                         </div>
                         <div class="detalhe-secao-body">
 
                         <div id="cfKpiWrap"></div>
 
                         <div id="wrapperCadFin" class="table-wrapper">
+                            <!-- Barra de ações acima da tabela -->
+                            <div class="table-actions-bar">
+                                <button type="button" class="btn-toggle-months" id="toggle-months-cadFin" data-expanded="0" onclick="toggleMonthCols('cadFin', this)">Ver detalhes mensais</button>
+                                <button type="button" class="section-add-btn" onclick="abrirModalFinanceiro()">+ Adicionar</button>
+                            </div>
                             <!-- Filtros Cadastro Financeiro -->
                             <div class="filter-bar" id="filterBarCadFin">
                                 <span class="filter-bar-label">Filtrar:</span>
@@ -1187,11 +1189,6 @@
                     <div class="detalhe-secao cadFin-collapsed">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart-3" class="inline-icon-sm"></i> Execução Financeira <span class="section-count-badge" id="count-execfin">0</span></h3>
-                            <div class="detalhe-secao-actions">
-                                <button type="button" class="btn-toggle-months" id="toggle-months-execFin" data-expanded="0" onclick="toggleMonthCols('execFin', this)">Ver detalhes mensais</button>
-                                <button type="button" class="btn-toggle-months" id="toggle-consolidar-execFin" data-consolidado="0" onclick="toggleConsolidarExecFin(this)">Consolidar por ND</button>
-                                <button type="button" class="section-add-btn" onclick="abrirModalExecFin()">+ Adicionar</button>
-                            </div>
                         </div>
                         <div class="detalhe-secao-body">
 
@@ -1199,6 +1196,12 @@
                         <div id="execfin-kpis-container"></div>
 
                         <div id="wrapperExecFin" class="table-freeze-wrapper">
+                            <!-- Barra de ações acima da tabela -->
+                            <div class="table-actions-bar">
+                                <button type="button" class="btn-toggle-months" id="toggle-months-execFin" data-expanded="0" onclick="toggleMonthCols('execFin', this)">Ver detalhes mensais</button>
+                                <button type="button" class="btn-toggle-months" id="toggle-consolidar-execFin" data-consolidado="0" onclick="toggleConsolidarExecFin(this)">Consolidar por ND</button>
+                                <button type="button" class="section-add-btn" onclick="abrirModalExecFin()">+ Adicionar</button>
+                            </div>
                             <!-- Filtros Execução Financeira -->
                             <div class="filter-bar" id="filterBarExecFin">
                                 <span class="filter-bar-label">Filtrar:</span>
@@ -1241,10 +1244,6 @@
                     <div class="detalhe-secao">
                         <div class="detalhe-secao-header">
                             <h3 class="detalhe-secao-titulo"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL <span class="section-count-badge" id="count-recgeral">0</span></h3>
-                            <div class="detalhe-secao-actions">
-                                <button type="button" id="toggle-months-recGeral" class="btn btn-sm auto-style-005" data-expanded="0" onclick="toggleMonthCols('recGeral', this)">Ver detalhes mensais</button>
-                                <button type="button" class="section-add-btn" onclick="abrirModalRecGeral()">+ Adicionar</button>
-                            </div>
                         </div>
                         <div class="detalhe-secao-body">
 
@@ -1252,6 +1251,11 @@
                         <div id="recgeral-kpis-container"></div>
 
                         <div id="wrapperRecGeral" class="table-freeze-wrapper">
+                            <!-- Barra de ações acima da tabela -->
+                            <div class="table-actions-bar">
+                                <button type="button" id="toggle-months-recGeral" class="btn-toggle-months" data-expanded="0" onclick="toggleMonthCols('recGeral', this)">Ver detalhes mensais</button>
+                                <button type="button" class="section-add-btn" onclick="abrirModalRecGeral()">+ Adicionar</button>
+                            </div>
                             <!-- Filtros Recursos Gerais -->
                             <div class="filter-bar" id="filterBarRecGeral">
                                 <span class="filter-bar-label">Filtrar:</span>
@@ -1767,7 +1771,7 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260621k"></script>
+    <script src="js/main.js?v=20260621q"></script>
 
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js"></script>

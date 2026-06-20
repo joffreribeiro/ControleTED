@@ -6378,7 +6378,8 @@
                     if (mods && (mods.mInicio || mods.mFinal)) nAdit++;
                 });
 
-                efWrap.innerHTML += `
+                const efFiltersWrap = document.getElementById('efCadFisFilters');
+                if (efFiltersWrap) efFiltersWrap.innerHTML = `
                 <div class="ef-filters" id="efFilters">
                     <span class="ef-filter-label">Filtrar:</span>
                     <button class="ef-chip active" data-filtro="todas" onclick="filtrarFasesCadFis(this)">Todas <span class="ef-chip-pill">${fisicosSorted.length}</span></button>
