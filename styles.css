@@ -3118,14 +3118,14 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        /* Larguras fixas em px para as 6 colunas que ficam visíveis — soma=630px igual à ExecFin */
-        #tabelaFinanceiraCompleta col.col-nd  { width: 110px; }
-        #tabelaFinanceiraCompleta col.col-up  { width: 70px; }
-        #tabelaFinanceiraCompleta col.col-m   { width: 50px; }
-        #tabelaFinanceiraCompleta col.col-mes { width: 110px; }
-        #tabelaFinanceiraCompleta col.col-valor   { width: 140px; }
-        #tabelaFinanceiraCompleta col.col-percent { width: 100px; }
-        #tabelaFinanceiraCompleta col.col-acao    { width: 50px; }
+        /* Larguras fixas em px para as 7 colunas visíveis — soma=800px */
+        #tabelaFinanceiraCompleta col.col-nd      { width: 120px; }
+        #tabelaFinanceiraCompleta col.col-up      { width: 70px; }
+        #tabelaFinanceiraCompleta col.col-m       { width: 50px; }
+        #tabelaFinanceiraCompleta col.col-mes     { width: 130px; }
+        #tabelaFinanceiraCompleta col.col-valor   { width: 200px; }
+        #tabelaFinanceiraCompleta col.col-percent { width: 160px; }
+        #tabelaFinanceiraCompleta col.col-acao    { width: 70px; }
         /* Container: encolhe ao tamanho da tabela, scroll quando necessário */
         #wrapperCadFin {
             display: block;
@@ -4658,12 +4658,12 @@ table.ef-table tbody td.right  { text-align: right; }
     border-spacing: 0;
 }
 
-/* colunas fixas — ND+UP+VPrev+VReal+Saldo = 748px */
-#tabelaExecFinanceiraTable col.col-nd     { width: 90px; }
-#tabelaExecFinanceiraTable col.col-up     { width: 55px; }
-#tabelaExecFinanceiraTable col.col-vprev  { width: 201px; }
-#tabelaExecFinanceiraTable col.col-vreal  { width: 201px; }
-#tabelaExecFinanceiraTable col.col-saldo  { width: 201px; }
+/* colunas fixas — ND+UP+VPrev+VReal+Saldo = 800px */
+#tabelaExecFinanceiraTable col.col-nd     { width: 100px; }
+#tabelaExecFinanceiraTable col.col-up     { width: 60px; }
+#tabelaExecFinanceiraTable col.col-vprev  { width: 213px; }
+#tabelaExecFinanceiraTable col.col-vreal  { width: 213px; }
+#tabelaExecFinanceiraTable col.col-saldo  { width: 214px; }
 #tabelaExecFinanceiraTable col.col-status { width: 90px; }
 
 /* box-sizing nas células */
@@ -4934,6 +4934,7 @@ table.ef-table tbody td.right  { text-align: right; }
 #wrapperRecGeral {
     display: block;
     width: 100%;
+    max-width: 800px;
     overflow-x: auto;
 }
 #wrapperRecGeral #tabelaRecursosGeraisTable {
@@ -4948,11 +4949,11 @@ table.ef-table tbody td.right  { text-align: right; }
     border-spacing: 0;
 }
 
-/* colunas fixas — ND+VPrev+VReal+Saldo = 748px */
-#tabelaRecursosGeraisTable col.rg-col-nd    { width: 150px; }
-#tabelaRecursosGeraisTable col.rg-col-vprev { width: 200px; }
-#tabelaRecursosGeraisTable col.rg-col-vreal { width: 200px; }
-#tabelaRecursosGeraisTable col.rg-col-saldo { width: 198px; }
+/* colunas fixas — ND+VPrev+VReal+Saldo = 800px */
+#tabelaRecursosGeraisTable col.rg-col-nd    { width: 110px; }
+#tabelaRecursosGeraisTable col.rg-col-vprev { width: 230px; }
+#tabelaRecursosGeraisTable col.rg-col-vreal { width: 230px; }
+#tabelaRecursosGeraisTable col.rg-col-saldo { width: 230px; }
 #tabelaRecursosGeraisTable td.rg-col-nd { text-align: center; }
 
 /* thead */

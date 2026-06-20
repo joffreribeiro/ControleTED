@@ -7291,6 +7291,10 @@
                 return;
             }
             if (section === 'recGeral') {
+                const w = document.getElementById('wrapperRecGeral');
+                if (w) w.style.maxWidth = newExpanded ? 'none' : '';
+                const detalheRG = btn.closest('.detalhe-secao');
+                if (detalheRG) { detalheRG.classList.toggle('months-expanded', newExpanded); detalheRG.classList.toggle('cadFin-collapsed', !newExpanded); }
                 try { atualizarTabelaRecursosGerais(); } catch(e) { console.error(e); }
                 return;
             }
@@ -9933,16 +9937,10 @@
                     let cg = tableEl.querySelector('colgroup');
                     if (!cg) { cg = document.createElement('colgroup'); tableEl.prepend(cg); }
                     cg.innerHTML = '';
-                    const fixedColDefs = [
-                        {cls:'col-nd',    w:'80px'},
-                        {cls:'col-up',    w:'20px'},
-                        {cls:'col-vprev', w:'150px'},
-                        {cls:'col-vreal', w:'150px'},
-                        {cls:'col-saldo', w:'150px'},
-                    ];
-                    fixedColDefs.forEach(({cls, w}) => {
+                    // larguras definidas pelo CSS #tabelaExecFinanceiraTable col.* — não sobrescrever inline
+                    ['col-nd','col-up','col-vprev','col-vreal','col-saldo'].forEach(cls => {
                         const col = document.createElement('col');
-                        col.className = cls; col.style.width = w;
+                        col.className = cls;
                         cg.appendChild(col);
                     });
                     if (monthsExpanded) {
@@ -10864,8 +10862,8 @@
                 let cg = tableEl.querySelector('colgroup');
                 if (!cg) { cg=document.createElement('colgroup'); tableEl.prepend(cg); }
                 cg.innerHTML='';
-                [{cls:'rg-col-nd',w:'100px'},{cls:'rg-col-vprev',w:'150px'},{cls:'rg-col-vreal',w:'150px'},{cls:'rg-col-saldo',w:'150px'}]
-                    .forEach(({cls,w})=>{ const col=document.createElement('col'); col.className=cls; col.style.width=w; cg.appendChild(col); });
+                ['rg-col-nd','rg-col-vprev','rg-col-vreal','rg-col-saldo']
+                    .forEach(cls=>{ const col=document.createElement('col'); col.className=cls; cg.appendChild(col); });
                 if (monthsExpanded) meses.forEach(()=>{ const col=document.createElement('col'); col.className='month-col-recGeral'; col.style.width='80px'; cg.appendChild(col); });
             }
 
