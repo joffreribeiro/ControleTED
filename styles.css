@@ -4136,6 +4136,7 @@ table.ef-table tbody td.right  { text-align: right; }
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin-bottom: 14px;
+  max-width: 800px;
 }
 @media (max-width: 900px) { .cf-kpis { grid-template-columns: repeat(2, 1fr); } }
 .cf-kpi {
@@ -4621,7 +4622,7 @@ table.ef-table tbody td.right  { text-align: right; }
 }
 
 /* KPI strip */
-.execfin-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+.execfin-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; max-width: 800px; }
 @media (max-width: 900px) { .execfin-kpis { grid-template-columns: repeat(2,1fr); } }
 .execfin-kpi {
   background: #fff; border: 0.5px solid rgba(0,0,0,0.10);
