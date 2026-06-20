@@ -118,7 +118,7 @@
         /* ===== Base ===== */
         /* ===== Layout base ===== */
         body {
-            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--bg-secondary);
             color: var(--color-text-primary);
             font-size: 0.925rem;
@@ -626,7 +626,7 @@
             border-radius: 999px;
             background: var(--color-primary-mid);
         }
-        .exec-perc { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; margin-left: 8px; color: var(--color-text-primary); }
+        .exec-perc { font-family: 'Nunito Sans', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; margin-left: 8px; color: var(--color-text-primary); }
         .status-badge { display:inline-block; font-size:11px; padding:3px 9px; border-radius:999px; margin-left:8px; font-weight:600; }
         .status-badge.concluido { background:#EAF3DE; color:#3B6D11; }
         .status-badge.acima { background:#FCEBEB; color:#A32D2D; }
@@ -638,7 +638,7 @@
         .exec-row.animate { animation: rowEnter 360ms cubic-bezier(.2,.9,.2,1) forwards; }
 
         /* Saldo: monospace e estados */
-        .col-saldo { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+        .col-saldo { font-family: 'Nunito Sans', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; text-align: center; }
         .col-saldo.zero { color: var(--color-text-secondary); }
         .col-saldo.neg { color: #A32D2D; }
 
@@ -932,11 +932,11 @@
         .ted-card-progress { margin-bottom: 8px; }
         .ted-card-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .ted-card-progress-label { font-size: 11px; color: #6b6b6b; }
-        .ted-card-progress-pct { font-size: 11px; font-family: 'IBM Plex Mono', ui-monospace, monospace; color: #1a1a1a; }
+        .ted-card-progress-pct { font-size: 11px; font-family: 'Nunito Sans', ui-monospace, monospace; color: #1a1a1a; }
         .ted-card-progress-track { background: rgba(0,0,0,0.07); border-radius: 4px; height: 6px; overflow: hidden; }
         .ted-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 0.5px solid rgba(0,0,0,0.07); }
-        .ted-card-saldo-pos { font-size: 12px; font-weight: 500; color: #3B6D11; font-family: 'IBM Plex Mono', ui-monospace, monospace; }
-        .ted-card-saldo-neg { font-size: 12px; font-weight: 500; color: #A32D2D; font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+        .ted-card-saldo-pos { font-size: 12px; font-weight: 500; color: #3B6D11; font-family: 'Nunito Sans', ui-monospace, monospace; }
+        .ted-card-saldo-neg { font-size: 12px; font-weight: 500; color: #A32D2D; font-family: 'Nunito Sans', ui-monospace, monospace; }
         .ted-card-status-col { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
         .ted-card-status-row { display:flex; gap:6px; align-items:flex-start; }
         .ted-card-status-note { font-size:11px; font-weight:600; color:#b45309; line-height:1; }
@@ -1591,12 +1591,12 @@
         .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:14px; }
         .field-label { font-size:11px; color:#6b6b6b; margin-bottom:2px; }
         .field-value { font-size:13px; font-weight:500; color:#1a1a1a; min-height:1.2em; word-break:normal; overflow-wrap:normal; }
-        .field-value.mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size:13px; }
+        .field-value.mono { font-family: 'Nunito Sans', ui-monospace, monospace; font-size:13px; }
         .field-value.empty { color:#9b9b9b; }
 
         /* Legado (mantido para compatibilidade com outros usos) */
         .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.9rem; margin-bottom: 0.6rem; }
-        .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+        .mono { font-family: 'Nunito Sans', ui-monospace, monospace; }
         .badge-prorrogado { background:#EAF3DE; color:#3B6D11; padding:3px 8px; border-radius:999px; font-weight:600; font-size:11px; margin-left:6px; }
         .fim-vigencia-current { display:flex; align-items:center; gap:0.5rem; font-weight:500; }
         .fim-vigencia-meta { font-size:11px; color:#9b9b9b; margin-top:3px; }
@@ -1777,7 +1777,7 @@
         .tabela-padrao {
             width: 100%;
             border-collapse: collapse;
-            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-size: 13px;
         }
                 /* Regra base para cabeçalhos de tabela (padronizada) */
@@ -1785,7 +1785,7 @@
                     background: #F4F4F2;
                     color: #1a1a1a;
                     font-size: 11px;
-                    font-weight: 600;
+                    font-weight: 700;
                     text-align: center;
                     vertical-align: middle;
                     padding: 10px 12px;
@@ -1801,6 +1801,7 @@
         .tabela-padrao td {
             padding: 0.6rem 0.5rem;
             vertical-align: middle;
+            text-align: center;
         }
         .tabela-padrao thead th {
             text-align: center;
@@ -1836,7 +1837,7 @@
             box-shadow: inset 2px 0 0 #000;
         }
         .tabela-padrao th {
-            font-weight: 600;
+            font-weight: 700;
             white-space: nowrap;
             letter-spacing: 0.02em;
         }
@@ -1845,7 +1846,7 @@
         .tabela-padrao .col-m { width: 50px; text-align: center; }
         .tabela-padrao .col-mes { width: 90px; text-align: center; }
         .tabela-padrao .col-qtde { width: 75px; min-width: 75px; text-align: center; white-space: nowrap; }
-        .tabela-padrao .col-valor { width: 100px; text-align: right; }
+        .tabela-padrao .col-valor { width: 100px; text-align: center; }
         .tabela-padrao .col-percent { min-width: 90px; text-align: center; }
         .tabela-padrao .col-nd { min-width: 60px; text-align: center; }
         .tabela-padrao .col-up { min-width: 60px; text-align: center; }
@@ -1853,14 +1854,14 @@
         .tabela-padrao .col-objeto { min-width: 100px; text-align: center; }
         .tabela-padrao .col-descricao { min-width: 150px; text-align: center; }
         .tabela-padrao .col-meta { width: 100px; text-align: center; }
-        .tabela-padrao .col-saldo { width: 100px; text-align: right; }
+        .tabela-padrao .col-saldo { width: 100px; text-align: center; }
         /* Linhas: branco de base e hover suave */
         .tabela-padrao tbody tr { background: #ffffff; }
         .tabela-padrao tbody td { border-bottom: 0.5px solid var(--color-border); }
         .tabela-padrao tbody tr:last-child td { border-bottom: none; }
 
         /* Valores financeiros: alinhamento direito com numerais tabulares */
-        .tabela-padrao .col-valor { text-align: right; font-variant-numeric: normal; }
+        .tabela-padrao .col-valor { text-align: center; font-variant-numeric: normal; }
 
         /* Linha de total (sempre em tfoot) */
         .tabela-padrao .linha-total {
@@ -2026,7 +2027,7 @@
         }
 
         #detalhes #tedsDetalheContainer .tabela-padrao {
-            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-size: 13px;
             line-height: 1.35;
         }
@@ -2291,7 +2292,7 @@
             z-index: 1;
         }
         #dashboard .stat-card .value {
-            font-family: 'IBM Plex Mono', ui-monospace, monospace;
+            font-family: 'Nunito Sans', ui-monospace, monospace;
             font-size: 1.5rem;
             font-weight: 700;
             color: #0f172a;
@@ -2780,7 +2781,7 @@
         .resumo-anual-grid { display:grid; gap:0; align-items:center; }
         .resumo-anual-grid .resumo-header { font-size:12px; font-weight:500; color:var(--color-text-secondary); text-align:center; padding-bottom:10px; }
         .resumo-anual-grid .resumo-label { font-size:12px; color:var(--color-text-secondary); padding:8px 10px; text-align:left; white-space:normal; word-break:break-word; line-height:1.4; align-self:center; }
-        .resumo-anual-grid .resumo-value { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size:12px; text-align:center; padding:8px 10px; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
+        .resumo-anual-grid .resumo-value { font-family: 'Nunito Sans', ui-monospace, monospace; font-size:12px; text-align:center; padding:8px 10px; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
         .resumo-anual-grid .resumo-value.negative { color: #A32D2D; }
         .resumo-anual-grid .resumo-value.saldo { font-weight:500; color:var(--color-text-primary); border-bottom: none; }
 
@@ -3077,7 +3078,7 @@
         td.valor,
         td.saldo,
         td.nd-code {
-            font-family: 'IBM Plex Mono', ui-monospace, monospace;
+            font-family: 'Nunito Sans', ui-monospace, monospace;
             font-variant-numeric: tabular-nums;
             font-size: 13px;
         }
@@ -3669,7 +3670,7 @@
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--text);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
 }
 .rel-kpi-sub {
   font-size: 0.68rem;
@@ -3761,7 +3762,7 @@
 .overview-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; align-items: start; }
 @media (max-width: 1100px) { .overview-two-col { grid-template-columns: 1fr; } }
 .ted-hero-id {
-  font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  font-family: 'Nunito Sans', monospace; font-size: 12px;
   color: rgba(255,255,255,0.70); margin-bottom: 6px; letter-spacing: 0.04em;
   display: flex; align-items: baseline; gap: 6px;
 }
@@ -3792,7 +3793,7 @@
   border-left: 1px solid rgba(255,255,255,0.18);
 }
 .ted-hero-cd-num {
-  font-size: 32px; font-weight: 700; font-family: 'IBM Plex Mono', monospace;
+  font-size: 32px; font-weight: 700; font-family: 'Nunito Sans', monospace;
   line-height: 1; color: #fff;
 }
 .ted-hero-cd-label {
@@ -3828,7 +3829,7 @@
   letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 5px;
 }
 .kpi-val {
-  font-size: 17px; font-weight: 600; font-family: 'IBM Plex Mono', monospace;
+  font-size: 17px; font-weight: 600; font-family: 'Nunito Sans', monospace;
   color: #1a1a1a; line-height: 1.2; margin-bottom: 3px;
 }
 .kpi-val .cur { font-size: 10px; color: #94a3b8; margin-right: 2px; font-weight: 500; }
@@ -3841,7 +3842,7 @@
 .kpi-chip {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 10.5px; font-weight: 600;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
   padding: 2px 8px; border-radius: 999px;
 }
 .kpi-chip.blue  { background: #E6F1FB; color: #0C447C; }
@@ -3867,7 +3868,7 @@
   background: #EAF3DE; color: #3B6D11; font-size: 9.5px; font-weight: 700;
   padding: 2px 8px; border-radius: 999px; letter-spacing: 0.04em;
 }
-.vig-meta { font-size: 11px; color: #64748b; font-family: 'IBM Plex Mono', monospace; }
+.vig-meta { font-size: 11px; color: #64748b; font-family: 'Nunito Sans', monospace; }
 /* ── Timeline de Vigência (SVG) ───────────────────────────────────── */
 .vig-bar-wrap {
   display: block; margin: 0 4px;
@@ -3892,7 +3893,7 @@
   width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
   background: #E6F1FB; color: #0C447C;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700;
+  font-family: 'Nunito Sans', monospace; font-size: 12px; font-weight: 700;
 }
 .aditivo-num-badge.apostilamento { background: #EAF3DE; color: #3B6D11; }
 .aditivo-card-body { flex: 1; min-width: 0; }
@@ -3900,7 +3901,7 @@
   display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;
 }
 .aditivo-card-tipo { font-size: 12.5px; font-weight: 600; color: #1a1a1a; }
-.aditivo-card-date { font-size: 11px; color: #64748b; font-family: 'IBM Plex Mono', monospace; }
+.aditivo-card-date { font-size: 11px; color: #64748b; font-family: 'Nunito Sans', monospace; }
 .change-chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .change-chip-new {
   display: inline-flex; align-items: center; gap: 4px;
@@ -3908,9 +3909,9 @@
   padding: 2px 8px; border-radius: 6px; font-size: 11px;
 }
 .change-chip-new .ch-field { color: #64748b; font-weight: 500; }
-.change-chip-new .ch-old  { text-decoration: line-through; text-decoration-color: #ef4444; text-decoration-thickness: 2px; color: #64748b; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
+.change-chip-new .ch-old  { text-decoration: line-through; text-decoration-color: #ef4444; text-decoration-thickness: 2px; color: #64748b; font-family: 'Nunito Sans', monospace; font-size: 10.5px; }
 .change-chip-new .ch-arrow { color: #94a3b8; margin: 0 2px; }
-.change-chip-new .ch-new  { color: #3B6D11; font-weight: 600; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
+.change-chip-new .ch-new  { color: #3B6D11; font-weight: 600; font-family: 'Nunito Sans', monospace; font-size: 10.5px; }
 .change-chip-new.amber .ch-new { color: #854F0B; }
 .aditivo-card-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; pointer-events: auto; position: relative; z-index: 10; }
 
@@ -3945,10 +3946,10 @@
 .obj-row-new.linha-excluida-aditivo .obj-total-new { text-decoration: line-through; text-decoration-color: #ef4444; text-decoration-thickness: 2px; color: #64748b; }
 .obj-name-new { font-weight: 600; color: #1a1a1a; }
 .obj-sub-new  { font-size: 10.5px; color: #94a3b8; margin-top: 1px; }
-.obj-num-new  { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #64748b; text-align: right; white-space: nowrap; }
+.obj-num-new  { font-family: 'Nunito Sans', monospace; font-size: 11.5px; color: #64748b; text-align: right; white-space: nowrap; }
 .obj-share-bar-new { height: 5px; background: #F7F9FC; border-radius: 3px; overflow: hidden; width: 100%; }
 .obj-share-fill-new { height: 100%; background: #185FA5; border-radius: 3px; transition: width 0.4s; }
-.obj-total-new { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; font-weight: 600; color: #1a1a1a; text-align: right; white-space: nowrap; }
+.obj-total-new { font-family: 'Nunito Sans', monospace; font-size: 12.5px; font-weight: 600; color: #1a1a1a; text-align: right; white-space: nowrap; }
 .obj-actions-new { display: flex; gap: 4px; justify-content: flex-end; }
 .obj-tfoot-new {
   display: grid;
@@ -3957,7 +3958,7 @@
   padding: 8px 14px; background: #F7F9FC; border-top: 1px solid rgba(0,0,0,0.07);
   font-size: 11.5px; color: #64748b;
 }
-.obj-tfoot-total { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: #0C447C; text-align: right; white-space: nowrap; }
+.obj-tfoot-total { font-family: 'Nunito Sans', monospace; font-size: 13px; font-weight: 700; color: #0C447C; text-align: right; white-space: nowrap; }
 
 /* Situação do TED — card condicional */
 .situacao-ted-card {
@@ -3985,7 +3986,7 @@
   letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 5px;
 }
 .ef-kpi-val {
-  font-size: 19px; font-weight: 600; font-family: 'IBM Plex Mono', monospace;
+  font-size: 19px; font-weight: 600; font-family: 'Nunito Sans', monospace;
   color: #1a1a1a; line-height: 1.1;
 }
 .ef-kpi-val .small { font-size: 12px; color: #94a3b8; font-weight: 500; margin-left: 4px; }
@@ -4077,7 +4078,7 @@
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 30px; height: 22px; border-radius: 6px;
   background: #E6F1FB; color: #0C447C;
-  font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 700;
+  font-family: 'Nunito Sans', monospace; font-size: 11.5px; font-weight: 700;
   padding: 0 6px; white-space: nowrap;
 }
 
@@ -4088,7 +4089,7 @@
 }
 
 .ef-qty-wrap { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; min-width: 90px; }
-.ef-qty-line { display: flex; gap: 4px; align-items: baseline; font-family: 'IBM Plex Mono', monospace; }
+.ef-qty-line { display: flex; gap: 4px; align-items: baseline; font-family: 'Nunito Sans', monospace; }
 .ef-qty-line .num   { font-size: 13px; font-weight: 600; }
 .ef-qty-line .denom { font-size: 11px; color: #94a3b8; }
 .ef-qty-bar { width: 100%; height: 3px; background: #F1F5F9; border-radius: 2px; overflow: hidden; }
@@ -4096,7 +4097,7 @@
 .ef-qty-bar-fill.amber { background: #c07a1c; }
 
 .ef-periodo { font-size: 12.5px; text-align: center; }
-.ef-periodo-meses { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #1a1a1a; font-weight: 500; text-align: center; }
+.ef-periodo-meses { font-family: 'Nunito Sans', monospace; font-size: 11.5px; color: #1a1a1a; font-weight: 500; text-align: center; }
 .ef-periodo-datas { font-size: 11.5px; color: #64748b; margin-top: 2px; text-align: center; }
 .ef-adit-pill {
   display: inline-flex; align-items: center; gap: 3px;
@@ -4155,13 +4156,13 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-kpi-sub   { font-size: 11px; color: #6b7280; }
 
 /* ND tags */
-.nd-tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 12px; font-weight: 600; font-family: 'IBM Plex Sans', -apple-system, sans-serif; white-space: nowrap; }
+.nd-tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 12px; font-weight: 600; font-family: 'Nunito Sans', -apple-system, sans-serif; white-space: nowrap; }
 .nd-tag.invest  { background: transparent; color: #1d4ed8; }
 .nd-tag.custeio { background: transparent; color: #92400e; }
 .nd-tag.outros  { background: transparent; color: #374151; }
 
 /* UP pills */
-.up-pill { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 12px; font-weight: 600; font-family: 'IBM Plex Sans', -apple-system, sans-serif; white-space: nowrap; }
+.up-pill { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 12px; font-weight: 600; font-family: 'Nunito Sans', -apple-system, sans-serif; white-space: nowrap; }
 .up-pill.fi { background: #dcfce7; color: #15803d; }
 .up-pill.ua { background: #fce7f3; color: #9d174d; }
 .up-pill.outros { background: #f3f4f6; color: #374151; }
@@ -4206,20 +4207,20 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-grp-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background 0.1s; }
 .cf-grp-table tbody tr:hover { background: #f8fafc; }
 .cf-grp-table tbody td { padding: 6px 10px; vertical-align: middle; }
-.cf-grp-table tbody td.right { text-align: right; }
+.cf-grp-table tbody td.right { text-align: center; }
 .cf-grp-table tbody td.center { text-align: center; }
 
 /* val-share mini bar — mantido para compatibilidade */
 .val-share { display: flex; align-items: center; gap: 5px; width: 100%; }
 .val-share-bar { flex: 1; height: 5px; border-radius: 99px; background: #e5e7eb; overflow: hidden; min-width: 30px; }
 .val-share-fill { height: 100%; border-radius: 99px; background: #3b82f6; }
-.val-share-pct { font-size: 11px; color: #374151; white-space: nowrap; min-width: 36px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
+.val-share-pct { font-size: 11px; color: #374151; white-space: nowrap; min-width: 36px; text-align: right; font-family: 'Nunito Sans', monospace; }
 
 /* coluna "A Receber" — formato diferenciado do valor da ND */
 .saldo-receber {
     display: inline-block;
     font-size: 0.72rem;
-    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-family: 'Nunito Sans', 'Courier New', monospace;
     font-weight: 500;
     color: #b45309;
     background: #fef3c7;
@@ -4341,7 +4342,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .fat-kpi-value {
   font-size: 1.2rem;
   font-weight: 700;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
   color: var(--text, #0f172a);
   line-height: 1.2;
 }
@@ -4417,7 +4418,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .fat-fase-totais {
   font-size: 0.72rem;
   color: var(--text-muted);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
   flex: 1;
 }
 .fat-fase-chevron { font-size: 0.8rem; color: var(--text-muted); transition: transform 0.2s; margin-left: auto; }
@@ -4486,12 +4487,12 @@ table.ef-table tbody td.right  { text-align: right; }
 .fat-cell-qtde {
   font-size: 0.72rem;
   color: var(--text-muted);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
 }
 .fat-cell-valor {
   font-size: 0.78rem;
   font-weight: 700;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
   color: var(--text);
 }
 
@@ -4525,12 +4526,12 @@ table.ef-table tbody td.right  { text-align: right; }
 .fat-entrega-qtde {
   font-size: 0.72rem;
   color: var(--text-muted);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
 }
 .fat-entrega-valor {
   font-size: 0.75rem;
   font-weight: 700;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
   color: #166534;
 }
 .fat-nf {
@@ -4567,7 +4568,7 @@ table.ef-table tbody td.right  { text-align: right; }
   padding: 7px 12px;
   font-size: 0.78rem;
   font-weight: 700;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
   color: #166534;
   border-top: 2px solid var(--border);
 }
@@ -4575,7 +4576,7 @@ table.ef-table tbody td.right  { text-align: right; }
   padding: 7px 12px;
   font-size: 0.72rem;
   font-weight: 700;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
   border-top: 2px solid var(--border);
 }
 .fat-tfoot-diff.pos  { color: #3B6D11; }
@@ -4594,7 +4595,7 @@ table.ef-table tbody td.right  { text-align: right; }
   border-radius: 10px;
 }
 .fat-totais-item-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; letter-spacing: 0.04em; }
-.fat-totais-item-value { font-size: 1rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+.fat-totais-item-value { font-size: 1rem; font-weight: 700; font-family: 'Nunito Sans', monospace; }
 .fat-totais-item-value.neg { color: #A32D2D; }
 
 .fat-empty {
@@ -4637,7 +4638,7 @@ table.ef-table tbody td.right  { text-align: right; }
   letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 5px;
 }
 .execfin-kpi-val {
-  font-size: 17px; font-weight: 600; font-family: 'IBM Plex Mono', monospace;
+  font-size: 17px; font-weight: 600; font-family: 'Nunito Sans', monospace;
   color: #1a1a1a; line-height: 1.15;
 }
 .execfin-kpi-val .cur { font-size: 11px; color: #94a3b8; margin-right: 3px; font-weight: 500; }
@@ -4680,9 +4681,9 @@ table.ef-table tbody td.right  { text-align: right; }
 #tabelaFinanceiraCompleta thead th,
 #tabelaExecFinanceiraTable thead th,
 #tabelaRecursosGeraisTable thead th {
-  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
   font-size: 11px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   text-transform: uppercase;
   text-align: center;
   white-space: nowrap;
@@ -4742,7 +4743,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Monthly value cells */
 .execfin-table tbody td.month-cell {
-  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  font-family: 'Nunito Sans', monospace; font-size: 11px;
   text-align: right; border-left: 1px solid rgba(0,0,0,0.03);
   color: #475569; background: #FCFDFE; cursor: pointer;
 }
@@ -4772,7 +4773,7 @@ table.ef-table tbody td.right  { text-align: right; }
   background: #F0F4F9 !important;
 }
 .execfin-table tbody tr.execfin-total-row td.month-cell {
-  font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;
+  font-family: 'Nunito Sans', monospace; font-size: 11.5px;
 }
 .execfin-table tbody tr.execfin-total-row td.month-cell.has-value {
   background: linear-gradient(135deg, #DDE9F4 0%, #C8DCE9 100%) !important;
@@ -4786,7 +4787,7 @@ table.ef-table tbody td.right  { text-align: right; }
 /* ND tag */
 .execfin-nd-tag {
   display: inline-flex; align-items: center;
-  font-family: 'IBM Plex Sans', -apple-system, sans-serif; font-weight: 600;
+  font-family: 'Nunito Sans', -apple-system, sans-serif; font-weight: 600;
   font-size: 12px; padding: 2px 7px; border-radius: 5px;
 }
 .execfin-nd-tag.invest  { background: transparent; color: #0C447C; }
@@ -4797,14 +4798,14 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-up-pill {
   display: inline-block; font-size: 12px; font-weight: 600;
   padding: 2px 7px; border-radius: 99px;
-  font-family: 'IBM Plex Sans', -apple-system, sans-serif; letter-spacing: 0.04em;
+  font-family: 'Nunito Sans', -apple-system, sans-serif; letter-spacing: 0.04em;
 }
 .execfin-up-pill.fi { background: #EAF3DE; color: #3B6D11; }
 .execfin-up-pill.ua { background: #FCE7F3; color: #9D174D; }
 .execfin-up-pill.outros { background: #F3F4F6; color: #374151; }
 
 /* Value cells */
-.execfin-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.execfin-val { font-family: 'Nunito Sans', monospace; font-size: 12px; }
 .execfin-val.previsto  { color: #475569; }
 .execfin-val.realizado { color: #1a1a1a; font-weight: 600; }
 .execfin-val.saldo     { color: #1a1a1a; font-weight: 600; }
@@ -4894,7 +4895,7 @@ table.ef-table tbody td.right  { text-align: right; }
 /* Células de ano (meses expandidos) */
 .execfin-table tbody tr.cons td.year-total,
 .rg-table tbody tr.cons td.year-total {
-  text-align: right; font-family: 'IBM Plex Mono', monospace;
+  text-align: right; font-family: 'Nunito Sans', monospace;
   font-size: 12px; font-weight: 400; color: #374151;
   background: #fff; border-left: 1px solid #f1f5f9;
   vertical-align: middle; padding: 8px 10px;
@@ -4999,7 +5000,7 @@ table.ef-table tbody td.right  { text-align: right; }
 /* ND tag — rg-nd-tag */
 .rg-nd-tag {
   display: inline-flex; align-items: center;
-  font-family: 'IBM Plex Sans', -apple-system, sans-serif; font-weight: 600;
+  font-family: 'Nunito Sans', -apple-system, sans-serif; font-weight: 600;
   font-size: 12px; padding: 2px 7px; border-radius: 5px;
 }
 .rg-nd-tag.invest  { background: transparent; color: #0C447C; }
@@ -5008,7 +5009,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .rg-nd-tag.outros  { background: transparent; color: #374151; }
 
 /* Valores */
-.rg-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.rg-val { font-family: 'Nunito Sans', monospace; font-size: 12px; }
 .rg-val.previsto  { color: #475569; }
 .rg-val.realizado { color: #1a1a1a; font-weight: 600; }
 .rg-val.saldo     { font-weight: 600; }
@@ -5018,7 +5019,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Células mensais */
 .rg-table tbody td.month-cell {
-  background: #FCFDFE; font-family: 'IBM Plex Mono', monospace;
+  background: #FCFDFE; font-family: 'Nunito Sans', monospace;
   font-size: 11px; text-align: right; padding: 6px 6px;
   border-left: 1px solid rgba(0,0,0,0.03); color: #475569;
   cursor: pointer;
@@ -5038,7 +5039,7 @@ table.ef-table tbody td.right  { text-align: right; }
   padding: 10px 10px;
 }
 .rg-table tbody tr.rg-total-row td.month-cell {
-  background: #F0F4F9 !important; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  background: #F0F4F9 !important; font-family: 'Nunito Sans', monospace; font-size: 11px;
 }
 .rg-table tbody tr.rg-total-row td.month-cell.has-value {
   background: linear-gradient(135deg,#DDE9F4 0%,#C8DCE9 100%) !important; color: #0C447C;
@@ -5075,7 +5076,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .ra-kpi.red   { border-left: 4px solid #A32D2D; }
 .ra-kpi.ok    { border-left: 4px solid #3B6D11; }
 .ra-kpi-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
-.ra-kpi-value { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 700; color: #0f172a; margin: 2px 0; }
+.ra-kpi-value { font-family: 'Nunito Sans', monospace; font-size: 14px; font-weight: 700; color: #0f172a; margin: 2px 0; }
 .ra-kpi-sub   { font-size: 10.5px; color: #94a3b8; }
 .ra-kpi-bar   { height: 4px; background: #f1f5f9; border-radius: 2px; margin: 4px 0 2px; }
 .ra-kpi-fill  { height: 4px; background: #3B6D11; border-radius: 2px; transition: width 0.4s; }
@@ -5108,7 +5109,7 @@ table.ef-table tbody td.right  { text-align: right; }
   border-bottom: 1px solid #f1f5f9; background: #fff;
 }
 .ra-table .ra-td-val {
-  text-align: right; padding: 8px 10px; font-family: 'IBM Plex Mono', monospace;
+  text-align: right; padding: 8px 10px; font-family: 'Nunito Sans', monospace;
   font-size: 12px; border-bottom: 1px solid #f1f5f9; color: #374151; background: #fff;
 }
 .ra-table .ra-td-val.current { background: #F0F6FF; }
@@ -5179,7 +5180,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Percentual grande */
 .ent2-perc-big {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
   font-size: 36px; font-weight: 700; line-height: 1;
   margin: 4px 0 0 0; color: #0f172a;
 }
@@ -5189,7 +5190,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Fração */
 .ent2-fracao {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Nunito Sans', monospace;
   font-size: 13px; color: #475569; margin: 2px 0 6px 0;
 }
 .ent2-frac-sep { color: #94a3b8; margin: 0 3px; }
@@ -5309,7 +5310,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .saude-pct {
     font-size: 12px;
     font-weight: 700;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Nunito Sans', monospace;
     color: #1e293b;
     width: 50px;
     text-align: right;
@@ -5371,7 +5372,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .reconciliacao-col-value {
     font-size: 18px;
     font-weight: 700;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Nunito Sans', monospace;
     margin-bottom: 4px;
 }
 .reconciliacao-col-sub {

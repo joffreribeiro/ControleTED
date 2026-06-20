@@ -1767,7 +1767,7 @@
                 html += `<td><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a></td>`;
                 html += `<td>${formatarNDComPontos(it.nd)}</td>`;
                 html += `<td>${it.up}</td>`;
-                html += `<td class="col-valor" style="text-align:right;">${it.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                html += `<td class="col-valor" style="text-align:center;">${it.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
                 html += `</tr>`;
             });
             html += '</tbody></table></div>';
@@ -7251,9 +7251,9 @@
             const s = Math.abs(n).toLocaleString('pt-BR', {minimumFractionDigits: 2});
             const mono = 'white-space:nowrap; display:inline-block;';
             const bld = bold ? 'font-weight:700;' : '';
-            if (n < -0.005) return `<span style="color:#A32D2D;${mono}${bld}">\u2212\u00a0R$\u00a0${s}</span>`;
-            if (n >  0.005) return `<span style="color:#3B6D11;${mono}${bld}">R$\u00a0${s}</span>`;
-            return `<span style="color:#9b9b9b;${mono}${bld}">R$\u00a0${s}</span>`;
+            if (n < -0.005) return `<span style="color:#A32D2D;${mono}${bld}">\u2212${s}</span>`;
+            if (n >  0.005) return `<span style="color:#3B6D11;${mono}${bld}">${s}</span>`;
+            return `<span style="color:#9b9b9b;${mono}${bld}">${s}</span>`;
         }
 
         // Backward-compatible alias: nova função para valores reais (mantém renderValorFmt disponível)
@@ -7529,7 +7529,7 @@
                         <td class="col-up"><span class="up-pill ${upCat}">${upRaw || '—'}</span></td>
                         <td class="col-m">${tdM}</td>
                         <td class="col-mes">${mesDescStr}</td>
-                        <td class="col-valor" style="text-align:right;">${tdValor}</td>
+                        <td class="col-valor" style="text-align:center;">${tdValor}</td>
                         <td class="col-percent">
                             ${valorFaltante <= 0
                                 ? '<span class="saldo-receber saldo-receber--zero">Recebido</span>'
@@ -9975,9 +9975,9 @@
 
                     const ndTag    = `<span class="execfin-nd-tag ${cat}">${ndFmt}</span>`;
                     const upPill   = `<span class="execfin-up-pill ${uc}">${up}</span>`;
-                    const prevFmt  = `<span class="execfin-val previsto">R$ ${fmtBR(previsto)}</span>`;
-                    const realFmt  = `<span class="execfin-val realizado">R$ ${fmtBR(realizado)}</span>`;
-                    const saldFmt  = `<span class="execfin-val saldo ${saldoCls}">R$ ${fmtBR(saldo)}</span>`;
+                    const prevFmt  = `<span class="execfin-val previsto">${fmtBR(previsto)}</span>`;
+                    const realFmt  = `<span class="execfin-val realizado">${fmtBR(realizado)}</span>`;
+                    const saldFmt  = `<span class="execfin-val saldo ${saldoCls}">${fmtBR(saldo)}</span>`;
                     const statusBadge = `<span class="execfin-status ${statusCls}"><span class="dot"></span>${statusLabel}</span>`;
 
                     // mapa mensal desta linha
@@ -10017,9 +10017,9 @@
                 let totalRow = `<tr class="execfin-total-row">` +
                     `<td class="col-nd col-sticky">TOTAL</td>` +
                     `<td class="col-up"></td>` +
-                    `<td class="col-valor right"><span class="execfin-val previsto">R$ ${fmtBR(totalPrevisto)}</span></td>` +
-                    `<td class="col-valor right"><span class="execfin-val realizado">R$ ${fmtBR(totalRealizado)}</span></td>` +
-                    `<td class="col-saldo right"><span class="execfin-val saldo ${saldoCls}">R$ ${fmtBR(totalSaldo)}</span></td>`;
+                    `<td class="col-valor"><span class="execfin-val previsto">${fmtBR(totalPrevisto)}</span></td>` +
+                    `<td class="col-valor"><span class="execfin-val realizado">${fmtBR(totalRealizado)}</span></td>` +
+                    `<td class="col-saldo"><span class="execfin-val saldo ${saldoCls}">${fmtBR(totalSaldo)}</span></td>`;
 
                 if (monthsExpanded) {
                     meses.forEach((m, idx) => {
@@ -10940,9 +10940,9 @@
 
                 let html = `<tr>`+
                     `<td class="rg-col-nd col-sticky">${ndTag}</td>`+
-                    `<td class="rg-col-vprev right"><span class="rg-val previsto">R$ ${fmtBR(previsto)}</span></td>`+
-                    `<td class="rg-col-vreal right"><span class="rg-val realizado">R$ ${fmtBR(realizado)}</span></td>`+
-                    `<td class="rg-col-saldo right"><span class="rg-val saldo ${saldoCls}">R$ ${fmtBR(saldo)}</span></td>`;
+                    `<td class="rg-col-vprev"><span class="rg-val previsto">${fmtBR(previsto)}</span></td>`+
+                    `<td class="rg-col-vreal"><span class="rg-val realizado">${fmtBR(realizado)}</span></td>`+
+                    `<td class="rg-col-saldo"><span class="rg-val saldo ${saldoCls}">${fmtBR(saldo)}</span></td>`;
 
                 if (monthsExpanded) {
                     meses.forEach((m,i) => {
@@ -10966,9 +10966,9 @@
             const tSaldoCls=totalSaldo>0.01?'alert':(Math.abs(totalSaldo)<0.01?'ok':'neg');
             let totalRow=`<tr class="rg-total-row">`+
                 `<td class="rg-col-nd col-sticky">TOTAL</td>`+
-                `<td class="rg-col-vprev right"><span class="rg-val previsto">R$ ${fmtBR(totalPrevisto)}</span></td>`+
-                `<td class="rg-col-vreal right"><span class="rg-val realizado">R$ ${fmtBR(totalRealizado)}</span></td>`+
-                `<td class="rg-col-saldo right"><span class="rg-val saldo ${tSaldoCls}">R$ ${fmtBR(totalSaldo)}</span></td>`;
+                `<td class="rg-col-vprev"><span class="rg-val previsto">${fmtBR(totalPrevisto)}</span></td>`+
+                `<td class="rg-col-vreal"><span class="rg-val realizado">${fmtBR(totalRealizado)}</span></td>`+
+                `<td class="rg-col-saldo"><span class="rg-val saldo ${tSaldoCls}">${fmtBR(totalSaldo)}</span></td>`;
             if (monthsExpanded) {
                 meses.forEach((m,idx) => {
                     const val=totalMeses.get(idx);
