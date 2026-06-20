@@ -4767,7 +4767,7 @@ table.ef-table tbody td.right  { text-align: right; }
 .execfin-table tbody tr.execfin-total-row td {
   background: #F0F4F9 !important;
   border-top: 2px solid #185FA5;
-  border-bottom: 2px solid #185FA5;
+  border-bottom: 3px solid #0C447C;
   padding: 11px 10px; font-weight: 700; color: #0C447C;
   text-align: center;
 }
@@ -4837,7 +4837,7 @@ table.ef-table tbody td.right  { text-align: right; }
 /* Fundo branco, sem zebra, hover suave — igual ao ra-table */
 .execfin-table tbody tr.cons td,
 .rg-table tbody tr.cons td {
-  background: #fff; color: #374151;
+  background: #fff !important; color: #374151;
   padding: 8px 10px; font-size: 12.5px;
   border-bottom: 1px solid #f1f5f9;
   text-align: left;
@@ -5038,7 +5038,7 @@ table.ef-table tbody td.right  { text-align: right; }
 /* Linha TOTAL */
 .rg-table tbody tr.rg-total-row td {
   background: #F0F4F9 !important; font-weight: 700; color: #0C447C;
-  border-top: 2px solid #185FA5; border-bottom: 2px solid #185FA5;
+  border-top: 2px solid #185FA5; border-bottom: 3px solid #0C447C;
   padding: 10px 10px; text-align: center;
 }
 .rg-table tbody tr.rg-total-row td.month-cell {
