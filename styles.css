@@ -4898,7 +4898,7 @@ table.ef-table tbody td.right  { text-align: right; }
 /* Células de ano (meses expandidos) */
 .execfin-table tbody tr.cons td.year-total,
 .rg-table tbody tr.cons td.year-total {
-  text-align: right; font-family: 'Nunito Sans', monospace;
+  text-align: center; font-family: 'Nunito Sans', monospace;
   font-size: 12px; font-weight: 400; color: #374151;
   background: #fff; border-left: 1px solid #f1f5f9;
   vertical-align: middle; padding: 8px 10px;
