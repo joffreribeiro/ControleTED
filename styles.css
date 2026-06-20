@@ -4804,7 +4804,7 @@ table.ef-table tbody td.right  { text-align: right; }
   background: #F0F4F9 !important;
   border-top: 2px solid #185FA5;
   border-bottom: 3px solid #0C447C;
-  padding: 11px 10px; font-weight: 700; color: #0C447C;
+  padding: 11px 10px; font-weight: 700; color: #1a1a1a; font-size: 14px;
   text-align: center;
 }
 .execfin-table tbody tr.execfin-total-row .col-sticky {
@@ -4845,8 +4845,8 @@ table.ef-table tbody td.right  { text-align: right; }
 /* Value cells */
 .execfin-val { font-family: 'Nunito Sans', monospace; font-size: 13px; }
 .execfin-val.previsto  { color: #475569; }
-.execfin-val.realizado { color: #1a1a1a; font-weight: 600; }
-.execfin-val.saldo     { color: #1a1a1a; font-weight: 600; }
+.execfin-val.realizado { color: #1a1a1a; font-weight: 700; }
+.execfin-val.saldo     { color: #1a1a1a; font-weight: 700; }
 .execfin-val.saldo.alert { color: #A32D2D; }
 .execfin-val.saldo.ok    { color: #3B6D11; }
 .execfin-val.saldo.neg   { color: #A32D2D; }
@@ -5045,18 +5045,18 @@ table.ef-table tbody td.right  { text-align: right; }
   font-family: 'Nunito Sans', -apple-system, sans-serif; font-weight: 600;
   font-size: 13px; padding: 2px 7px; border-radius: 5px;
 }
-.rg-nd-tag.invest  { background: transparent; color: #0C447C; }
-.rg-nd-tag.invest2 { background: transparent; color: #6B21A8; }
-.rg-nd-tag.custeio { background: transparent; color: #92400E; }
-.rg-nd-tag.outros  { background: transparent; color: #374151; }
+.rg-nd-tag.invest  { background: transparent; color: #1a1a1a; }
+.rg-nd-tag.invest2 { background: transparent; color: #1a1a1a; }
+.rg-nd-tag.custeio { background: transparent; color: #1a1a1a; }
+.rg-nd-tag.outros  { background: transparent; color: #1a1a1a; }
 
 /* Valores */
-.rg-val { font-family: 'Nunito Sans', monospace; font-size: 13px; }
-.rg-val.previsto  { color: #475569; }
-.rg-val.realizado { color: #1a1a1a; font-weight: 600; }
-.rg-val.saldo     { font-weight: 600; }
-.rg-val.saldo.alert { color: #A32D2D; }
-.rg-val.saldo.ok    { color: #3B6D11; }
+.rg-val { font-family: 'Nunito Sans', monospace; font-size: 13px; color: #1a1a1a; }
+.rg-val.previsto  { color: #1a1a1a; }
+.rg-val.realizado { color: #1a1a1a; font-weight: 700; }
+.rg-val.saldo     { color: #1a1a1a; font-weight: 700; }
+.rg-val.saldo.alert { color: #1a1a1a; }
+.rg-val.saldo.ok    { color: #1a1a1a; }
 .rg-val.saldo.neg   { color: #A32D2D; }
 
 /* Células mensais */
@@ -5076,7 +5076,7 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Linha TOTAL */
 .rg-table tbody tr.rg-total-row td {
-  background: #F0F4F9 !important; font-weight: 700; color: #0C447C;
+  background: #F0F4F9 !important; font-weight: 700; color: #1a1a1a; font-size: 14px;
   border-top: 2px solid #185FA5; border-bottom: 3px solid #0C447C;
   padding: 10px 10px; text-align: center;
 }

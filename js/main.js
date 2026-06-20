@@ -13011,6 +13011,7 @@
 
         function refreshFrozenColumnsAllTables() {
             document.querySelectorAll('table.tabela-padrao').forEach(table => {
+                if (table.classList.contains('rg-table')) return;
                 try { applyFrozenColumnsToTable(table); } catch(e) {}
                 try { applyYearDividersToTable(table); } catch(e) {}
             });
