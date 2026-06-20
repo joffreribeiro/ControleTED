@@ -4037,7 +4037,7 @@
     table-layout: auto;
     min-width: 0;
 }
-#tabelaExecFisTable .col-objeto { width: 130px; max-width: 160px; }
+#tabelaExecFisTable .col-objeto { width: 220px; max-width: 260px; }
 #tabelaExecFisTable .col-saldo { width: 60px; min-width: 60px; text-align: center; }
 #tabelaExecFisTable .col-percent { width: 180px; min-width: 180px; max-width: 220px; white-space: nowrap; }
 
