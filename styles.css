@@ -4025,6 +4025,7 @@
 #wrapperExecFis {
     display: block;
     width: 100%;
+    max-width: 800px;
     overflow-x: auto;
 }
 #tabelaCadFisTable {
@@ -4037,9 +4038,9 @@
     table-layout: auto;
     min-width: 0;
 }
-#tabelaExecFisTable .col-objeto { width: 220px; max-width: 260px; }
+#tabelaExecFisTable .col-objeto { width: 280px; max-width: 320px; }
 #tabelaExecFisTable .col-saldo { width: 60px; min-width: 60px; text-align: center; }
-#tabelaExecFisTable .col-percent { width: 180px; min-width: 180px; max-width: 220px; white-space: nowrap; }
+#tabelaExecFisTable .col-percent { width: 220px; min-width: 220px; max-width: 260px; white-space: nowrap; }
 
 .ef-table { width: 100%; border-collapse: collapse; }
 .ef-table thead th {
