@@ -121,5 +121,5 @@ Array.from(allNDs).sort().forEach(nd => {
     out += '  "' + nd + '" ' + (isValid ? 'VALID' : '*** INVALID ***') + '\n';
 });
 
-fs.writeFileSync(String.raw`e:\MEUS DOCUMENTOS\OneDrive\Documentos\Controle TED\Controle-TED\debug_output.txt`, out);
+fs.writeFileSync(String.raw`e:\MEUS DOCUMENTOS\OneDrive\Documentos\Sistemas\Controle-TED\debug_output.txt`, out);
 console.log('Done! Output in debug_output.txt');
