@@ -258,13 +258,16 @@ window.testFirestoreConnection = async function() {
     setLastSync(null);
 
     // Auto-carregar dados da nuvem no startup quando a base local estiver vazia.
+    // Esta tentativa roda antes do login (em paralelo ao auth listener) e é esperado
+    // que falhe com permission-denied enquanto não autenticado, já que a leitura de
+    // 'teds' agora exige login — o listener de auth (abaixo) recarrega após o login.
     try {
       const semDadosLocais = !window.dados || !Array.isArray(window.dados.teds) || window.dados.teds.length === 0;
       if (semDadosLocais && typeof window.carregarDoCloud === 'function') {
         await window.carregarDoCloud();
       }
     } catch (e) {
-      console.warn('auto carregarDoCloud falhou (verifique as Firestore Security Rules — leitura deve ser pública):', e && e.code ? e.code : e);
+      console.warn('auto carregarDoCloud falhou (normal antes do login):', e && e.code ? e.code : e);
     }
 
   })();
@@ -553,13 +556,14 @@ window.testFirestoreConnection = async function() {
               }
               window.currentUserProfile = profile;
             } else {
-              // Perfil não encontrado: verificar se é o primeiro usuário (bootstrap) e tratar como admin
+              // Perfil não encontrado: verificar se é o primeiro usuário (bootstrap) e tratar como admin.
+              // Demais usuários autenticados sem perfil entram como 'leitor' (somente leitura) por padrão.
               const allUsers = await (window.firestoreGetCollection ? window.firestoreGetCollection('users').catch(()=>[]) : Promise.resolve([]));
               const isFirstUser = !allUsers || allUsers.length === 0;
               window.currentUserProfile = {
                 uid: user.uid,
                 email: user.email,
-                role: isFirstUser ? 'admin' : 'user',
+                role: isFirstUser ? 'admin' : 'leitor',
                 displayName: user.displayName || ''
               };
               // Salvar perfil no Firestore para consultas futuras
@@ -581,8 +585,9 @@ window.testFirestoreConnection = async function() {
           } else {
             window.currentUser = null;
             window.currentUserProfile = null;
-            // DO NOT show login screen — read mode is the default
-            // User can click the admin login button if they want
+            // Login é obrigatório: sem usuário autenticado, sempre mostrar a tela de login
+            // (cobre sessão expirada/revogada, não só o logout manual via doLogout()).
+            try { if (window.showLoginModal) window.showLoginModal(); } catch(e) {}
           }
         } catch (e) { console.warn('auth state handler', e); }
         // Só aplicar permissões após o perfil estar definido

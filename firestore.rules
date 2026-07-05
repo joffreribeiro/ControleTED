@@ -2,17 +2,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // TEDs: leitura pública, escrita para admin ou editor
+    // TEDs: leitura somente para autenticados, escrita para admin ou editor
     match /teds/{tedId} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if request.auth != null
                    && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
                        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'editor');
     }
 
-    // Meta (controle de IDs): leitura pública, escrita somente para admin
+    // Meta (controle de IDs): leitura somente para autenticados, escrita somente para admin
     match /meta/{docId} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if request.auth != null
                    && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }

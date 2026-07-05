@@ -3985,6 +3985,67 @@
             }
         ];
 
+        // Chave natural de um lançamento financeiro (ND+UP+M+valor), usada como fallback
+        // quando o id divergir entre o snapshot salvo em removidos/adicionados e a linha viva
+        // (única implementação — usada tanto no modal de apostilamento quanto no render das tabelas).
+        function finNaturalKey(f) {
+            return [
+                String(f.numero || f.nd || '').replace(/\D/g, ''),
+                String(f.up || f.ug || ''),
+                String(f.m ?? ''),
+                String(Math.round((parseNumber(f.valor) || 0) * 100))
+            ].join('|');
+        }
+
+        // Destaque inline (vence zebra/sticky) das linhas consolidadas do resumo financeiro:
+        // Total a Receber em azul, Resultado em vermelho. Compartilhado entre a Execução
+        // Financeira e o Recursos Gerais IMBEL (mesmo padrão visual nas duas tabelas).
+        function consHlEstilo(tipo) {
+            if (tipo === 'total') return 'background:#F0F4F9 !important;border-top:1px solid #B3D1EF !important;border-bottom:1px solid #B3D1EF !important;color:#0C447C;font-weight:700;';
+            if (tipo === 'resultado') return 'background:#FFF1F1 !important;border-top:2px solid #FCBFBF !important;border-bottom:2px solid #FCBFBF !important;color:#A32D2D;font-weight:700;';
+            return '';
+        }
+
+        // Resolve, para cada item de `liveItems`, se ele deve ser considerado "removido" com
+        // base numa lista de itens removidos/adicionados (soft-delete de aditivo/apostilamento).
+        // Casamento por ID tem prioridade; quando o ID do item removido não existir entre os
+        // itens vivos (id divergente), cai para a chave natural — mas com CONTAGEM: cada chave
+        // natural só exclui tantas linhas vivas quantas efetivamente foram removidas, evitando
+        // que múltiplas linhas idênticas (mesma ND+UP+M+valor) sejam todas tachadas quando
+        // apenas uma delas foi de fato removida.
+        function resolverExclusaoPorChaveNatural(liveItems, removedEntries) {
+            const liveIds = new Set((liveItems || []).filter(f => f.id != null).map(f => String(f.id)));
+            const excludedIds = new Set();
+            const keyCounts = new Map();
+            (removedEntries || []).forEach(entry => {
+                const item = entry.item || entry;
+                const idStr = item.id != null ? String(item.id) : null;
+                if (idStr != null && liveIds.has(idStr)) {
+                    excludedIds.add(idStr);
+                } else {
+                    const k = finNaturalKey(item);
+                    keyCounts.set(k, (keyCounts.get(k) || 0) + 1);
+                }
+            });
+            const resultMap = new Map();
+            const keyRemaining = new Map(keyCounts);
+            (liveItems || []).forEach(f => {
+                let excluded = false;
+                if (f.id != null && excludedIds.has(String(f.id))) {
+                    excluded = true;
+                } else {
+                    const k = finNaturalKey(f);
+                    const remaining = keyRemaining.get(k) || 0;
+                    if (remaining > 0) {
+                        excluded = true;
+                        keyRemaining.set(k, remaining - 1);
+                    }
+                }
+                resultMap.set(f, excluded);
+            });
+            return resultMap;
+        }
+
         // Obter alterações de uma tabela específica a partir do último aditivo ou apostilamento que modificou essa tabela
         // Retorna { modificados: [{matchKey, camposAlterados:{field:{de,para,label}}}], adicionados: [{item}], removidos: [{item}] } ou null
         function obterAlteracoesTabelaAditivos(tabelaKey) {
@@ -4413,28 +4474,26 @@
             ADITIVO_TABELAS_CLONE.forEach(tabDef => {
                 const arr = ted[tabDef.key] || [];
 
-                // Construir set de IDs/matchKeys removidos neste apostilamento (para marcar tachado ao reabrir)
-                // Para financeiros, matchFields é só ['id']; como o id pode divergir entre o snapshot
-                // e o item vivo, casamos também por chave natural (ND+UP+M+valor).
-                const finNatKeyMod = (it) => 'nk:' + [
-                    String(it.numero || it.nd || '').replace(/\D/g, ''),
-                    String(it.up || it.ug || ''),
-                    String(it.m ?? ''),
-                    String(Math.round((parseNumber(it.valor) || 0) * 100))
-                ].join('|');
+                // Construir set de IDs/matchKeys removidos neste apostilamento (para marcar tachado ao reabrir).
+                // Para financeiros (matchFields=['id']), o id pode divergir entre o snapshot e o item
+                // vivo — usa-se resolverExclusaoPorChaveNatural (id + chave natural com contagem, para
+                // não tachar múltiplas linhas idênticas quando só uma foi removida).
                 const removidosNesseAlt = new Set();
-                if (existente && existente.tabelasAlteradas && existente.tabelasAlteradas[tabDef.key]) {
-                    const diffs = existente.tabelasAlteradas[tabDef.key];
-                    (diffs.removidos || []).forEach(rem => {
+                const diffsAtual = existente && existente.tabelasAlteradas && existente.tabelasAlteradas[tabDef.key];
+                const finExclusionMapModal = tabDef.key === 'financeiros'
+                    ? resolverExclusaoPorChaveNatural(arr, (diffsAtual && diffsAtual.removidos) || [])
+                    : null;
+                if (diffsAtual && tabDef.key !== 'financeiros') {
+                    (diffsAtual.removidos || []).forEach(rem => {
                         const item = rem.item || rem;
                         if (item.id != null) removidosNesseAlt.add(String(item.id));
                         const mk = tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
                         if (mk) removidosNesseAlt.add('mk:' + mk);
-                        if (tabDef.key === 'financeiros') removidosNesseAlt.add(finNatKeyMod(item));
                     });
                 }
 
-                const countAtivo = arr.length - removidosNesseAlt.size;
+                const countRemovidosFin = finExclusionMapModal ? [...finExclusionMapModal.values()].filter(Boolean).length : removidosNesseAlt.size;
+                const countAtivo = arr.length - countRemovidosFin;
                 html += `<div class="aditivo-section-title">${tabDef.label} (<span id="${prefix}_count_${tabDef.key}">${countAtivo}</span> ${countAtivo === 1 ? 'item' : 'itens'})</div>`;
                 html += `<div class="table-wrapper" style="max-width:100%; overflow-x:auto; margin-bottom:0.5rem;"><table class="aditivo-clone-table" id="${prefix}_tabela_${tabDef.key}"><thead><tr>`;
                 tabDef.colunas.forEach(col => {
@@ -4478,8 +4537,9 @@
                     const item = arr[kidx];
                     const itemId = (item && item.id != null) ? String(item.id) : null;
                     const itemMk = 'mk:' + tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
-                    const itemNk = tabDef.key === 'financeiros' ? finNatKeyMod(item) : null;
-                    const jaRemovido = (itemId && removidosNesseAlt.has(itemId)) || removidosNesseAlt.has(itemMk) || (itemNk && removidosNesseAlt.has(itemNk));
+                    const jaRemovido = finExclusionMapModal
+                        ? finExclusionMapModal.get(item) === true
+                        : ((itemId && removidosNesseAlt.has(itemId)) || removidosNesseAlt.has(itemMk));
                     const removidoAttr = jaRemovido ? ' data-removido="1"' : '';
                     // O tachado vermelho vem do CSS (.aditivo-clone-table tr[data-removido="1"]).
                     html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}"${removidoAttr}>`;
@@ -5356,10 +5416,6 @@
             const removida = ted.alteracoes[index];
             removida.excluido = true;
 
-            console.log('[EXCLUIR] tabelasAlteradas:', JSON.stringify(removida.tabelasAlteradas));
-            console.log('[EXCLUIR] snapshot keys:', removida.snapshot ? Object.keys(removida.snapshot) : 'sem snapshot');
-            console.log('[EXCLUIR] financeiros antes:', ted.financeiros && ted.financeiros.length);
-
             // Reverter tabelas usando diffs registrados no apostilamento/aditivo
             const getId = (item) => (item && item.id != null) ? String(item.id) : null;
 
@@ -5394,22 +5450,17 @@
                         }
                     });
                     ted[tabDef.key] = arr;
-                    console.log('[EXCLUIR] tabela', tabDef.key, 'após reversão diffs:', arr.length);
                 });
             } else if (removida.snapshot) {
                 // Caminho 2: sem diffs mas tem snapshot — restaurar tabelas do snapshot
-                console.log('[EXCLUIR] usando fallback por snapshot');
                 ADITIVO_TABELAS_CLONE.forEach(tabDef => {
                     if (removida.snapshot[tabDef.key] !== undefined) {
                         ted[tabDef.key] = JSON.parse(JSON.stringify(removida.snapshot[tabDef.key]));
-                        console.log('[EXCLUIR] tabela', tabDef.key, 'restaurada do snapshot:', ted[tabDef.key].length);
                     }
                 });
             } else {
                 console.warn('[EXCLUIR] sem tabelasAlteradas e sem snapshot — não é possível reverter tabelas');
             }
-
-            console.log('[EXCLUIR] financeiros depois da reversão:', ted.financeiros && ted.financeiros.length);
 
             // Reconstruir campos simples (vigência, valor, camposAlterados) sem tocar nas tabelas
             restaurarCamposSimplesSemTabelas(ted, index, removida);
@@ -7732,33 +7783,22 @@
             const { modMap: modMapFin, addSet: addSetFin } = criarMapaAlteracoes(altFinanc, tabDefFin);
             const matchKeyFin = (item) => tabDefFin ? tabDefFin.matchFields.map(f => String(item[f] || '')).join('||') : '';
 
-            // Construir conjunto de IDs de linhas que devem aparecer tachadas e fora dos cálculos:
+            // Construir conjunto de linhas que devem aparecer tachadas e fora dos cálculos:
             // 1. Linhas ADICIONADAS por aditivos/apostilamentos que foram excluídos (soft-delete)
             // 2. Linhas REMOVIDAS no modal de aditivos/apostilamentos ativos (ficaram no array mas foram "removidas" logicamente)
-            // Casamento robusto: por ID e também por chave natural (ND+UP+M+valor), porque o id
-            // do item em "removidos"/"adicionados" (vindo do snapshot) pode divergir do id da linha
-            // viva na tabela. A chave natural garante o tachado mesmo nesse caso.
-            const finNatKey = (f) => [
-                String(f.numero || f.nd || '').replace(/\D/g, ''),
-                String(f.up || f.ug || ''),
-                String(f.m ?? ''),
-                String(Math.round((parseNumber(f.valor) || 0) * 100))
-            ].join('|');
-            const excludedFinIds = new Set();
-            const excludedFinKeys = new Set();
+            // Casamento robusto (id + chave natural com contagem) via resolverExclusaoPorChaveNatural,
+            // para não tachar múltiplas linhas idênticas (mesma ND+UP+M+valor) quando só uma foi removida.
+            const _finRemovedEntries = [];
             (window.tedSelecionado.alteracoes || []).forEach(alt => {
                 const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas['financeiros'];
                 if (!diffs) return;
                 // Apostilamento excluído → itens que ADICIONOU ficam tachados.
                 // Apostilamento ativo → itens que REMOVEU ficam tachados.
                 const lista = alt.excluido ? (diffs.adicionados || []) : (diffs.removidos || []);
-                lista.forEach(entry => {
-                    const item = entry.item || entry;
-                    if (item.id != null) excludedFinIds.add(String(item.id));
-                    excludedFinKeys.add(finNatKey(item));
-                });
+                lista.forEach(entry => _finRemovedEntries.push(entry));
             });
-            const isFinExcluded = (f) => (f.id != null && excludedFinIds.has(String(f.id))) || excludedFinKeys.has(finNatKey(f));
+            const _finExclusionMap = resolverExclusaoPorChaveNatural(dadosFiltrados, _finRemovedEntries);
+            const isFinExcluded = (f) => _finExclusionMap.get(f) === true;
 
             // Calcular totais por mês ignorando linhas de aditivos excluídos
             totalValor = 0;
@@ -7964,6 +8004,7 @@
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
             try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
             try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'adicionar_exec_financeira', null, { campo: 'execução financeira', novo: { nd, up, valor, data } }); } catch(e) {}
+            try { salvarDados(); } catch(e) {}
             fecharModalExecFin();
         }
 
@@ -7982,72 +8023,6 @@
             try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_exec_financeira', null, { campo: 'execução financeira', anterior: { nd, up, data } }); } catch(e) {}
-        }
-
-        // Builder reutilizável do resumo no formato do Resumo Anual (.ra-table).
-        // Recebe os maps por ano de cada seção (mantendo os cálculos próprios) e
-        // devolve o HTML da tabela. devolvidoAbsByAno deve vir em valor ABSOLUTO.
-        function buildResumoRaHtml(maps, anosOrdenados, anoAtual) {
-            const previstoByAno        = maps.previstoByAno        || {};
-            const aReceberAnteriorByAno= maps.aReceberAnteriorByAno|| {};
-            const recebidoByAno        = maps.recebidoByAno        || {};
-            const devolvidoAbsByAno    = maps.devolvidoAbsByAno    || {};
-            const saldoByAno           = maps.saldoByAno           || {};
-            const fmt = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            const totalAReceberByAno = {}, resultadoByAno = {};
-            anosOrdenados.forEach(a => {
-                totalAReceberByAno[a] = (previstoByAno[a] || 0) + (aReceberAnteriorByAno[a] || 0);
-                resultadoByAno[a] = (totalAReceberByAno[a] - (saldoByAno[a] || 0)) * -1;
-            });
-            const iconHtml = (name) => `<i data-lucide="${name}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`;
-            const fml = (s) => `<span class="ra-formula">${s}</span>`;
-            const rows = [
-                { label: 'Previsto Anual',       icon: 'calendar',          formula: '',                              map: previstoByAno,         cls: '' },
-                { label: 'A Receber (ano ant.)', icon: 'arrow-left',        formula: fml('carry-over'),               map: aReceberAnteriorByAno, cls: '' },
-                { label: 'Total a Receber',      icon: 'sigma',             formula: fml('Prev + A Receber'),         map: totalAReceberByAno,    cls: 'ra-row-total' },
-                { label: 'Recebido Anual',       icon: 'arrow-down-circle', formula: '',                              map: recebidoByAno,         cls: '' },
-                { label: 'Devolvido / Recolhido',icon: 'arrow-up-circle',   formula: '',                              map: devolvidoAbsByAno,     cls: '', negative: true },
-                { label: 'Saldo Anual',          icon: 'minus-circle',      formula: fml('Recebido − Devolvido'),     map: saldoByAno,            cls: '' },
-                { label: 'Resultado',            icon: 'trending-up',       formula: fml('Total a Receber − Saldo'),  map: resultadoByAno,        cls: 'ra-row-resultado', isResultado: true },
-            ];
-            const futurosSet = new Set(anosOrdenados.filter(ano =>
-                !(previstoByAno[ano] || 0) && !(recebidoByAno[ano] || 0) && !(devolvidoAbsByAno[ano] || 0)
-            ));
-            let thead = `<thead><tr><th class="ra-th-label"></th>`;
-            anosOrdenados.forEach(ano => {
-                const isCurr = ano === anoAtual;
-                const isFut = futurosSet.has(ano);
-                let cls = 'ra-th-ano';
-                if (isCurr) cls += ' current';
-                if (isFut) cls += ' future';
-                thead += `<th class="${cls}">${ano}${isCurr ? '<span class="ra-atual-badge">ATUAL</span>' : ''}</th>`;
-            });
-            thead += `</tr></thead>`;
-            let tbody = '<tbody>';
-            rows.forEach(row => {
-                tbody += `<tr class="ra-row ${row.cls}">`;
-                tbody += `<td class="ra-td-label">${iconHtml(row.icon)}<span>${row.label}</span>${row.formula}</td>`;
-                anosOrdenados.forEach(ano => {
-                    const isCurr = ano === anoAtual;
-                    const isFut = futurosSet.has(ano);
-                    const raw = row.map[ano] || 0;
-                    const v = row.negative ? -raw : raw;
-                    const disp = row.negative && raw > 0 ? `−R$ ${fmt(raw)}` : `R$ ${fmt(raw)}`;
-                    let cls = 'ra-td-val';
-                    if (isCurr) cls += ' current';
-                    if (isFut) cls += ' future';
-                    if (row.isResultado) {
-                        if (v < -0.01) cls += ' pos';
-                        else if (v > 0.01) cls += ' neg';
-                        else cls += ' zero';
-                    }
-                    const isEmpty = Math.abs(raw) < 0.01;
-                    tbody += `<td class="${cls}">${isEmpty && isFut ? '—' : disp}</td>`;
-                });
-                tbody += '</tr>';
-            });
-            tbody += '</tbody>';
-            return `<div class="ra-table-wrap"><table class="ra-table">${thead}${tbody}</table></div>`;
         }
 
         // GANTT 60 MESES - resumo anual agora baseado em Recursos Gerais (IMBEL)
@@ -10074,7 +10049,7 @@
                                 if (val)             cls += ' has-value';
                                 if (val < 0)         cls += ' has-neg';
                                 const display = val ? fmtBR(val) : '';
-                                html += `<td class="${cls}" onclick="editarValorExecFinanceira('${nd}','${up}',${i})" title="Clique para editar">${display}</td>`;
+                                html += `<td class="${cls}" onclick="editarValorExecFinanceira('${nd}','${up}',${i})" title="Clique para ver lançamentos">${display}</td>`;
                             });
                         }
                         html += '</tr>';
@@ -10142,12 +10117,7 @@
 
                 // helper para montar célula de ano nas linhas consolidadas
                 const anoAtual = today.getFullYear();
-                // Destaque inline (vence zebra/sticky): Total a Receber azul, Resultado vermelho.
-                const consHl = (tipo) => tipo === 'total'
-                    ? 'background:#F0F4F9 !important;border-top:1px solid #B3D1EF !important;border-bottom:1px solid #B3D1EF !important;color:#0C447C;font-weight:700;'
-                    : tipo === 'resultado'
-                    ? 'background:#FFF1F1 !important;border-top:2px solid #FCBFBF !important;border-bottom:2px solid #FCBFBF !important;color:#A32D2D;font-weight:700;'
-                    : '';
+                const consHl = consHlEstilo;
 
                 const consYearCells = (calcFn, colorFn, cellStyle) => anos.map(a => {
                     if (!monthsExpanded) return '';
@@ -10424,8 +10394,7 @@
             
             const d = new Date(startDate);
             d.setMonth(d.getMonth() + indiceMes);
-            const dataFormatada = d.toISOString().split('T')[0];
-            
+
             // Buscar execuções existentes neste mês para este ND/UP
             const execs = window.tedSelecionado.execFinanceiras || [];
             const execsDoMes = execs.filter(e => {
@@ -10480,33 +10449,6 @@
                 `Mês: ${d.toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}`,
                 linhas
             );
-            return;
-
-            // Remover execuções antigas deste mês/ND/UP
-            window.tedSelecionado.execFinanceiras = execs.filter(e => {
-                if (!e.data) return true;
-                if (String(e.nd || e.numero) !== nd || String(e.up || e.ug) !== up) return true;
-                const ed = new Date(e.data + 'T00:00:00');
-                const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
-                return diff !== indiceMes;
-            });
-            
-            // Adicionar nova execução se valor != 0
-            if (valor !== 0) {
-                window.tedSelecionado.execFinanceiras.push({
-                    id: Date.now(),
-                    nd: nd,
-                    numero: nd,
-                    up: up,
-                    ug: up,
-                    valor: valor,
-                    valorRealizado: valor,
-                    data: dataFormatada
-                });
-            }
-            
-            salvarDados();
-            atualizarTabelaExecFinanceira();
         }
 
         // Modal de Lançamentos (Execução Financeira / Recursos Gerais)
@@ -11067,12 +11009,7 @@
             });
 
             const anoAtual=today.getFullYear();
-            // Destaque inline (vence zebra/sticky): Total a Receber azul, Resultado vermelho.
-            const consHl = (tipo) => tipo === 'total'
-                ? 'background:#F0F4F9 !important;border-top:1px solid #B3D1EF !important;border-bottom:1px solid #B3D1EF !important;color:#0C447C;font-weight:700;'
-                : tipo === 'resultado'
-                ? 'background:#FFF1F1 !important;border-top:2px solid #FCBFBF !important;border-bottom:2px solid #FCBFBF !important;color:#A32D2D;font-weight:700;'
-                : '';
+            const consHl = consHlEstilo;
             const consYearCells=(calcFn,colorFn,cellStyle)=>anos.map(a=>{
                 if(!monthsExpanded) return '';
                 const val=calcFn(a.ano);
@@ -11264,13 +11201,26 @@
             if (syncEl) syncEl.textContent = '💾 Salvando...';
             try {
                 if (window && window.firestoreBatchSet) {
-                    await window.firestoreBatchSet('teds', dados.teds || []);
-                    // Atualizar snapshot de referência para o autosave loop
-                    window._lastSavedTedsSnapshot = JSON.stringify(dados.teds || []);
-                    // Feedback visual de sucesso
-                    if (syncEl) syncEl.textContent = 'Salvo: ' + new Date().toLocaleTimeString('pt-BR');
-                    const iconEl = document.getElementById('cloudStatusIcon');
-                    if (iconEl) { iconEl.style.color = 'var(--success)'; iconEl.title = 'Conectado ao Firestore'; }
+                    // Timeout de segurança: se o commit ficar pendente (ex.: rede bloqueada
+                    // por adblock), não deixar _salvandoEmAndamento travado indefinidamente.
+                    const _timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000));
+                    const ok = await Promise.race([window.firestoreBatchSet('teds', dados.teds || []), _timeout]);
+                    // firestoreBatchSet engole exceções e retorna false em caso de erro —
+                    // tratar como falha real, não como sucesso silencioso.
+                    if (ok) {
+                        // Atualizar snapshot de referência para o autosave loop
+                        window._lastSavedTedsSnapshot = JSON.stringify(dados.teds || []);
+                        // Feedback visual de sucesso
+                        if (syncEl) syncEl.textContent = 'Salvo: ' + new Date().toLocaleTimeString('pt-BR');
+                        const iconEl = document.getElementById('cloudStatusIcon');
+                        if (iconEl) { iconEl.style.color = 'var(--success)'; iconEl.title = 'Conectado ao Firestore'; }
+                    } else {
+                        console.warn('firestoreBatchSet retornou falha; dados podem não ter sido persistidos.');
+                        if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
+                        const iconEl = document.getElementById('cloudStatusIcon');
+                        if (iconEl) { iconEl.style.color = 'var(--danger)'; iconEl.title = 'Falha ao salvar no Firestore'; }
+                        showToast('Erro ao salvar dados (possível bloqueador de anúncios/firewall). Tentando novamente em breve...', 'danger');
+                    }
                 } else {
                     console.warn('Firestore batch helper not available; dados not persisted.');
                     if (syncEl) syncEl.textContent = '⚠️ Sem conexão';
@@ -12160,8 +12110,6 @@
                         const colValor = findCol(['valor', 'linha']) || findCol(['valor']);
                         const colData  = findCol(['emissao', 'dia']) || findCol(['emiss', 'dia']) || findCol(['dia']);
 
-                        console.log('[ExecFin] Tesouro Gerencial - SIAFI=' + (colSiafi||'?') + ', UP=' + (colUP||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
-
                         if (!colND) { showToast('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger'); return; }
 
                         // Parsear dados
@@ -12604,8 +12552,6 @@
                         return null;
                     })();
 
-                    console.log('[RecGerais] Colunas: SIAFI=' + (colSiafi||'?') + ', ND=' + (colND||'?') + ', Valor=' + (colValor||'?') + ', Data=' + (colData||'?'));
-
                     if (!colSiafi) {
                         showToast('❌ Coluna "NC - Transferência" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger');
                         return;
@@ -12659,8 +12605,6 @@
 
                     const siafiKeys = Object.keys(grouped);
                     const totalItens = siafiKeys.reduce((s, k) => s + grouped[k].itens.length, 0);
-
-                    console.log('[RecGerais] SIAFIs no CSV:', siafiKeys.length, '(' + siafiKeys.join(', ') + ') | Total itens:', totalItens);
 
                     if (siafiKeys.length === 0) {
                         showToast('❌ Nenhum dado válido encontrado no arquivo.', 'danger');
@@ -13215,28 +13159,35 @@
         window.doForceCreateAdmin = doForceCreateAdmin;
 
         // Logout: sair do modo admin e voltar para leitura
+        // Limpa o estado local e volta para a tela de login bloqueante — chamada em
+        // todo caminho de saída (sucesso, falha ou exceção no signOut).
+        function _voltarParaTelaDeLogin() {
+            window.currentUser = null;
+            window.currentUserProfile = null;
+            // Não deixar dados do usuário anterior residentes em memória após logout.
+            if (window.dados) { window.dados.teds = []; window.dados.proxiId = 1; }
+            window.tedSelecionado = null;
+            try { atualizarDashboard(); } catch(e) {}
+            try { atualizarListaTEDs(); } catch(e) {}
+            try { atualizarSeletorTED(); } catch(e) {}
+            updateAdminUI(false);
+            showLoginScreen();
+        }
+
         function doLogout() {
             try {
                 if (window.authSignOut) {
                     window.authSignOut().then(function() {
-                        window.currentUser = null;
-                        window.currentUserProfile = null;
-                        updateAdminUI(false);
-                        showToast('Voltou ao modo leitura', 'info');
+                        _voltarParaTelaDeLogin();
+                        showToast('Sessão encerrada. Faça login para continuar.', 'info');
                     }).catch(function() {
-                        window.currentUser = null;
-                        window.currentUserProfile = null;
-                        updateAdminUI(false);
+                        _voltarParaTelaDeLogin();
                     });
                 } else {
-                    window.currentUser = null;
-                    window.currentUserProfile = null;
-                    updateAdminUI(false);
+                    _voltarParaTelaDeLogin();
                 }
             } catch(e) {
-                window.currentUser = null;
-                window.currentUserProfile = null;
-                updateAdminUI(false);
+                _voltarParaTelaDeLogin();
             }
         }
         window.doLogout = doLogout;
@@ -15033,11 +14984,14 @@
             }).catch(e => { showToast('Erro ao gerar Excel: ' + (e && e.message ? e.message : e), 'danger'); });
         }
 
-        // Modo leitura ativado por padrão
+        // Modo leitura ativado por padrão (permanece assim até login bem-sucedido)
         window._readOnlyMode = true;
 
         // Iniciar ao carregar a página
         window.onload = function() {
+            // Login é obrigatório: a tela de login já vem visível por padrão no HTML
+            // (evita flash do dashboard), mas reforçamos aqui por segurança.
+            showLoginScreen();
             initTheme();
             inicializar();
             checkTableScrolls();
