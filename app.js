@@ -68,7 +68,6 @@ window.carregarDoCloud = async function() {
   try {
     const ok = await waitForHelper('firestoreGetCollection', 5000);
     if (!ok) throw new Error('Firestore helpers indisponíveis');
-    showToast('Carregando dados da nuvem...', 'info');
     // show loader (fallback if helper not yet defined)
     (function(msg){
       if (typeof window.showGlobalLoader === 'function') return window.showGlobalLoader(msg);
@@ -124,7 +123,6 @@ window.carregarDoCloud = async function() {
       }
     } catch(e) { console.warn('re-sync tedSelecionado após carregarDoCloud:', e); }
 
-    showToast('Dados carregados da nuvem', 'success');
     try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
   } catch (e) {
     console.error(e);
@@ -572,7 +570,6 @@ window.testFirestoreConnection = async function() {
               }
             }
 
-            showToast('Conectado como ' + (window.currentUserProfile.displayName || window.currentUserProfile.email), 'info');
             // Hide login screen if it was open
             try { if (window.hideLoginModal) window.hideLoginModal(); } catch(e){}
             // Recarregar dados se ainda estiverem vazios (ex: regras exigem auth para leitura)
