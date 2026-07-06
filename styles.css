@@ -5486,3 +5486,324 @@ table.ef-table tbody td.right  { text-align: right; }
     gap: 16px;
     flex-wrap: wrap;
 }
+
+/* ============================================================
+   DASHBOARD REDESIGN — "Livro-Razão" (Ledger & Signal)
+   Um painel de controle orçamentário público não precisa parecer
+   um SaaS genérico. Aqui a referência é o gazette/relatório oficial:
+   fundo cor de papel, tinta azul-marinho profunda, números sempre
+   em mono tabular de verdade (não Nunito Sans disfarçado), títulos
+   em serifada editorial. As cores de destaque (navy/verde/âmbar/
+   vermelho) são as MESMAS já usadas nas tabelas de Resumo Anual/
+   Execução Financeira — consistência proposital com o resto do
+   sistema, não uma paleta nova isolada.
+   Escopo: somente #dashboard, para não afetar as demais abas.
+   ============================================================ */
+
+#dashboard {
+    background: #FAF6EC;
+    padding: 1.75rem 1.75rem 0.5rem;
+    margin: -1.5rem -1.5rem 0;
+}
+
+#dashboard .card {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-top: 3px solid #0C447C;
+    border-radius: 3px;
+    box-shadow: none;
+}
+#dashboard .card:hover { border-color: rgba(12,68,124,0.12); }
+
+#dashboard .card h2 {
+    font-family: 'Fraunces', 'Nunito Sans', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    color: #0C2A47;
+    padding-bottom: 0.65rem;
+    margin-bottom: 1.15rem;
+    border-bottom: 1px solid rgba(12,68,124,0.14);
+    display: flex;
+    align-items: baseline;
+    gap: 0.05rem;
+}
+
+#dashboard .stat-card {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-left: none;
+    border-top: 3px solid var(--tile-accent, #0C447C);
+    border-radius: 2px;
+    box-shadow: none;
+    padding: 1.15rem 1.2rem 1.05rem;
+}
+#dashboard .stat-card.wm-blue    { --tile-accent: #0C447C; }
+#dashboard .stat-card.wm-amber   { --tile-accent: #854F0B; }
+#dashboard .stat-card.wm-indigo  { --tile-accent: #4A3B6E; }
+#dashboard .stat-card.wm-green,
+#dashboard .stat-card.accent-green { --tile-accent: #3B6D11; border-radius: 2px; }
+#dashboard .stat-card.accent-red   { --tile-accent: #A32D2D; border-radius: 2px; }
+
+#dashboard .stat-card .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    color: #7A6E5A;
+    font-weight: 600;
+}
+#dashboard .stat-card .value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #0C2A47;
+    letter-spacing: -0.015em;
+}
+#dashboard .stat-card .stat-watermark .lucide,
+#dashboard .stat-card .stat-watermark svg { opacity: 0.07; stroke-width: 1.1; }
+
+#dashboard .proxima-col {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-radius: 2px;
+    box-shadow: none;
+}
+#dashboard .proxima-col .proxima-col-header {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #0C2A47;
+}
+
+/* Painéis de Resumo Financeiro / Entregas */
+#dashboard .resumo-panel .card,
+#dashboard .entregas-panel .card {
+    border-radius: 2px;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-top: 3px solid #0C447C;
+    box-shadow: none;
+    background: #FFFDF7;
+}
+#dashboard .resumo-panel .card-title-blue,
+#dashboard .entregas-panel .card-title-blue {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0C2A47;
+}
+
+/* Filtros: mantém a diagramação, aquece a paleta de bordas */
+#dashboard .filter-bar select,
+#dashboard .graficos-filters select,
+#dashboard .ms-btn { border-color: rgba(12,68,124,0.22); }
+#dashboard .ms-btn:hover { border-color: #0C447C; }
+
+/* ============================================================
+   TEDs — "Livro-Razão" aplicado à lista de TEDs
+   Mesma paleta/tipografia do Dashboard: fundo cor de papel,
+   cartões com regra superior azul-marinho, rótulos em mono,
+   números tabulares. Escopo: somente #teds.
+   ============================================================ */
+
+#teds {
+    background: #FAF6EC;
+    padding: 1.75rem 1.75rem 0.5rem;
+    margin: -1.5rem -1.5rem 0;
+}
+
+#teds .card {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-top: 3px solid #0C447C;
+    border-radius: 3px;
+    box-shadow: none;
+}
+
+#teds .card > h2,
+#teds h2.auto-style-008 {
+    font-family: 'Fraunces', 'Nunito Sans', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    color: #0C2A47;
+}
+
+#teds .teds-filter-bar {
+    border-bottom: 1px solid rgba(12,68,124,0.14);
+}
+#teds .teds-filter-bar .filter-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7A6E5A;
+}
+#teds .teds-filter-bar select {
+    border-color: rgba(12,68,124,0.22);
+    color: #0C2A47;
+}
+#teds .teds-filter-bar .btn-limpar { color: #0C447C; }
+
+#teds .ted-card {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-left: 3px solid var(--tile-accent, #888780);
+    border-radius: 2px;
+}
+#teds .ted-card:hover { box-shadow: none; border-color: #0C447C; }
+#teds .ted-card-title {
+    font-family: 'Fraunces', 'Nunito Sans', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #0C2A47;
+}
+#teds .ted-card-obj { color: #6b6558; }
+#teds .ted-card-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: #7A6E5A;
+}
+#teds .ted-card-progress-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #7A6E5A;
+}
+#teds .ted-card-progress-pct,
+#teds .ted-card-saldo-pos,
+#teds .ted-card-saldo-neg {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+#teds .ted-card-progress-track { background: rgba(12,68,124,0.08); }
+#teds .ted-card-footer { border-top: 1px solid rgba(12,68,124,0.10); }
+#teds .ted-card-footer > span:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7A6E5A;
+}
+
+/* ============================================================
+   DETALHES TED — "Livro-Razão" aplicado à ficha do TED
+   Mesma paleta/tipografia do Dashboard/TEDs. O hero mantém o
+   degradê navy (é o único "cartaz" da tela, funciona como capa
+   de dossiê); todo o resto vira papel + mono tabular.
+   Escopo: somente #detalhes.
+   ============================================================ */
+
+#detalhes { background: #FAF6EC; padding: 1.75rem 1.75rem 0.5rem; margin: -1.5rem -1.5rem 0; }
+
+#detalhes .card {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-top: 3px solid #0C447C;
+    border-radius: 3px;
+    box-shadow: none;
+}
+#detalhes .detalhes-header h2 {
+    font-family: 'Fraunces', 'Nunito Sans', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    color: #0C2A47;
+}
+#detalhes .ted-chip { border-color: rgba(12,68,124,0.22); }
+#detalhes .ted-chip-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; }
+
+/* Nav de abas internas: mono, ativa em navy sólido (sem gradiente) */
+#detalhes .dt-tab-switch { background: #FFFDF7; border-color: rgba(12,68,124,0.16); box-shadow: none; }
+#detalhes .dt-tab-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #7A6E5A;
+}
+#detalhes .dt-tab-btn:hover { background: rgba(12,68,124,0.06); color: #0C2A47; }
+#detalhes .dt-tab-btn.active { background: #0C447C; color: #FFFDF7; }
+
+/* Hero: mantém o degradê como "capa"; tipografia alinhada ao resto */
+#detalhes .ted-hero { border-radius: 3px; box-shadow: none; }
+#detalhes .ted-hero-id { font-family: 'IBM Plex Mono', monospace; }
+#detalhes .ted-hero-title { font-family: 'Fraunces', 'Nunito Sans', serif; font-weight: 500; }
+
+/* KPI cards: topo colorido por tipo, números em mono tabular */
+#detalhes .kpi {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-left: none;
+    border-top: 3px solid var(--kpi-accent, #0C447C);
+    border-radius: 2px;
+}
+#detalhes .kpi.lead-blue  { --kpi-accent: #0C447C; }
+#detalhes .kpi.lead-green { --kpi-accent: #3B6D11; }
+#detalhes .kpi.lead-red   { --kpi-accent: #A32D2D; }
+#detalhes .kpi.lead-amber { --kpi-accent: #854F0B; }
+#detalhes .kpi-label {
+    font-family: 'IBM Plex Mono', monospace;
+    color: #7A6E5A;
+}
+#detalhes .kpi-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    color: #0C2A47;
+}
+#detalhes .kpi-val .cur { color: #9C7A34; }
+#detalhes .kpi-sub { color: #6b6558; }
+#detalhes .kpi-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+}
+
+/* Timeline de vigência */
+#detalhes .vig-card {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-radius: 2px;
+}
+#detalhes .vig-title { font-family: 'Fraunces', 'Nunito Sans', serif; font-weight: 600; color: #0C2A47; }
+#detalhes .vig-meta { font-family: 'IBM Plex Mono', monospace; color: #7A6E5A; }
+
+/* Dados Cadastrais + Aditivos */
+#detalhes .dc-card {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-radius: 2px;
+}
+#detalhes .dc-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0C2A47;
+}
+#detalhes .sub-group-title,
+#detalhes .field-label {
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.03em;
+    color: #7A6E5A;
+}
+#detalhes .field-value { color: #0C2A47; }
+#detalhes .field-value.mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+
+#detalhes .aditivo-card-new {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-radius: 2px;
+}
+#detalhes .aditivo-num-badge { background: #E6F1FB; color: #0C447C; font-family: 'IBM Plex Mono', monospace; }
+#detalhes .aditivo-card-date { font-family: 'IBM Plex Mono', monospace; color: #7A6E5A; }

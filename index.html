@@ -9,9 +9,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,500;0,6..12,600;0,6..12,700&display=swap" rel="stylesheet">
+    <!-- Dashboard/TEDs/Detalhes redesign: serif display (Fraunces) + true tabular monospace (IBM Plex Mono) -->
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-        <link rel="stylesheet" href="styles.css?v=20260705a">
+        <link rel="stylesheet" href="styles.css?v=20260706d">
     </head>
     <body>
 
@@ -471,7 +473,7 @@
                 <h2>Próximas Ações</h2>
                 <div class="proximas-acoes-grid">
                     <div class="proxima-col">
-                        <div class="proxima-col-header"><i data-lucide="package" class="inline-icon-sm" style="color:#378ADD;"></i> Entregas</div>
+                        <div class="proxima-col-header"><i data-lucide="package" class="inline-icon-sm" style="color:#0C447C;"></i> Entregas</div>
                         <div id="proximasEntregas">
                             <p class="empty-state auto-style-004">Sem entregas programadas nos próximos 30 dias.</p>
                         </div>
@@ -1772,10 +1774,10 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260705a"></script>
+    <script src="js/main.js?v=20260706d"></script>
 
     <!-- Firebase initialization (module) -->
-    <script type="module" src="./firebase-init.js?v=20260705a"></script>
-    <script type="module" src="./app.js?v=20260705a"></script>
+    <script type="module" src="./firebase-init.js?v=20260706d"></script>
+    <script type="module" src="./app.js?v=20260706d"></script>
 </body>
 </html>
