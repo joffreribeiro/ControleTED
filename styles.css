@@ -4190,8 +4190,9 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-kpi.lead-amber { border-left: 4px solid #F59E0B; }
 .cf-kpi.lead-purple{ border-left: 4px solid #a855f7; }
 .cf-kpi-label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; }
-.cf-kpi-val   { font-size: 18px; font-weight: 700; color: #111; line-height: 1.2; }
+.cf-kpi-val   { font-size: 18px; font-weight: 700; color: #111; line-height: 1.2; white-space: nowrap; }
 .cf-kpi-sub   { font-size: 11px; color: #6b7280; }
+.cf-kpi.lead-blue .cf-kpi-val { font-size: clamp(13px, 1.6vw, 18px); }
 
 /* ND tags */
 .nd-tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 13px; font-weight: 600; font-family: 'Nunito Sans', -apple-system, sans-serif; white-space: nowrap; }
@@ -4207,9 +4208,9 @@ table.ef-table tbody td.right  { text-align: right; }
 
 /* Group header row */
 .cf-grp-head {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -4220,11 +4221,34 @@ table.ef-table tbody td.right  { text-align: right; }
   user-select: none;
 }
 .cf-grp-head:hover { background: #f1f5f9; }
-.cf-grp-head-left { display: flex; align-items: center; gap: 8px; }
+.cf-grp-head-left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .cf-grp-toggle { font-size: 10px; color: #94a3b8; transition: transform 0.15s; }
 .cf-grp-toggle.open { transform: rotate(90deg); }
 .mes-pill { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 700; background: #e0f2fe; color: #0369a1; white-space: nowrap; }
-.cf-grp-subtotal { font-size: 12px; font-weight: 700; color: #374151; white-space: nowrap; }
+.cf-grp-subtotal {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-right: 8px;
+  overflow: visible;
+}
+.cf-grp-subtotal-recebido,
+.cf-grp-subtotal-total {
+  display: inline-block;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.cf-grp-subtotal-recebido { color: #16a34a; }
+.cf-grp-subtotal-sep { color: #94a3b8; font-weight: 400; flex-shrink: 0; }
 .cf-grp-count { font-size: 11px; color: #94a3b8; }
 
 /* Inner table within each group */

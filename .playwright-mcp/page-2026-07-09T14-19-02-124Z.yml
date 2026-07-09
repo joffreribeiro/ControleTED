@@ -1,0 +1,156 @@
+- generic [active] [ref=e1]:
+  - status [ref=e2]:
+    - generic [ref=e6]: Carregando dados da nuvem...
+  - navigation "Menu lateral" [ref=e7]:
+    - generic [ref=e9]:
+      - img "Logo" [ref=e11]
+      - generic [ref=e12]:
+        - generic [ref=e13]: Controle TED
+        - generic [ref=e14]: TERMO DE EXEC. DESC.
+    - navigation "Navegação principal" [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]: Principal
+        - button "Dashboard" [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+          - generic [ref=e24]: Dashboard
+      - generic [ref=e25]:
+        - generic [ref=e26]: Gestão
+        - button "TEDs" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e31]: TEDs
+        - button "Detalhes TED" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: Detalhes TED
+        - button "Plano de Trabalho" [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e41]: Plano de Trabalho
+      - generic [ref=e42]:
+        - generic [ref=e43]: Análise
+        - button "Relatórios" [ref=e44] [cursor=pointer]:
+          - img [ref=e45]
+          - generic [ref=e48]: Relatórios
+    - generic [ref=e49]:
+      - generic "Clique para ver detalhes do TED" [ref=e50] [cursor=pointer]:
+        - generic [ref=e52]: Selecionar TED
+        - img [ref=e53]
+      - generic [ref=e55]:
+        - generic "Última sincronização" [ref=e56]: Nunca sincronizado
+        - generic [ref=e57]:
+          - button "Carregar" [ref=e58] [cursor=pointer]
+          - button "Salvar" [disabled]
+        - generic [ref=e59]:
+          - generic "Modo atual" [ref=e60]: 📖 Leitura
+          - button "Entrar" [ref=e61] [cursor=pointer]:
+            - img [ref=e62]
+  - generic [ref=e65]:
+    - generic [ref=e66]:
+      - generic [ref=e67]:
+        - heading "Resumo Geral" [level=2] [ref=e68]
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - generic [ref=e71]: Total de TED
+            - generic [ref=e72]: "0"
+            - generic:
+              - img
+          - generic [ref=e73]:
+            - generic [ref=e74]: TED Em Execução
+            - generic [ref=e75]: "0"
+            - generic:
+              - img
+          - generic [ref=e76]:
+            - generic [ref=e77]: Orçamento Total (R$)
+            - generic [ref=e78]: 0,00
+            - generic:
+              - img
+          - generic [ref=e79]:
+            - generic [ref=e80]: Total Recebido (R$)
+            - generic [ref=e81]: 0,00
+            - generic:
+              - img
+        - generic [ref=e82]:
+          - heading "Assinados / Encerrados (Mês – UP)" [level=4] [ref=e83]:
+            - img [ref=e84]
+            - text: Assinados / Encerrados (Mês – UP)
+          - paragraph [ref=e87]: Assinados / Encerrados
+          - button "Relatório Mensal" [ref=e89] [cursor=pointer]
+          - paragraph [ref=e91]: Sem dados para exibir.
+      - generic [ref=e92]:
+        - heading "Próximas Ações" [level=2] [ref=e93]
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - img [ref=e97]
+              - text: Entregas
+            - paragraph [ref=e102]: Sem entregas programadas nos próximos 30 dias.
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - img [ref=e105]
+              - text: Recebimentos
+            - paragraph [ref=e109]: Sem recebimentos programados nos próximos 30 dias.
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - img [ref=e112]
+              - text: Fim de Vigência
+            - paragraph [ref=e117]: Sem TEDs com vigência terminando nos próximos 30 dias.
+          - generic [ref=e118]:
+            - generic [ref=e119]:
+              - img [ref=e120]
+              - text: Alerta
+            - paragraph [ref=e123]: Nenhum TED com vigência vencida e não encerrado.
+      - generic [ref=e124]:
+        - heading "Vigência dos TED" [level=2] [ref=e125]
+        - generic [ref=e126]:
+          - generic [ref=e127]: "UP:"
+          - listbox [ref=e128]
+          - generic [ref=e129]: "Situação:"
+          - listbox [ref=e130]:
+            - option "Em Execução" [selected] [ref=e131]
+            - option "TED Finalizado" [ref=e132]
+          - button "Limpar" [ref=e133] [cursor=pointer]
+        - paragraph [ref=e135]: Nenhum TED com vigência cadastrada (ou todos filtrados).
+      - generic [ref=e136]:
+        - heading "Gráficos" [level=2] [ref=e137]
+        - generic [ref=e138]:
+          - generic [ref=e139]:
+            - generic [ref=e140]:
+              - generic [ref=e141]: "Filtrar TED:"
+              - button "-- Todos --" [ref=e143] [cursor=pointer]:
+                - generic [ref=e144]: "-- Todos --"
+                - img [ref=e145]
+            - generic [ref=e147]:
+              - generic [ref=e148]: "Ano:"
+              - button "-- Todos --" [ref=e150] [cursor=pointer]:
+                - generic [ref=e151]: "-- Todos --"
+                - img [ref=e152]
+            - generic [ref=e154]:
+              - generic [ref=e155]: "UP:"
+              - button "-- Todas --" [ref=e157] [cursor=pointer]:
+                - generic [ref=e158]: "-- Todas --"
+                - img [ref=e159]
+            - button "Limpar Filtros" [ref=e161] [cursor=pointer]
+          - generic [ref=e162]:
+            - generic [ref=e164]:
+              - heading "Resumo Financeiro" [level=4] [ref=e165]:
+                - img [ref=e166]
+                - text: Resumo Financeiro
+              - paragraph [ref=e170]: Sem dados para o resumo financeiro.
+            - generic [ref=e172]:
+              - heading "Entregas" [level=4] [ref=e173]:
+                - img [ref=e174]
+                - text: Entregas
+              - paragraph [ref=e179]: Nenhum TED disponível.
+    - text: + + + + + + + + + +
+  - generic [ref=e181]:
+    - generic [ref=e182]:
+      - generic [ref=e183]: 🔐
+      - heading "Controle TED" [level=2] [ref=e184]
+      - paragraph [ref=e185]: Faça login para acessar o sistema
+    - generic [ref=e186]: Email
+    - textbox "email@exemplo.com" [ref=e187]
+    - generic [ref=e188]: Senha
+    - textbox "Senha" [ref=e189]
+    - button "Entrar" [ref=e190] [cursor=pointer]
+    - paragraph [ref=e191]:
+      - link "Esqueci minha senha" [ref=e192] [cursor=pointer]:
+        - /url: "#"
+    - paragraph [ref=e193]: Pronto para login.

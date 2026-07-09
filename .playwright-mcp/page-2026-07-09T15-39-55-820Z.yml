@@ -1,0 +1,156 @@
+- generic [active] [ref=f5e1]:
+  - status [ref=f5e2]:
+    - generic [ref=f5e6]: Carregando dados da nuvem...
+  - navigation "Menu lateral" [ref=f5e7]:
+    - generic [ref=f5e9]:
+      - img "Logo" [ref=f5e11]
+      - generic [ref=f5e12]:
+        - generic [ref=f5e13]: Controle TED
+        - generic [ref=f5e14]: TERMO DE EXEC. DESC.
+    - navigation "Navegação principal" [ref=f5e15]:
+      - generic [ref=f5e16]:
+        - generic [ref=f5e17]: Principal
+        - button "Dashboard" [ref=f5e18] [cursor=pointer]:
+          - img [ref=f5e19]
+          - generic [ref=f5e24]: Dashboard
+      - generic [ref=f5e25]:
+        - generic [ref=f5e26]: Gestão
+        - button "TEDs" [ref=f5e27] [cursor=pointer]:
+          - img [ref=f5e28]
+          - generic [ref=f5e31]: TEDs
+        - button "Detalhes TED" [ref=f5e32] [cursor=pointer]:
+          - img [ref=f5e33]
+          - generic [ref=f5e36]: Detalhes TED
+        - button "Plano de Trabalho" [ref=f5e37] [cursor=pointer]:
+          - img [ref=f5e38]
+          - generic [ref=f5e41]: Plano de Trabalho
+      - generic [ref=f5e42]:
+        - generic [ref=f5e43]: Análise
+        - button "Relatórios" [ref=f5e44] [cursor=pointer]:
+          - img [ref=f5e45]
+          - generic [ref=f5e48]: Relatórios
+    - generic [ref=f5e49]:
+      - generic "Clique para ver detalhes do TED" [ref=f5e50] [cursor=pointer]:
+        - generic [ref=f5e52]: Selecionar TED
+        - img [ref=f5e53]
+      - generic [ref=f5e55]:
+        - generic "Última sincronização" [ref=f5e56]: Nunca sincronizado
+        - generic [ref=f5e57]:
+          - button "Carregar" [ref=f5e58] [cursor=pointer]
+          - button "Salvar" [disabled]
+        - generic [ref=f5e59]:
+          - generic "Modo atual" [ref=f5e60]: 📖 Leitura
+          - button "Entrar" [ref=f5e61] [cursor=pointer]:
+            - img [ref=f5e62]
+  - generic [ref=f5e65]:
+    - generic [ref=f5e66]:
+      - generic [ref=f5e67]:
+        - heading "Resumo Geral" [level=2] [ref=f5e68]
+        - generic [ref=f5e69]:
+          - generic [ref=f5e70]:
+            - generic [ref=f5e71]: Total de TED
+            - generic [ref=f5e72]: "0"
+            - generic:
+              - img
+          - generic [ref=f5e73]:
+            - generic [ref=f5e74]: TED Em Execução
+            - generic [ref=f5e75]: "0"
+            - generic:
+              - img
+          - generic [ref=f5e76]:
+            - generic [ref=f5e77]: Orçamento Total (R$)
+            - generic [ref=f5e78]: 0,00
+            - generic:
+              - img
+          - generic [ref=f5e79]:
+            - generic [ref=f5e80]: Total Recebido (R$)
+            - generic [ref=f5e81]: 0,00
+            - generic:
+              - img
+        - generic [ref=f5e82]:
+          - heading "Assinados / Encerrados (Mês – UP)" [level=4] [ref=f5e83]:
+            - img [ref=f5e84]
+            - text: Assinados / Encerrados (Mês – UP)
+          - paragraph [ref=f5e87]: Assinados / Encerrados
+          - button "Relatório Mensal" [ref=f5e89] [cursor=pointer]
+          - paragraph [ref=f5e91]: Sem dados para exibir.
+      - generic [ref=f5e92]:
+        - heading "Próximas Ações" [level=2] [ref=f5e93]
+        - generic [ref=f5e94]:
+          - generic [ref=f5e95]:
+            - generic [ref=f5e96]:
+              - img [ref=f5e97]
+              - text: Entregas
+            - paragraph [ref=f5e102]: Sem entregas programadas nos próximos 30 dias.
+          - generic [ref=f5e103]:
+            - generic [ref=f5e104]:
+              - img [ref=f5e105]
+              - text: Recebimentos
+            - paragraph [ref=f5e109]: Sem recebimentos programados nos próximos 30 dias.
+          - generic [ref=f5e110]:
+            - generic [ref=f5e111]:
+              - img [ref=f5e112]
+              - text: Fim de Vigência
+            - paragraph [ref=f5e117]: Sem TEDs com vigência terminando nos próximos 30 dias.
+          - generic [ref=f5e118]:
+            - generic [ref=f5e119]:
+              - img [ref=f5e120]
+              - text: Alerta
+            - paragraph [ref=f5e123]: Nenhum TED com vigência vencida e não encerrado.
+      - generic [ref=f5e124]:
+        - heading "Vigência dos TED" [level=2] [ref=f5e125]
+        - generic [ref=f5e126]:
+          - generic [ref=f5e127]: "UP:"
+          - listbox [ref=f5e128]
+          - generic [ref=f5e129]: "Situação:"
+          - listbox [ref=f5e130]:
+            - option "Em Execução" [selected] [ref=f5e131]
+            - option "TED Finalizado" [ref=f5e132]
+          - button "Limpar" [ref=f5e133] [cursor=pointer]
+        - paragraph [ref=f5e135]: Nenhum TED com vigência cadastrada (ou todos filtrados).
+      - generic [ref=f5e136]:
+        - heading "Gráficos" [level=2] [ref=f5e137]
+        - generic [ref=f5e138]:
+          - generic [ref=f5e139]:
+            - generic [ref=f5e140]:
+              - generic [ref=f5e141]: "Filtrar TED:"
+              - button "-- Todos --" [ref=f5e143] [cursor=pointer]:
+                - generic [ref=f5e144]: "-- Todos --"
+                - img [ref=f5e145]
+            - generic [ref=f5e147]:
+              - generic [ref=f5e148]: "Ano:"
+              - button "-- Todos --" [ref=f5e150] [cursor=pointer]:
+                - generic [ref=f5e151]: "-- Todos --"
+                - img [ref=f5e152]
+            - generic [ref=f5e154]:
+              - generic [ref=f5e155]: "UP:"
+              - button "-- Todas --" [ref=f5e157] [cursor=pointer]:
+                - generic [ref=f5e158]: "-- Todas --"
+                - img [ref=f5e159]
+            - button "Limpar Filtros" [ref=f5e161] [cursor=pointer]
+          - generic [ref=f5e162]:
+            - generic [ref=f5e164]:
+              - heading "Resumo Financeiro" [level=4] [ref=f5e165]:
+                - img [ref=f5e166]
+                - text: Resumo Financeiro
+              - paragraph [ref=f5e170]: Sem dados para o resumo financeiro.
+            - generic [ref=f5e172]:
+              - heading "Entregas" [level=4] [ref=f5e173]:
+                - img [ref=f5e174]
+                - text: Entregas
+              - paragraph [ref=f5e179]: Nenhum TED disponível.
+    - text: + + + + + + + + + +
+  - generic [ref=f5e181]:
+    - generic [ref=f5e182]:
+      - generic [ref=f5e183]: 🔐
+      - heading "Controle TED" [level=2] [ref=f5e184]
+      - paragraph [ref=f5e185]: Faça login para acessar o sistema
+    - generic [ref=f5e186]: Email
+    - textbox "email@exemplo.com" [ref=f5e187]
+    - generic [ref=f5e188]: Senha
+    - textbox "Senha" [ref=f5e189]
+    - button "Entrar" [ref=f5e190] [cursor=pointer]
+    - paragraph [ref=f5e191]:
+      - link "Esqueci minha senha" [ref=f5e192] [cursor=pointer]:
+        - /url: "#"
+    - paragraph [ref=f5e193]: Pronto para login.

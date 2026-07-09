@@ -1,0 +1,768 @@
+- generic [ref=f3e1]:
+  - navigation "Menu lateral" [ref=f3e7]:
+    - generic [ref=f3e9]:
+      - img "Logo" [ref=f3e11]
+      - generic [ref=f3e12]:
+        - generic [ref=f3e13]: Controle TED
+        - generic [ref=f3e14]: TERMO DE EXEC. DESC.
+    - navigation "Navegação principal" [ref=f3e15]:
+      - generic [ref=f3e16]:
+        - generic [ref=f3e17]: Principal
+        - button "Dashboard" [ref=f3e18] [cursor=pointer]:
+          - img [ref=f3e3702]
+          - generic [ref=f3e24]: Dashboard
+      - generic [ref=f3e25]:
+        - generic [ref=f3e26]: Gestão
+        - button "TEDs" [ref=f3e27] [cursor=pointer]:
+          - img [ref=f3e3707]
+          - generic [ref=f3e31]: TEDs
+        - button "Detalhes TED" [active] [ref=f3e32] [cursor=pointer]:
+          - img [ref=f3e3710]
+          - generic [ref=f3e36]: Detalhes TED
+        - button "Plano de Trabalho" [ref=f3e37] [cursor=pointer]:
+          - img [ref=f3e3713]
+          - generic [ref=f3e41]: Plano de Trabalho
+      - generic [ref=f3e42]:
+        - generic [ref=f3e43]: Análise
+        - button "Relatórios" [ref=f3e44] [cursor=pointer]:
+          - img [ref=f3e3716]
+          - generic [ref=f3e48]: Relatórios
+        - button "Configurações" [ref=f3e211] [cursor=pointer]:
+          - img [ref=f3e3719]
+          - generic [ref=f3e215]: Configurações
+    - generic [ref=f3e49]:
+      - generic "Clique para ver detalhes do TED" [ref=f3e50] [cursor=pointer]:
+        - generic [ref=f3e52]: TED 20-EME-030
+        - img [ref=f3e3722]
+      - generic [ref=f3e55]:
+        - generic "Última sincronização" [ref=f3e56]: "Salvo: 12:37:09"
+        - generic [ref=f3e57]:
+          - button "Carregar" [ref=f3e58] [cursor=pointer]
+          - button "Salvar" [ref=f3e218] [cursor=pointer]
+        - generic [ref=f3e59]:
+          - generic "Modo atual" [ref=f3e60]: 🔑 Admin
+          - button "Alterar minha senha" [ref=f3e219] [cursor=pointer]:
+            - img [ref=f3e3724]
+          - button "Sair" [ref=f3e224] [cursor=pointer]:
+            - img [ref=f3e3728]
+            - text: Sair
+  - generic [ref=f3e65]:
+    - generic [ref=f3e3732]:
+      - generic [ref=f3e3733]:
+        - heading "Detalhes do TED" [level=2] [ref=f3e3734]
+        - generic [ref=f3e3735] [cursor=pointer]:
+          - generic [ref=f3e3737]: TED 20-EME-030
+          - img [ref=f3e3738]
+      - generic [ref=f3e3740]:
+        - tablist "Seções do Detalhes TED" [ref=f3e3741]:
+          - button "Visão Geral" [ref=f3e3742] [cursor=pointer]
+          - button "Físico" [ref=f3e3743] [cursor=pointer]
+          - button "Financeiro" [ref=f3e3744] [cursor=pointer]
+          - button "Faturamento" [ref=f3e3745] [cursor=pointer]
+        - generic [ref=f3e3746]:
+          - generic [ref=f3e3747]:
+            - heading "Cadastro Financeiro 11" [level=3] [ref=f3e3749]:
+              - img [ref=f3e3750]
+              - text: Cadastro Financeiro
+              - generic [ref=f3e3753]: "11"
+            - generic [ref=f3e3754]:
+              - generic [ref=f3e3756]:
+                - generic [ref=f3e3757]:
+                  - generic [ref=f3e3758]: Total Cadastrado
+                  - generic [ref=f3e3759]: R$ 78.281.459,28
+                - generic [ref=f3e3760]:
+                  - generic [ref=f3e3761]: Maior ND
+                  - generic [ref=f3e3762]: 33.90.30
+                  - generic [ref=f3e3763]: R$ 32.177.086,86
+                - generic [ref=f3e3764]:
+                  - generic [ref=f3e3765]: Distribuição por UP
+                  - generic [ref=f3e3766]: "4"
+                  - generic [ref=f3e3767]: unidades
+                - generic [ref=f3e3768]:
+                  - generic [ref=f3e3769]: Próximo período
+                  - generic [ref=f3e3770]: —
+                  - generic [ref=f3e3771]: sem previsão
+              - generic [ref=f3e3772]:
+                - generic [ref=f3e3773]:
+                  - button "Ver detalhes mensais" [ref=f3e3774] [cursor=pointer]
+                  - button "+ Adicionar" [ref=f3e3775] [cursor=pointer]
+                - generic [ref=f3e3776]:
+                  - generic [ref=f3e3777]: "Filtrar:"
+                  - generic "Filtrar por ND" [ref=f3e3778] [cursor=pointer]:
+                    - generic [ref=f3e3779]: ND
+                    - text: +
+                  - generic "Filtrar por UP" [ref=f3e3780] [cursor=pointer]:
+                    - generic [ref=f3e3781]: UP
+                    - text: +
+                  - generic "Filtrar por M" [ref=f3e3782] [cursor=pointer]:
+                    - generic [ref=f3e3783]: M
+                    - text: +
+                - table [ref=f3e3784]:
+                  - rowgroup [ref=f3e3793]:
+                    - row "ND UP M Mês Desc. Valor A Receber Ação":
+                      - columnheader "ND" [ref=f3e3794]
+                      - columnheader "UP" [ref=f3e3795]
+                      - columnheader "M" [ref=f3e3796]
+                      - columnheader "Mês Desc." [ref=f3e3797]
+                      - columnheader "Valor" [ref=f3e3798]
+                      - columnheader "A Receber" [ref=f3e3799]
+                      - columnheader "Ação" [ref=f3e3800]
+                    - row [ref=f3e3801]
+                  - rowgroup [ref=f3e3802]:
+                    - row "▶ NOV/2020 11 lançamentos R$ 78.032.637,00 / R$ 78.281.459,28" [ref=f3e3803]:
+                      - cell "▶ NOV/2020 11 lançamentos R$ 78.032.637,00 / R$ 78.281.459,28" [ref=f3e3804]:
+                        - generic [ref=f3e3805] [cursor=pointer]:
+                          - generic [ref=f3e3806]:
+                            - generic [ref=f3e3807]: ▶
+                            - generic [ref=f3e3808]: NOV/2020
+                            - generic [ref=f3e3809]: 11 lançamentos
+                          - generic [ref=f3e3810]:
+                            - generic [ref=f3e3811]: R$ 78.032.637,00
+                            - generic [ref=f3e3812]: /
+                            - generic [ref=f3e3813]: R$ 78.281.459,28
+                    - row "33.90.30 FJF 0 NOV/2020 20.677.935,46 R$ 109,49" [ref=f3e3814]:
+                      - cell "33.90.30" [ref=f3e3815]:
+                        - generic [ref=f3e3816]: 33.90.30
+                      - cell "FJF" [ref=f3e3817]:
+                        - generic [ref=f3e3818]: FJF
+                      - cell "0" [ref=f3e3819]
+                      - cell "NOV/2020" [ref=f3e3820]
+                      - cell "20.677.935,46" [ref=f3e3821]:
+                        - generic [ref=f3e3822]: 20.677.935,46
+                      - cell "R$ 109,49" [ref=f3e3823]:
+                        - generic [ref=f3e3824]: R$ 109,49
+                      - cell [ref=f3e3825]:
+                        - button "Editar" [ref=f3e3826] [cursor=pointer]:
+                          - img [ref=f3e3827]
+                        - button "Remover" [ref=f3e3830] [cursor=pointer]:
+                          - img [ref=f3e3831]
+                    - row "33.90.30 FE 0 NOV/2020 397.000,00 R$ 283,86" [ref=f3e3834]:
+                      - cell "33.90.30" [ref=f3e3835]:
+                        - generic [ref=f3e3836]: 33.90.30
+                      - cell "FE" [ref=f3e3837]:
+                        - generic [ref=f3e3838]: FE
+                      - cell "0" [ref=f3e3839]
+                      - cell "NOV/2020" [ref=f3e3840]
+                      - cell "397.000,00" [ref=f3e3841]:
+                        - generic [ref=f3e3842]: 397.000,00
+                      - cell "R$ 283,86" [ref=f3e3843]:
+                        - generic [ref=f3e3844]: R$ 283,86
+                      - cell [ref=f3e3845]:
+                        - button "Editar" [ref=f3e3846] [cursor=pointer]:
+                          - img [ref=f3e3847]
+                        - button "Remover" [ref=f3e3850] [cursor=pointer]:
+                          - img [ref=f3e3851]
+                    - row "33.90.30 FPV 0 NOV/2020 11.102.151,40 Recebido" [ref=f3e3854]:
+                      - cell "33.90.30" [ref=f3e3855]:
+                        - generic [ref=f3e3856]: 33.90.30
+                      - cell "FPV" [ref=f3e3857]:
+                        - generic [ref=f3e3858]: FPV
+                      - cell "0" [ref=f3e3859]
+                      - cell "NOV/2020" [ref=f3e3860]
+                      - cell "11.102.151,40" [ref=f3e3861]:
+                        - generic [ref=f3e3862]: 11.102.151,40
+                      - cell "Recebido" [ref=f3e3863]:
+                        - generic [ref=f3e3864]: Recebido
+                      - cell [ref=f3e3865]:
+                        - button "Editar" [ref=f3e3866] [cursor=pointer]:
+                          - img [ref=f3e3867]
+                        - button "Remover" [ref=f3e3870] [cursor=pointer]:
+                          - img [ref=f3e3871]
+                    - row "33.90.39 FJF 0 NOV/2020 6.316.619,41 R$ 51,93" [ref=f3e3874]:
+                      - cell "33.90.39" [ref=f3e3875]:
+                        - generic [ref=f3e3876]: 33.90.39
+                      - cell "FJF" [ref=f3e3877]:
+                        - generic [ref=f3e3878]: FJF
+                      - cell "0" [ref=f3e3879]
+                      - cell "NOV/2020" [ref=f3e3880]
+                      - cell "6.316.619,41" [ref=f3e3881]:
+                        - generic [ref=f3e3882]: 6.316.619,41
+                      - cell "R$ 51,93" [ref=f3e3883]:
+                        - generic [ref=f3e3884]: R$ 51,93
+                      - cell [ref=f3e3885]:
+                        - button "Editar" [ref=f3e3886] [cursor=pointer]:
+                          - img [ref=f3e3887]
+                        - button "Remover" [ref=f3e3890] [cursor=pointer]:
+                          - img [ref=f3e3891]
+                    - row "33.90.39 FE 0 NOV/2020 6.602.464,47 R$ 1.390,91" [ref=f3e3894]:
+                      - cell "33.90.39" [ref=f3e3895]:
+                        - generic [ref=f3e3896]: 33.90.39
+                      - cell "FE" [ref=f3e3897]:
+                        - generic [ref=f3e3898]: FE
+                      - cell "0" [ref=f3e3899]
+                      - cell "NOV/2020" [ref=f3e3900]
+                      - cell "6.602.464,47" [ref=f3e3901]:
+                        - generic [ref=f3e3902]: 6.602.464,47
+                      - cell "R$ 1.390,91" [ref=f3e3903]:
+                        - generic [ref=f3e3904]: R$ 1.390,91
+                      - cell [ref=f3e3905]:
+                        - button "Editar" [ref=f3e3906] [cursor=pointer]:
+                          - img [ref=f3e3907]
+                        - button "Remover" [ref=f3e3910] [cursor=pointer]:
+                          - img [ref=f3e3911]
+                    - row "33.90.39 FPV 0 NOV/2020 2.108.530,25 Recebido" [ref=f3e3914]:
+                      - cell "33.90.39" [ref=f3e3915]:
+                        - generic [ref=f3e3916]: 33.90.39
+                      - cell "FPV" [ref=f3e3917]:
+                        - generic [ref=f3e3918]: FPV
+                      - cell "0" [ref=f3e3919]
+                      - cell "NOV/2020" [ref=f3e3920]
+                      - cell "2.108.530,25" [ref=f3e3921]:
+                        - generic [ref=f3e3922]: 2.108.530,25
+                      - cell "Recebido" [ref=f3e3923]:
+                        - generic [ref=f3e3924]: Recebido
+                      - cell [ref=f3e3925]:
+                        - button "Editar" [ref=f3e3926] [cursor=pointer]:
+                          - img [ref=f3e3927]
+                        - button "Remover" [ref=f3e3930] [cursor=pointer]:
+                          - img [ref=f3e3931]
+                    - row "33.90.47 FJF 0 NOV/2020 19.567.450,47 Recebido" [ref=f3e3934]:
+                      - cell "33.90.47" [ref=f3e3935]:
+                        - generic [ref=f3e3936]: 33.90.47
+                      - cell "FJF" [ref=f3e3937]:
+                        - generic [ref=f3e3938]: FJF
+                      - cell "0" [ref=f3e3939]
+                      - cell "NOV/2020" [ref=f3e3940]
+                      - cell "19.567.450,47" [ref=f3e3941]:
+                        - generic [ref=f3e3942]: 19.567.450,47
+                      - cell "Recebido" [ref=f3e3943]:
+                        - generic [ref=f3e3944]: Recebido
+                      - cell [ref=f3e3945]:
+                        - button "Editar" [ref=f3e3946] [cursor=pointer]:
+                          - img [ref=f3e3947]
+                        - button "Remover" [ref=f3e3950] [cursor=pointer]:
+                          - img [ref=f3e3951]
+                    - row "33.90.47 FE 0 NOV/2020 3.503.000,00 Recebido" [ref=f3e3954]:
+                      - cell "33.90.47" [ref=f3e3955]:
+                        - generic [ref=f3e3956]: 33.90.47
+                      - cell "FE" [ref=f3e3957]:
+                        - generic [ref=f3e3958]: FE
+                      - cell "0" [ref=f3e3959]
+                      - cell "NOV/2020" [ref=f3e3960]
+                      - cell "3.503.000,00" [ref=f3e3961]:
+                        - generic [ref=f3e3962]: 3.503.000,00
+                      - cell "Recebido" [ref=f3e3963]:
+                        - generic [ref=f3e3964]: Recebido
+                      - cell [ref=f3e3965]:
+                        - button "Editar" [ref=f3e3966] [cursor=pointer]:
+                          - img [ref=f3e3967]
+                        - button "Remover" [ref=f3e3970] [cursor=pointer]:
+                          - img [ref=f3e3971]
+                    - row "33.90.47 FPV 0 NOV/2020 6.557.767,77 Recebido" [ref=f3e3974]:
+                      - cell "33.90.47" [ref=f3e3975]:
+                        - generic [ref=f3e3976]: 33.90.47
+                      - cell "FPV" [ref=f3e3977]:
+                        - generic [ref=f3e3978]: FPV
+                      - cell "0" [ref=f3e3979]
+                      - cell "NOV/2020" [ref=f3e3980]
+                      - cell "6.557.767,77" [ref=f3e3981]:
+                        - generic [ref=f3e3982]: 6.557.767,77
+                      - cell "Recebido" [ref=f3e3983]:
+                        - generic [ref=f3e3984]: Recebido
+                      - cell [ref=f3e3985]:
+                        - button "Editar" [ref=f3e3986] [cursor=pointer]:
+                          - img [ref=f3e3987]
+                        - button "Remover" [ref=f3e3990] [cursor=pointer]:
+                          - img [ref=f3e3991]
+                    - row "33.91.47 FJF 0 NOV/2020 1.201.553,96 Recebido" [ref=f3e3994]:
+                      - cell "33.91.47" [ref=f3e3995]:
+                        - generic [ref=f3e3996]: 33.91.47
+                      - cell "FJF" [ref=f3e3997]:
+                        - generic [ref=f3e3998]: FJF
+                      - cell "0" [ref=f3e3999]
+                      - cell "NOV/2020" [ref=f3e4000]
+                      - cell "1.201.553,96" [ref=f3e4001]:
+                        - generic [ref=f3e4002]: 1.201.553,96
+                      - cell "Recebido" [ref=f3e4003]:
+                        - generic [ref=f3e4004]: Recebido
+                      - cell [ref=f3e4005]:
+                        - button "Editar" [ref=f3e4006] [cursor=pointer]:
+                          - img [ref=f3e4007]
+                        - button "Remover" [ref=f3e4010] [cursor=pointer]:
+                          - img [ref=f3e4011]
+                    - row "33.91.47 Sede 0 NOV/2020 246.986,09 R$ 246.986,09" [ref=f3e4014]:
+                      - cell "33.91.47" [ref=f3e4015]:
+                        - generic [ref=f3e4016]: 33.91.47
+                      - cell "Sede" [ref=f3e4017]:
+                        - generic [ref=f3e4018]: Sede
+                      - cell "0" [ref=f3e4019]
+                      - cell "NOV/2020" [ref=f3e4020]
+                      - cell "246.986,09" [ref=f3e4021]:
+                        - generic [ref=f3e4022]: 246.986,09
+                      - cell "R$ 246.986,09" [ref=f3e4023]:
+                        - generic [ref=f3e4024]: R$ 246.986,09
+                      - cell [ref=f3e4025]:
+                        - button "Editar" [ref=f3e4026] [cursor=pointer]:
+                          - img [ref=f3e4027]
+                        - button "Remover" [ref=f3e4030] [cursor=pointer]:
+                          - img [ref=f3e4031]
+                    - row "TOTAL 78.281.459,28" [ref=f3e4034]:
+                      - cell "TOTAL" [ref=f3e4035]
+                      - cell [ref=f3e4036]
+                      - cell [ref=f3e4037]
+                      - cell [ref=f3e4038]
+                      - cell "78.281.459,28" [ref=f3e4039]:
+                        - generic [ref=f3e4040]: 78.281.459,28
+                      - cell [ref=f3e4041]
+                      - cell [ref=f3e4042]
+                    - row "Previsto Anual" [ref=f3e4043]:
+                      - cell "Previsto Anual" [ref=f3e4044]
+                - generic [ref=f3e4045]:
+                  - text: ⚠️ A soma dos valores lançados no Cadastro Financeiro (
+                  - strong [ref=f3e4046]: R$ 78.281.459,28
+                  - text: ) é maior que o total previsto no Cadastro de Objetos (
+                  - strong [ref=f3e4047]: R$ 67.500.150,18
+                  - text: ).
+          - generic [ref=f3e4048]:
+            - heading "Execução Financeira 20" [level=3] [ref=f3e4050]:
+              - img [ref=f3e4051]
+              - text: Execução Financeira
+              - generic [ref=f3e4053]: "20"
+            - generic [ref=f3e4054]:
+              - generic [ref=f3e4056]:
+                - generic [ref=f3e4057]:
+                  - generic [ref=f3e4058]: Previsto Total
+                  - generic [ref=f3e4059]: R$78.281.459,28
+                  - generic [ref=f3e4060]: 11 item(ns) · 11 ND(s)
+                - generic [ref=f3e4061]:
+                  - generic [ref=f3e4062]: Realizado Total
+                  - generic [ref=f3e4063]: R$78.032.637,00
+                  - generic [ref=f3e4064]: 99.7% do previsto
+                - generic [ref=f3e4067]:
+                  - generic [ref=f3e4068]: Saldo a Receber
+                  - generic [ref=f3e4069]: R$248.822,28
+                  - generic [ref=f3e4070]: 0.3% pendente · 5 ND(s) abaixo
+                - generic [ref=f3e4071]:
+                  - generic [ref=f3e4072]: Status Geral
+                  - generic [ref=f3e4073]: 5 Abaixo · 6 Regular
+                  - generic [ref=f3e4074]: somente 33.91.47-FJF executou 100%
+              - generic [ref=f3e4075]:
+                - generic [ref=f3e4076]:
+                  - button "Ver detalhes mensais" [ref=f3e4077] [cursor=pointer]
+                  - button "Consolidar por ND" [ref=f3e4078] [cursor=pointer]
+                  - button "+ Adicionar" [ref=f3e4079] [cursor=pointer]
+                - generic [ref=f3e4080]:
+                  - generic [ref=f3e4081]: "Filtrar:"
+                  - generic "Filtrar por ND" [ref=f3e4082] [cursor=pointer]:
+                    - generic [ref=f3e4083]: ND
+                    - text: +
+                  - generic "Filtrar por UP" [ref=f3e4084] [cursor=pointer]:
+                    - generic [ref=f3e4085]: UP
+                    - text: +
+                - table [ref=f3e4086]:
+                  - rowgroup [ref=f3e4093]:
+                    - row "ND UP Valor Previsto Valor Realizado Saldo" [ref=f3e4094]:
+                      - columnheader "ND" [ref=f3e4095]
+                      - columnheader "UP" [ref=f3e4096]
+                      - columnheader "Valor Previsto" [ref=f3e4097]
+                      - columnheader "Valor Realizado" [ref=f3e4098]
+                      - columnheader "Saldo" [ref=f3e4099]
+                  - rowgroup [ref=f3e4100]:
+                    - row "33.90.30 FE 397.000,00 396.716,14 283,86" [ref=f3e4101]:
+                      - cell "33.90.30" [ref=f3e4102]:
+                        - generic [ref=f3e4103]: 33.90.30
+                      - cell "FE" [ref=f3e4104]:
+                        - generic [ref=f3e4105]: FE
+                      - cell "397.000,00" [ref=f3e4106]:
+                        - generic [ref=f3e4107]: 397.000,00
+                      - cell "396.716,14" [ref=f3e4108]:
+                        - generic [ref=f3e4109]: 396.716,14
+                      - cell "283,86" [ref=f3e4110]:
+                        - generic [ref=f3e4111]: 283,86
+                    - row "33.90.30 FJF 20.677.935,46 20.677.825,97 109,49" [ref=f3e4112]:
+                      - cell "33.90.30" [ref=f3e4113]:
+                        - generic [ref=f3e4114]: 33.90.30
+                      - cell "FJF" [ref=f3e4115]:
+                        - generic [ref=f3e4116]: FJF
+                      - cell "20.677.935,46" [ref=f3e4117]:
+                        - generic [ref=f3e4118]: 20.677.935,46
+                      - cell "20.677.825,97" [ref=f3e4119]:
+                        - generic [ref=f3e4120]: 20.677.825,97
+                      - cell "109,49" [ref=f3e4121]:
+                        - generic [ref=f3e4122]: 109,49
+                    - row "33.90.30 FPV 11.102.151,40 11.102.151,40 0,00" [ref=f3e4123]:
+                      - cell "33.90.30" [ref=f3e4124]:
+                        - generic [ref=f3e4125]: 33.90.30
+                      - cell "FPV" [ref=f3e4126]:
+                        - generic [ref=f3e4127]: FPV
+                      - cell "11.102.151,40" [ref=f3e4128]:
+                        - generic [ref=f3e4129]: 11.102.151,40
+                      - cell "11.102.151,40" [ref=f3e4130]:
+                        - generic [ref=f3e4131]: 11.102.151,40
+                      - cell "0,00" [ref=f3e4132]:
+                        - generic [ref=f3e4133]: 0,00
+                    - row "33.90.39 FE 6.602.464,47 6.601.073,56 1.390,91" [ref=f3e4134]:
+                      - cell "33.90.39" [ref=f3e4135]:
+                        - generic [ref=f3e4136]: 33.90.39
+                      - cell "FE" [ref=f3e4137]:
+                        - generic [ref=f3e4138]: FE
+                      - cell "6.602.464,47" [ref=f3e4139]:
+                        - generic [ref=f3e4140]: 6.602.464,47
+                      - cell "6.601.073,56" [ref=f3e4141]:
+                        - generic [ref=f3e4142]: 6.601.073,56
+                      - cell "1.390,91" [ref=f3e4143]:
+                        - generic [ref=f3e4144]: 1.390,91
+                    - row "33.90.39 FJF 6.316.619,41 6.316.567,48 51,93" [ref=f3e4145]:
+                      - cell "33.90.39" [ref=f3e4146]:
+                        - generic [ref=f3e4147]: 33.90.39
+                      - cell "FJF" [ref=f3e4148]:
+                        - generic [ref=f3e4149]: FJF
+                      - cell "6.316.619,41" [ref=f3e4150]:
+                        - generic [ref=f3e4151]: 6.316.619,41
+                      - cell "6.316.567,48" [ref=f3e4152]:
+                        - generic [ref=f3e4153]: 6.316.567,48
+                      - cell "51,93" [ref=f3e4154]:
+                        - generic [ref=f3e4155]: 51,93
+                    - row "33.90.39 FPV 2.108.530,25 2.108.530,25 0,00" [ref=f3e4156]:
+                      - cell "33.90.39" [ref=f3e4157]:
+                        - generic [ref=f3e4158]: 33.90.39
+                      - cell "FPV" [ref=f3e4159]:
+                        - generic [ref=f3e4160]: FPV
+                      - cell "2.108.530,25" [ref=f3e4161]:
+                        - generic [ref=f3e4162]: 2.108.530,25
+                      - cell "2.108.530,25" [ref=f3e4163]:
+                        - generic [ref=f3e4164]: 2.108.530,25
+                      - cell "0,00" [ref=f3e4165]:
+                        - generic [ref=f3e4166]: 0,00
+                    - row "33.90.47 FE 3.503.000,00 3.503.000,00 0,00" [ref=f3e4167]:
+                      - cell "33.90.47" [ref=f3e4168]:
+                        - generic [ref=f3e4169]: 33.90.47
+                      - cell "FE" [ref=f3e4170]:
+                        - generic [ref=f3e4171]: FE
+                      - cell "3.503.000,00" [ref=f3e4172]:
+                        - generic [ref=f3e4173]: 3.503.000,00
+                      - cell "3.503.000,00" [ref=f3e4174]:
+                        - generic [ref=f3e4175]: 3.503.000,00
+                      - cell "0,00" [ref=f3e4176]:
+                        - generic [ref=f3e4177]: 0,00
+                    - row "33.90.47 FJF 19.567.450,47 19.567.450,47 0,00" [ref=f3e4178]:
+                      - cell "33.90.47" [ref=f3e4179]:
+                        - generic [ref=f3e4180]: 33.90.47
+                      - cell "FJF" [ref=f3e4181]:
+                        - generic [ref=f3e4182]: FJF
+                      - cell "19.567.450,47" [ref=f3e4183]:
+                        - generic [ref=f3e4184]: 19.567.450,47
+                      - cell "19.567.450,47" [ref=f3e4185]:
+                        - generic [ref=f3e4186]: 19.567.450,47
+                      - cell "0,00" [ref=f3e4187]:
+                        - generic [ref=f3e4188]: 0,00
+                    - row "33.90.47 FPV 6.557.767,77 6.557.767,77 0,00" [ref=f3e4189]:
+                      - cell "33.90.47" [ref=f3e4190]:
+                        - generic [ref=f3e4191]: 33.90.47
+                      - cell "FPV" [ref=f3e4192]:
+                        - generic [ref=f3e4193]: FPV
+                      - cell "6.557.767,77" [ref=f3e4194]:
+                        - generic [ref=f3e4195]: 6.557.767,77
+                      - cell "6.557.767,77" [ref=f3e4196]:
+                        - generic [ref=f3e4197]: 6.557.767,77
+                      - cell "0,00" [ref=f3e4198]:
+                        - generic [ref=f3e4199]: 0,00
+                    - row "33.91.47 FJF 1.201.553,96 1.201.553,96 0,00" [ref=f3e4200]:
+                      - cell "33.91.47" [ref=f3e4201]:
+                        - generic [ref=f3e4202]: 33.91.47
+                      - cell "FJF" [ref=f3e4203]:
+                        - generic [ref=f3e4204]: FJF
+                      - cell "1.201.553,96" [ref=f3e4205]:
+                        - generic [ref=f3e4206]: 1.201.553,96
+                      - cell "1.201.553,96" [ref=f3e4207]:
+                        - generic [ref=f3e4208]: 1.201.553,96
+                      - cell "0,00" [ref=f3e4209]:
+                        - generic [ref=f3e4210]: 0,00
+                    - row "33.91.47 Sede 246.986,09 0,00 246.986,09" [ref=f3e4211]:
+                      - cell "33.91.47" [ref=f3e4212]:
+                        - generic [ref=f3e4213]: 33.91.47
+                      - cell "Sede" [ref=f3e4214]:
+                        - generic [ref=f3e4215]: Sede
+                      - cell "246.986,09" [ref=f3e4216]:
+                        - generic [ref=f3e4217]: 246.986,09
+                      - cell "0,00" [ref=f3e4218]:
+                        - generic [ref=f3e4219]: 0,00
+                      - cell "246.986,09" [ref=f3e4220]:
+                        - generic [ref=f3e4221]: 246.986,09
+                    - row "TOTAL 78.281.459,28 78.032.637,00 248.822,28" [ref=f3e4222]:
+                      - cell "TOTAL" [ref=f3e4223]
+                      - cell [ref=f3e4224]
+                      - cell "78.281.459,28" [ref=f3e4225]:
+                        - generic [ref=f3e4226]: 78.281.459,28
+                      - cell "78.032.637,00" [ref=f3e4227]:
+                        - generic [ref=f3e4228]: 78.032.637,00
+                      - cell "248.822,28" [ref=f3e4229]:
+                        - generic [ref=f3e4230]: 248.822,28
+                    - row "Previsto Anual" [ref=f3e4231]:
+                      - cell "Previsto Anual" [ref=f3e4232]:
+                        - img [ref=f3e4233]
+                        - generic [ref=f3e4235]: Previsto Anual
+                    - row "A Receber (ano ant.) carry-over" [ref=f3e4236]:
+                      - cell "A Receber (ano ant.) carry-over" [ref=f3e4237]:
+                        - img [ref=f3e4238]
+                        - generic [ref=f3e4240]: A Receber (ano ant.)
+                        - generic [ref=f3e4241]: carry-over
+                    - row "Total a Receber Prev + A Receber" [ref=f3e4242]:
+                      - cell "Total a Receber Prev + A Receber" [ref=f3e4243]:
+                        - img [ref=f3e4244]
+                        - generic [ref=f3e4246]: Total a Receber
+                        - generic [ref=f3e4247]: Prev + A Receber
+                    - row "Recebido Anual" [ref=f3e4248]:
+                      - cell "Recebido Anual" [ref=f3e4249]:
+                        - img [ref=f3e4250]
+                        - generic [ref=f3e4253]: Recebido Anual
+                    - row "Devolvido / Recolhido" [ref=f3e4254]:
+                      - cell "Devolvido / Recolhido" [ref=f3e4255]:
+                        - img [ref=f3e4256]
+                        - generic [ref=f3e4259]: Devolvido / Recolhido
+                    - row "Saldo Anual Recebido − Devolvido" [ref=f3e4260]:
+                      - cell "Saldo Anual Recebido − Devolvido" [ref=f3e4261]:
+                        - img [ref=f3e4262]
+                        - generic [ref=f3e4264]: Saldo Anual
+                        - generic [ref=f3e4265]: Recebido − Devolvido
+                    - row "Resultado Total a Receber − Saldo" [ref=f3e4266]:
+                      - cell "Resultado Total a Receber − Saldo" [ref=f3e4267]:
+                        - img [ref=f3e4268]
+                        - generic [ref=f3e4271]: Resultado
+                        - generic [ref=f3e4272]: Total a Receber − Saldo
+          - generic [ref=f3e4273]:
+            - heading "Recursos Gerais IMBEL 8" [level=3] [ref=f3e4275]:
+              - img [ref=f3e4276]
+              - text: Recursos Gerais IMBEL
+              - generic [ref=f3e4278]: "8"
+            - generic [ref=f3e4279]:
+              - generic [ref=f3e4281]:
+                - generic [ref=f3e4282]:
+                  - generic [ref=f3e4283]: Previsto Total
+                  - generic [ref=f3e4284]: R$78.281.459,28
+                  - generic [ref=f3e4285]: 8 lançamento(s) · 4 ND(s)
+                - generic [ref=f3e4286]:
+                  - generic [ref=f3e4287]: Realizado Total
+                  - generic [ref=f3e4288]: R$78.279.623,09
+                  - generic [ref=f3e4289]: 100.0% do previsto
+                - generic [ref=f3e4292]:
+                  - generic [ref=f3e4293]: Saldo a Receber
+                  - generic [ref=f3e4294]: R$1.836,19
+                  - generic [ref=f3e4295]: 0.0% pendente
+                - generic [ref=f3e4296]:
+                  - generic [ref=f3e4297]: Maior ND
+                  - generic [ref=f3e4298]: 33.90.30
+                  - generic [ref=f3e4299]: R$ 32.177.086,86 previsto
+              - generic [ref=f3e4300]:
+                - generic [ref=f3e4301]:
+                  - button "Ver detalhes mensais" [ref=f3e4302] [cursor=pointer]
+                  - button "+ Adicionar" [ref=f3e4303] [cursor=pointer]
+                - generic [ref=f3e4304]:
+                  - generic [ref=f3e4305]: "Filtrar:"
+                  - generic [ref=f3e4306] [cursor=pointer]:
+                    - generic [ref=f3e4307]: ND
+                    - text: +
+                - table [ref=f3e4308]:
+                  - rowgroup [ref=f3e4314]:
+                    - row "ND Valor Previsto Valor Realizado Saldo" [ref=f3e4315]:
+                      - columnheader "ND" [ref=f3e4316]
+                      - columnheader "Valor Previsto" [ref=f3e4317]
+                      - columnheader "Valor Realizado" [ref=f3e4318]
+                      - columnheader "Saldo" [ref=f3e4319]
+                  - rowgroup [ref=f3e4320]:
+                    - row "33.90.30 32.177.086,86 32.176.693,51 393,35" [ref=f3e4321]:
+                      - cell "33.90.30" [ref=f3e4322]:
+                        - generic [ref=f3e4323]: 33.90.30
+                      - cell "32.177.086,86" [ref=f3e4324]:
+                        - generic [ref=f3e4325]: 32.177.086,86
+                      - cell "32.176.693,51" [ref=f3e4326]:
+                        - generic [ref=f3e4327]: 32.176.693,51
+                      - cell "393,35" [ref=f3e4328]:
+                        - generic [ref=f3e4329]: 393,35
+                    - row "33.90.39 15.027.614,13 15.026.171,29 1.442,84" [ref=f3e4330]:
+                      - cell "33.90.39" [ref=f3e4331]:
+                        - generic [ref=f3e4332]: 33.90.39
+                      - cell "15.027.614,13" [ref=f3e4333]:
+                        - generic [ref=f3e4334]: 15.027.614,13
+                      - cell "15.026.171,29" [ref=f3e4335]:
+                        - generic [ref=f3e4336]: 15.026.171,29
+                      - cell "1.442,84" [ref=f3e4337]:
+                        - generic [ref=f3e4338]: 1.442,84
+                    - row "33.90.47 29.628.218,24 29.628.218,24 0,00" [ref=f3e4339]:
+                      - cell "33.90.47" [ref=f3e4340]:
+                        - generic [ref=f3e4341]: 33.90.47
+                      - cell "29.628.218,24" [ref=f3e4342]:
+                        - generic [ref=f3e4343]: 29.628.218,24
+                      - cell "29.628.218,24" [ref=f3e4344]:
+                        - generic [ref=f3e4345]: 29.628.218,24
+                      - cell "0,00" [ref=f3e4346]:
+                        - generic [ref=f3e4347]: 0,00
+                    - row "33.91.47 1.448.540,05 1.448.540,05 0,00" [ref=f3e4348]:
+                      - cell "33.91.47" [ref=f3e4349]:
+                        - generic [ref=f3e4350]: 33.91.47
+                      - cell "1.448.540,05" [ref=f3e4351]:
+                        - generic [ref=f3e4352]: 1.448.540,05
+                      - cell "1.448.540,05" [ref=f3e4353]:
+                        - generic [ref=f3e4354]: 1.448.540,05
+                      - cell "0,00" [ref=f3e4355]:
+                        - generic [ref=f3e4356]: 0,00
+                    - row "TOTAL 78.281.459,28 78.279.623,09 1.836,19" [ref=f3e4357]:
+                      - cell "TOTAL" [ref=f3e4358]
+                      - cell "78.281.459,28" [ref=f3e4359]:
+                        - generic [ref=f3e4360]: 78.281.459,28
+                      - cell "78.279.623,09" [ref=f3e4361]:
+                        - generic [ref=f3e4362]: 78.279.623,09
+                      - cell "1.836,19" [ref=f3e4363]:
+                        - generic [ref=f3e4364]: 1.836,19
+                    - row "Previsto Anual" [ref=f3e4365]:
+                      - cell "Previsto Anual" [ref=f3e4366]:
+                        - img [ref=f3e4367]
+                        - generic [ref=f3e4369]: Previsto Anual
+                    - row "A Receber (ano ant.) carry-over" [ref=f3e4370]:
+                      - cell "A Receber (ano ant.) carry-over" [ref=f3e4371]:
+                        - img [ref=f3e4372]
+                        - generic [ref=f3e4374]: A Receber (ano ant.)
+                        - generic [ref=f3e4375]: carry-over
+                    - row "Total a Receber Prev + A Receber" [ref=f3e4376]:
+                      - cell "Total a Receber Prev + A Receber" [ref=f3e4377]:
+                        - img [ref=f3e4378]
+                        - generic [ref=f3e4380]: Total a Receber
+                        - generic [ref=f3e4381]: Prev + A Receber
+                    - row "Recebido Anual" [ref=f3e4382]:
+                      - cell "Recebido Anual" [ref=f3e4383]:
+                        - img [ref=f3e4384]
+                        - generic [ref=f3e4387]: Recebido Anual
+                    - row "Devolvido / Recolhido" [ref=f3e4388]:
+                      - cell "Devolvido / Recolhido" [ref=f3e4389]:
+                        - img [ref=f3e4390]
+                        - generic [ref=f3e4393]: Devolvido / Recolhido
+                    - row "Saldo Anual Recebido − Devolvido" [ref=f3e4394]:
+                      - cell "Saldo Anual Recebido − Devolvido" [ref=f3e4395]:
+                        - img [ref=f3e4396]
+                        - generic [ref=f3e4398]: Saldo Anual
+                        - generic [ref=f3e4399]: Recebido − Devolvido
+                    - row "Resultado Total a Receber − Saldo" [ref=f3e4400]:
+                      - cell "Resultado Total a Receber − Saldo" [ref=f3e4401]:
+                        - img [ref=f3e4402]
+                        - generic [ref=f3e4405]: Resultado
+                        - generic [ref=f3e4406]: Total a Receber − Saldo
+          - generic [ref=f3e4407]:
+            - heading "Resumo Anual" [level=3] [ref=f3e4408]:
+              - img [ref=f3e4409]
+              - text: Resumo Anual
+            - generic [ref=f3e4411]:
+              - generic [ref=f3e4412]:
+                - generic [ref=f3e4413]:
+                  - generic [ref=f3e4414]: Previsto Total
+                  - generic [ref=f3e4415]: R$ 78.281.459,28
+                - generic [ref=f3e4416]:
+                  - generic [ref=f3e4417]: Recebido Total
+                  - generic [ref=f3e4418]: R$ 79.729.999,34
+                  - generic [ref=f3e4421]: 100.0% do previsto
+                - generic [ref=f3e4422]:
+                  - generic [ref=f3e4423]: Total Devolvido
+                  - generic [ref=f3e4424]: R$ 1.450.376,25
+                - generic [ref=f3e4425]:
+                  - generic [ref=f3e4426]: Resultado Total
+                  - generic [ref=f3e4427]: R$ 14.689,52
+                  - generic [ref=f3e4428]: Saldo positivo
+              - table [ref=f3e4430]:
+                - rowgroup [ref=f3e4431]:
+                  - row "2020 2021 2022 2023 2024 2025 2026 ATUAL 2027" [ref=f3e4432]:
+                    - columnheader [ref=f3e4433]
+                    - columnheader "2020" [ref=f3e4434]
+                    - columnheader "2021" [ref=f3e4435]
+                    - columnheader "2022" [ref=f3e4436]
+                    - columnheader "2023" [ref=f3e4437]
+                    - columnheader "2024" [ref=f3e4438]
+                    - columnheader "2025" [ref=f3e4439]
+                    - columnheader "2026 ATUAL" [ref=f3e4440]:
+                      - text: "2026"
+                      - generic [ref=f3e4441]: ATUAL
+                    - columnheader "2027" [ref=f3e4442]
+                - rowgroup [ref=f3e4443]:
+                  - row "Previsto Anual R$ 78.281.459,28 — — — — — — —" [ref=f3e4444]:
+                    - cell "Previsto Anual" [ref=f3e4445]:
+                      - img [ref=f3e4446]
+                      - generic [ref=f3e4448]: Previsto Anual
+                    - cell "R$ 78.281.459,28" [ref=f3e4449]
+                    - cell "—" [ref=f3e4450]
+                    - cell "—" [ref=f3e4451]
+                    - cell "—" [ref=f3e4452]
+                    - cell "—" [ref=f3e4453]
+                    - cell "—" [ref=f3e4454]
+                    - cell "—" [ref=f3e4455]
+                    - cell "—" [ref=f3e4456]
+                  - row "A Receber (ano ant.) carry-over R$ 0,00 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19" [ref=f3e4457]:
+                    - cell "A Receber (ano ant.) carry-over" [ref=f3e4458]:
+                      - img [ref=f3e4459]
+                      - generic [ref=f3e4461]: A Receber (ano ant.)
+                      - generic [ref=f3e4462]: carry-over
+                    - cell "R$ 0,00" [ref=f3e4463]
+                    - cell "R$ 1.836,19" [ref=f3e4464]
+                    - cell "R$ 1.836,19" [ref=f3e4465]
+                    - cell "R$ 1.836,19" [ref=f3e4466]
+                    - cell "R$ 1.836,19" [ref=f3e4467]
+                    - cell "R$ 1.836,19" [ref=f3e4468]
+                    - cell "R$ 1.836,19" [ref=f3e4469]
+                    - cell "R$ 1.836,19" [ref=f3e4470]
+                  - row "Total a Receber Prev + A Receber R$ 78.281.459,28 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19 R$ 1.836,19" [ref=f3e4471]:
+                    - cell "Total a Receber Prev + A Receber" [ref=f3e4472]:
+                      - img [ref=f3e4473]
+                      - generic [ref=f3e4475]: Total a Receber
+                      - generic [ref=f3e4476]: Prev + A Receber
+                    - cell "R$ 78.281.459,28" [ref=f3e4477]
+                    - cell "R$ 1.836,19" [ref=f3e4478]
+                    - cell "R$ 1.836,19" [ref=f3e4479]
+                    - cell "R$ 1.836,19" [ref=f3e4480]
+                    - cell "R$ 1.836,19" [ref=f3e4481]
+                    - cell "R$ 1.836,19" [ref=f3e4482]
+                    - cell "R$ 1.836,19" [ref=f3e4483]
+                    - cell "R$ 1.836,19" [ref=f3e4484]
+                  - row "Recebido Anual R$ 79.729.999,34 — — — — — — —" [ref=f3e4485]:
+                    - cell "Recebido Anual" [ref=f3e4486]:
+                      - img [ref=f3e4487]
+                      - generic [ref=f3e4490]: Recebido Anual
+                    - cell "R$ 79.729.999,34" [ref=f3e4491]
+                    - cell "—" [ref=f3e4492]
+                    - cell "—" [ref=f3e4493]
+                    - cell "—" [ref=f3e4494]
+                    - cell "—" [ref=f3e4495]
+                    - cell "—" [ref=f3e4496]
+                    - cell "—" [ref=f3e4497]
+                    - cell "—" [ref=f3e4498]
+                  - row "Devolvido / Recolhido −R$ 1.450.376,25 — — — — — — —" [ref=f3e4499]:
+                    - cell "Devolvido / Recolhido" [ref=f3e4500]:
+                      - img [ref=f3e4501]
+                      - generic [ref=f3e4504]: Devolvido / Recolhido
+                    - cell "−R$ 1.450.376,25" [ref=f3e4505]
+                    - cell "—" [ref=f3e4506]
+                    - cell "—" [ref=f3e4507]
+                    - cell "—" [ref=f3e4508]
+                    - cell "—" [ref=f3e4509]
+                    - cell "—" [ref=f3e4510]
+                    - cell "—" [ref=f3e4511]
+                    - cell "—" [ref=f3e4512]
+                  - row "Saldo Anual Recebido − Devolvido R$ 78.279.623,09 — — — — — — —" [ref=f3e4513]:
+                    - cell "Saldo Anual Recebido − Devolvido" [ref=f3e4514]:
+                      - img [ref=f3e4515]
+                      - generic [ref=f3e4517]: Saldo Anual
+                      - generic [ref=f3e4518]: Recebido − Devolvido
+                    - cell "R$ 78.279.623,09" [ref=f3e4519]
+                    - cell "—" [ref=f3e4520]
+                    - cell "—" [ref=f3e4521]
+                    - cell "—" [ref=f3e4522]
+                    - cell "—" [ref=f3e4523]
+                    - cell "—" [ref=f3e4524]
+                    - cell "—" [ref=f3e4525]
+                    - cell "—" [ref=f3e4526]
+                  - row "Resultado Total a Receber − Saldo R$ -1.836,19 R$ -1.836,19 R$ -1.836,19 R$ -1.836,19 R$ -1.836,19 R$ -1.836,19 R$ -1.836,19 R$ -1.836,19" [ref=f3e4527]:
+                    - cell "Resultado Total a Receber − Saldo" [ref=f3e4528]:
+                      - img [ref=f3e4529]
+                      - generic [ref=f3e4532]: Resultado
+                      - generic [ref=f3e4533]: Total a Receber − Saldo
+                    - cell "R$ -1.836,19" [ref=f3e4534]
+                    - cell "R$ -1.836,19" [ref=f3e4535]
+                    - cell "R$ -1.836,19" [ref=f3e4536]
+                    - cell "R$ -1.836,19" [ref=f3e4537]
+                    - cell "R$ -1.836,19" [ref=f3e4538]
+                    - cell "R$ -1.836,19" [ref=f3e4539]
+                    - cell "R$ -1.836,19" [ref=f3e4540]
+                    - cell "R$ -1.836,19" [ref=f3e4541]
+          - contentinfo [ref=f3e4542]:
+            - text: "Última atualização:"
+            - time [ref=f3e4543]: 13/05/2026 14:37
+            - text: "· Responsável:"
+            - generic [ref=f3e4544]: Maj Silva
+            - text: "· Versão do plano: 022/2025"
+    - text: + + + +

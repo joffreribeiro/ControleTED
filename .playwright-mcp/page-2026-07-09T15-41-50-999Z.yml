@@ -1,0 +1,57 @@
+- generic [ref=f6e1]:
+  - navigation "Menu lateral" [ref=f6e7]:
+    - generic [ref=f6e9]:
+      - img "Logo" [ref=f6e11]
+      - generic [ref=f6e12]:
+        - generic [ref=f6e13]: Controle TED
+        - generic [ref=f6e14]: TERMO DE EXEC. DESC.
+    - navigation "Navegação principal" [ref=f6e15]:
+      - generic [ref=f6e16]:
+        - generic [ref=f6e17]: Principal
+        - button "Dashboard" [ref=f6e18] [cursor=pointer]:
+          - img [ref=f6e194]
+          - generic [ref=f6e24]: Dashboard
+      - generic [ref=f6e25]:
+        - generic [ref=f6e26]: Gestão
+        - button "TEDs" [ref=f6e27] [cursor=pointer]:
+          - img [ref=f6e199]
+          - generic [ref=f6e31]: TEDs
+        - button "Detalhes TED" [active] [ref=f6e32] [cursor=pointer]:
+          - img [ref=f6e202]
+          - generic [ref=f6e36]: Detalhes TED
+        - button "Plano de Trabalho" [ref=f6e37] [cursor=pointer]:
+          - img [ref=f6e205]
+          - generic [ref=f6e41]: Plano de Trabalho
+      - generic [ref=f6e42]:
+        - generic [ref=f6e43]: Análise
+        - button "Relatórios" [ref=f6e44] [cursor=pointer]:
+          - img [ref=f6e208]
+          - generic [ref=f6e48]: Relatórios
+        - button "Configurações" [ref=f6e211] [cursor=pointer]:
+          - img [ref=f6e212]
+          - generic [ref=f6e215]: Configurações
+    - generic [ref=f6e49]:
+      - generic "Clique para ver detalhes do TED" [ref=f6e50] [cursor=pointer]:
+        - generic [ref=f6e52]: Selecionar TED
+        - img [ref=f6e216]
+      - generic [ref=f6e55]:
+        - generic "Última sincronização" [ref=f6e56]: "Última sync: 09/07/2026, 12:41:47"
+        - generic [ref=f6e57]:
+          - button "Carregar" [ref=f6e58] [cursor=pointer]
+          - button "Salvar" [ref=f6e218] [cursor=pointer]
+        - generic [ref=f6e59]:
+          - generic "Modo atual" [ref=f6e60]: 🔑 Admin
+          - button "Alterar minha senha" [ref=f6e219] [cursor=pointer]:
+            - img [ref=f6e220]
+          - button "Sair" [ref=f6e224] [cursor=pointer]:
+            - img [ref=f6e225]
+            - text: Sair
+  - generic [ref=f6e65]:
+    - generic [ref=f6e229]:
+      - generic [ref=f6e230]:
+        - heading "Detalhes do TED" [level=2] [ref=f6e231]
+        - generic [ref=f6e232] [cursor=pointer]:
+          - generic [ref=f6e234]: Selecionar TED
+          - img [ref=f6e235]
+      - text: + + + + + +
+    - text: + + + +

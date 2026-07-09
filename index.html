@@ -66,6 +66,10 @@
                         <i data-lucide="search" class="nav-item-icon"></i>
                         <span class="nav-item-label">Detalhes TED</span>
                     </button>
+                    <button class="nav-item" data-tab="tabPlanoTrabalho" onclick="switchTab('tabPlanoTrabalho', this)">
+                        <i data-lucide="clipboard-list" class="nav-item-icon"></i>
+                        <span class="nav-item-label">Plano de Trabalho</span>
+                    </button>
                 </div>
 
                 <div class="nav-group">
@@ -188,6 +192,50 @@
                 <div class="modal-objeto-actions">
                     <button class="btn" onclick="fecharModalObjeto()">Cancelar</button>
                     <button class="btn btn-primary" onclick="salvarModalObjeto()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Plano de Trabalho -->
+        <div id="modalPlanoTrabalhoBackdrop" class="modal-objeto-backdrop" aria-hidden="true" onclick="fecharModalPlanoTrabalho()">
+            <div class="modal-objeto" role="dialog" aria-modal="true" onclick="event.stopPropagation()" style="width:560px;">
+                <h3 id="modalPlanoTrabalhoTitulo">📋 Novo Registro</h3>
+                <div id="modalPlanoTrabalhoError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
+                <div class="auto-style-003">
+                    <div class="form-group">
+                        <label>Ano</label>
+                        <input type="text" id="modalPlanoAno" placeholder="Ex: 2026">
+                    </div>
+                    <div class="form-group">
+                        <label>P Trab</label>
+                        <input type="text" id="modalPlanoPTrab" placeholder="Ex: 01/2026-DRCOM/IMBEL">
+                    </div>
+                </div>
+                <div class="auto-style-003">
+                    <div class="form-group">
+                        <label>Cliente</label>
+                        <input type="text" id="modalPlanoCliente" placeholder="Ex: EB, FAB, CCOMGEX, Marinha">
+                    </div>
+                    <div class="form-group">
+                        <label>Qtde</label>
+                        <input type="text" id="modalPlanoQtde" placeholder="Ex: 15.000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Objeto</label>
+                    <input type="text" id="modalPlanoObjeto" placeholder="Ex: Fuzil 5.56 IA2">
+                </div>
+                <div class="form-group">
+                    <label>Doc Solicitação</label>
+                    <input type="text" id="modalPlanoDocSolicitacao" placeholder="Ex: Ofício nº 9-CLV - Armt/CMat/COLOG, 23 FEV 24">
+                </div>
+                <div class="form-group">
+                    <label>TED</label>
+                    <input type="text" id="modalPlanoTed" placeholder="Ex: 21-EME-014-00">
+                </div>
+                <div class="modal-objeto-actions">
+                    <button class="btn" onclick="fecharModalPlanoTrabalho()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="salvarModalPlanoTrabalho()">Salvar</button>
                 </div>
             </div>
         </div>
@@ -1312,7 +1360,35 @@
             </div>
         </div>
 
-
+        <!-- TAB 4.5: Plano de Trabalho -->
+        <div id="tabPlanoTrabalho" class="tab-content">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <h2 class="auto-style-008"><i data-lucide="clipboard-list" class="inline-icon-sm"></i> Plano de Trabalho <span class="section-count-badge" id="count-planoTrabalho">0</span></h2>
+                    <button type="button" class="section-add-btn" onclick="abrirModalPlanoTrabalho()">+ Adicionar</button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="tabela-padrao">
+                        <thead>
+                            <tr>
+                                <th>Nr Ordem</th>
+                                <th>Ano</th>
+                                <th>P Trab</th>
+                                <th>Cliente</th>
+                                <th>Objeto</th>
+                                <th>Qtde</th>
+                                <th>Doc Solicitação</th>
+                                <th>TED</th>
+                                <th class="col-acao">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaPlanoTrabalho">
+                            <tr><td colspan="9" style="text-align:center;padding:1.5rem;color:#94a3b8;">Nenhum registro cadastrado</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
 <!-- TAB 5: Relatórios -->
         <div id="relatorios" class="tab-content">

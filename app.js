@@ -42,8 +42,9 @@ window.salvarNoCloud = async function() {
     })('Salvando na nuvem...');
     console.log('[Cloud] iniciar salvarNoCloud');
     // Ensure dados exists
-    if (!window.dados) window.dados = { teds: [], proxiId: 1 };
+    if (!window.dados) window.dados = { teds: [], proxiId: 1, planosTrabalho: [], proxiIdPlano: 1 };
     await window.firestoreBatchSet('teds', window.dados.teds || []);
+    await window.firestoreBatchSet('planosTrabalho', window.dados.planosTrabalho || []);
     console.log('[Cloud] firestoreBatchSet ok');
     // Update meta nextId so other clients can pick up current proxi
     try {
@@ -91,7 +92,7 @@ window.carregarDoCloud = async function() {
       try { delete copy._docId; } catch (e) {}
       return copy;
     });
-    window.dados = window.dados || { teds: [], proxiId: 1 };
+    window.dados = window.dados || { teds: [], proxiId: 1, planosTrabalho: [], proxiIdPlano: 1 };
     // Atualizar in-place para que referências locais em main.js (var dados) continuem válidas
     window.dados.teds.splice(0, window.dados.teds.length, ...normalized);
     window.dados.proxiId = window.dados.teds.length ? Math.max(...window.dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
@@ -103,6 +104,23 @@ window.carregarDoCloud = async function() {
       }
     } catch (e) { console.warn('Erro lendo meta/teds', e); }
 
+    // Carregar Plano de Trabalho (coleção independente)
+    try {
+      const planoItems = await window.firestoreGetCollection('planosTrabalho');
+      const planoNormalized = (planoItems || []).map(d => {
+        const copy = Object.assign({}, d);
+        if (!copy.id && copy._docId) {
+          const n = Number(copy._docId);
+          copy.id = isFinite(n) ? n : copy._docId;
+        }
+        try { delete copy._docId; } catch (e) {}
+        return copy;
+      });
+      if (!window.dados.planosTrabalho) window.dados.planosTrabalho = [];
+      window.dados.planosTrabalho.splice(0, window.dados.planosTrabalho.length, ...planoNormalized);
+      window.dados.proxiIdPlano = window.dados.planosTrabalho.length ? Math.max(...window.dados.planosTrabalho.map(p => Number(p.id) || 0)) + 1 : 1;
+    } catch (e) { console.warn('Erro carregando planosTrabalho', e); }
+
     try { atualizarDashboard(); } catch(e) {}
     try { atualizarListaTEDs(); } catch(e) {}
     try { atualizarSeletorTED(); } catch(e) {}
@@ -111,6 +129,7 @@ window.carregarDoCloud = async function() {
     try { renderEntregasFromFilter(); } catch(e) {}
     try { renderResumoFinanceiroFromFilter(); } catch(e) {}
     try { popularFiltrosRelatorios(); } catch(e) {}
+    try { if (typeof window.atualizarTabelaPlanoTrabalho === 'function') window.atualizarTabelaPlanoTrabalho(); } catch(e) {}
     try { if (typeof window.enhanceEmptyStates === 'function') window.enhanceEmptyStates(); } catch(e) {}
 
     // Re-sincronizar tedSelecionado com o novo objeto do Firestore e re-renderizar tabelas

@@ -14,7 +14,13 @@
       "Bash(Select-String \"width: 100%\")",
       "Bash(Select-Object -First 20)",
       "Bash(findstr /N \"\\\\.table-wrapper\\\\|\\\\.table-freeze-wrapper\" styles.css)",
-      "Bash(Get-ChildItem -Recurse -File -Include \"*.ts\", \"*.tsx\", \"*.js\", \"*.jsx\")"
+      "Bash(Get-ChildItem -Recurse -File -Include \"*.ts\", \"*.tsx\", \"*.js\", \"*.jsx\")",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_navigate"
     ]
   }
 }

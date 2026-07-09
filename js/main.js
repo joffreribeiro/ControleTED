@@ -738,7 +738,9 @@
         // Dados Iniciais (usar var para expor em window para módulos)
         var dados = {
             teds: [],
-            proxiId: 1
+            proxiId: 1,
+            planosTrabalho: [],
+            proxiIdPlano: 1
         };
 
         // Função auxiliar para normalizar data (aceita DD/MM/YYYY ou YYYY-MM-DD)
@@ -943,6 +945,7 @@
                 }
                 if (tabName === 'dashboard') { try { atualizarDashboard(); } catch(e) {} }
                 if (tabName === 'teds') { try { atualizarListaTEDs(); } catch(e) {} }
+                if (tabName === 'tabPlanoTrabalho') { try { atualizarTabelaPlanoTrabalho(); } catch(e) {} }
 
                 if (tabName === 'relatorios') {
                     setTimeout(function() {
@@ -3806,6 +3809,117 @@
             const totalCardEl = document.getElementById('obj_totalCard');
             if (totalCardEl) totalCardEl.textContent = `R$ ${totalValor.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
             try { const c = document.getElementById('count-objetos'); if (c) c.textContent = String(objetos.length); } catch(e) {}
+
+            initLucideIcons();
+        }
+
+        // ===== PLANO DE TRABALHO (lista global, independente de TED) =====
+        function abrirModalPlanoTrabalho(editId) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalPlanoTrabalhoBackdrop');
+            const titulo = document.getElementById('modalPlanoTrabalhoTitulo');
+            const errEl = document.getElementById('modalPlanoTrabalhoError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            document.getElementById('modalPlanoAno').value = '';
+            document.getElementById('modalPlanoPTrab').value = '';
+            document.getElementById('modalPlanoCliente').value = '';
+            document.getElementById('modalPlanoObjeto').value = '';
+            document.getElementById('modalPlanoQtde').value = '';
+            document.getElementById('modalPlanoDocSolicitacao').value = '';
+            document.getElementById('modalPlanoTed').value = '';
+            window._editandoPlanoTrabalhoId = null;
+
+            if (editId) {
+                const item = (dados.planosTrabalho || []).find(p => p.id === editId);
+                if (item) {
+                    window._editandoPlanoTrabalhoId = editId;
+                    titulo.textContent = '🔑 Editar Registro';
+                    document.getElementById('modalPlanoAno').value = item.ano || '';
+                    document.getElementById('modalPlanoPTrab').value = item.pTrab || '';
+                    document.getElementById('modalPlanoCliente').value = item.cliente || '';
+                    document.getElementById('modalPlanoObjeto').value = item.objeto || '';
+                    document.getElementById('modalPlanoQtde').value = item.qtde || '';
+                    document.getElementById('modalPlanoDocSolicitacao').value = item.docSolicitacao || '';
+                    document.getElementById('modalPlanoTed').value = item.ted || '';
+                }
+            } else {
+                titulo.textContent = '📋 Novo Registro';
+            }
+
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalPlanoAno').focus(), 80);
+        }
+
+        function fecharModalPlanoTrabalho() {
+            const backdrop = document.getElementById('modalPlanoTrabalhoBackdrop');
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
+            window._editandoPlanoTrabalhoId = null;
+        }
+
+        function salvarModalPlanoTrabalho() {
+            if (!dados.planosTrabalho) dados.planosTrabalho = [];
+            if (!dados.proxiIdPlano) dados.proxiIdPlano = 1;
+
+            const item = {
+                id: window._editandoPlanoTrabalhoId || dados.proxiIdPlano++,
+                ano: document.getElementById('modalPlanoAno').value.trim(),
+                pTrab: document.getElementById('modalPlanoPTrab').value.trim(),
+                cliente: document.getElementById('modalPlanoCliente').value.trim(),
+                objeto: document.getElementById('modalPlanoObjeto').value.trim(),
+                qtde: document.getElementById('modalPlanoQtde').value.trim(),
+                docSolicitacao: document.getElementById('modalPlanoDocSolicitacao').value.trim(),
+                ted: document.getElementById('modalPlanoTed').value.trim()
+            };
+
+            if (window._editandoPlanoTrabalhoId) {
+                dados.planosTrabalho = dados.planosTrabalho.filter(p => p.id !== window._editandoPlanoTrabalhoId);
+            }
+            dados.planosTrabalho.push(item);
+
+            try { salvarDados(); } catch(e) { console.warn('salvarDados falhou', e); }
+            atualizarTabelaPlanoTrabalho();
+            fecharModalPlanoTrabalho();
+        }
+
+        function editarPlanoTrabalho(id) { abrirModalPlanoTrabalho(id); }
+
+        function removerPlanoTrabalho(id) {
+            if (!confirm('Remover este registro do Plano de Trabalho?')) return;
+            dados.planosTrabalho = (dados.planosTrabalho || []).filter(p => p.id !== id);
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            atualizarTabelaPlanoTrabalho();
+        }
+
+        function atualizarTabelaPlanoTrabalho() {
+            const tbody = document.getElementById('tabelaPlanoTrabalho');
+            if (!tbody) return;
+            const itens = dados.planosTrabalho || [];
+
+            try { const c = document.getElementById('count-planoTrabalho'); if (c) c.textContent = String(itens.length); } catch(e) {}
+
+            if (itens.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:#94a3b8;">Nenhum registro cadastrado</td></tr>';
+                return;
+            }
+
+            const editBtnHtml = (id) => !window._readOnlyMode ? `<button class="btn-icon-action edit" onclick="editarPlanoTrabalho(${id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>` : '';
+            const delBtnHtml = (id) => !window._readOnlyMode ? `<button class="btn-icon-action delete" onclick="removerPlanoTrabalho(${id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>` : '';
+
+            tbody.innerHTML = itens.map((item, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td>${item.ano || ''}</td>
+                    <td>${item.pTrab || ''}</td>
+                    <td>${item.cliente || ''}</td>
+                    <td>${item.objeto || ''}</td>
+                    <td>${item.qtde || ''}</td>
+                    <td>${item.docSolicitacao || ''}</td>
+                    <td>${item.ted || ''}</td>
+                    <td class="col-acao">${editBtnHtml(item.id)}${delBtnHtml(item.id)}</td>
+                </tr>
+            `).join('');
 
             initLucideIcons();
         }
@@ -7546,6 +7660,12 @@
                 const activeItems = grp.items.filter(f => !isFinExcluded(f));
                 const subTotal = activeItems.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
                 const subFmt = subTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                const subRecebido = activeItems.reduce((s, f) => {
+                    const valorLinha = parseNumber(f.valor) || 0;
+                    const pct = pctRecebidoMap.get(f) ?? 0;
+                    return s + (valorLinha * pct / 100);
+                }, 0);
+                const subRecebidoFmt = subRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 const grpId = 'cfgrp_' + chave;
                 // group header row (fixed cols + Gantt spacers)
                 const nGantt = meses.length;
@@ -7557,7 +7677,11 @@
                                 <span class="mes-pill">${grp.label}</span>
                                 <span class="cf-grp-count">${activeItems.length} lançamento${activeItems.length !== 1 ? 's' : ''}</span>
                             </div>
-                            <span class="cf-grp-subtotal">R$ ${subFmt}</span>
+                            <span class="cf-grp-subtotal">
+                                <span class="cf-grp-subtotal-recebido">R$ ${subRecebidoFmt}</span>
+                                <span class="cf-grp-subtotal-sep">/</span>
+                                <span class="cf-grp-subtotal-total">R$ ${subFmt}</span>
+                            </span>
                         </div>
                     </td>
                 </tr>`;
@@ -11205,6 +11329,7 @@
                     // por adblock), não deixar _salvandoEmAndamento travado indefinidamente.
                     const _timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000));
                     const ok = await Promise.race([window.firestoreBatchSet('teds', dados.teds || []), _timeout]);
+                    try { await window.firestoreBatchSet('planosTrabalho', dados.planosTrabalho || []); } catch(e) { console.warn('Erro salvando planosTrabalho', e); }
                     // firestoreBatchSet engole exceções e retorna false em caso de erro —
                     // tratar como falha real, não como sucesso silencioso.
                     if (ok) {
