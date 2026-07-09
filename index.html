@@ -203,12 +203,12 @@
                 <div id="modalPlanoTrabalhoError" class="modal-objeto-error" role="alert" aria-live="assertive"></div>
                 <div class="auto-style-003">
                     <div class="form-group">
-                        <label>Ano</label>
-                        <input type="text" id="modalPlanoAno" placeholder="Ex: 2026">
+                        <label>Data</label>
+                        <input type="date" id="modalPlanoData" onchange="atualizarPreviewPTrab()">
                     </div>
                     <div class="form-group">
                         <label>P Trab</label>
-                        <input type="text" id="modalPlanoPTrab" placeholder="Ex: 01/2026-DRCOM/IMBEL">
+                        <input type="text" id="modalPlanoPTrab" placeholder="Gerado automaticamente" readonly disabled>
                     </div>
                 </div>
                 <div class="auto-style-003">
@@ -1362,23 +1362,23 @@
 
         <!-- TAB 4.5: Plano de Trabalho -->
         <div id="tabPlanoTrabalho" class="tab-content">
-            <div class="card">
+            <div class="card" style="width:100%; max-width:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                     <h2 class="auto-style-008"><i data-lucide="clipboard-list" class="inline-icon-sm"></i> Plano de Trabalho <span class="section-count-badge" id="count-planoTrabalho">0</span></h2>
                     <button type="button" class="section-add-btn" onclick="abrirModalPlanoTrabalho()">+ Adicionar</button>
                 </div>
                 <div class="table-wrapper">
-                    <table class="tabela-padrao">
+                    <table class="tabela-padrao tabela-plano-trabalho" style="width:100%; table-layout:auto;">
                         <thead>
                             <tr>
-                                <th>Nr Ordem</th>
-                                <th>Ano</th>
-                                <th>P Trab</th>
-                                <th>Cliente</th>
-                                <th>Objeto</th>
-                                <th>Qtde</th>
-                                <th>Doc Solicitação</th>
-                                <th>TED</th>
+                                <th style="width:8%;">Nr Ordem</th>
+                                <th style="width:10%;">Data</th>
+                                <th style="width:16%;">P Trab</th>
+                                <th style="width:10%;">Cliente</th>
+                                <th style="width:20%;">Objeto</th>
+                                <th style="width:8%;">Qtde</th>
+                                <th style="width:18%;">Doc Solicitação</th>
+                                <th style="width:10%;">TED</th>
                                 <th class="col-acao">Ação</th>
                             </tr>
                         </thead>

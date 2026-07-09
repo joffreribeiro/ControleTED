@@ -42,7 +42,7 @@ window.salvarNoCloud = async function() {
     })('Salvando na nuvem...');
     console.log('[Cloud] iniciar salvarNoCloud');
     // Ensure dados exists
-    if (!window.dados) window.dados = { teds: [], proxiId: 1, planosTrabalho: [], proxiIdPlano: 1 };
+    if (!window.dados) window.dados = { teds: [], proxiId: 1, planosTrabalho: [], proxiIdPlano: 1, proxiNrOrdemPlano: 1 };
     await window.firestoreBatchSet('teds', window.dados.teds || []);
     await window.firestoreBatchSet('planosTrabalho', window.dados.planosTrabalho || []);
     console.log('[Cloud] firestoreBatchSet ok');
@@ -92,7 +92,7 @@ window.carregarDoCloud = async function() {
       try { delete copy._docId; } catch (e) {}
       return copy;
     });
-    window.dados = window.dados || { teds: [], proxiId: 1, planosTrabalho: [], proxiIdPlano: 1 };
+    window.dados = window.dados || { teds: [], proxiId: 1, planosTrabalho: [], proxiIdPlano: 1, proxiNrOrdemPlano: 1 };
     // Atualizar in-place para que referências locais em main.js (var dados) continuem válidas
     window.dados.teds.splice(0, window.dados.teds.length, ...normalized);
     window.dados.proxiId = window.dados.teds.length ? Math.max(...window.dados.teds.map(t => Number(t.id) || 0)) + 1 : 1;
@@ -119,6 +119,7 @@ window.carregarDoCloud = async function() {
       if (!window.dados.planosTrabalho) window.dados.planosTrabalho = [];
       window.dados.planosTrabalho.splice(0, window.dados.planosTrabalho.length, ...planoNormalized);
       window.dados.proxiIdPlano = window.dados.planosTrabalho.length ? Math.max(...window.dados.planosTrabalho.map(p => Number(p.id) || 0)) + 1 : 1;
+      window.dados.proxiNrOrdemPlano = window.dados.planosTrabalho.length ? Math.max(...window.dados.planosTrabalho.map(p => Number(p.nrOrdem) || 0)) + 1 : 1;
     } catch (e) { console.warn('Erro carregando planosTrabalho', e); }
 
     try { atualizarDashboard(); } catch(e) {}

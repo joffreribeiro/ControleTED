@@ -740,7 +740,8 @@
             teds: [],
             proxiId: 1,
             planosTrabalho: [],
-            proxiIdPlano: 1
+            proxiIdPlano: 1,
+            proxiNrOrdemPlano: 1
         };
 
         // Função auxiliar para normalizar data (aceita DD/MM/YYYY ou YYYY-MM-DD)
@@ -3814,13 +3815,47 @@
         }
 
         // ===== PLANO DE TRABALHO (lista global, independente de TED) =====
+        // Numeração automática do P Trab: nnn/aaaa-DRCOM/IMBEL, reiniciando em 001 a cada ano.
+        function calcularProximoNumeroPTrab(ano, ignorarId) {
+            const itens = (dados.planosTrabalho || []).filter(p => p.id !== ignorarId);
+            let maxNum = 0;
+            itens.forEach(p => {
+                if (String(p.ano) !== String(ano)) return;
+                const m = String(p.pTrab || '').match(/^(\d+)\//);
+                if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10));
+            });
+            return maxNum + 1;
+        }
+
+        function gerarPTrab(ano, numero) {
+            if (!ano) return '';
+            return String(numero).padStart(3, '0') + '/' + ano + '-DRCOM/IMBEL';
+        }
+
+        function atualizarPreviewPTrab() {
+            const dataVal = document.getElementById('modalPlanoData').value;
+            const pTrabInput = document.getElementById('modalPlanoPTrab');
+            if (!dataVal) { pTrabInput.value = ''; return; }
+            const ano = dataVal.split('-')[0];
+            // Se estamos editando e o ano não mudou, mantém o número já atribuído (não recalcula).
+            if (window._editandoPlanoTrabalhoId) {
+                const item = (dados.planosTrabalho || []).find(p => p.id === window._editandoPlanoTrabalhoId);
+                if (item && String(item.ano) === String(ano) && item.pTrab) {
+                    pTrabInput.value = item.pTrab;
+                    return;
+                }
+            }
+            const numero = calcularProximoNumeroPTrab(ano, window._editandoPlanoTrabalhoId);
+            pTrabInput.value = gerarPTrab(ano, numero);
+        }
+
         function abrirModalPlanoTrabalho(editId) {
             if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
             const backdrop = document.getElementById('modalPlanoTrabalhoBackdrop');
             const titulo = document.getElementById('modalPlanoTrabalhoTitulo');
             const errEl = document.getElementById('modalPlanoTrabalhoError');
             errEl.textContent = ''; errEl.classList.remove('open');
-            document.getElementById('modalPlanoAno').value = '';
+            document.getElementById('modalPlanoData').value = '';
             document.getElementById('modalPlanoPTrab').value = '';
             document.getElementById('modalPlanoCliente').value = '';
             document.getElementById('modalPlanoObjeto').value = '';
@@ -3834,7 +3869,7 @@
                 if (item) {
                     window._editandoPlanoTrabalhoId = editId;
                     titulo.textContent = '🔑 Editar Registro';
-                    document.getElementById('modalPlanoAno').value = item.ano || '';
+                    document.getElementById('modalPlanoData').value = item.data || '';
                     document.getElementById('modalPlanoPTrab').value = item.pTrab || '';
                     document.getElementById('modalPlanoCliente').value = item.cliente || '';
                     document.getElementById('modalPlanoObjeto').value = item.objeto || '';
@@ -3848,7 +3883,7 @@
 
             backdrop.classList.add('open');
             backdrop.setAttribute('aria-hidden', 'false');
-            setTimeout(() => document.getElementById('modalPlanoAno').focus(), 80);
+            setTimeout(() => document.getElementById('modalPlanoData').focus(), 80);
         }
 
         function fecharModalPlanoTrabalho() {
@@ -3861,11 +3896,28 @@
         function salvarModalPlanoTrabalho() {
             if (!dados.planosTrabalho) dados.planosTrabalho = [];
             if (!dados.proxiIdPlano) dados.proxiIdPlano = 1;
+            if (!dados.proxiNrOrdemPlano) dados.proxiNrOrdemPlano = 1;
+
+            const data = document.getElementById('modalPlanoData').value;
+            const ano = data ? data.split('-')[0] : '';
+            const editId = window._editandoPlanoTrabalhoId;
+            const itemAnterior = editId ? (dados.planosTrabalho || []).find(p => p.id === editId) : null;
+
+            // P Trab: mantém o já atribuído se o ano não mudou; senão gera novo número para o ano.
+            let pTrab = '';
+            if (itemAnterior && String(itemAnterior.ano) === String(ano)) {
+                pTrab = itemAnterior.pTrab || '';
+            } else if (ano) {
+                const numero = calcularProximoNumeroPTrab(ano, editId);
+                pTrab = gerarPTrab(ano, numero);
+            }
 
             const item = {
-                id: window._editandoPlanoTrabalhoId || dados.proxiIdPlano++,
-                ano: document.getElementById('modalPlanoAno').value.trim(),
-                pTrab: document.getElementById('modalPlanoPTrab').value.trim(),
+                id: editId || dados.proxiIdPlano++,
+                nrOrdem: itemAnterior ? itemAnterior.nrOrdem : dados.proxiNrOrdemPlano++,
+                data: data,
+                ano: ano,
+                pTrab: pTrab,
                 cliente: document.getElementById('modalPlanoCliente').value.trim(),
                 objeto: document.getElementById('modalPlanoObjeto').value.trim(),
                 qtde: document.getElementById('modalPlanoQtde').value.trim(),
@@ -3873,8 +3925,8 @@
                 ted: document.getElementById('modalPlanoTed').value.trim()
             };
 
-            if (window._editandoPlanoTrabalhoId) {
-                dados.planosTrabalho = dados.planosTrabalho.filter(p => p.id !== window._editandoPlanoTrabalhoId);
+            if (editId) {
+                dados.planosTrabalho = dados.planosTrabalho.filter(p => p.id !== editId);
             }
             dados.planosTrabalho.push(item);
 
@@ -3892,10 +3944,17 @@
             atualizarTabelaPlanoTrabalho();
         }
 
+        function formatarDataBR(dataIso) {
+            if (!dataIso) return '';
+            const partes = String(dataIso).split('-');
+            if (partes.length !== 3) return dataIso;
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
         function atualizarTabelaPlanoTrabalho() {
             const tbody = document.getElementById('tabelaPlanoTrabalho');
             if (!tbody) return;
-            const itens = dados.planosTrabalho || [];
+            const itens = (dados.planosTrabalho || []).slice().sort((a, b) => (a.nrOrdem || 0) - (b.nrOrdem || 0));
 
             try { const c = document.getElementById('count-planoTrabalho'); if (c) c.textContent = String(itens.length); } catch(e) {}
 
@@ -3907,10 +3966,10 @@
             const editBtnHtml = (id) => !window._readOnlyMode ? `<button class="btn-icon-action edit" onclick="editarPlanoTrabalho(${id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>` : '';
             const delBtnHtml = (id) => !window._readOnlyMode ? `<button class="btn-icon-action delete" onclick="removerPlanoTrabalho(${id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>` : '';
 
-            tbody.innerHTML = itens.map((item, idx) => `
+            tbody.innerHTML = itens.map((item) => `
                 <tr>
-                    <td>${idx + 1}</td>
-                    <td>${item.ano || ''}</td>
+                    <td>${item.nrOrdem || ''}</td>
+                    <td>${formatarDataBR(item.data)}</td>
                     <td>${item.pTrab || ''}</td>
                     <td>${item.cliente || ''}</td>
                     <td>${item.objeto || ''}</td>
