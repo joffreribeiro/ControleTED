@@ -1242,9 +1242,71 @@
             try { renderGanttVigencia(); } catch(e) { console.warn('renderGanttVigencia error', e); }
             // Atualizar resumo geral (assinados/encerrados por mês e por UP)
             try { renderResumoGeralAssinadosEncerrados(); } catch(e) { console.warn('renderResumoGeralAssinadosEncerrados error', e); }
+            // Atualizar distribuição de TEDs por status (donut)
+            try { renderDistribuicaoStatus(); } catch(e) { console.warn('renderDistribuicaoStatus error', e); }
             // Garantir atualização dos gráficos do dashboard
             try { renderEntregasFromFilter(); } catch(e) { console.warn('renderEntregasFromFilter error', e); }
             try { renderResumoFinanceiroFromFilter(); } catch(e) { console.warn('renderResumoFinanceiroFromFilter error', e); }
+        }
+
+        // Distribuição de TEDs por status: reusa getDisplayStatus (a mesma função que já
+        // decide o badge de cada ted-card) e desdobra "Em Execução" em dois buckets quando a
+        // vigência está vencida, espelhando a nota que já aparece sob o badge nesse caso.
+        function renderDistribuicaoStatus() {
+            const container = document.getElementById('distribuicaoStatusContainer');
+            if (!container) return;
+
+            const buckets = [
+                { key: 'execucao',      label: 'Em Execução',                 cor: '#0C447C' },
+                { key: 'execucaoVenc',  label: 'Em Execução — vigência vencida', cor: '#854F0B' },
+                { key: 'finalizado',    label: 'TED Finalizado',              cor: '#3B6D11' },
+                { key: 'denunciado',    label: 'TED Denunciado',              cor: '#A32D2D' },
+                { key: 'relatorio',     label: 'Relatório Final (pendente)',  cor: '#4A3B6E' }
+            ];
+            const counts = { execucao: 0, execucaoVenc: 0, finalizado: 0, denunciado: 0, relatorio: 0 };
+
+            (dados.teds || []).forEach(t => {
+                const st = getDisplayStatus(t) || { text: '', vigenciaVencida: false };
+                const txt = String(st.text || '');
+                if (/denunci/i.test(txt)) counts.denunciado++;
+                else if (/finaliz/i.test(txt)) counts.finalizado++;
+                else if (/relat/i.test(txt)) counts.relatorio++;
+                else if (/execu/i.test(txt)) counts[st.vigenciaVencida ? 'execucaoVenc' : 'execucao']++;
+            });
+
+            const total = (dados.teds || []).length;
+            if (total === 0) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Nenhum TED cadastrado.</p>';
+                return;
+            }
+
+            // Montar o conic-gradient em fatias contíguas, pulando buckets vazios
+            let acc = 0;
+            const stops = [];
+            buckets.forEach(b => {
+                const n = counts[b.key];
+                if (n <= 0) return;
+                const pct = (n / total) * 100;
+                stops.push(`${b.cor} ${acc}% ${acc + pct}%`);
+                acc += pct;
+            });
+            const gradient = stops.length ? `conic-gradient(${stops.join(', ')})` : 'var(--color-bg-surface)';
+
+            const legendaHtml = buckets.map(b => {
+                const n = counts[b.key];
+                if (n <= 0) return '';
+                return `
+                    <div class="status-donut-row">
+                        <span class="status-donut-label"><i style="background:${b.cor};"></i>${b.label}</span>
+                        <span class="status-donut-count">${n}</span>
+                    </div>`;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="status-donut-card">
+                    <div class="status-donut" style="background:${gradient};"></div>
+                    <div class="status-donut-legend">${legendaHtml}</div>
+                </div>`;
         }
 
         // Atualizar Lista de TEDs
@@ -1338,10 +1400,35 @@
                     cardBorderColor = '#639922'; // verde: em execução
                 }
 
+                // ---- Chip de Prazo (colorido por urgência) ----
+                // Mesmos cortes usados no dashboard: vencido/crítico (≤15d) em vermelho,
+                // atenção (≤30d) em âmbar, ok em tom neutro. buildAlertasInteligentes só
+                // sinaliza vigência JÁ vencida — este chip antecipa visualmente antes disso.
+                let prazoChipHtml = '';
+                if (isFinalizado) {
+                    prazoChipHtml = '<span class="ted-card-prazo prazo-encerrado">Encerrado</span>';
+                } else if (fimValido) {
+                    let prazoClasse, prazoTexto;
+                    if (diasRestantes < 0) {
+                        prazoClasse = 'prazo-vencido';
+                        prazoTexto = `Vencido há ${Math.abs(diasRestantes)}d`;
+                    } else if (diasRestantes <= 15) {
+                        prazoClasse = 'prazo-critico';
+                        prazoTexto = `${diasRestantes}d`;
+                    } else if (diasRestantes <= 30) {
+                        prazoClasse = 'prazo-atencao';
+                        prazoTexto = `${diasRestantes}d`;
+                    } else {
+                        prazoClasse = 'prazo-ok';
+                        prazoTexto = `${diasRestantes}d`;
+                    }
+                    prazoChipHtml = `<span class="ted-card-prazo ${prazoClasse}">${prazoTexto}</span>`;
+                }
+
                 // ---- Metadados em linha ----
                 const metaParts = [];
                 if (inicioStr !== '-' || fimStr !== '-') metaParts.push(`${inicioStr} → ${fimStr}`);
-                if (fimValido) metaParts.push(`${Math.max(0, diasRestantes)} dias rest.`);
+                if (prazoChipHtml) metaParts.push(prazoChipHtml);
                 const up = t.upResponsavel || t.up || '';
                 if (up) metaParts.push(up);
                 const metaLine = metaParts.join(' · ');

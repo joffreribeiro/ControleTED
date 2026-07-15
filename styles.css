@@ -5608,6 +5608,60 @@ table.ef-table tbody td.right  { text-align: right; }
     color: #0C2A47;
 }
 
+/* Distribuição por Status (donut) */
+#dashboard .status-donut-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.5rem 0.25rem;
+}
+#dashboard .status-donut {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+}
+#dashboard .status-donut::after {
+    content: '';
+    position: absolute;
+    inset: 15px;
+    background: #FFFDF7;
+    border-radius: 50%;
+}
+#dashboard .status-donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+#dashboard .status-donut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+#dashboard .status-donut-label {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #6b6558;
+}
+#dashboard .status-donut-label i {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    display: inline-block;
+}
+#dashboard .status-donut-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: #0C2A47;
+}
+
 /* Painéis de Resumo Financeiro / Entregas */
 #dashboard .resumo-panel .card,
 #dashboard .entregas-panel .card {
@@ -5701,6 +5755,17 @@ table.ef-table tbody td.right  { text-align: right; }
     letter-spacing: 0.02em;
     color: #7A6E5A;
 }
+/* Chip de prazo dentro do meta line, colorido por urgência */
+#teds .ted-card-prazo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+#teds .ted-card-prazo.prazo-vencido,
+#teds .ted-card-prazo.prazo-critico { color: #A32D2D; }
+#teds .ted-card-prazo.prazo-atencao { color: #854F0B; }
+#teds .ted-card-prazo.prazo-ok,
+#teds .ted-card-prazo.prazo-encerrado { color: #7A6E5A; font-weight: 600; }
 #teds .ted-card-progress-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.66rem;
