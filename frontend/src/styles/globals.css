@@ -328,6 +328,67 @@ a.nav-item.active,
 .progress-fill-green { background: var(--color-success); }
 .progress-pct   { font-size: 11px; color: var(--color-text-secondary); font-family: var(--font-mono); min-width: 30px; }
 
+/* ─── Panels (Vigências / Alertas / Status) ─────── */
+.panel-row     { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 22px; }
+.panel-row-2   { display: grid; grid-template-columns: 1fr 1.3fr; gap: 14px; margin-bottom: 22px; }
+.panel {
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.panel-head  { display: flex; justify-content: space-between; align-items: center; padding: 13px 18px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.panel-title { font-size: 13px; font-weight: 700; color: var(--color-text); }
+.panel-tag   { font-size: 11px; color: var(--color-text-muted); }
+.panel-body  { padding: 14px 18px; }
+.panel-empty { padding: 20px 18px; font-size: 12.5px; color: var(--color-text-muted); text-align: center; }
+
+/* ─── Deadline cell ─────────────────────────────── */
+.deadline       { display: flex; flex-direction: column; gap: 2px; }
+.deadline-days  { font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+.deadline-days.urg-vencido  { color: var(--color-danger); }
+.deadline-days.urg-critico  { color: var(--color-danger); }
+.deadline-days.urg-atencao  { color: var(--color-warning); }
+.deadline-days.urg-ok       { color: var(--color-text-secondary); font-weight: 400; }
+.deadline-days.urg-none     { color: var(--color-text-muted); font-weight: 400; }
+.deadline-date  { font-size: 10.5px; color: var(--color-text-muted); }
+
+/* ─── Alertas Inteligentes ──────────────────────── */
+.alerts-list  { display: flex; flex-direction: column; gap: 2px; padding: 8px; max-height: 280px; overflow-y: auto; }
+.alert-item   { display: flex; gap: 10px; padding: 9px 8px; border-radius: 8px; align-items: flex-start; text-decoration: none; color: inherit; }
+.alert-item:hover { background: var(--color-surface); }
+.alert-ico    { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.alert-ico.danger { background: var(--color-danger-bg); color: var(--color-danger); }
+.alert-ico.warn   { background: var(--color-warning-bg); color: var(--color-warning); }
+.alert-ico.info   { background: var(--color-primary-bg); color: var(--color-primary); }
+.alert-title  { font-size: 12px; font-weight: 600; line-height: 1.35; color: var(--color-text); }
+.alert-sub    { font-size: 11px; color: var(--color-text-muted); margin-top: 1px; }
+
+/* ─── Status Donut ──────────────────────────────── */
+.donut-card   { display: flex; align-items: center; gap: 18px; padding: 16px 18px; }
+.donut        { width: 78px; height: 78px; border-radius: 50%; flex-shrink: 0; position: relative; }
+.donut::after { content: ''; position: absolute; inset: 12px; background: var(--color-card); border-radius: 50%; }
+.donut-legend { display: flex; flex-direction: column; gap: 6px; font-size: 12px; flex: 1; }
+.donut-legend-row { display: flex; align-items: center; gap: 7px; justify-content: space-between; }
+.donut-legend-row .label { display: flex; align-items: center; gap: 7px; color: var(--color-text-secondary); }
+.donut-legend-row i  { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.donut-legend-row .count { font-family: var(--font-mono); font-weight: 600; color: var(--color-text); }
+
+/* ─── Gantt de Vigências ─────────────────────────── */
+.gantt-meta      { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--color-text-muted); padding: 0 18px 8px; }
+.gantt-grid      { display: grid; grid-template-columns: 120px 1fr; max-height: 300px; overflow-y: auto; }
+.gantt-labels    { display: flex; flex-direction: column; border-right: 1px solid rgba(0,0,0,0.06); }
+.gantt-label     { height: 32px; display: flex; align-items: center; padding: 0 12px 0 18px; font-size: 11px; font-weight: 500; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.gantt-tracks    { position: relative; padding-right: 16px; }
+.gantt-today     { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--color-danger); opacity: 0.45; z-index: 1; }
+.gantt-today-tag { position: absolute; top: -2px; transform: translateX(-50%); font-size: 8.5px; font-weight: 700; color: var(--color-danger); background: var(--color-card); padding: 0 3px; white-space: nowrap; }
+.gantt-track-row { height: 32px; display: flex; align-items: center; position: relative; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.gantt-bar       { position: absolute; height: 16px; border-radius: 4px; min-width: 6px; }
+.gantt-bar-execucao     { background: var(--color-primary-mid); }
+.gantt-bar-concluido    { background: var(--color-success); }
+.gantt-bar-planejamento { background: #c07a1c; }
+.gantt-bar-suspenso     { background: #c94040; }
+
 /* ─── Filter Tabs ───────────────────────────────── */
 .filter-row { display: flex; gap: 4px; margin-bottom: 14px; align-items: center; }
 .filter-btn {

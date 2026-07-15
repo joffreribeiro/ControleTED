@@ -658,6 +658,72 @@
             };
         }
 
+        // ===== Modal de duplicatas na importação =====
+        // Diferente do confirmarAcao: tem três saídas (cancelar / tudo / consolidar) e
+        // renderiza uma tabela, então precisa de innerHTML em vez de textContent.
+        function confirmarDuplicatas(dups, onEscolha) {
+            var esc = function(s) {
+                return String(s == null ? '' : s)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            };
+            var id = 'modalDupGlobal';
+            var el = document.getElementById(id);
+            if (!el) {
+                el = document.createElement('div');
+                el.id = id;
+                el.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;';
+                el.innerHTML =
+                    '<div style="background:#fff;border-radius:12px;padding:1.5rem;max-width:720px;width:92%;">' +
+                    '<p style="font-size:14px;font-weight:500;color:#1a1a1a;margin:0 0 8px;">Linhas repetidas no arquivo</p>' +
+                    '<p id="' + id + '_msg" style="font-size:13px;color:#6b6b6b;margin:0 0 12px;"></p>' +
+                    '<div id="' + id + '_lista" style="max-height:320px;overflow:auto;border:0.5px solid rgba(0,0,0,0.12);border-radius:8px;margin-bottom:1rem;"></div>' +
+                    '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+                    '<button id="' + id + '_cancel" style="padding:7px 16px;border-radius:7px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;font-size:13px;cursor:pointer;">Cancelar</button>' +
+                    '<button id="' + id + '_tudo" style="padding:7px 16px;border-radius:7px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;font-size:13px;cursor:pointer;">Importar tudo como está</button>' +
+                    '<button id="' + id + '_cons" style="padding:7px 16px;border-radius:7px;border:none;background:#E24B4A;color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Consolidar (1 de cada)</button>' +
+                    '</div></div>';
+                document.body.appendChild(el);
+            }
+
+            var excedentes = dups.reduce(function(s, d) { return s + (d.vezes - 1); }, 0);
+            document.getElementById(id + '_msg').textContent =
+                dups.length + ' linha(s) do arquivo aparecem mais de uma vez, somando ' + excedentes +
+                ' registro(s) excedente(s). Linhas idênticas em todas as colunas são o mesmo lançamento repetido e inflam o realizado. ' +
+                'Se preferir, cancele e reemita o extrato.';
+
+            document.getElementById(id + '_lista').innerHTML =
+                '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+                '<thead><tr style="background:#f5f5f5;">' +
+                '<th style="padding:6px 8px;text-align:left;">TED</th>' +
+                '<th style="padding:6px 8px;text-align:left;">NC</th>' +
+                '<th style="padding:6px 8px;text-align:center;">ND</th>' +
+                '<th style="padding:6px 8px;text-align:right;">Valor</th>' +
+                '<th style="padding:6px 8px;text-align:center;">Data</th>' +
+                '<th style="padding:6px 8px;text-align:center;">Vezes</th>' +
+                '</tr></thead><tbody>' +
+                dups.map(function(d) {
+                    return '<tr style="border-top:0.5px solid rgba(0,0,0,0.08);">' +
+                        '<td style="padding:6px 8px;">' + esc(d.siafi) + '</td>' +
+                        '<td style="padding:6px 8px;">' + esc(d.nc) + '</td>' +
+                        '<td style="padding:6px 8px;text-align:center;">' + esc(d.nd) + '</td>' +
+                        '<td style="padding:6px 8px;text-align:right;">' + (Number(d.valor) || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}) + '</td>' +
+                        '<td style="padding:6px 8px;text-align:center;">' + esc(d.data) + '</td>' +
+                        '<td style="padding:6px 8px;text-align:center;font-weight:600;">' + d.vezes + '×</td>' +
+                        '</tr>';
+                }).join('') +
+                '</tbody></table>';
+
+            el.style.display = 'flex';
+            var responder = function(escolha) {
+                el.style.display = 'none';
+                try { onEscolha(escolha); } catch(e) { console.error('confirmarDuplicatas', e); }
+            };
+            document.getElementById(id + '_cancel').onclick = function() { el.style.display = 'none'; };
+            document.getElementById(id + '_tudo').onclick = function() { responder('tudo'); };
+            document.getElementById(id + '_cons').onclick = function() { responder('consolidar'); };
+        }
+
         // Global helper: format numeric quantities with thousands separator (pt-BR)
         function formatNumber(v) {
             if (v === undefined || v === null || v === '') return '';
@@ -1889,51 +1955,105 @@
             container.innerHTML = html;
         }
 
+        // Monta a lista unificada de alertas inteligentes: vigência vencida,
+        // orçamento próximo do limite e descompasso entre execução física e financeira.
+        // Cada TED finalizado é ignorado (já encerrado, não precisa de alerta).
+        function buildAlertasInteligentes() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const alerts = [];
+
+            (dados.teds || []).forEach(t => {
+                if (isTedFinalizado(t)) return;
+
+                const up = t.upResponsavel || t.up || '';
+                const valorTed = parseFloat(t.valorTed) || 0;
+                const recsRealizados = (t.recursosGerais || []).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+                const percentualGasto = valorTed > 0 ? (recsRealizados / valorTed) * 100 : 0;
+                const percentualFisicoRaw = (typeof t.progressoFisico !== 'undefined' ? t.progressoFisico : calcularProgressoFisico(t)) || 0;
+                const percentualFisico = parseFloat(percentualFisicoRaw) || 0;
+
+                // 1. Vigência vencida e não encerrada
+                if (t.fimVigencia || t.inicioVigencia) {
+                    const fimEfetivo = calcularFimComAditivos(t);
+                    let fimDate = null;
+                    if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
+                        fimDate = fimEfetivo;
+                    } else {
+                        const fimNorm = normalizarData(t.fimVigencia);
+                        if (fimNorm) {
+                            const d = new Date(fimNorm + 'T00:00:00');
+                            if (!isNaN(d.getTime())) fimDate = d;
+                        }
+                    }
+                    if (fimDate && fimDate < today) {
+                        const diasAtraso = Math.ceil((today - fimDate) / (1000 * 60 * 60 * 24));
+                        alerts.push({
+                            severity: 'danger', rank: 0, icon: 'alert-triangle', tedId: t.id,
+                            title: `TED ${t.numTed}`, up,
+                            detail: `Vigência encerrada há ${diasAtraso} dia${diasAtraso !== 1 ? 's' : ''}`,
+                            value: `${diasAtraso}d`, sortValue: -diasAtraso,
+                        });
+                    }
+                }
+
+                // 2. Orçamento próximo do limite (>= 90% executado)
+                if (valorTed > 0 && percentualGasto >= 90) {
+                    alerts.push({
+                        severity: 'warn', rank: 1, icon: 'wallet', tedId: t.id,
+                        title: `TED ${t.numTed}`, up,
+                        detail: `${percentualGasto.toFixed(0)}% do orçamento já executado`,
+                        value: `${percentualGasto.toFixed(0)}%`, sortValue: -percentualGasto,
+                    });
+                }
+
+                // 3. Descompasso entre execução física e financeira (>= 25 pontos)
+                const gap = Math.abs(percentualFisico - percentualGasto);
+                if (valorTed > 0 && gap >= 25) {
+                    alerts.push({
+                        severity: 'info', rank: 2, icon: 'bar-chart-3', tedId: t.id,
+                        title: `TED ${t.numTed}`, up,
+                        detail: `Física ${percentualFisico.toFixed(0)}% vs. financeira ${percentualGasto.toFixed(0)}%`,
+                        value: `${gap.toFixed(0)}pp`, sortValue: -gap,
+                    });
+                }
+            });
+
+            alerts.sort((a, b) => a.rank - b.rank || a.sortValue - b.sortValue);
+            return alerts;
+        }
+
         // Render compacto para a coluna em 'Próximas Ações' (mostra contagem e top itens)
         function renderProximasVigenciasVencidas() {
             const container = document.getElementById('proximasVigenciasVencidas');
             if (!container) return;
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            const expired = [];
 
-            (dados.teds || []).forEach(t => {
-                if (!t.fimVigencia && !t.inicioVigencia) return;
-                const fimEfetivo = calcularFimComAditivos(t);
-                let d;
-                if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
-                    d = fimEfetivo;
-                } else {
-                    const fimNorm = normalizarData(t.fimVigencia);
-                    if (!fimNorm) return;
-                    d = new Date(fimNorm + 'T00:00:00');
-                    if (isNaN(d.getTime())) return;
-                }
-                const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
-                const encDate = encNorm ? new Date(encNorm + 'T00:00:00') : null;
-                if (d < today) {
-                    if (!encDate || encDate > today) {
-                        const diasAtraso = Math.ceil((today - d) / (1000 * 60 * 60 * 24));
-                        expired.push({ date: d, ted: t, diasAtraso: diasAtraso, up: t.upResponsavel || t.up || '' });
-                    }
-                }
-            });
+            const alerts = buildAlertasInteligentes();
 
-            if (!expired.length) {
-                container.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Nenhum TED com vigência vencida e não encerrado.</p>';
+            if (!alerts.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Nenhum alerta no momento.</p>';
                 return;
             }
 
-            expired.sort((a,b) => a.date - b.date);
-            const maxShow = 4;
-            let html = `<div style="font-weight:600; color:#dc2626; margin-bottom:6px;">${expired.length} TED(s) vencido(s)</div>`;
-            html += '<ul style="margin:0; padding-left:1rem; font-size:0.85rem;">';
-            expired.slice(0, maxShow).forEach(it => {
-                html += `<li style="margin-bottom:0.35rem; display:flex; justify-content:space-between; gap:8px;"><div><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a> <span style="color:var(--text-muted);">${it.up}</span></div><div style="color:#dc2626; font-weight:600;">${it.diasAtraso}d</div></li>`;
+            const severityColor = { danger: '#dc2626', warn: '#d97706', info: '#0C447C' };
+            const maxShow = 6;
+            let html = `<div style="font-weight:600; color:#dc2626; margin-bottom:6px;">${alerts.length} alerta${alerts.length !== 1 ? 's' : ''} ativo${alerts.length !== 1 ? 's' : ''}</div>`;
+            html += '<ul style="margin:0; padding-left:0; list-style:none; font-size:0.85rem;">';
+            alerts.slice(0, maxShow).forEach(a => {
+                const cor = severityColor[a.severity] || '#6b6b6b';
+                html += `<li style="margin-bottom:0.35rem; display:flex; justify-content:space-between; gap:8px;" title="${a.detail}">`;
+                html += `<div style="display:flex; align-items:center; gap:4px; min-width:0;">`;
+                html += `<i data-lucide="${a.icon}" class="inline-icon-sm" style="color:${cor}; width:12px; height:12px; flex-shrink:0;"></i>`;
+                html += `<a href="#" onclick="carregarDetalhes(${a.tedId}); switchTab('detalhes'); return false;">${a.title}</a>`;
+                html += `<span style="color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a.up}</span>`;
+                html += `</div>`;
+                html += `<div style="color:${cor}; font-weight:600; white-space:nowrap;">${a.value}</div>`;
+                html += `</li>`;
             });
-            if (expired.length > maxShow) html += `<li style="color:var(--text-muted); margin-top:4px;">+${expired.length - maxShow} outros...</li>`;
+            if (alerts.length > maxShow) html += `<li style="color:var(--text-muted); margin-top:4px;">+${alerts.length - maxShow} outros...</li>`;
             html += '</ul>';
             container.innerHTML = html;
+            try { initLucideIcons(); } catch (e) {}
         }
 
         // Abrir Detalhes
@@ -10635,18 +10755,63 @@
         }
 
         // Modal de Lançamentos (Execução Financeira / Recursos Gerais)
-        function abrirModalLancamentos(titulo, subtitulo, linhas) {
+        // opcoes.onExcluir(indice) — quando informado, cada linha ganha um botão de exclusão.
+        // Sem ele o modal fica idêntico ao de antes (Execução Financeira agrega origens[],
+        // que não são deletáveis individualmente).
+        function abrirModalLancamentos(titulo, subtitulo, linhas, opcoes) {
+            opcoes = opcoes || {};
+            // Mesma regra de gravação do salvarDados(): o gate por [onclick*=...] não alcança
+            // estas linhas, que são injetadas depois da varredura do DOM.
+            const _role = window.currentUserProfile && window.currentUserProfile.role;
+            const podeExcluir = typeof opcoes.onExcluir === 'function' && (_role === 'admin' || _role === 'editor');
             document.getElementById('modalLancamentosTitulo').textContent = titulo;
-            document.getElementById('modalLancamentosSubtitulo').textContent = subtitulo;
+
+            // Linhas iguais em NC+valor+data são o mesmo lançamento contado duas vezes
+            const contagem = {};
+            linhas.forEach(l => {
+                const k = l.nc + '|' + l.valor + '|' + l.data;
+                contagem[k] = (contagem[k] || 0) + 1;
+            });
+            const repetidas = linhas.filter(l => contagem[l.nc + '|' + l.valor + '|' + l.data] > 1).length;
+
+            const sub = document.getElementById('modalLancamentosSubtitulo');
+            sub.textContent = subtitulo;
+            if (repetidas > 0) {
+                const aviso = document.createElement('div');
+                aviso.style.cssText = 'margin-top:6px;color:#E24B4A;font-weight:500;';
+                aviso.textContent = '⚠️ ' + repetidas + ' linha(s) com NC, valor e data repetidos — o total abaixo está inflado.';
+                sub.appendChild(aviso);
+            }
+
+            const thAcoes = document.getElementById('modalLancamentosThAcoes');
+            const tfAcoes = document.getElementById('modalLancamentosTfAcoes');
+            if (thAcoes) thAcoes.style.display = podeExcluir ? '' : 'none';
+            if (tfAcoes) tfAcoes.style.display = podeExcluir ? '' : 'none';
+
             const tbody = document.getElementById('modalLancamentosBody');
             const total = linhas.reduce((s, l) => s + l.valor, 0);
-            tbody.innerHTML = linhas.map(l => `
-                <tr>
+            tbody.innerHTML = linhas.map((l, i) => {
+                const dup = contagem[l.nc + '|' + l.valor + '|' + l.data] > 1;
+                const acao = podeExcluir
+                    ? `<td style="text-align:center;"><button type="button" data-lanc-idx="${i}" title="Excluir este lançamento" style="border:none;background:transparent;color:#E24B4A;cursor:pointer;font-size:14px;">✕</button></td>`
+                    : '';
+                return `
+                <tr${dup ? ' style="background:rgba(226,75,74,0.07);"' : ''}>
                     <td style="text-align:center;">${l.nc}</td>
                     <td style="text-align:right;">${l.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td style="text-align:center;">${l.data}</td>
-                </tr>
-            `).join('');
+                    ${acao}
+                </tr>`;
+            }).join('');
+
+            if (podeExcluir) {
+                tbody.querySelectorAll('[data-lanc-idx]').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        opcoes.onExcluir(parseInt(btn.getAttribute('data-lanc-idx'), 10));
+                    });
+                });
+            }
+
             document.getElementById('modalLancamentosTotal').textContent = total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
             const backdrop = document.getElementById('modalLancamentosBackdrop');
             backdrop.classList.add('open');
@@ -10800,12 +10965,14 @@
 
         function adicionarRecursoGeral() { abrirModalRecGeral(); }
 
-        function removerRecursoGeral(nd, data) {
+        // Exclui UM lançamento pelo índice no array. A versão anterior filtrava por ND+data e
+        // apagava todos os lançamentos daquela ND naquele dia de uma vez, o que impedia
+        // remover uma única NC duplicada sem levar junto as demais NCs da mesma data.
+        function removerRecursoGeralPorIndice(indice) {
             if (!window.tedSelecionado) return;
-            const ndNorm = normalizarND(nd);
-            window.tedSelecionado.recursosGerais = (window.tedSelecionado.recursosGerais || []).filter(r =>
-                !(normalizarND(r.nd) === ndNorm && r.data === data)
-            );
+            const recs = window.tedSelecionado.recursosGerais || [];
+            if (indice < 0 || indice >= recs.length) return;
+            recs.splice(indice, 1);
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarTabelaRecursosGerais();
         }
@@ -10828,7 +10995,8 @@
 
             const recs = window.tedSelecionado.recursosGerais || [];
             const ndNorm = normalizarND(nd);
-            const recsDoMes = recs.filter(r => {
+            // Carrega o índice no array de origem para permitir excluir o registro exato
+            const recsDoMes = recs.map((r, i) => ({ r, i })).filter(({ r }) => {
                 if (!r.data || normalizarND(r.nd) !== ndNorm) return false;
                 const rd = new Date(r.data + 'T00:00:00');
                 const diff = (rd.getFullYear() - startDate.getFullYear()) * 12 + (rd.getMonth() - startDate.getMonth());
@@ -10851,7 +11019,7 @@
                 return `${dd}-${mmm}-${yyyy}`;
             }
 
-            const linhas = recsDoMes.map(r => ({
+            const linhas = recsDoMes.map(({ r }) => ({
                 nc: (r.nc || r.NC || '').toString().trim() || '-',
                 valor: parseFloat(r.valor) || 0,
                 data: formatDateDDMMM(r.data)
@@ -10859,7 +11027,23 @@
             abrirModalLancamentos(
                 `Recursos Gerais — ND: ${nd}`,
                 `Mês: ${d.toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}`,
-                linhas
+                linhas,
+                {
+                    onExcluir: (posicaoNoModal) => {
+                        const alvo = recsDoMes[posicaoNoModal];
+                        if (!alvo) return;
+                        confirmarAcao(
+                            'Excluir o lançamento da NC ' + (linhas[posicaoNoModal].nc) + ' no valor de ' +
+                            linhas[posicaoNoModal].valor.toLocaleString('pt-BR', {minimumFractionDigits: 2}) + '?',
+                            function() {
+                                removerRecursoGeralPorIndice(alvo.i);
+                                fecharModalLancamentos();
+                                editarValorRecursoGeral(nd, indiceMes);
+                            },
+                            'Excluir lançamento'
+                        );
+                    }
+                }
             );
         }
 
@@ -11431,8 +11615,10 @@
             data.forEach(row => {
                 const values = headers.map(h => {
                     let val = row[h] !== undefined ? row[h] : '';
-                    // Escapar ponto e vírgula e aspas
-                    if (typeof val === 'string' && (val.includes(';') || val.includes('"'))) {
+                    // Escapar separador, aspas e quebras de linha. A quebra importa: o Tesouro
+                    // Gerencial emite '\n' dentro do campo TED, e sem aspas o registro sairia
+                    // partido em duas linhas e não voltaria a ser importado.
+                    if (typeof val === 'string' && (val.includes(';') || val.includes('"') || val.includes('\n') || val.includes('\r'))) {
                         val = '"' + val.replace(/"/g, '""') + '"';
                     }
                     return val;
@@ -11449,6 +11635,52 @@
             link.href = URL.createObjectURL(blob);
             link.download = filename;
             link.click();
+        }
+
+        // Acha o nome de uma coluna por palavras-chave, ignorando acentos e caixa.
+        // Todas as palavras precisam aparecer no cabeçalho.
+        function acharColuna(headers, keywords) {
+            for (const h of headers) {
+                const hLow = String(h).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (keywords.length > 0 && keywords.every(kw => hLow.indexOf(kw) > -1)) return h;
+            }
+            return null;
+        }
+
+        // Tokeniza o CSV inteiro em registros, respeitando aspas — inclusive quebras de linha
+        // DENTRO de um campo. O Tesouro Gerencial emite isso na coluna TED (ex.: "20-EME-027\nINOVA")
+        // e em "Doc - Observação"; dividir o texto por '\n' antes de olhar as aspas parte esses
+        // registros ao meio e faz a importação descartá-los em silêncio.
+        // Retorna: [ [campo, campo, ...], ... ]
+        function parseCSVRegistros(texto, sep) {
+            if (texto.charCodeAt(0) === 0xFEFF) texto = texto.substring(1);
+            const registros = [];
+            let registro = [];
+            let campo = '';
+            let entreAspas = false;
+            for (let i = 0; i < texto.length; i++) {
+                const ch = texto[i];
+                if (entreAspas) {
+                    if (ch === '"') {
+                        if (texto[i + 1] === '"') { campo += '"'; i++; }  // aspa escapada
+                        else entreAspas = false;
+                    } else {
+                        campo += ch;   // preserva '\n' dentro do campo
+                    }
+                } else if (ch === '"') {
+                    entreAspas = true;
+                } else if (ch === sep) {
+                    registro.push(campo.trim()); campo = '';
+                } else if (ch === '\n') {
+                    registro.push(campo.trim()); registros.push(registro);
+                    registro = []; campo = '';
+                } else if (ch !== '\r') {
+                    campo += ch;
+                }
+            }
+            if (campo !== '' || registro.length) { registro.push(campo.trim()); registros.push(registro); }
+            // Descartar linhas totalmente vazias
+            return registros.filter(r => r.some(c => c !== ''));
         }
 
         // Função auxiliar para parsear CSV
@@ -11748,22 +11980,58 @@
             showToast('Execução Financeira exportada com sucesso!', 'success');
         }
 
+        // Exporta reproduzindo o extrato do Tesouro Gerencial: cada registro importado guarda
+        // a linha original completa em `origem`, então a exportação devolve as mesmas colunas
+        // que entraram — inclusive as que o sistema não usa (Evento, PTRES, Plano Interno,
+        // Fonte, Observação). Sem nenhum registro importado de um extrato, cai no formato
+        // simplificado de 5 colunas.
         function exportarRecursosGerais() {
-            const rows = [];
+            const registros = [];
             dados.teds.forEach(ted => {
-                (ted.recursosGerais || []).forEach(r => {
-                    rows.push({
-                        numTed: ted.numTed,
-                        nd: r.nd,
-                        valor: r.valor,
-                        data: r.data
-                    });
-                });
+                (ted.recursosGerais || []).forEach(r => registros.push({ ted, r }));
             });
-            const headers = ['numTed', 'nd', 'valor', 'data'];
-            const csv = arrayToCSV(rows, headers);
-            downloadFile(csv, 'recursos_gerais_export.csv');
-            showToast('Recursos Gerais exportados com sucesso!', 'success');
+
+            const comOrigem = registros.find(({ r }) => r.origem && Object.keys(r.origem).length);
+            const headers = comOrigem ? Object.keys(comOrigem.r.origem) : null;
+
+            if (!headers) {
+                const rows = registros.map(({ ted, r }) => ({
+                    numTed: ted.numTed, nd: r.nd, nc: r.nc || '', valor: r.valor, data: r.data
+                }));
+                downloadFile(arrayToCSV(rows, ['numTed', 'nd', 'nc', 'valor', 'data']), 'recursos_gerais_export.csv');
+                showToast(registros.length + ' registro(s) exportado(s) (formato simplificado).', 'success');
+                return;
+            }
+
+            // Colunas do extrato usadas para descrever lançamentos incluídos à mão, que não
+            // vieram de um arquivo e portanto não têm linha original
+            const colND    = acharColuna(headers, ['natureza', 'despes']) || acharColuna(headers, ['natureza']);
+            const colValor = acharColuna(headers, ['valor', 'linha']) || acharColuna(headers, ['valor']);
+            const colData  = acharColuna(headers, ['emissao', 'dia']) || acharColuna(headers, ['dia']);
+            const colSiafi = acharColuna(headers, ['transferencia']) || acharColuna(headers, ['transfer']);
+            const colNC    = headers.find(h => String(h).trim().toLowerCase() === 'nc');
+
+            let semOrigem = 0;
+            const rows = registros.map(({ ted, r }) => {
+                if (r.origem) return r.origem;
+                semOrigem++;
+                const linha = {};
+                headers.forEach(h => { linha[h] = ''; });
+                if (colND) linha[colND] = r.nd || '';
+                if (colNC) linha[colNC] = r.nc || '';
+                if (colValor) linha[colValor] = r.valor;
+                if (colSiafi) linha[colSiafi] = ted.numTedSiafi || '';
+                if (colData && r.data) {
+                    const p = String(r.data).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                    linha[colData] = p ? (p[3] + '/' + p[2] + '/' + p[1]) : r.data;
+                }
+                return linha;
+            });
+
+            downloadFile(arrayToCSV(rows, headers), 'recursos_gerais_export.csv');
+            let msg = registros.length + ' registro(s) exportado(s) no formato do extrato (' + headers.length + ' colunas).';
+            if (semOrigem > 0) msg += '\n' + semOrigem + ' lançamento(s) incluído(s) à mão saíram só com as colunas conhecidas.';
+            showToast(msg, semOrigem > 0 ? 'warning' : 'success');
         }
 
         // EXPORTAR TUDO (múltiplos arquivos)
@@ -12246,34 +12514,10 @@
                     if (primeiraLinha.indexOf('\t') > -1) sep = '\t';
                     else if (primeiraLinha.indexOf(';') === -1 && primeiraLinha.indexOf(',') > -1) sep = ',';
 
-                    // Parser CSV que respeita aspas
-                    function splitCSV(line) {
-                        const result = [];
-                        let current = '';
-                        let inQuotes = false;
-                        for (let i = 0; i < line.length; i++) {
-                            const ch = line[i];
-                            if (ch === '"') {
-                                if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
-                                    current += '"'; i++;
-                                } else {
-                                    inQuotes = !inQuotes;
-                                }
-                            } else if (ch === sep && !inQuotes) {
-                                result.push(current.trim());
-                                current = '';
-                            } else {
-                                current += ch;
-                            }
-                        }
-                        result.push(current.trim());
-                        return result;
-                    }
+                    const registros = parseCSVRegistros(texto, sep);
+                    if (registros.length < 2) { showToast('⚠️ Arquivo vazio.', 'warning'); return; }
 
-                    const lines = texto.split('\n').filter(l => l.trim());
-                    if (lines.length < 2) { showToast('⚠️ Arquivo vazio.', 'warning'); return; }
-
-                    const headers = splitCSV(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+                    const headers = registros[0];
 
                     // Detectar formato: Tesouro Gerencial ou simplificado (exportação do sistema)
                     function findCol(keywords) {
@@ -12298,8 +12542,8 @@
 
                         // Parsear dados
                         const rows = [];
-                        for (let i = 1; i < lines.length; i++) {
-                            const values = splitCSV(lines[i]).map(v => v.replace(/^"|"$/g, '').trim());
+                        for (let i = 1; i < registros.length; i++) {
+                            const values = registros[i];
                             const obj = {};
                             headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
                             rows.push(obj);
@@ -12664,6 +12908,125 @@
             });
         });
 
+        // Grava os Recursos Gerais agrupados, detectando linhas repetidas antes de confirmar.
+        // Compartilhado pelos dois formatos aceitos (Tesouro Gerencial e exportação do sistema),
+        // que diferem apenas em como cada chave de grupo vira um TED.
+        //   grupos      : { chave: [{nd, nc, valor, data, raw}] }
+        //   resolverTed : (chave) => ted | undefined
+        //   rotuloChave : como chamar a chave nas mensagens ('SIAFI' ou 'nº TED')
+        function aplicarRecursosGerais(grupos, resolverTed, rotuloChave) {
+            // Resolver os TEDs ANTES de detectar duplicatas: só faz sentido avisar sobre
+            // repetições em dados que de fato serão importados.
+            const naoEncontrados = [];
+            const chaves = [];
+            const tedPorChave = {};
+            Object.keys(grupos).forEach(chave => {
+                const ted = resolverTed(chave);
+                if (!ted) { naoEncontrados.push(chave); return; }
+                tedPorChave[chave] = ted;
+                chaves.push(chave);
+            });
+            const totalItens = chaves.reduce((s, k) => s + grupos[k].length, 0);
+
+            // Linhas idênticas em TODAS as colunas são o mesmo lançamento repetido no extrato —
+            // não há dimensão que as distinga, então somá-las infla o realizado. A chave é a
+            // linha bruta inteira: linhas que diferem em qualquer coluna (subitem, plano
+            // interno, fonte) são fatos distintos e continuam somando.
+            const duplicatas = [];
+            chaves.forEach(chave => {
+                const contagem = {};
+                grupos[chave].forEach(it => { contagem[it.raw] = (contagem[it.raw] || 0) + 1; });
+                Object.keys(contagem).forEach(raw => {
+                    if (contagem[raw] < 2) return;
+                    const it = grupos[chave].find(x => x.raw === raw);
+                    duplicatas.push({
+                        siafi: chave, nc: it.nc, nd: it.nd,
+                        valor: it.valor, data: it.data, vezes: contagem[raw]
+                    });
+                });
+            });
+
+            const dedupPorRaw = (itens) => {
+                const vistos = {};
+                return itens.filter(it => {
+                    if (vistos[it.raw]) return false;
+                    vistos[it.raw] = true;
+                    return true;
+                });
+            };
+
+            function gravar(consolidar) {
+                let countTeds = 0, countItens = 0, countConsolidados = 0;
+
+                chaves.forEach(chave => {
+                    const ted = tedPorChave[chave];
+                    const itens = consolidar ? dedupPorRaw(grupos[chave]) : grupos[chave];
+                    countConsolidados += grupos[chave].length - itens.length;
+
+                    // Limpar dados antigos deste TED
+                    ted.recursosGerais = [];
+
+                    // Mapa de NDs do cadastro financeiro (normalizada → formato com pontos)
+                    const cadNDs = {};
+                    (ted.financeiros || []).forEach(f => {
+                        const ndNorm = normalizarND(f.numero);
+                        if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
+                    });
+
+                    itens.forEach((item, idx) => {
+                        const ndImportNorm = normalizarND(item.nd);
+                        // Usar ND do cadastro (com pontos) se existir, senão formatar automaticamente
+                        const ndFinal = cadNDs[ndImportNorm] || formatarNDComPontos(item.nd);
+                        ted.recursosGerais.push({
+                            id: Date.now() + idx + Math.random() * 1000,
+                            nd: ndFinal,
+                            nc: item.nc || '',
+                            valor: item.valor,
+                            data: item.data,
+                            // Linha original completa do extrato, para a exportação devolver
+                            // as mesmas colunas que entraram
+                            origem: item.origem || null
+                        });
+                    });
+
+                    countTeds++;
+                    countItens += itens.length;
+                });
+
+                try { salvarDadosImediato(); } catch(e) {}
+                try { atualizarTabelaRecursosGerais(); } catch(e) {}
+
+                let msg = countItens + ' recurso(s) importado(s) para ' + countTeds + ' TED(s)!';
+                if (countConsolidados > 0) {
+                    msg += '\n' + countConsolidados + ' linha(s) repetida(s) consolidada(s).';
+                } else if (duplicatas.length > 0) {
+                    // Importou sabendo das repetições: não anunciar como sucesso limpo
+                    msg += '\n⚠️ ' + duplicatas.length + ' linha(s) repetida(s) foram mantidas — o realizado está inflado.';
+                }
+                if (naoEncontrados.length > 0) {
+                    msg += '\n⚠️ ' + rotuloChave + ' sem TED cadastrado (não importado(s)): ' + naoEncontrados.join(', ');
+                }
+                showToast(msg, (countConsolidados > 0 || duplicatas.length > 0 || naoEncontrados.length > 0) ? 'warning' : 'success');
+            }
+
+            if (chaves.length === 0) {
+                showToast('❌ Nenhum recurso importado!\n\nNenhum ' + rotuloChave + ' do arquivo corresponde a um TED cadastrado.\n\n' +
+                    rotuloChave + ' no arquivo: ' + naoEncontrados.join(', ') +
+                    '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'), 'danger');
+                return;
+            }
+
+            confirmarAcao('O arquivo contém ' + totalItens + ' registro(s) de ' + chaves.length + ' TED(s) reconhecido(s).' +
+                (naoEncontrados.length ? ('\n' + naoEncontrados.length + ' ' + rotuloChave + ' do arquivo não têm TED cadastrado e serão ignorados.') : '') +
+                '\n\n⚠️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?', function() {
+                if (duplicatas.length > 0) {
+                    confirmarDuplicatas(duplicatas, function(escolha) { gravar(escolha === 'consolidar'); });
+                } else {
+                    gravar(false);
+                }
+            }, 'Confirmar');
+        }
+
         function importarRecursosGerais(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -12678,39 +13041,13 @@
                     if (primeiraLinha.indexOf('\t') > -1) sep = '\t';
                     else if (primeiraLinha.indexOf(';') === -1 && primeiraLinha.indexOf(',') > -1) sep = ',';
 
-                    // Parser CSV que respeita campos entre aspas
-                    function splitCSV(line) {
-                        const result = [];
-                        let current = '';
-                        let inQuotes = false;
-                        for (let i = 0; i < line.length; i++) {
-                            const ch = line[i];
-                            if (ch === '"') {
-                                if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
-                                    current += '"';
-                                    i++;
-                                } else {
-                                    inQuotes = !inQuotes;
-                                }
-                            } else if (ch === sep && !inQuotes) {
-                                result.push(current.trim());
-                                current = '';
-                            } else {
-                                current += ch;
-                            }
-                        }
-                        result.push(current.trim());
-                        return result;
-                    }
-
-                    const lines = texto.split('\n').filter(l => l.trim());
-                    if (lines.length < 2) {
+                    const registros = parseCSVRegistros(texto, sep);
+                    if (registros.length < 2) {
                         showToast('⚠️ Arquivo vazio ou sem dados.', 'warning');
                         return;
                     }
 
-                    // Parsear headers e normalizar (remover aspas e espaços extras)
-                    const headers = splitCSV(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+                    const headers = registros[0];
 
                     // Localizar as 4 colunas necessárias por busca flexível
                     function findCol(keywords) {
@@ -12737,7 +13074,37 @@
                     })();
 
                     if (!colSiafi) {
-                        showToast('❌ Coluna "NC - Transferência" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger');
+                        // === FORMATO SIMPLIFICADO (exportação do próprio sistema) ===
+                        const simples = parseCSV(texto);
+                        if (!simples.length || simples[0].numTed === undefined || simples[0].nd === undefined) {
+                            showToast('❌ Coluna "NC - Transferência" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger');
+                            return;
+                        }
+                        const porTed = {}; // chave = numTed
+                        simples.forEach(row => {
+                            const numTed = String(row.numTed || '').trim();
+                            const ndRaw = String(row.nd || '').trim();
+                            if (!numTed || !isNDValida(ndRaw)) return;
+                            let data = String(row.data || '').trim();
+                            const p = data.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+                            if (p) data = p[3] + '-' + p[2].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+                            else if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) data = '';
+                            const nc = String(row.nc || row.NC || '').trim();
+                            if (!porTed[numTed]) porTed[numTed] = [];
+                            porTed[numTed].push({
+                                nd: ndRaw, nc, valor: parseNumber(row.valor) || 0, data,
+                                raw: JSON.stringify([numTed, ndRaw, nc, row.valor, data]),
+                                // Formato simplificado não carrega as colunas do extrato
+                                origem: null
+                            });
+                        });
+                        if (Object.keys(porTed).length === 0) {
+                            showToast('❌ Nenhum dado válido encontrado no arquivo.', 'danger');
+                            return;
+                        }
+                        aplicarRecursosGerais(porTed, function(numTed) {
+                            return dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        }, 'nº TED');
                         return;
                     }
                     if (!colND) {
@@ -12745,20 +13112,22 @@
                         return;
                     }
 
-                    // Parsear dados
+                    // Parsear dados. `campos` guarda a linha original inteira (as 15 colunas do
+                    // extrato, não só as 5 que o sistema usa) para que a exportação consiga
+                    // devolver o mesmo arquivo que entrou.
                     const rows = [];
-                    for (let i = 1; i < lines.length; i++) {
-                        const values = splitCSV(lines[i]).map(v => v.replace(/^"|"$/g, '').trim());
-                        const obj = {};
-                        headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
-                        rows.push(obj);
+                    for (let i = 1; i < registros.length; i++) {
+                        const values = registros[i];
+                        const campos = {};
+                        headers.forEach((h, idx) => { campos[h] = values[idx] || ''; });
+                        rows.push({ campos, raw: JSON.stringify(values) });
                     }
 
                     // Agrupar por NC - Transferência (nº SIAFI do TED)
-                    const grouped = {}; // chave = siafi, valor = { itens: [{nd, valor, data}] }
+                    const grouped = {}; // chave = siafi, valor = [{nd, nc, valor, data, raw, origem}]
                     let linhasIgnoradas = 0;
 
-                    rows.forEach(row => {
+                    rows.forEach(({ campos: row, raw }) => {
                         const siafi = String(row[colSiafi] || '').trim();
                         if (!siafi) { linhasIgnoradas++; return; }
 
@@ -12783,88 +13152,24 @@
 
                         const nc = colNC ? String(row[colNC] || '').trim() : '';
 
-                        if (!grouped[siafi]) grouped[siafi] = { itens: [] };
-                        grouped[siafi].itens.push({ nd: ndRaw, nc, valor, data });
+                        if (!grouped[siafi]) grouped[siafi] = [];
+                        grouped[siafi].push({ nd: ndRaw, nc, valor, data, raw, origem: row });
                     });
 
-                    const siafiKeys = Object.keys(grouped);
-                    const totalItens = siafiKeys.reduce((s, k) => s + grouped[k].itens.length, 0);
-
-                    if (siafiKeys.length === 0) {
+                    if (Object.keys(grouped).length === 0) {
                         showToast('❌ Nenhum dado válido encontrado no arquivo.', 'danger');
                         return;
                     }
 
-                    confirmarAcao('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?', function() {
-
-                    // Normalizar SIAFI para comparação
+                    // Resolver o TED pelo nº SIAFI (coluna "NC - Transferência")
                     const normSiafi = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
-
-                    let countTeds = 0;
-                    let countItens = 0;
-                    let tedsNaoEncontrados = [];
-
-                    siafiKeys.forEach(siafi => {
-                        const grupo = grouped[siafi];
+                    aplicarRecursosGerais(grouped, function(siafi) {
                         const normS = normSiafi(siafi);
-
-                        // Procurar TED pelo numTedSiafi
-                        const ted = dados.teds.find(t => {
+                        return dados.teds.find(t => {
                             const tSiafi = normSiafi(t.numTedSiafi);
                             return normS && tSiafi && normS === tSiafi;
                         });
-
-                        if (!ted) {
-                            tedsNaoEncontrados.push(siafi);
-                            return;
-                        }
-
-                        // Limpar dados antigos deste TED
-                        ted.recursosGerais = [];
-
-                        // Mapa de NDs do cadastro financeiro (normalizada → formato com pontos)
-                        const cadNDs = {};
-                        (ted.financeiros || []).forEach(f => {
-                            const ndNorm = normalizarND(f.numero);
-                            if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
-                        });
-
-                        grupo.itens.forEach((item, idx) => {
-                            const ndImportNorm = normalizarND(item.nd);
-                            // Usar ND do cadastro (com pontos) se existir, senão formatar automaticamente
-                            const ndFinal = cadNDs[ndImportNorm] || formatarNDComPontos(item.nd);
-
-                            ted.recursosGerais.push({
-                                id: Date.now() + idx + Math.random() * 1000,
-                                nd: ndFinal,
-                                nc: item.nc || '',
-                                valor: item.valor,
-                                data: item.data
-                            });
-                        });
-
-                        countTeds++;
-                        countItens += grupo.itens.length;
-                    });
-
-                    try { salvarDadosImediato(); } catch(e) {}
-                    try { atualizarTabelaRecursosGerais(); } catch(e) {}
-                }, 'Confirmar');
-                return;
-
-                    let msg = countItens + ' recurso(s) importado(s) para ' + countTeds + ' TED(s)!';
-                    if (tedsNaoEncontrados.length > 0) {
-                        msg += '\n⚠️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
-                        if (countItens === 0) {
-                            showToast('❌ Nenhum recurso importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + '\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'), 'danger');
-                        } else {
-                            showToast(msg, 'warning');
-                        }
-                    } else if (countItens === 0) {
-                        showToast('❌ Nenhum recurso importado.\n\nCabeçalhos: ' + headers.join(', ') + '\nLinhas: ' + rows.length, 'danger');
-                    } else {
-                        showToast(msg, 'success');
-                    }
+                    }, 'SIAFI');
                 } catch (err) {
                     console.error('Erro na importação:', err);
                     showToast('❌ Erro ao importar: ' + err.message, 'danger');

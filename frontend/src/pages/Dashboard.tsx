@@ -35,6 +35,205 @@ function ProgressCell({ value, color }: { value: number; color: 'blue' | 'green'
 
 const FILTER_OPTIONS = ['TODOS', 'EXECUÇÃO', 'PLANEJAMENTO', 'CONCLUÍDO', 'SUSPENSO'];
 
+const STATUS_SLUG: Record<string, string> = {
+  'EXECUÇÃO': 'execucao',
+  'CONCLUÍDO': 'concluido',
+  'PLANEJAMENTO': 'planejamento',
+  'SUSPENSO': 'suspenso',
+};
+
+const STATUS_HEX: Record<string, string> = {
+  'EXECUÇÃO': '#185FA5',
+  'CONCLUÍDO': '#639922',
+  'PLANEJAMENTO': '#c07a1c',
+  'SUSPENSO': '#c94040',
+};
+
+type Urgency = 'vencido' | 'critico' | 'atencao' | 'ok' | 'none';
+
+// Datas "YYYY-MM-DD" são interpretadas como UTC pelo construtor nativo; parseamos
+// manualmente em horário local para não perder um dia em fusos negativos (ex: America/Sao_Paulo).
+function parseDateOnly(dateStr: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function daysUntil(dateStr?: string): number | null {
+  if (!dateStr) return null;
+  const end = parseDateOnly(dateStr);
+  if (!end) return null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  return Math.round((end.getTime() - now.getTime()) / 86400000);
+}
+
+function deadlineUrgency(days: number | null, status: string): Urgency {
+  if (days === null || status === TED_STATUS.CONCLUIDO) return days === null ? 'none' : 'ok';
+  if (days < 0) return 'vencido';
+  if (days <= 15) return 'critico';
+  if (days <= 30) return 'atencao';
+  return 'ok';
+}
+
+function DeadlineCell({ ted }: { ted: TED }) {
+  const days = daysUntil(ted.end_date);
+  const urgency = deadlineUrgency(days, ted.status);
+  if (days === null) {
+    return <div className="deadline"><span className="deadline-days urg-none">—</span><span className="deadline-date">Sem data</span></div>;
+  }
+  const dateLabel = parseDateOnly(ted.end_date!)?.toLocaleDateString('pt-BR') ?? '';
+  if (ted.status === TED_STATUS.CONCLUIDO) {
+    return <div className="deadline"><span className="deadline-days urg-ok">Encerrado</span><span className="deadline-date">{dateLabel}</span></div>;
+  }
+  const label = urgency === 'vencido' ? `Vencido há ${Math.abs(days)}d` : `${days}d`;
+  return (
+    <div className="deadline">
+      <span className={`deadline-days urg-${urgency}`}>{label}</span>
+      <span className="deadline-date">{dateLabel}</span>
+    </div>
+  );
+}
+
+interface Alert {
+  severity: 'danger' | 'warn' | 'info';
+  icon: string;
+  title: string;
+  sub: string;
+  tedId: number;
+}
+
+function buildAlerts(teds: TED[]): Alert[] {
+  const alerts: Alert[] = [];
+  for (const ted of teds) {
+    if (ted.status === TED_STATUS.CONCLUIDO) continue;
+    const days = daysUntil(ted.end_date);
+
+    if (days !== null && days < 0) {
+      alerts.push({
+        severity: 'danger', icon: '⏰', tedId: ted.id,
+        title: `TED ${ted.number} vencido`,
+        sub: `Prazo encerrado há ${Math.abs(days)} dia${Math.abs(days) !== 1 ? 's' : ''}`,
+      });
+    } else if (ted.status === TED_STATUS.EXECUCAO && days !== null && days <= 15) {
+      alerts.push({
+        severity: 'danger', icon: '⏰', tedId: ted.id,
+        title: `TED ${ted.number} vence em ${days} dia${days !== 1 ? 's' : ''}`,
+        sub: `Execução física em ${ted.physical_progress_percentage || 0}%`,
+      });
+    }
+
+    const budget = ted.total_budget || 0;
+    const spent = ted.total_spent || 0;
+    if (ted.status === TED_STATUS.EXECUCAO && budget > 0 && spent / budget >= 0.9) {
+      alerts.push({
+        severity: 'warn', icon: '💸', tedId: ted.id,
+        title: `TED ${ted.number} próximo do orçamento`,
+        sub: `${((spent / budget) * 100).toFixed(0)}% do orçamento já executado`,
+      });
+    }
+
+    const physical = ted.physical_progress_percentage || 0;
+    const financial = ted.financial_progress_percentage || 0;
+    if (ted.status === TED_STATUS.EXECUCAO && Math.abs(financial - physical) >= 25) {
+      alerts.push({
+        severity: 'info', icon: '📊', tedId: ted.id,
+        title: `TED ${ted.number} com descompasso física × financeira`,
+        sub: `Física ${physical}% vs. financeira ${financial}%`,
+      });
+    }
+  }
+  const rank = { danger: 0, warn: 1, info: 2 };
+  return alerts.sort((a, b) => rank[a.severity] - rank[b.severity]);
+}
+
+function StatusDonut({ teds }: { teds: TED[] }) {
+  const statuses = ['EXECUÇÃO', 'CONCLUÍDO', 'PLANEJAMENTO', 'SUSPENSO'];
+  const total = teds.length || 1;
+  let acc = 0;
+  const stops: string[] = [];
+  const counts = statuses.map(s => teds.filter(t => t.status === s).length);
+  statuses.forEach((s, i) => {
+    const pct = (counts[i] / total) * 100;
+    if (pct > 0) {
+      stops.push(`${STATUS_HEX[s]} ${acc}% ${acc + pct}%`);
+      acc += pct;
+    }
+  });
+  const gradient = stops.length ? `conic-gradient(${stops.join(', ')})` : 'var(--color-surface)';
+
+  return (
+    <div className="donut-card">
+      <div className="donut" style={{ background: gradient }} />
+      <div className="donut-legend">
+        {statuses.map((s, i) => (
+          <div key={s} className="donut-legend-row">
+            <span className="label"><i style={{ background: STATUS_HEX[s] }} />{s}</span>
+            <span className="count">{counts[i]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GanttVigencias({ teds }: { teds: TED[] }) {
+  const withDates = teds
+    .filter(t => t.start_date && t.end_date)
+    .map(t => ({ ted: t, start: parseDateOnly(t.start_date!), end: parseDateOnly(t.end_date!) }))
+    .filter((t): t is { ted: TED; start: Date; end: Date } => t.start !== null && t.end !== null)
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  if (withDates.length === 0) {
+    return <div className="panel-empty">Nenhum TED com datas de vigência cadastradas.</div>;
+  }
+
+  const today = new Date();
+  const minDate = new Date(Math.min(...withDates.map(t => t.start.getTime()), today.getTime()));
+  const maxDate = new Date(Math.max(...withDates.map(t => t.end.getTime()), today.getTime()));
+  const span = Math.max(maxDate.getTime() - minDate.getTime(), 1);
+
+  const pct = (d: Date) => ((d.getTime() - minDate.getTime()) / span) * 100;
+  const todayPct = pct(today);
+
+  return (
+    <>
+      <div className="gantt-meta">
+        <span>{minDate.toLocaleDateString('pt-BR')}</span>
+        <span>{maxDate.toLocaleDateString('pt-BR')}</span>
+      </div>
+      <div className="gantt-grid">
+        <div className="gantt-labels">
+          {withDates.map(({ ted }) => (
+            <div key={ted.id} className="gantt-label" title={ted.title}>{ted.number}</div>
+          ))}
+        </div>
+        <div className="gantt-tracks">
+          <div className="gantt-today" style={{ left: `${todayPct}%` }}>
+            <span className="gantt-today-tag">HOJE</span>
+          </div>
+          {withDates.map(({ ted, start, end }) => {
+            const left = pct(start);
+            const width = Math.max(pct(end) - left, 0.8);
+            const slug = STATUS_SLUG[ted.status] || 'execucao';
+            return (
+              <div key={ted.id} className="gantt-track-row">
+                <div
+                  className={`gantt-bar gantt-bar-${slug}`}
+                  style={{ left: `${left}%`, width: `${width}%` }}
+                  title={`${ted.number} · ${start.toLocaleDateString('pt-BR')} – ${end.toLocaleDateString('pt-BR')}`}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function Dashboard() {
   const [teds, setTeds] = useState<TED[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +268,7 @@ export default function Dashboard() {
   const totalSpent  = teds.reduce((s, t) => s + (t.total_spent  || 0), 0);
   const emExecucao  = teds.filter(t => t.status === TED_STATUS.EXECUCAO).length;
   const concluidos  = teds.filter(t => t.status === TED_STATUS.CONCLUIDO).length;
+  const alerts      = buildAlerts(teds);
 
   const fmtBRL = (n: number) =>
     n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -129,6 +329,51 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Vigências + Alertas + Distribuição */}
+      {!loading && teds.length > 0 && (
+        <div className="panel-row">
+          <div className="panel">
+            <div className="panel-head">
+              <span className="panel-title">Vigências dos TEDs</span>
+              <span className="panel-tag">{teds.filter(t => t.start_date && t.end_date).length} com datas cadastradas</span>
+            </div>
+            <GanttVigencias teds={teds} />
+          </div>
+        </div>
+      )}
+
+      {!loading && teds.length > 0 && (
+        <div className="panel-row-2">
+          <div className="panel">
+            <div className="panel-head">
+              <span className="panel-title">Distribuição por Status</span>
+            </div>
+            <StatusDonut teds={teds} />
+          </div>
+          <div className="panel">
+            <div className="panel-head">
+              <span className="panel-title">Alertas Inteligentes</span>
+              <span className="panel-tag">{alerts.length} ativos</span>
+            </div>
+            {alerts.length === 0 ? (
+              <div className="panel-empty">Nenhum alerta no momento. 👍</div>
+            ) : (
+              <div className="alerts-list">
+                {alerts.slice(0, 8).map((a, i) => (
+                  <Link key={i} to={`/ted/${a.tedId}`} className="alert-item">
+                    <div className={`alert-ico ${a.severity}`}>{a.icon}</div>
+                    <div>
+                      <div className="alert-title">{a.title}</div>
+                      <div className="alert-sub">{a.sub}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Error */}
       {error && <div className="alert-error">{error}</div>}
 
@@ -176,6 +421,7 @@ export default function Dashboard() {
                     <th>Nº TED</th>
                     <th>Título / Descrição</th>
                     <th>Status</th>
+                    <th>Prazo</th>
                     <th>Exec. Física</th>
                     <th>Exec. Financeira</th>
                     <th>Orçamento</th>
@@ -191,6 +437,7 @@ export default function Dashboard() {
                         <div className="td-title-sub">{ted.description}</div>
                       </td>
                       <td><StatusBadge status={ted.status} /></td>
+                      <td style={{ minWidth: 90 }}><DeadlineCell ted={ted} /></td>
                       <td style={{ minWidth: 140 }}>
                         <ProgressCell value={ted.physical_progress_percentage || 0} color="blue" />
                       </td>
@@ -223,7 +470,7 @@ export default function Dashboard() {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan={5} style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                    <td colSpan={6} style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>
                       Total ({teds.length} TEDs)
                     </td>
                     <td>
