@@ -3147,6 +3147,35 @@
             if (prorPill) prorPill.style.display = hasPror ? '' : 'none';
         }
 
+        // Escapar HTML de valores vindos do usuário antes de interpolar em template strings
+        function _escHtml(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // Valores de campos alterados: datas ISO viram dd/mm/aaaa; demais são escapados
+        function _fmtValorChip(v) {
+            if (v === undefined || v === null || v === '') return '—';
+            const s = String(v).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+                const f = _fmtData(s);
+                if (f) return f;
+            }
+            return _escHtml(s);
+        }
+
+        // Rótulos amigáveis para as tabelas alteradas por aditivo/apostilamento
+        const _TABELA_LABELS = {
+            objetos: 'Objetos',
+            metas: 'Metas',
+            fisicos: 'Cad. Físico',
+            financeiros: 'Cad. Financeiro',
+            recursosGerais: 'Recursos',
+            execFisica: 'Exec. Física',
+            execFinanceira: 'Exec. Financeira'
+        };
+
         function _buildAditivoChips(a) {
             const chips = [];
             const isAditivo = a.tipo === 'aditivo';
@@ -3167,16 +3196,34 @@
                 Object.keys(a.camposAlterados).forEach(k => {
                     const ch = a.camposAlterados[k];
                     const def = (typeof ADITIVO_CAMPOS_CLONE !== 'undefined') ? ADITIVO_CAMPOS_CLONE.find(c => c.key === k) : null;
-                    const label = (def && def.label) || (ch && ch.label) || k;
-                    const deStr = ch.de !== undefined ? String(ch.de) : '—';
-                    const paraStr = ch.para !== undefined ? String(ch.para) : '—';
+                    const label = _escHtml((def && def.label) || (ch && ch.label) || k);
+                    const deStr = _fmtValorChip(ch.de);
+                    const paraStr = _fmtValorChip(ch.para);
                     chips.push(`<span class="change-chip-new"><span class="ch-field">${label}</span><span class="ch-old">${deStr}</span><span class="ch-arrow">→</span><span class="ch-new">${paraStr}</span></span>`);
                 });
             }
-            // tabelas alteradas (resumo)
+            // tabelas alteradas (resumo com rótulo amigável e contagem de mudanças)
             if (a.tabelasAlteradas) {
-                const keys = Array.isArray(a.tabelasAlteradas) ? a.tabelasAlteradas.map(t => t.key || t) : Object.keys(a.tabelasAlteradas);
-                keys.forEach(k => chips.push(`<span class="change-chip-new"><span class="ch-field">Tabela</span><span class="ch-new">${k}</span></span>`));
+                if (Array.isArray(a.tabelasAlteradas)) {
+                    a.tabelasAlteradas.forEach(t => {
+                        const k = t.key || t;
+                        chips.push(`<span class="change-chip-new"><span class="ch-field">Tabela</span><span class="ch-new">${_escHtml(_TABELA_LABELS[k] || k)}</span></span>`);
+                    });
+                } else {
+                    Object.keys(a.tabelasAlteradas).forEach(k => {
+                        const diffs = a.tabelasAlteradas[k] || {};
+                        const nAdd = (diffs.adicionados || []).length;
+                        const nMod = (diffs.modificados || []).length;
+                        const nRem = (diffs.removidos || []).length;
+                        const partes = [];
+                        if (nAdd) partes.push(`+${nAdd}`);
+                        if (nMod) partes.push(`~${nMod}`);
+                        if (nRem) partes.push(`−${nRem}`);
+                        const resumo = partes.length ? ` ${partes.join(' ')}` : '';
+                        const titulo = [nAdd ? `${nAdd} inclusão(ões)` : '', nMod ? `${nMod} modificação(ões)` : '', nRem ? `${nRem} remoção(ões)` : ''].filter(Boolean).join(', ');
+                        chips.push(`<span class="change-chip-new" title="${_escHtml(titulo)}"><span class="ch-field">${_escHtml(_TABELA_LABELS[k] || k)}</span><span class="ch-new">${resumo || '✓'}</span></span>`);
+                    });
+                }
             }
             if (!chips.length) chips.push(`<span class="change-chip-new"><span class="ch-field" style="color:#94a3b8;">Sem alterações registradas</span></span>`);
             return chips.join('');
@@ -3215,6 +3262,7 @@
                 // Sempre renderizar todos os botões; visibilidade controlada via CSS/enableEditButtons
                 const actions = a.excluido ? `${viewBtn}${restoreBtn}` : `${viewBtn}${editBtn}${delBtn}`;
                 const excTag = a.excluido ? `<span style="font-size:9px;font-weight:600;color:#94a3b8;letter-spacing:.04em;margin-left:6px;">EXCLUÍDO</span>` : '';
+                const obsHtml = a.obs ? `<div class="aditivo-card-obs" title="${_escHtml(a.obs)}"><i data-lucide="message-square" class="inline-icon-sm" style="width:11px;height:11px;flex-shrink:0;"></i>${_escHtml(a.obs)}</div>` : '';
                 return `<div class="aditivo-card-new${a.excluido ? ' excluido' : ''}">
                     <div class="aditivo-num-badge${badgeClass}${a.excluido ? ' excluido' : ''}">${ordinal}</div>
                     <div class="aditivo-card-body">
@@ -3223,6 +3271,7 @@
                             <span class="aditivo-card-date">${dataStr}</span>
                         </div>
                         <div class="change-chips">${chips}</div>
+                        ${obsHtml}
                     </div>
                     <div class="aditivo-card-actions">${actions}</div>
                 </div>`;
@@ -3385,9 +3434,12 @@
                     const primeira = todasAlteracoes[campoKey][0];
                     const valorOriginal = primeira.de || '(vazio)';
                     const valorNovo = valorAtual || primeira.para || '-';
-                    el.innerHTML = `<span class="valor-alterado-aditivo"><span class="valor-antigo">${valorOriginal}</span><span class="valor-novo">${valorNovo}</span></span>`;
+                    el.innerHTML = `<span class="valor-alterado-aditivo"><span class="valor-antigo">${_escHtml(valorOriginal)}</span><span class="valor-novo">${_escHtml(valorNovo)}</span></span>`;
+                    el.title = `Original: ${valorOriginal} → Atual: ${valorNovo}`;
                 } else {
                     el.textContent = valorAtual || '-';
+                    // Tooltip para valores longos truncados pelo layout
+                    el.title = (valorAtual && String(valorAtual).length > 40) ? String(valorAtual) : '';
                 }
             };
 
@@ -11567,6 +11619,9 @@
         // Flag para evitar salvamentos simultâneos
         let _salvandoEmAndamento = false;
         let _salvarDebounceTimer = null;
+        // Se um salvamento for solicitado enquanto outro está em andamento, não pode ser
+        // descartado silenciosamente — fica pendente e roda de novo ao final do atual.
+        let _salvarPendente = false;
 
         async function salvarDados() {
             // Bloquear gravação em modo leitura (somente admin e editor podem gravar)
@@ -11593,7 +11648,12 @@
         }
 
         async function _executarSalvamento() {
-            if (_salvandoEmAndamento) return; // evitar duplicação
+            if (_salvandoEmAndamento) {
+                // Já existe um commit em voo: marcar pendência para re-executar ao final,
+                // senão as mudanças feitas durante o commit só seriam salvas pelo loop de 30s.
+                _salvarPendente = true;
+                return;
+            }
             _salvandoEmAndamento = true;
             // sinalizar também em window para que listeners possam checar
             try { window._salvandoEmAndamento = true; } catch(e) {}
@@ -11605,8 +11665,13 @@
                     // Timeout de segurança: se o commit ficar pendente (ex.: rede bloqueada
                     // por adblock), não deixar _salvandoEmAndamento travado indefinidamente.
                     const _timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000));
-                    const ok = await Promise.race([window.firestoreBatchSet('teds', dados.teds || []), _timeout]);
-                    try { await window.firestoreBatchSet('planosTrabalho', dados.planosTrabalho || []); } catch(e) { console.warn('Erro salvando planosTrabalho', e); }
+                    let ok = await Promise.race([window.firestoreBatchSet('teds', dados.teds || []), _timeout]);
+                    // planosTrabalho faz parte do mesmo salvamento: se falhar, o usuário
+                    // precisa ver erro (antes a falha era só um console.warn).
+                    try {
+                        const okPlanos = await window.firestoreBatchSet('planosTrabalho', dados.planosTrabalho || []);
+                        if (!okPlanos) { console.warn('Erro salvando planosTrabalho'); ok = false; }
+                    } catch(e) { console.warn('Erro salvando planosTrabalho', e); ok = false; }
                     // firestoreBatchSet engole exceções e retorna false em caso de erro —
                     // tratar como falha real, não como sucesso silencioso.
                     if (ok) {
@@ -11635,8 +11700,40 @@
             } finally {
                 _salvandoEmAndamento = false;
                 try { window._salvandoEmAndamento = false; } catch(e) {}
+                // Houve pedido de salvamento durante o commit? Re-executar para não perder
+                // as mudanças feitas nesse intervalo.
+                if (_salvarPendente) {
+                    _salvarPendente = false;
+                    setTimeout(() => { _executarSalvamento(); }, 50);
+                }
             }
         }
+
+        // Proteção contra perda silenciosa: o salvamento é debounced (1,5s) e o loop de
+        // segurança roda a cada 30s — fechar a aba nesse intervalo perderia a edição.
+        window.addEventListener('beforeunload', function (e) {
+            try {
+                const _role = window.currentUserProfile && window.currentUserProfile.role;
+                if (_role !== 'admin' && _role !== 'editor') return; // modo leitura não grava
+                let dirty = !!_salvarDebounceTimer || _salvandoEmAndamento || _salvarPendente;
+                if (!dirty && typeof window._lastSavedTedsSnapshot === 'string') {
+                    dirty = JSON.stringify(dados.teds || []) !== window._lastSavedTedsSnapshot;
+                }
+                if (dirty) {
+                    e.preventDefault();
+                    e.returnValue = 'Há alterações ainda não salvas na nuvem.';
+                    return e.returnValue;
+                }
+            } catch (err) { /* nunca bloquear o unload por erro do próprio guard */ }
+        });
+
+        // Ao ocultar a aba (troca de aba/minimizar), antecipar o debounce pendente:
+        // dispara o salvamento imediatamente em vez de esperar os 1,5s.
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden' && _salvarDebounceTimer) {
+                try { salvarDadosImediato(); } catch (e) { /* melhor esforço */ }
+            }
+        });
 
         // =============================================
         // FUN→.ES DE EXPORTA→fO E IMPORTA→fO (CSV/JSON)

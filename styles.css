@@ -3946,6 +3946,11 @@
 .change-chip-new .ch-new  { color: #3B6D11; font-weight: 600; font-family: 'Nunito Sans', monospace; font-size: 10.5px; }
 .change-chip-new.amber .ch-new { color: #854F0B; }
 .aditivo-card-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; pointer-events: auto; position: relative; z-index: 10; }
+.aditivo-card-obs {
+  display: flex; align-items: center; gap: 5px; margin-top: 5px;
+  font-size: 11px; color: #64748b; font-style: italic;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* Estilo para aditivos/apostilamentos excluídos: exibir riscado e diminuir destaque */
 .aditivo-card-new.excluido { opacity: 0.6; background: #fafafa; }

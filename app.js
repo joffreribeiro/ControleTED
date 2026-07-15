@@ -1,7 +1,7 @@
 /**
- * ARQUIVO LEGADO — Não usado em produção.
- * O frontend ativo é frontend/src/ (React/TypeScript/Vite).
- * Não adicionar novas funcionalidades aqui. Planejado para remoção.
+ * ARQUIVO ATIVO — carregado por index.html (raiz), que é o app em produção.
+ * Responsável por: salvar/carregar da nuvem, autosave de segurança (30s),
+ * autenticação e gestão de usuários. (O diretório frontend/ é que está morto.)
  */
 
 // App-level Firebase helpers and cloud save/load functions
@@ -261,9 +261,14 @@ window.testFirestoreConnection = async function() {
           } else if (typeof window.salvarDados === 'function') {
             await window.salvarDados();
           }
-          window._lastSavedTedsSnapshot = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
-          setLastSync(new Date());
-          setCloudStatus(true);
+          // NÃO atualizar _lastSavedTedsSnapshot aqui: quem atualiza é o próprio
+          // salvamento (_executarSalvamento) e somente em caso de sucesso. Atualizar
+          // incondicionalmente marcava como "salvo" dados cujo commit falhou, e o
+          // loop parava de tentar de novo.
+          if (window._lastSavedTedsSnapshot === current) {
+            setLastSync(new Date());
+            setCloudStatus(true);
+          }
         }
       } catch (e) {
         console.warn('autosave error', e);
