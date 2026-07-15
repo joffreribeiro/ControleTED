@@ -490,6 +490,8 @@ window.testFirestoreConnection = async function() {
       }
 
       const acaoLabels = {
+        'criar_ted': 'Criou o TED',
+        'excluir_ted': 'Excluiu o TED',
         'editar_info': 'Editou informações gerais',
         'adicionar_fisico': 'Adicionou cadastro físico',
         'editar_fisico': 'Editou cadastro físico',

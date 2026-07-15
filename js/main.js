@@ -1169,7 +1169,13 @@
                 recursosGerais: [],
                 marcos: [],
                 despesas: [],
-                dataCriacao: new Date().toLocaleDateString('pt-BR')
+                dataCriacao: new Date().toLocaleDateString('pt-BR'),
+                // Autoria: dataCriacao sozinha (só a data, sem hora) não permite saber quem
+                // criou o TED nem quando exatamente
+                criadoEm: new Date().toISOString(),
+                criadoPorUid: (window.currentUserProfile && window.currentUserProfile.uid) || '',
+                criadoPorNome: (window.currentUserProfile &&
+                    (window.currentUserProfile.displayName || window.currentUserProfile.email)) || ''
             };
 
             // Garantir que valorTed seja derivado do cadastro de objetos (inicialmente 0)
@@ -1186,6 +1192,7 @@
             salvarDados();
             atualizarSeletorTED();
             atualizarFiltroTedEntregas();
+            try { adicionarRegistroAuditoria(ted.id, 'criar_ted', null, { campo: 'TED', novo: { numTed: ted.numTed, numTedSiafi: ted.numTedSiafi } }); } catch(e) {}
 
             // Mostrar sucesso
             showToast('TED criado com sucesso!', 'success');
@@ -2198,36 +2205,63 @@
             window.tedAtual = id;
         }
 
+        // Remove o TED do Firestore E da memória.
+        // O firestoreBatchSet só faz set() — nunca delete. Tirar o TED apenas do array e
+        // salvar deixava o documento intacto no servidor, e como carregarDoCloud() relê a
+        // coleção inteira a cada login, o TED "excluído" reaparecia.
+        // Apaga no servidor PRIMEIRO: se falhar, nada é alterado localmente e o usuário
+        // recebe erro em vez de um "excluído com sucesso" que não aconteceu.
+        async function removerTedDaBase(id) {
+            const idx = dados.teds.findIndex(t => t.id === id);
+            if (idx === -1) { showToast('TED não encontrado.', 'error'); return false; }
+            const ted = dados.teds[idx];
+
+            let apagado = false;
+            try {
+                if (window.firestoreDeleteDoc) apagado = await window.firestoreDeleteDoc('teds/' + String(id));
+            } catch (e) { console.warn('firestoreDeleteDoc falhou', e); }
+
+            if (!apagado) {
+                showToast('❌ Não foi possível excluir o TED no servidor.\nNada foi removido — verifique sua conexão e permissão, e tente de novo.', 'danger');
+                return false;
+            }
+
+            // Auditar antes do splice: o log resolve o número do TED a partir do array
+            try {
+                adicionarRegistroAuditoria(id, 'excluir_ted', null, {
+                    campo: 'TED', anterior: { numTed: ted.numTed, numTedSiafi: ted.numTedSiafi || '' }
+                });
+            } catch (e) {}
+
+            dados.teds.splice(idx, 1);
+            try { await salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            showToast('TED excluído com sucesso!', 'success');
+            return true;
+        }
+
         // Deletar TED
         function deletarTED() {
-            confirmarAcao('Tem certeza que deseja deletar este TED?', function() {
-                dados.teds = dados.teds.filter(t => t.id !== window.tedAtual);
-                try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            confirmarAcao('Tem certeza que deseja deletar este TED?', async function() {
+                const ok = await removerTedDaBase(window.tedAtual);
+                if (!ok) return;
                 fecharModal();
                 atualizarListaTEDs();
+                atualizarSeletorTED();
                 atualizarDashboard();
                 atualizarFiltroTedEntregas();
-                showToast('TED deletado com sucesso!', 'success');
             }, 'Confirmar');
             return;
         }
 
         // Excluir TED a partir da lista (botão na aba TEDs)
         function excluirTED(id) {
-            confirmarAcao('Tem certeza que deseja excluir este TED? Esta ação não pode ser desfeita.', function() {
-                const idx = dados.teds.findIndex(t => t.id === id);
-                if (idx === -1) {
-                    showToast('TED não encontrado.', 'error');
-                    return;
-                }
-
-                dados.teds.splice(idx, 1);
-                try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            confirmarAcao('Tem certeza que deseja excluir este TED? Esta ação não pode ser desfeita.', async function() {
+                const ok = await removerTedDaBase(id);
+                if (!ok) return;
                 atualizarListaTEDs();
                 atualizarSeletorTED();
                 atualizarFiltroTedEntregas();
                 atualizarDashboard();
-                showToast('TED excluído com sucesso!', 'success');
             }, 'Confirmar');
             return;
         }
@@ -11667,8 +11701,12 @@
                     } else {
                         campo += ch;   // preserva '\n' dentro do campo
                     }
-                } else if (ch === '"') {
+                } else if (ch === '"' && campo.trim() === '') {
+                    // Aspa só abre campo citado se vier no INÍCIO. Uma aspa solta no meio de
+                    // texto livre é conteúdo — tratá-la como abertura faria o parser engolir
+                    // o resto do arquivo.
                     entreAspas = true;
+                    campo = '';
                 } else if (ch === sep) {
                     registro.push(campo.trim()); campo = '';
                 } else if (ch === '\n') {
@@ -11683,18 +11721,18 @@
             return registros.filter(r => r.some(c => c !== ''));
         }
 
-        // Função auxiliar para parsear CSV
+        // Função auxiliar para parsear CSV.
+        // Usa parseCSVRegistros: o split(';') cru de antes ignorava aspas, então um campo de
+        // texto livre contendo ';' (descrição de objeto, observação) era partido em pedaços e
+        // desalinhava as colunas seguintes. Como arrayToCSV JÁ exporta esses campos entre
+        // aspas, o ciclo exportar→reimportar corrompia os dados.
         function parseCSV(text) {
-            // Remover BOM se existir
-            if (text.charCodeAt(0) === 0xFEFF) {
-                text = text.substring(1);
-            }
-            const lines = text.split('\n').filter(l => l.trim());
-            if (lines.length < 2) return [];
-            const headers = lines[0].split(';').map(h => h.trim().replace(/^"|"$/g, ''));
+            const registros = parseCSVRegistros(text, ';');
+            if (registros.length < 2) return [];
+            const headers = registros[0];
             const data = [];
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(';').map(v => v.trim().replace(/^"|"$/g, ''));
+            for (let i = 1; i < registros.length; i++) {
+                const values = registros[i];
                 const obj = {};
                 headers.forEach((h, idx) => {
                     let val = values[idx] || '';
