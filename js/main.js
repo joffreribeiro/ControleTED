@@ -12192,24 +12192,62 @@
         }
 
         // EXPORTAR EXECU→fO FINANCEIRA
+        // Reproduz o extrato do Tesouro Gerencial: cada lançamento agregado (por ND+UP+Data)
+        // guarda em `origens[].origem` a linha original de cada registro que foi somado, então
+        // a exportação desfaz a agregação e devolve uma linha por lançamento original, com as
+        // mesmas colunas que entraram — inclusive as que o sistema não usa. Sem nenhum item
+        // importado do extrato, cai no formato simplificado de 6 colunas.
         function exportarExecFinanceira() {
-            const rows = [];
+            const registros = [];
             dados.teds.forEach(ted => {
                 (ted.execFinanceiras || []).forEach(e => {
-                    rows.push({
-                        numTed: ted.numTed,
-                        id: e.id,
-                        nd: e.nd,
-                        up: e.up,
-                        valor: e.valor || e.valorRealizado,
-                        data: e.data
-                    });
+                    if (Array.isArray(e.origens) && e.origens.length) {
+                        e.origens.forEach(o => registros.push({ ted, e, origem: o.origem || null, nc: o.nc, valor: o.valor, data: o.data }));
+                    } else {
+                        registros.push({ ted, e, origem: null, nc: '', valor: e.valor || e.valorRealizado, data: e.data });
+                    }
                 });
             });
-            const headers = ['numTed', 'id', 'nd', 'up', 'valor', 'data'];
-            const csv = arrayToCSV(rows, headers);
-            downloadFile(csv, 'exec_financeira_export.csv');
-            showToast('Execução Financeira exportada com sucesso!', 'success');
+
+            const comOrigem = registros.find(r => r.origem && Object.keys(r.origem).length);
+            const headers = comOrigem ? Object.keys(comOrigem.origem) : null;
+
+            if (!headers) {
+                const rows = registros.map(({ ted, e, valor, data }) => ({
+                    numTed: ted.numTed, id: e.id, nd: e.nd, up: e.up, valor, data
+                }));
+                downloadFile(arrayToCSV(rows, ['numTed', 'id', 'nd', 'up', 'valor', 'data']), 'exec_financeira_export.csv');
+                showToast(registros.length + ' registro(s) exportado(s) (formato simplificado).', 'success');
+                return;
+            }
+
+            const colND    = acharColuna(headers, ['natureza', 'despes']) || acharColuna(headers, ['natureza']);
+            const colValor = acharColuna(headers, ['valor', 'linha']) || acharColuna(headers, ['valor']);
+            const colData  = acharColuna(headers, ['emissao', 'dia']) || acharColuna(headers, ['dia']);
+            const colSiafi = acharColuna(headers, ['transferencia']) || acharColuna(headers, ['transfer']);
+            const colNC    = headers.find(h => String(h).trim().toLowerCase() === 'nc');
+
+            let semOrigem = 0;
+            const rows = registros.map(({ ted, e, origem, nc, valor, data }) => {
+                if (origem) return origem;
+                semOrigem++;
+                const linha = {};
+                headers.forEach(h => { linha[h] = ''; });
+                if (colND) linha[colND] = e.nd || '';
+                if (colNC) linha[colNC] = nc || '';
+                if (colValor) linha[colValor] = valor;
+                if (colSiafi) linha[colSiafi] = ted.numTedSiafi || '';
+                if (colData && data) {
+                    const p = String(data).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                    linha[colData] = p ? (p[3] + '/' + p[2] + '/' + p[1]) : data;
+                }
+                return linha;
+            });
+
+            downloadFile(arrayToCSV(rows, headers), 'exec_financeira_export.csv');
+            let msg = registros.length + ' registro(s) exportado(s) no formato do extrato (' + headers.length + ' colunas).';
+            if (semOrigem > 0) msg += '\n' + semOrigem + ' lançamento(s) incluído(s) à mão saíram só com as colunas conhecidas.';
+            showToast(msg, semOrigem > 0 ? 'warning' : 'success');
         }
 
         // Exporta reproduzindo o extrato do Tesouro Gerencial: cada registro importado guarda
@@ -12823,7 +12861,9 @@
                             const ncRaw = colNC ? String(row[colNC] || '').trim() : '';
 
                             if (!grouped[siafi]) grouped[siafi] = { itens: [] };
-                            grouped[siafi].itens.push({ nd: ndRaw, nc: ncRaw, up: upSigla, valor, data });
+                            // Guardar a linha original completa (`origem`) para permitir reexportar
+                            // depois todas as colunas do extrato, inclusive as que o sistema não usa.
+                            grouped[siafi].itens.push({ nd: ndRaw, nc: ncRaw, up: upSigla, valor, data, origem: row });
                         });
 
                         const siafiKeys = Object.keys(grouped);
@@ -12874,7 +12914,7 @@
                                 const valorNum = parseFloat(item.valor) || 0;
                                 if (!agregados[chave]) agregados[chave] = { nd: ndFinal, up: upVal, data: dataVal, valor: 0, origens: [] };
                                 agregados[chave].valor += valorNum;
-                                agregados[chave].origens.push({ nc: item.nc || '', valor: valorNum, data: dataVal });
+                                agregados[chave].origens.push({ nc: item.nc || '', valor: valorNum, data: dataVal, origem: item.origem || null });
                             });
 
                             // Substituir execFinanceiras com os lançamentos agregados
