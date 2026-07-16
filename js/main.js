@@ -1454,7 +1454,7 @@
                             <div class="ted-card-status-col" style="margin-left:10px;">
                                 <div class="ted-card-status-row">
                                     <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
-                                    <button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
+                                    ${!window._readOnlyMode ? `<button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>` : ''}
                                 </div>
                                 ${vigenciaSubHtml}
                             </div>
@@ -2299,6 +2299,16 @@
         // Apaga no servidor PRIMEIRO: se falhar, nada é alterado localmente e o usuário
         // recebe erro em vez de um "excluído com sucesso" que não aconteceu.
         async function removerTedDaBase(id) {
+            // Checar role ANTES de chamar o Firestore: com enableIndexedDbPersistence,
+            // deleteDoc() resolve com sucesso assim que a escrita entra na fila local,
+            // antes do servidor confirmar. Se as regras rejeitarem (usuário 'leitor'),
+            // a rejeição chega depois, em silêncio — o app já teria mostrado "excluído
+            // com sucesso" e o TED reaparece no próximo carregarDoCloud().
+            const _role = window.currentUserProfile && window.currentUserProfile.role;
+            if (_role !== 'admin' && _role !== 'editor') {
+                showToast('Modo leitura: faça login como admin ou editor para excluir TED.', 'warning');
+                return false;
+            }
             const idx = dados.teds.findIndex(t => t.id === id);
             if (idx === -1) { showToast('TED não encontrado.', 'error'); return false; }
             const ted = dados.teds[idx];

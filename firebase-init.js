@@ -1,6 +1,6 @@
 // Firebase initialization for Controle TED
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, doc as fsDoc, getDoc as fsGetDoc, setDoc as fsSetDoc, onSnapshot as fsOnSnapshot, collection as fsCollection, getDocs as fsGetDocs, writeBatch as fsWriteBatch, deleteDoc as fsDeleteDoc, addDoc as fsAddDoc, runTransaction as fsRunTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, doc as fsDoc, getDoc as fsGetDoc, getDocFromServer as fsGetDocFromServer, setDoc as fsSetDoc, onSnapshot as fsOnSnapshot, collection as fsCollection, getDocs as fsGetDocs, writeBatch as fsWriteBatch, deleteDoc as fsDeleteDoc, addDoc as fsAddDoc, runTransaction as fsRunTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged as fbOnAuthStateChanged, sendPasswordResetEmail as fbSendPasswordResetEmail, updatePassword as fbUpdatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
@@ -215,6 +215,20 @@ window.firestoreDeleteDoc = async function(path) {
     if (parts.length % 2 === 1) throw new Error('Invalid doc path');
     const ref = fsDoc(db, ...parts);
     await fsDeleteDoc(ref);
+    // Com enableIndexedDbPersistence, deleteDoc() resolve assim que a escrita entra
+    // na fila local de mutações — antes do servidor confirmar. Se as regras de segurança
+    // rejeitarem (ex.: role sem permissão), isso acontece depois, em silêncio, e o app
+    // já teria reportado sucesso. Confirmar direto no servidor evita esse falso-positivo.
+    try {
+      const serverSnap = await fsGetDocFromServer(ref);
+      if (serverSnap.exists()) {
+        console.warn('firestoreDeleteDoc: documento ainda existe no servidor após delete (provável rejeição por regra de segurança)');
+        return false;
+      }
+    } catch (verifyErr) {
+      console.warn('firestoreDeleteDoc: falha ao verificar exclusão no servidor', verifyErr);
+      return false;
+    }
     return true;
   } catch (e) {
     console.warn('firestoreDeleteDoc error', e);
