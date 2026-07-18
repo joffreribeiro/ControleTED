@@ -79,8 +79,25 @@ window.carregarDoCloud = async function() {
       }
     })('Carregando dados da nuvem...');
     console.log('[Cloud] iniciar carregarDoCloud');
-    const items = await window.firestoreGetCollection('teds');
-    console.log('[Cloud] firestoreGetCollection items count=', (items || []).length);
+    // Preferir SEMPRE a leitura direta do servidor: com enableIndexedDbPersistence,
+    // getDocs() pode responder do cache local (dados de dias atrás). Se esses dados
+    // velhos entrarem em window.dados e depois forem regravados (autosave/salvar),
+    // eles ressuscitam TEDs excluídos e apagam alterações feitas em outro aparelho —
+    // foi exatamente o bug dos TEDs 042/037 que voltaram e da importação perdida.
+    let items = null;
+    window._dadosOrigemCache = false;
+    if (window.firestoreGetCollectionFromServer) {
+      const res = await window.firestoreGetCollectionFromServer('teds');
+      if (res.ok) items = res.items;
+    }
+    if (items === null) {
+      // Servidor inacessível (offline real): usar o cache, mas deixar registrado que a
+      // base local pode estar defasada — o listener de 'online' re-sincroniza depois.
+      items = await window.firestoreGetCollection('teds');
+      window._dadosOrigemCache = true;
+      showToast('⚠️ Sem conexão com o servidor — exibindo dados locais (podem estar desatualizados).', 'warning');
+    }
+    console.log('[Cloud] carregarDoCloud items count=', (items || []).length, window._dadosOrigemCache ? '(CACHE local)' : '(servidor)');
     const normalized = (items || []).map(d => {
       const copy = Object.assign({}, d);
       if (!copy.id) {
@@ -104,9 +121,15 @@ window.carregarDoCloud = async function() {
       }
     } catch (e) { console.warn('Erro lendo meta/teds', e); }
 
-    // Carregar Plano de Trabalho (coleção independente)
+    // Carregar Plano de Trabalho (coleção independente) — mesma política server-first,
+    // pois _executarSalvamento() regrava planosTrabalho junto com teds.
     try {
-      const planoItems = await window.firestoreGetCollection('planosTrabalho');
+      let planoItems = null;
+      if (window.firestoreGetCollectionFromServer) {
+        const resPlanos = await window.firestoreGetCollectionFromServer('planosTrabalho');
+        if (resPlanos.ok) planoItems = resPlanos.items;
+      }
+      if (planoItems === null) planoItems = await window.firestoreGetCollection('planosTrabalho');
       const planoNormalized = (planoItems || []).map(d => {
         const copy = Object.assign({}, d);
         if (!copy.id && copy._docId) {
@@ -121,6 +144,12 @@ window.carregarDoCloud = async function() {
       window.dados.proxiIdPlano = window.dados.planosTrabalho.length ? Math.max(...window.dados.planosTrabalho.map(p => Number(p.id) || 0)) + 1 : 1;
       window.dados.proxiNrOrdemPlano = window.dados.planosTrabalho.length ? Math.max(...window.dados.planosTrabalho.map(p => Number(p.nrOrdem) || 0)) + 1 : 1;
     } catch (e) { console.warn('Erro carregando planosTrabalho', e); }
+
+    // Dados recém-carregados NÃO são "edição pendente": alinhar o snapshot de referência
+    // do autosave. Sem isso, o snapshot inicial (feito antes deste load, com a lista ainda
+    // vazia) fazia o loop de 30s regravar no servidor tudo que acabou de ser lido — inócuo
+    // quando a leitura veio do servidor, mas destrutivo quando veio do cache local velho.
+    window._lastSavedTedsSnapshot = JSON.stringify(window.dados.teds || []);
 
     try { atualizarDashboard(); } catch(e) {}
     try { atualizarListaTEDs(); } catch(e) {}
@@ -246,7 +275,21 @@ window.testFirestoreConnection = async function() {
     } catch (e) { console.warn('Erro anexando snapshot de teds para status', e); }
 
     // Listen to online/offline browser events
-    window.addEventListener('online', () => { setCloudStatus(true); });
+    window.addEventListener('online', async () => {
+      setCloudStatus(true);
+      // Se o load inicial caiu no fallback de cache (offline na abertura), re-sincronizar
+      // agora que há conexão — mas só quando NÃO houver edição local pendente, para não
+      // descartar trabalho feito offline (esse caso continua com o fluxo de autosave).
+      try {
+        if (window._dadosOrigemCache) {
+          const semEdicoesPendentes = typeof window._lastSavedTedsSnapshot === 'string'
+            && JSON.stringify((window.dados && window.dados.teds) || []) === window._lastSavedTedsSnapshot;
+          if (semEdicoesPendentes && typeof window.carregarDoCloud === 'function') {
+            await window.carregarDoCloud();
+          }
+        }
+      } catch (e) { console.warn('re-sync após reconectar falhou', e); }
+    });
     window.addEventListener('offline', () => { setCloudStatus(false); });
 
     // Autosave loop de segurança: every 30s check for unsaved changes
@@ -599,10 +642,16 @@ window.testFirestoreConnection = async function() {
 
             // Hide login screen if it was open
             try { if (window.hideLoginModal) window.hideLoginModal(); } catch(e){}
-            // Recarregar dados se ainda estiverem vazios (ex: regras exigem auth para leitura)
+            // Recarregar do servidor após o login. Não só quando vazio: uma aba/app que
+            // ficou aberta com dados antigos em memória e reautenticou precisa se atualizar,
+            // senão qualquer edição feita nela parte de uma base defasada e sobrescreve o
+            // que outros aparelhos salvaram. Só NÃO recarrega se houver edição local ainda
+            // não salva (para não descartá-la).
             try {
               const semDados = !window.dados || !Array.isArray(window.dados.teds) || window.dados.teds.length === 0;
-              if (semDados && typeof window.carregarDoCloud === 'function') {
+              const semEdicoesPendentes = typeof window._lastSavedTedsSnapshot === 'string'
+                && JSON.stringify((window.dados && window.dados.teds) || []) === window._lastSavedTedsSnapshot;
+              if ((semDados || semEdicoesPendentes) && typeof window.carregarDoCloud === 'function') {
                 await window.carregarDoCloud();
               }
             } catch(e) { console.warn('recarregar após login falhou:', e && e.code ? e.code : e); }
