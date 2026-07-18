@@ -1,0 +1,373 @@
+/* mockup-mobile/mockup.css
+   Reaproveita os design tokens (cores/fontes) reais de ../styles.css — não importa o
+   arquivo inteiro (228KB, desktop-only) porque isso é só um mockup visual isolado. */
+
+:root {
+    --color-primary: #0C447C;
+    --color-primary-mid: #185FA5;
+    --color-primary-bg: #E6F1FB;
+    --color-primary-border: #B3D1EF;
+    --color-bg-card: #ffffff;
+    --color-bg-surface: #F7F9FC;
+    --color-border: rgba(0,0,0,0.08);
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #64748b;
+    --color-text-muted: #94a3b8;
+    --color-success: #10b981;
+    --color-danger: #ef4444;
+    --warning: #f59e0b;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg-surface);
+    color: var(--color-text-primary);
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 0 40px rgba(0,0,0,0.08);
+}
+
+/* ===== Top bar ===== */
+.app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--color-primary);
+    color: #fff;
+    padding: calc(env(safe-area-inset-top, 0px) + 0.75rem) 1rem 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.app-topbar-title {
+    font-family: 'Fraunces', 'Nunito Sans', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.app-topbar-title .lucide { width: 18px; height: 18px; }
+.app-topbar-mode {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.15);
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+}
+.app-topbar-back {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #fff;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 0.85rem;
+    padding: 0;
+    cursor: pointer;
+}
+.app-topbar-back .lucide { width: 16px; height: 16px; }
+
+/* ===== Screens ===== */
+.screen {
+    display: none;
+    flex: 1;
+    padding: 0.9rem 0.9rem calc(env(safe-area-inset-bottom, 0px) + 76px);
+    overflow-y: auto;
+}
+.screen.active { display: block; }
+
+.screen-title {
+    font-family: 'Fraunces', 'Nunito Sans', serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #0C2A47;
+    margin: 0.2rem 0 0.75rem;
+}
+
+/* ===== Busca / filtros (Lista) ===== */
+.mock-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 0.55rem 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.mock-search input {
+    border: none;
+    outline: none;
+    background: none;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.85rem;
+    flex: 1;
+    color: var(--color-text-primary);
+}
+.mock-search .lucide { width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0; }
+
+.mock-filtro-chips {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 0.85rem;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.mock-filtro-chips::-webkit-scrollbar { display: none; }
+.mock-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    padding: 0.32rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: #fff;
+    color: var(--color-text-secondary);
+}
+.mock-chip.active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+}
+
+/* ===== TED Card (Lista) — espelha #teds .ted-card do sistema real ===== */
+.ted-card {
+    background: #FFFDF7;
+    border: 1px solid rgba(12,68,124,0.12);
+    border-left: 3px solid var(--tile-accent, #888780);
+    border-radius: 2px;
+    padding: 0.9rem 0.9rem 0.8rem;
+    margin-bottom: 0.7rem;
+    cursor: pointer;
+}
+.ted-card:active { border-color: #0C447C; }
+.ted-card-title {
+    font-family: 'Fraunces', 'Nunito Sans', serif;
+    font-weight: 600;
+    font-size: 1.02rem;
+    color: #0C2A47;
+    text-decoration: none;
+}
+.ted-card-obj { font-size: 0.75rem; color: #6b6558; margin: 3px 0 8px; line-height: 1.35; }
+.ted-card-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.02em;
+    color: #7A6E5A;
+    margin-bottom: 8px;
+}
+.ted-card-prazo { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-weight: 700; }
+.ted-card-prazo.prazo-vencido, .ted-card-prazo.prazo-critico { color: #A32D2D; }
+.ted-card-prazo.prazo-atencao { color: #854F0B; }
+.ted-card-prazo.prazo-ok, .ted-card-prazo.prazo-encerrado { color: #7A6E5A; font-weight: 600; }
+
+.ted-card-status-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 2px; }
+.badge { display: inline-block; padding: 0.22rem 0.65rem; border-radius: 9999px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+.badge-planejamento { background: #fef3c7; color: #92400e; }
+.badge-execucao { background: var(--color-primary-bg); color: var(--color-primary); }
+.badge-finalizado { background: #fee2e2; color: #dc2626; }
+.badge-vigencia-vencida { background: #fef3c7; color: #b45309; }
+
+.ted-card-progress { margin-bottom: 6px; }
+.ted-card-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.ted-card-progress-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #7A6E5A;
+}
+.ted-card-progress-pct { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; font-weight: 600; color: #0C2A47; }
+.ted-card-progress-track { background: rgba(12,68,124,0.08); border-radius: 4px; height: 5px; overflow: hidden; }
+.ted-card-progress-fill { height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); }
+.ted-card-progress-fill.financeira { background: linear-gradient(90deg, #185FA5, #4F9DE0); }
+
+.ted-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 7px; border-top: 1px solid rgba(12,68,124,0.10); }
+.ted-card-footer-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7A6E5A;
+}
+.ted-card-saldo-pos { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; font-weight: 600; color: #3B6D11; }
+.ted-card-saldo-neg { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; font-weight: 600; color: #A32D2D; }
+
+/* ===== Detalhe ===== */
+.det-section {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+.det-section-title {
+    font-family: 'Fraunces', 'Nunito Sans', serif;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: #0C2A47;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.6rem;
+}
+.det-section-title .lucide { width: 15px; height: 15px; color: var(--color-primary); }
+.det-row { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.3rem 0; font-size: 0.8rem; border-bottom: 1px solid var(--color-border); }
+.det-row:last-child { border-bottom: none; }
+.det-row-label { color: var(--color-text-secondary); }
+.det-row-value { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; color: var(--color-text-primary); }
+
+.det-kpi-row { display: flex; gap: 0.6rem; margin-bottom: 0.2rem; }
+.det-kpi { flex: 1; background: var(--color-bg-surface); border-radius: 8px; padding: 0.55rem 0.6rem; }
+.det-kpi-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 2px; }
+.det-kpi-value { font-family: 'IBM Plex Mono', monospace; font-size: 0.92rem; font-weight: 700; color: #0C2A47; }
+
+.det-entrega-item { display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0; border-bottom: 1px solid var(--color-border); font-size: 0.78rem; }
+.det-entrega-item:last-child { border-bottom: none; }
+.det-entrega-desc { color: var(--color-text-primary); }
+.det-entrega-meta { color: var(--color-text-muted); font-size: 0.7rem; }
+.det-entrega-qtd { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--color-primary); }
+.det-empty { color: var(--color-text-muted); font-size: 0.78rem; text-align: center; padding: 0.75rem 0; }
+
+.det-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem;
+    font-family: 'Nunito Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-top: 0.2rem;
+}
+.det-cta .lucide { width: 16px; height: 16px; }
+
+/* ===== Formulário (Registrar) ===== */
+.mock-form-field { margin-bottom: 0.9rem; }
+.mock-form-label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.3rem;
+}
+.mock-form-field input,
+.mock-form-field select,
+.mock-form-field textarea {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 0.6rem 0.7rem;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.85rem;
+    background: #fff;
+    color: var(--color-text-primary);
+}
+.mock-form-field textarea { resize: vertical; min-height: 64px; }
+.mock-form-row { display: flex; gap: 0.6rem; }
+.mock-form-row .mock-form-field { flex: 1; }
+.mock-form-ted-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--color-primary-bg);
+    border: 1px solid var(--color-primary-border);
+    border-radius: 8px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.8rem;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+}
+.mock-form-ted-chip strong { font-family: 'Fraunces', serif; }
+.mock-submit-btn {
+    width: 100%;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-family: 'Nunito Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+}
+.mock-submit-btn .lucide { width: 17px; height: 17px; }
+.mock-form-hint {
+    display: flex;
+    gap: 0.4rem;
+    background: #FFF7E6;
+    border: 1px solid #F2D9A0;
+    color: #854F0B;
+    border-radius: 8px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.72rem;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+.mock-form-hint .lucide { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+
+/* ===== Bottom nav ===== */
+.mobile-bottom-nav {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    background: #fff;
+    border-top: 1px solid var(--color-border);
+    padding: 0.4rem 0.4rem calc(env(safe-area-inset-bottom, 0px) + 0.4rem);
+    z-index: 30;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+}
+.mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.66rem;
+    font-weight: 600;
+    padding: 0.35rem 0;
+    border-radius: 10px;
+}
+.mobile-nav-btn .lucide { width: 20px; height: 20px; }
+.mobile-nav-btn.active { color: var(--color-primary); background: var(--color-primary-bg); }
+
+/* ===== Frame do dispositivo (só pra visualização no navegador desktop) ===== */
+@media (min-width: 540px) {
+    body { border-radius: 28px; margin: 24px auto; min-height: calc(100vh - 48px); overflow: hidden; }
+}

@@ -28,6 +28,10 @@ yarn-error.log*
 build/
 out/
 
+# Capacitor: www/ é gerado por scripts/build-www.js (espelho dos arquivos estáticos
+# reais pro wrapper Android) — não é código-fonte, não precisa ser versionado.
+www/
+
 # Database
 *.sqlite
 *.db

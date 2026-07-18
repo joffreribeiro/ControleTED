@@ -1,0 +1,17 @@
+{
+  "name": "controle-ted",
+  "version": "1.0.0",
+  "description": "Wrapper Capacitor para gerar o app Android (.apk) do Controle TED. O site em si continua sendo servido como arquivos estáticos puros (sem build step) via Firebase Hosting — este package.json existe só para o tooling do Capacitor.",
+  "private": true,
+  "scripts": {
+    "build:www": "node scripts/build-www.js",
+    "cap:sync": "npm run build:www && cap sync android",
+    "cap:open": "cap open android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  }
+}

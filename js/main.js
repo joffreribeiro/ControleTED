@@ -297,10 +297,42 @@
             f.entregas = Array.isArray(f.entregas) ? f.entregas : [];
             const e = { id: entrega.id || (Date.now() + Math.floor(Math.random()*9999)), data: entrega.data || '', quantidade: entrega.quantidade || parseNumber(f.qtde) || 0, nf: entrega.nf || '' };
             f.entregas.push(e);
-            adicionarRegistroAuditoria(window.tedSelecionado.id, 'adicionar_entrega', f.id, { objeto: f.objeto, data: e.data, quantidade: e.quantidade, nf: e.nf });
+            const tedId = window.tedSelecionado.id;
+            adicionarRegistroAuditoria(tedId, 'adicionar_entrega', f.id, { objeto: f.objeto, data: e.data, quantidade: e.quantidade, nf: e.nf });
             try { sincronizarExecucaoFisica(); } catch(e) {}
-            try { salvarDadosImediato(); } catch(e) { try { salvarDados(); } catch(_) {} }
+            // Atualização local é imediata de propósito (uso em campo depende disso — ver
+            // window._isMobileShell): não travar a UI esperando confirmação do servidor.
+            let salvarPromise;
+            try { salvarPromise = salvarDadosImediato(); } catch(e) { salvarPromise = null; try { salvarDados(); } catch(_) {} }
             try { atualizarTabelaFisicos(); } catch(e) {}
+            _verificarEntregaNoServidor(tedId, f.id, e.id, salvarPromise);
+        }
+
+        // Confirma em segundo plano que a entrega chegou de fato ao Firestore — mesmo
+        // raciocínio do fix em firestoreDeleteDoc: com enableIndexedDbPersistence, o
+        // salvamento "parece" bem-sucedido assim que entra na fila local, antes do servidor
+        // confirmar/rejeitar. Se estiver genuinamente offline, isso NÃO é erro (sincroniza
+        // sozinho quando a conexão voltar); só avisa se estiver online e mesmo assim a
+        // entrega não aparecer no servidor (ex.: rejeição silenciosa por falta de permissão).
+        async function _verificarEntregaNoServidor(tedId, faseId, entregaId, salvarPromise) {
+            try {
+                if (salvarPromise && typeof salvarPromise.then === 'function') await salvarPromise;
+                if (!navigator.onLine) return; // offline real — o autosave/SW cuidam de sincronizar depois
+                if (!window.firestoreGetDocFromServer) return;
+
+                const result = await window.firestoreGetDocFromServer('teds/' + String(tedId));
+                if (!result.ok) {
+                    if (result.offline) return; // timeout/sem rede no momento da checagem — não é erro
+                    return; // falha ao verificar por outro motivo: não afirmar erro sem certeza
+                }
+                const tedServidor = result.data;
+                const faseServidor = tedServidor && Array.isArray(tedServidor.fisicos) ? tedServidor.fisicos.find(x => x.id == faseId) : null;
+                const entregaServidor = faseServidor && Array.isArray(faseServidor.entregas) ? faseServidor.entregas.find(x => String(x.id) === String(entregaId)) : null;
+
+                if (!entregaServidor) {
+                    showToast('⚠️ A entrega foi salva neste aparelho, mas não foi confirmada no servidor. Verifique sua permissão/conexão e tente salvar de novo.', 'warning');
+                }
+            } catch (e) { console.warn('_verificarEntregaNoServidor error', e); }
         }
 
         function entregas_remover(faseId, entregaId) {
@@ -923,6 +955,19 @@
             return false;
         }
 
+        // Modo mobile (recorte de campo): mesma media query usada em styles.css pra
+        // esconder a sidebar e mostrar a bottom nav — precisa ser IDÊNTICA à do CSS, senão
+        // JS e CSS discordam sobre se está em modo mobile. max-width sozinho só cobre
+        // celular em pé; "OR altura baixa" pega também celular deitado (largura passa de
+        // 768px girado, mas a altura fica baixa) sem confundir com tablet/desktop de verdade.
+        (function() {
+            var mq = window.matchMedia('(max-width: 768px), (max-height: 500px)');
+            function atualizarMobileShell() { window._isMobileShell = mq.matches; }
+            atualizarMobileShell();
+            if (mq.addEventListener) mq.addEventListener('change', atualizarMobileShell);
+            else if (mq.addListener) mq.addListener(atualizarMobileShell); // fallback p/ WebViews antigos
+        })();
+
         // Trocar Abas
         function switchTab(tabName, btnEl) {
             // Bloquear acesso à aba de configurações quando não for admin
@@ -936,12 +981,24 @@
                 }
             } catch(e) {}
 
+            // Modo mobile (recorte de campo — ver window._isMobileShell): restringe a
+            // navegação às abas do recorte aprovado no mockup. Fora delas, redireciona
+            // para 'teds' — mesmo padrão do guard de 'config' acima.
+            try {
+                if (window._isMobileShell) {
+                    var abasPermitidasMobile = ['teds', 'detalhes'];
+                    if (abasPermitidasMobile.indexOf(tabName) === -1) {
+                        tabName = 'teds';
+                    }
+                }
+            } catch(e) {}
+
             // Ocultar todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
                 tab.style.display = 'none';
             });
-            document.querySelectorAll('.tab-btn, .nav-item').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-btn, .nav-item, .mobile-nav-btn').forEach(btn => btn.classList.remove('active'));
 
             // Mostrar aba selecionada
             var tabEl = document.getElementById(tabName);
@@ -949,8 +1006,10 @@
                 tabEl.classList.add('active');
                 tabEl.style.display = 'block';
             }
-            var btnToActivate = btnEl || document.querySelector('.nav-item[data-tab="' + tabName + '"]') || document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
-            if (btnToActivate) btnToActivate.classList.add('active');
+            // Ativar tanto o item do sidebar desktop quanto o botão da bottom nav mobile
+            // (os dois convivem no DOM o tempo todo; o CSS decide qual fica visível).
+            document.querySelectorAll('[data-tab="' + tabName + '"]').forEach(function(btn) { btn.classList.add('active'); });
+            if (btnEl) btnEl.classList.add('active');
 
             // Inicializar conteúdo específico da aba
             if (tabName === 'relatorios') {
@@ -1040,6 +1099,27 @@
                 }
             } catch(e) { /* ignore */ }
         }
+
+        // Botão "Registrar" da bottom nav mobile: não existe uma aba dedicada de registro
+        // (uma entrega sempre pertence a uma fase/objeto específico do TED selecionado —
+        // ver abrirModalAdicionarEntrega(faseId)), então aqui vai direto pra aba Detalhe
+        // e rola até a seção de Entregas, onde o fluxo real de registro já existe.
+        function irParaRegistrarEntrega() {
+            if (!window.tedSelecionado) {
+                showToast('Selecione um TED na Lista antes de registrar uma entrega.', 'warning');
+                switchTab('teds', null);
+                return;
+            }
+            switchTab('detalhes', null);
+            document.querySelectorAll('.mobile-nav-btn').forEach(function(btn) { btn.classList.remove('active'); });
+            var btnRegistrar = document.querySelector('.mobile-nav-btn[data-mobile-action="registrar"]');
+            if (btnRegistrar) btnRegistrar.classList.add('active');
+            setTimeout(function() {
+                var sec = document.getElementById('secaoEntregasDetalhe');
+                if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 60);
+        }
+        window.irParaRegistrarEntrega = irParaRegistrarEntrega;
 
         // Calcula valor total de objetos (qtde * valorUnitario)
         function calcularTotalObjetosValor(ted) {
@@ -6949,7 +7029,7 @@
             headerHTML += `<th class="center" style="width:140px;" rowspan="2">Qtde / Entregue</th>`;
             headerHTML += `<th class="center" style="width:190px;" rowspan="2">Período (meses)</th>`;
             headerHTML += `<th class="center" style="width:150px;" rowspan="2">Datas previstas</th>`;
-            headerHTML += `<th class="center" style="width:96px;" rowspan="2">Ações</th>`;
+            headerHTML += `<th class="center col-acao" style="width:96px;" rowspan="2">Ações</th>`;
             anos.forEach(a => {
                 headerHTML += `<th class="month-col-cadFis" style="text-align:center;${mmHideCadFis}" colspan="${a.count}">${a.ano}</th>`;
             });
@@ -7077,7 +7157,7 @@
                         }
                         return `<div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div>`;
                     })()}</div></td>
-                    <td class="center"><span class="ef-row-actions">${editBtn}${delBtn}${entBtn}</span></td>`;
+                    <td class="center col-acao"><span class="ef-row-actions">${editBtn}${delBtn}${entBtn}</span></td>`;
                 
                 // Adicionar células do Gantt - destacar período mInicio até mFinal e renderizar entregas por mês (empilhadas)
                 const entregaMesMap = new Map();
@@ -13741,6 +13821,19 @@
             } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 document.documentElement.setAttribute('data-theme', 'dark');
             }
+            atualizarIconeTemaMobile();
+        }
+
+        // Troca o ícone lua/sol do botão de tema na barra superior mobile (a sidebar
+        // desktop, escondida no recorte mobile, nunca teve um botão de tema visível —
+        // toggleTheme() existia mas ficava órfã, e o app só seguia prefers-color-scheme
+        // do aparelho sem nenhum jeito de o usuário reverter).
+        function atualizarIconeTemaMobile() {
+            const btn = document.getElementById('mobileThemeToggle');
+            if (!btn) return;
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            btn.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}" class="nav-item-icon"></i>`;
+            try { if (typeof initLucideIcons === 'function') initLucideIcons(); } catch (e) {}
         }
 
         // Inicializar Lucide Icons

@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle TED - Sistema Termo de Execução Descentralizada</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0C447C">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-        <link rel="stylesheet" href="styles.css?v=20260715a">
+        <link rel="stylesheet" href="styles.css?v=20260717c">
     </head>
     <body>
 
@@ -25,6 +31,24 @@
                 <div class="global-loader-message">Carregando dados...</div>
             </div>
         </div>
+
+        <!-- Barra superior mobile: só visível abaixo de 768px (ver styles.css). A sidebar
+             leva junto o tema/logout quando escondida no recorte mobile — isso repõe o
+             essencial (alternar claro/escuro, sair) num lugar sempre alcançável. -->
+        <header class="mobile-topbar" id="mobileTopbar">
+            <div class="mobile-topbar-title">
+                <img src="logo-controle-ted.svg" alt="" style="width:20px;height:20px;object-fit:contain;">
+                <span>Controle TED</span>
+            </div>
+            <div class="mobile-topbar-actions">
+                <button id="mobileThemeToggle" onclick="toggleTheme(); atualizarIconeTemaMobile();" title="Alternar tema claro/escuro">
+                    <i data-lucide="moon" class="nav-item-icon"></i>
+                </button>
+                <button onclick="doLogout()" title="Sair">
+                    <i data-lucide="log-out" class="nav-item-icon"></i>
+                </button>
+            </div>
+        </header>
 
         <!-- Sidebar lateral -->
         <aside class="sidebar" role="navigation" aria-label="Menu lateral">
@@ -116,6 +140,23 @@
                 </div>
             </div>
         </aside>
+
+        <!-- Bottom nav mobile: só visível abaixo de 768px (ver styles.css). Reaproveita
+             switchTab() — mesma função de roteamento da sidebar desktop. -->
+        <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Navegação mobile">
+            <button class="mobile-nav-btn" data-tab="teds" onclick="switchTab('teds', this)">
+                <i data-lucide="list" class="nav-item-icon"></i>
+                <span>Lista</span>
+            </button>
+            <button class="mobile-nav-btn" data-tab="detalhes" onclick="switchTab('detalhes', this)">
+                <i data-lucide="file-text" class="nav-item-icon"></i>
+                <span>Detalhe</span>
+            </button>
+            <button class="mobile-nav-btn" data-mobile-action="registrar" onclick="irParaRegistrarEntrega()">
+                <i data-lucide="plus-circle" class="nav-item-icon"></i>
+                <span>Registrar</span>
+            </button>
+        </nav>
 
         <!-- Modal: Adicionar Entrega (formulário com data DD/MM/AAAA) -->
         <div id="modalAddEntregaBackdrop" class="modal-backdrop" aria-hidden="true">
@@ -1164,7 +1205,7 @@
                     </div>
 
                     <!-- Seção de gráficos completa (Entregas) -->
-                    <div class="detalhe-secao">
+                    <div class="detalhe-secao" id="secaoEntregasDetalhe">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="package" class="inline-icon-sm"></i> Entregas</h3>
                         <div class="detalhe-secao-body">
                         <div id="entregasChartFull">
@@ -1855,10 +1896,13 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260715a"></script>
+    <script src="js/main.js?v=20260717b"></script>
+
+    <!-- PWA: registro do service worker e botão de instalação (depende de showToast/confirmarAcao acima) -->
+    <script src="pwa.js?v=20260717a"></script>
 
     <!-- Firebase initialization (module) -->
-    <script type="module" src="./firebase-init.js?v=20260715a"></script>
-    <script type="module" src="./app.js?v=20260715a"></script>
+    <script type="module" src="./firebase-init.js?v=20260717b"></script>
+    <script type="module" src="./app.js?v=20260717b"></script>
 </body>
 </html>

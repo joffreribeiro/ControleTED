@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Controle TED — Modo Campo (mockup)</title>
+<meta name="theme-color" content="#0C447C">
+
+<!-- Mesmas fontes do sistema real (index.html raiz), pra manter a identidade visual -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,500;0,6..12,600;0,6..12,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+
+    <!-- ===== Top bar ===== -->
+    <div class="app-topbar">
+        <button class="app-topbar-back" id="btnVoltar" style="display:none;" onclick="mockVoltar()">
+            <i data-lucide="chevron-left"></i> Voltar
+        </button>
+        <div class="app-topbar-title" id="topbarTitle">
+            <i data-lucide="file-text"></i> Controle TED
+        </div>
+        <span class="app-topbar-mode">Modo Campo</span>
+    </div>
+
+    <!-- ===== Tela 1: Lista de TEDs ===== -->
+    <section class="screen active" id="screen-lista">
+        <div class="mock-search">
+            <i data-lucide="search"></i>
+            <input type="text" placeholder="Buscar por número ou objetivo...">
+        </div>
+        <div class="mock-filtro-chips">
+            <span class="mock-chip active">Todos</span>
+            <span class="mock-chip">Em Execução</span>
+            <span class="mock-chip">Vencidos</span>
+            <span class="mock-chip">Finalizados</span>
+        </div>
+        <div id="listaTedsContainer"><!-- preenchido via JS a partir de MOCK_TEDS --></div>
+    </section>
+
+    <!-- ===== Tela 2: Detalhe do TED ===== -->
+    <section class="screen" id="screen-detalhe">
+        <div id="detalheContainer"><!-- preenchido via JS --></div>
+    </section>
+
+    <!-- ===== Tela 3: Registrar entrega/execução ===== -->
+    <section class="screen" id="screen-registrar">
+        <h2 class="screen-title">Registrar Entrega</h2>
+
+        <div class="mock-form-ted-chip" id="registrarTedChip">
+            <i data-lucide="file-text"></i>
+            <span>TED <strong id="registrarTedNum">—</strong></span>
+        </div>
+
+        <div class="mock-form-hint">
+            <i data-lucide="wifi-off"></i>
+            <span>Sem sinal? Sem problema — o registro fica salvo no aparelho e sincroniza sozinho assim que a conexão voltar.</span>
+        </div>
+
+        <div class="mock-form-field">
+            <label class="mock-form-label">Fase / Objeto</label>
+            <select>
+                <option>Fardamento — Lote 1</option>
+                <option>Fardamento — Lote 2</option>
+                <option>Equipamentos de proteção</option>
+            </select>
+        </div>
+
+        <div class="mock-form-row">
+            <div class="mock-form-field">
+                <label class="mock-form-label">Data</label>
+                <input type="date" value="2026-07-17">
+            </div>
+            <div class="mock-form-field">
+                <label class="mock-form-label">Quantidade</label>
+                <input type="number" placeholder="0">
+            </div>
+        </div>
+
+        <div class="mock-form-field">
+            <label class="mock-form-label">Nota Fiscal (opcional)</label>
+            <input type="text" placeholder="Número da NF">
+        </div>
+
+        <div class="mock-form-field">
+            <label class="mock-form-label">Observação (opcional)</label>
+            <textarea placeholder="Alguma observação sobre esta entrega..."></textarea>
+        </div>
+
+        <button class="mock-submit-btn" onclick="mockSalvarEntrega()">
+            <i data-lucide="check"></i> Salvar Entrega
+        </button>
+    </section>
+
+    <!-- ===== Bottom tab bar ===== -->
+    <nav class="mobile-bottom-nav">
+        <button class="mobile-nav-btn active" data-screen="lista" onclick="mockIrPara('lista')">
+            <i data-lucide="list"></i> Lista
+        </button>
+        <button class="mobile-nav-btn" data-screen="detalhe" onclick="mockIrPara('detalhe')">
+            <i data-lucide="file-text"></i> Detalhe
+        </button>
+        <button class="mobile-nav-btn" data-screen="registrar" onclick="mockIrPara('registrar')">
+            <i data-lucide="plus-circle"></i> Registrar
+        </button>
+    </nav>
+
+<script src="mockup-data.js"></script>
+<script>
+    let mockTedSelecionadoId = null;
+
+    function fmtMoeda(v) {
+        return 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    }
+
+    // ===== Tela 1: Lista =====
+    function renderLista() {
+        const container = document.getElementById('listaTedsContainer');
+        container.innerHTML = MOCK_TEDS.map(t => {
+            const saldo = t.valorTed - t.gasto;
+            const saldoHtml = saldo < 0
+                ? `<span class="ted-card-saldo-neg">- ${fmtMoeda(saldo)}</span>`
+                : `<span class="ted-card-saldo-pos">${fmtMoeda(saldo)}</span>`;
+            return `
+                <div class="ted-card" style="--tile-accent:${t.borderColor};" onclick="mockAbrirDetalhe(${t.id})">
+                    <div class="ted-card-status-row">
+                        <div style="flex:1;min-width:0;">
+                            <div class="ted-card-title">TED ${t.numTed}</div>
+                        </div>
+                        <span class="badge ${t.badgeClass}">${t.badgeText}</span>
+                    </div>
+                    <p class="ted-card-obj">${t.objetivo}</p>
+                    <p class="ted-card-meta">${t.dataInicio} → ${t.dataFim} · <span class="ted-card-prazo ${t.prazoClass}">${t.prazoText}</span> · ${t.upResponsavel}</p>
+
+                    <div class="ted-card-progress">
+                        <div class="ted-card-progress-header">
+                            <span class="ted-card-progress-label">Exec. Financeira</span>
+                            <span class="ted-card-progress-pct">${t.progressoFinanceiro}%</span>
+                        </div>
+                        <div class="ted-card-progress-track"><div class="ted-card-progress-fill financeira" style="width:${t.progressoFinanceiro}%;"></div></div>
+                    </div>
+                    <div class="ted-card-progress">
+                        <div class="ted-card-progress-header">
+                            <span class="ted-card-progress-label">Exec. Física</span>
+                            <span class="ted-card-progress-pct">${t.progressoFisico}%</span>
+                        </div>
+                        <div class="ted-card-progress-track"><div class="ted-card-progress-fill" style="width:${t.progressoFisico}%;"></div></div>
+                    </div>
+
+                    <div class="ted-card-footer">
+                        <span class="ted-card-footer-label">Saldo</span>
+                        ${saldoHtml}
+                    </div>
+                </div>`;
+        }).join('');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    // ===== Tela 2: Detalhe =====
+    function renderDetalhe(id) {
+        const t = MOCK_TEDS.find(x => x.id === id) || MOCK_TEDS[0];
+        mockTedSelecionadoId = t.id;
+        const saldo = t.valorTed - t.gasto;
+
+        const entregasHtml = t.entregas.length
+            ? t.entregas.map(e => `
+                <div class="det-entrega-item">
+                    <div>
+                        <div class="det-entrega-desc">${e.descricao}</div>
+                        <div class="det-entrega-meta">${e.data} · NF ${e.nf}</div>
+                    </div>
+                    <span class="det-entrega-qtd">${e.quantidade}</span>
+                </div>`).join('')
+            : `<div class="det-empty">Nenhuma entrega registrada ainda.</div>`;
+
+        document.getElementById('detalheContainer').innerHTML = `
+            <div class="det-section" style="border-left:3px solid ${t.borderColor};">
+                <div class="ted-card-status-row" style="margin-bottom:0.3rem;">
+                    <div class="ted-card-title" style="font-size:1.15rem;">TED ${t.numTed}</div>
+                    <span class="badge ${t.badgeClass}">${t.badgeText}</span>
+                </div>
+                <p class="ted-card-obj" style="margin-bottom:0.5rem;">${t.objetivo}</p>
+                <p class="ted-card-meta">${t.dataInicio} → ${t.dataFim} · <span class="ted-card-prazo ${t.prazoClass}">${t.prazoText}</span></p>
+            </div>
+
+            <div class="det-section">
+                <h3 class="det-section-title"><i data-lucide="clipboard-list"></i> Dados Cadastrais</h3>
+                <div class="det-row"><span class="det-row-label">SIAFI</span><span class="det-row-value">${t.numTedSiafi}</span></div>
+                <div class="det-row"><span class="det-row-label">Órgão Concedente</span><span class="det-row-value">${t.orgaoConcedente}</span></div>
+                <div class="det-row"><span class="det-row-label">UP Responsável</span><span class="det-row-value">${t.upResponsavel}</span></div>
+            </div>
+
+            <div class="det-section">
+                <h3 class="det-section-title"><i data-lucide="wallet"></i> Resumo Financeiro</h3>
+                <div class="det-kpi-row">
+                    <div class="det-kpi"><div class="det-kpi-label">Total</div><div class="det-kpi-value">${fmtMoeda(t.valorTed)}</div></div>
+                    <div class="det-kpi"><div class="det-kpi-label">Gasto</div><div class="det-kpi-value">${fmtMoeda(t.gasto)}</div></div>
+                </div>
+                <div class="det-kpi-row" style="margin-top:0.6rem;">
+                    <div class="det-kpi"><div class="det-kpi-label">Saldo</div><div class="det-kpi-value" style="color:${saldo < 0 ? '#A32D2D' : '#3B6D11'};">${fmtMoeda(saldo)}</div></div>
+                    <div class="det-kpi"><div class="det-kpi-label">% Financeiro</div><div class="det-kpi-value">${t.progressoFinanceiro}%</div></div>
+                </div>
+            </div>
+
+            <div class="det-section">
+                <h3 class="det-section-title"><i data-lucide="trending-up"></i> Execução Física</h3>
+                <div class="ted-card-progress" style="margin-bottom:0;">
+                    <div class="ted-card-progress-header">
+                        <span class="ted-card-progress-label">Progresso Geral</span>
+                        <span class="ted-card-progress-pct">${t.progressoFisico}%</span>
+                    </div>
+                    <div class="ted-card-progress-track" style="height:8px;"><div class="ted-card-progress-fill" style="width:${t.progressoFisico}%;"></div></div>
+                </div>
+            </div>
+
+            <div class="det-section">
+                <h3 class="det-section-title"><i data-lucide="package"></i> Entregas Recentes</h3>
+                ${entregasHtml}
+            </div>
+
+            <button class="det-cta" onclick="mockIrPara('registrar')">
+                <i data-lucide="plus-circle"></i> Registrar Nova Entrega
+            </button>
+        `;
+        document.getElementById('registrarTedNum').textContent = t.numTed;
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function mockAbrirDetalhe(id) {
+        renderDetalhe(id);
+        mockIrPara('detalhe');
+    }
+
+    // ===== Navegação (bottom nav + topbar) =====
+    function mockIrPara(screen) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-' + screen).classList.add('active');
+        document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
+
+        const topbarTitle = document.getElementById('topbarTitle');
+        const btnVoltar = document.getElementById('btnVoltar');
+        if (screen === 'lista') {
+            topbarTitle.innerHTML = '<i data-lucide="file-text"></i> Controle TED';
+            btnVoltar.style.display = 'none';
+        } else if (screen === 'detalhe') {
+            const t = MOCK_TEDS.find(x => x.id === mockTedSelecionadoId) || MOCK_TEDS[0];
+            topbarTitle.innerHTML = `<i data-lucide="file-text"></i> TED ${t.numTed}`;
+            btnVoltar.style.display = 'flex';
+        } else if (screen === 'registrar') {
+            topbarTitle.innerHTML = '<i data-lucide="plus-circle"></i> Registrar Entrega';
+            btnVoltar.style.display = 'flex';
+        }
+        if (window.lucide) lucide.createIcons();
+        window.scrollTo(0, 0);
+    }
+
+    function mockVoltar() {
+        mockIrPara('lista');
+    }
+
+    function mockSalvarEntrega() {
+        alert('[Mockup] Isso simularia salvar a entrega e voltar pro detalhe do TED ' + (MOCK_TEDS.find(x => x.id === mockTedSelecionadoId) || MOCK_TEDS[0]).numTed + '.\n\nNo sistema real, o toast mostraria "salvo localmente — sincroniza quando houver conexão" se estiver offline.');
+    }
+
+    // ===== Init =====
+    renderLista();
+    renderDetalhe(MOCK_TEDS[0].id);
+    if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

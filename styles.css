@@ -5901,3 +5901,163 @@ table.ef-table tbody td.right  { text-align: right; }
 }
 #detalhes .aditivo-num-badge { background: #E6F1FB; color: #0C447C; font-family: 'IBM Plex Mono', monospace; }
 #detalhes .aditivo-card-date { font-family: 'IBM Plex Mono', monospace; color: #7A6E5A; }
+
+/* ===== Modo Mobile (recorte de campo: Lista de TEDs / Detalhe / Registrar Entrega) =====
+   Ativado abaixo de 768px — mesmo corte já usado em outras regras pontuais deste arquivo.
+   Só adiciona por cima do layout desktop (.sidebar/.container acima não são editados),
+   então nada aqui deveria afetar telas >768px. window._isMobileShell (js/main.js) espelha
+   este mesmo breakpoint via matchMedia para o guard de navegação em switchTab().
+   Regras base (escondidas por padrão) vêm ANTES da media query de propósito: como as duas
+   têm a mesma especificidade, quem vier depois no arquivo vence o empate — a media query
+   precisa ser a última para conseguir sobrescrever o `display: none` base em telas ≤768px. */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 600;
+    background: #fff;
+    border-top: 1px solid var(--color-border);
+    padding: 0.4rem 0.4rem calc(env(safe-area-inset-bottom, 0px) + 0.4rem);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+}
+[data-theme="dark"] .mobile-bottom-nav {
+    background: var(--color-bg-card);
+    border-top-color: var(--color-border);
+}
+.mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.66rem;
+    font-weight: 600;
+    padding: 0.4rem 0;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.mobile-nav-btn .nav-item-icon { width: 20px; height: 20px; }
+.mobile-nav-btn.active { color: var(--color-primary); background: var(--color-primary-bg); }
+
+/* Barra superior mobile: repõe tema/logout, que ficam inacessíveis com a sidebar
+   escondida (ver comentário no index.html, acima do <header class="mobile-topbar">). */
+.mobile-topbar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 600;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--color-primary);
+    color: #fff;
+    padding: calc(env(safe-area-inset-top, 0px) + 0.6rem) 0.9rem 0.6rem;
+}
+.mobile-topbar-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Fraunces', 'Nunito Sans', serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.mobile-topbar-actions { display: flex; gap: 0.3rem; }
+.mobile-topbar-actions button {
+    background: rgba(255,255,255,0.14);
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    padding: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.mobile-topbar-actions .nav-item-icon { width: 18px; height: 18px; }
+
+/* max-width sozinho só cobre celular em pé — deitado, a largura de um celular comum
+   facilmente passa de 768px (ex.: ~915px), mas a altura fica baixa (~350-430px, a mesma
+   largura que tinha em pé). Um tablet/desktop genuíno tem as DUAS dimensões grandes, então
+   somar "OR altura baixa" pega celular deitado sem confundir com tela grande de verdade. */
+@media (max-width: 768px), (max-height: 500px) {
+    .sidebar { display: none; }
+    .container {
+        margin-left: 0;
+        width: 100vw;
+        max-width: 100vw;
+        padding-top: calc(env(safe-area-inset-top, 0px) + 52px);
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+    }
+    .mobile-bottom-nav { display: flex; }
+    .mobile-topbar { display: flex; }
+
+    /* Cards de resumo administrativo das sub-abas Físico (.ef-kpis: Total de fases/
+       Concluídas/Qtde entregue), Financeiro (.cf-kpis: Total Cadastrado/Maior ND/
+       Distribuição por UP/Próximo Período) e as duas seções que reaproveitam
+       .execfin-kpis dentro do Financeiro — Execução Financeira e Recursos Gerais IMBEL
+       (Previsto Total/Realizado Total/Saldo a Receber/Maior ND) — decisão do usuário:
+       não fazem sentido no recorte de consulta em campo, só no desktop. */
+    .ef-kpis, .cf-kpis, .execfin-kpis { display: none; }
+
+    /* Coluna de Ações (editar/excluir) nas tabelas de Cadastro Físico e Cadastro
+       Financeiro — decisão do usuário: o app é só consulta, não edita nem cria nada,
+       então esses botões só ocupam espaço que falta nas telas estreitas. Não dá pra usar
+       :last-child: com "Ver detalhes mensais" expandido, colunas de mês são inseridas
+       DEPOIS da coluna de Ação em ambas as tabelas (atualizarTabelaFisicos/
+       atualizarTabelaFinanceira), então ela deixa de ser a última. .col-acao já era usado
+       de forma inconsistente entre as duas tabelas — padronizei nas duas (js/main.js) pra
+       poder escondê-la aqui por classe, não por posição. Também não dá pra mirar
+       #tabelaCadFisTable: atualizarTabelaFisicos() troca o id da tabela pra
+       "efTabelaFisicos" assim que renderiza dados de verdade — .ef-table é a classe
+       estável que ela recebe nesse mesmo momento. */
+    #tabelaFinanceiraCompleta .col-acao,
+    .ef-table .col-acao {
+        display: none;
+    }
+}
+
+/* ===== Ajuste de conteúdo da aba Detalhes em telas de celular =====
+   O shell (sidebar/bottom-nav) acima já cobre 768px; estas regras miram especificamente
+   a largura de um celular (≤480px), onde o grid de KPIs em 2 colunas e o título de uma
+   linha só do hero banner (ambos desenhados pra desktop) cortavam texto. Só sobrescreve
+   propriedades pontuais — não duplica nem substitui as regras base de .kpi-grid/.ted-hero-title
+   /.dt-tab-switch acima. */
+@media (max-width: 480px) {
+    /* KPI cards: 1 coluna em vez de 2 — o valor em R$ não cabia em ~170px sem cortar */
+    .kpi-grid { grid-template-columns: 1fr; }
+
+    /* Objetivo do TED: permitir 2 linhas em vez de truncar com reticências numa só linha.
+       -webkit-line-clamp exige overflow:hidden pra funcionar — usar overflow:visible aqui
+       (como numa primeira tentativa) quebra o clamp e sobrepõe o texto ao elemento seguinte. */
+    .ted-hero-title {
+        white-space: normal;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    /* Sub-abas (Visão Geral/Físico/Financeiro/Faturamento): rolagem horizontal em vez de
+       empilhar 4 linhas — mantém o visual de "pills" numa faixa só, como o resto do app
+       já faz em filtros com muitas opções. */
+    .dt-tab-switch {
+        width: 100%;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .dt-tab-switch::-webkit-scrollbar { display: none; }
+    .dt-tab-btn { flex-shrink: 0; }
+
+    /* Toasts (showToast, js/main.js): no desktop ficam ancorados no canto superior
+       direito com max-width:350px — num celular de 375px isso sobra só 5px de margem
+       na esquerda. Em campo os avisos de "salvo localmente"/erro de sincronização
+       (ver entregas_adicionar) precisam ser bem legíveis, então aqui viram uma faixa
+       centralizada com margens simétricas em vez de ancorados no canto. */
+    .toast-container { left: 12px; right: 12px; top: 12px; align-items: center; }
+    .toast { max-width: 100%; width: 100%; box-sizing: border-box; }
+}

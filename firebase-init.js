@@ -1,6 +1,6 @@
 // Firebase initialization for Controle TED
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, doc as fsDoc, getDoc as fsGetDoc, getDocFromServer as fsGetDocFromServer, setDoc as fsSetDoc, onSnapshot as fsOnSnapshot, collection as fsCollection, getDocs as fsGetDocs, writeBatch as fsWriteBatch, deleteDoc as fsDeleteDoc, addDoc as fsAddDoc, runTransaction as fsRunTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, doc as fsDoc, getDoc as fsGetDoc, getDocFromServer as fsGetDocFromServer, setDoc as fsSetDoc, onSnapshot as fsOnSnapshot, collection as fsCollection, getDocs as fsGetDocs, getDocsFromServer as fsGetDocsFromServer, writeBatch as fsWriteBatch, deleteDoc as fsDeleteDoc, addDoc as fsAddDoc, runTransaction as fsRunTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged as fbOnAuthStateChanged, sendPasswordResetEmail as fbSendPasswordResetEmail, updatePassword as fbUpdatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
@@ -139,6 +139,25 @@ window.firestoreGetDoc = async function(path) {
   }
 };
 
+// Variante que ignora o cache local do IndexedDB persistence e força a leitura do
+// servidor. Usada para confirmar se uma escrita otimista (ver firestoreDeleteDoc acima)
+// realmente chegou lá, distinguindo "só está offline" (rejeita por timeout/rede) de
+// "servidor recusou" (rejeita porque o doc no servidor não reflete a escrita esperada).
+window.firestoreGetDocFromServer = async function(path) {
+  const parts = String(path || '').split('/').filter(Boolean);
+  if (parts.length % 2 === 1) return { ok: false, offline: false, data: null };
+  const ref = fsDoc(db, ...parts);
+  try {
+    const snap = await fsGetDocFromServer(ref);
+    return { ok: true, offline: false, data: snap.exists() ? snap.data() : null };
+  } catch (e) {
+    // Firestore lança 'unavailable' quando não consegue alcançar o servidor (offline real)
+    const offline = !!(e && (e.code === 'unavailable' || e.code === 'deadline-exceeded'));
+    console.warn('firestoreGetDocFromServer error', e);
+    return { ok: false, offline, data: null };
+  }
+};
+
 window.firestoreSetDoc = async function(path, data, options = { merge: false }) {
   try {
     const parts = String(path || '').split('/').filter(Boolean);
@@ -173,6 +192,27 @@ window.firestoreGetCollection = async function(collPath) {
   const items = [];
   snap.forEach(d => items.push(Object.assign({ _docId: d.id }, d.data())));
   return items;
+};
+
+// Variante de firestoreGetCollection que força a leitura do SERVIDOR, ignorando o cache
+// do IndexedDB persistence. Com persistência ativada, getDocs() pode responder do cache
+// local quando o servidor está inacessível — e dados velhos carregados assim, se depois
+// regravados pelo autosave, ressuscitam documentos excluídos e sobrescrevem alterações
+// feitas em outro aparelho. Retorna { ok, offline, items } para o chamador distinguir
+// "servidor respondeu" de "estou offline, use o cache sabendo que é cache".
+window.firestoreGetCollectionFromServer = async function(collPath) {
+  const parts = String(collPath || '').split('/').filter(Boolean);
+  if (parts.length === 0) return { ok: false, offline: false, items: [] };
+  try {
+    const snap = await fsGetDocsFromServer(fsCollection(db, ...parts));
+    const items = [];
+    snap.forEach(d => items.push(Object.assign({ _docId: d.id }, d.data())));
+    return { ok: true, offline: false, items };
+  } catch (e) {
+    const offline = !!(e && (e.code === 'unavailable' || e.code === 'deadline-exceeded'));
+    console.warn('firestoreGetCollectionFromServer error', e);
+    return { ok: false, offline, items: [] };
+  }
 };
 
 window.firestoreOnCollectionSnapshot = function(collPath, cb) {
