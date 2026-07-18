@@ -1194,6 +1194,29 @@
         .empty-state .empty-title { font-weight: 700; font-size: 1.05rem; color: var(--color-text-primary); }
         .empty-state .empty-sub { color: var(--color-text-muted); font-size: 0.95rem; max-width: 520px; }
 
+        /* Banner de versão desatualizada (pwa.js: checkAppVersion) */
+        .pwa-version-banner {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 10001;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            flex-wrap: wrap; padding: 10px 16px;
+            background: var(--warning-light); color: var(--warning-dark);
+            border-bottom: 1px solid var(--warning);
+            font-size: 0.9rem; font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .pwa-version-banner-text { flex: 1 1 auto; min-width: 200px; text-align: center; }
+        .pwa-version-banner-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .pwa-version-banner-btn {
+            padding: 5px 12px; border-radius: 6px; border: 1px solid var(--warning-dark);
+            background: var(--warning-dark); color: #fff; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer;
+        }
+        .pwa-version-banner-btn:hover { opacity: 0.9; }
+        .pwa-version-banner-close {
+            background: none; border: none; color: var(--warning-dark); font-size: 1.3rem;
+            line-height: 1; cursor: pointer; padding: 0 4px;
+        }
+
         /* Global loader (overlay) */
         .global-loader { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 2147483647; }
         .global-loader.active { display: flex; }

@@ -4,6 +4,15 @@
   },
   "hosting": {
     "public": ".",
+    "headers": [
+      {
+        "source": "/version.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      }
+    ],
     "ignore": [
       "firebase.json",
       ".firebaserc",

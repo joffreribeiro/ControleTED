@@ -14,6 +14,70 @@ const PWA = {
         this.setupInstallPrompt();
         this.checkInstallStatus();
         this.setupUpdateNotification();
+        this.checkAppVersion();
+    },
+
+    // Detecta apps "congelados" que não conseguem se auto-atualizar pela rede — sobretudo
+    // o APK Android (Capacitor): ele carrega js/main.js, app.js etc. do pacote local
+    // (webDir empacotado no build), não do Firebase Hosting, então um `firebase deploy`
+    // sozinho nunca chega até um aparelho com o APK já instalado (ver bug dos TEDs
+    // ressuscitados por cache/autosave — o mesmo problema de "código antigo rodando" pode
+    // se repetir de outras formas). Compara a versão empacotada nesta build
+    // (window.APP_BUILD_VERSION, definida inline em index.html) com version.json,
+    // lido sempre do Hosting ao vivo (cache: 'no-store' + cache-busting) para nunca aceitar
+    // uma resposta de cache/CDN velha.
+    checkAppVersion() {
+        const HOSTING_VERSION_URL = 'https://controleted.web.app/version.json';
+
+        const attempt = async () => {
+            if (!navigator.onLine) return;
+            try {
+                const resp = await fetch(HOSTING_VERSION_URL + '?t=' + Date.now(), { cache: 'no-store' });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const latest = data && data.version;
+                const current = window.APP_BUILD_VERSION;
+                if (latest && current && latest !== current) {
+                    this.showVersionBanner(latest);
+                }
+            } catch (e) {
+                // Rede instável, CORS bloqueado, ou offline "silencioso": não é um erro
+                // acionável pelo usuário — não interromper o carregamento do app por isso.
+                console.warn('[PWA] checkAppVersion falhou (não crítico):', e);
+            }
+        };
+
+        attempt();
+        // Se a primeira tentativa caiu offline, tentar de novo assim que a conexão voltar.
+        window.addEventListener('online', () => attempt(), { once: true });
+    },
+
+    showVersionBanner(latestVersion) {
+        if (document.getElementById('pwa-version-banner')) return; // já exibido nesta sessão
+
+        const isNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+
+        const banner = document.createElement('div');
+        banner.id = 'pwa-version-banner';
+        banner.className = 'pwa-version-banner';
+
+        const msg = isNative
+            ? 'Este aplicativo instalado está desatualizado. Peça ao administrador o APK mais recente para receber as últimas correções.'
+            : 'Há uma nova versão do sistema disponível.';
+
+        banner.innerHTML =
+            '<span class="pwa-version-banner-text">🔄 ' + msg + '</span>' +
+            '<span class="pwa-version-banner-actions">' +
+            (isNative ? '' : '<button type="button" class="pwa-version-banner-btn" id="pwa-version-banner-reload">Atualizar agora</button>') +
+            '<button type="button" class="pwa-version-banner-close" id="pwa-version-banner-close" aria-label="Fechar aviso">&times;</button>' +
+            '</span>';
+
+        document.body.appendChild(banner);
+
+        const reloadBtn = document.getElementById('pwa-version-banner-reload');
+        if (reloadBtn) reloadBtn.addEventListener('click', () => window.location.reload());
+        const closeBtn = document.getElementById('pwa-version-banner-close');
+        if (closeBtn) closeBtn.addEventListener('click', () => banner.remove());
     },
 
     async registerServiceWorker() {
