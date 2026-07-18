@@ -13805,35 +13805,14 @@
         // Observer para detectar mudanças no DOM
         const resizeObserver = new ResizeObserver(checkTableScrolls);
 
-        // ===== DARK MODE / THEME TOGGLE =====
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('ted_theme', newTheme);
-        }
-
+        // ===== TEMA (somente claro) =====
+        // Tema escuro foi desativado por pedido do usuário: ignorar preferência salva e
+        // prefers-color-scheme do sistema, e limpar qualquer 'dark' salvo de sessões
+        // anteriores (senão quem tinha escolhido escuro antes ficaria preso nele).
         function initTheme() {
             const savedTheme = localStorage.getItem('ted_theme');
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
-            atualizarIconeTemaMobile();
-        }
-
-        // Troca o ícone lua/sol do botão de tema na barra superior mobile (a sidebar
-        // desktop, escondida no recorte mobile, nunca teve um botão de tema visível —
-        // toggleTheme() existia mas ficava órfã, e o app só seguia prefers-color-scheme
-        // do aparelho sem nenhum jeito de o usuário reverter).
-        function atualizarIconeTemaMobile() {
-            const btn = document.getElementById('mobileThemeToggle');
-            if (!btn) return;
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            btn.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}" class="nav-item-icon"></i>`;
-            try { if (typeof initLucideIcons === 'function') initLucideIcons(); } catch (e) {}
+            if (savedTheme === 'dark') localStorage.removeItem('ted_theme');
+            document.documentElement.setAttribute('data-theme', 'light');
         }
 
         // Inicializar Lucide Icons

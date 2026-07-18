@@ -26,6 +26,11 @@ const PWA = {
     // (window.APP_BUILD_VERSION, definida inline em index.html) com version.json,
     // lido sempre do Hosting ao vivo (cache: 'no-store' + cache-busting) para nunca aceitar
     // uma resposta de cache/CDN velha.
+    // Nome fixo do asset em TODA release do GitHub (ver scripts/release-apk.js) — é o que
+    // permite usar o alias .../releases/latest/download/<nome>, que sempre resolve pro
+    // asset da release mais recente sem precisar atualizar link nenhum a cada versão nova.
+    APK_DOWNLOAD_URL: 'https://github.com/joffreribeiro/ControleTED/releases/latest/download/controle-ted.apk',
+
     checkAppVersion() {
         const HOSTING_VERSION_URL = 'https://controleted.web.app/version.json';
 
@@ -62,13 +67,15 @@ const PWA = {
         banner.className = 'pwa-version-banner';
 
         const msg = isNative
-            ? 'Este aplicativo instalado está desatualizado. Peça ao administrador o APK mais recente para receber as últimas correções.'
+            ? 'Este aplicativo instalado está desatualizado.'
             : 'Há uma nova versão do sistema disponível.';
 
         banner.innerHTML =
             '<span class="pwa-version-banner-text">🔄 ' + msg + '</span>' +
             '<span class="pwa-version-banner-actions">' +
-            (isNative ? '' : '<button type="button" class="pwa-version-banner-btn" id="pwa-version-banner-reload">Atualizar agora</button>') +
+            (isNative
+                ? '<button type="button" class="pwa-version-banner-btn" id="pwa-version-banner-download">Baixar atualização</button>'
+                : '<button type="button" class="pwa-version-banner-btn" id="pwa-version-banner-reload">Atualizar agora</button>') +
             '<button type="button" class="pwa-version-banner-close" id="pwa-version-banner-close" aria-label="Fechar aviso">&times;</button>' +
             '</span>';
 
@@ -76,6 +83,14 @@ const PWA = {
 
         const reloadBtn = document.getElementById('pwa-version-banner-reload');
         if (reloadBtn) reloadBtn.addEventListener('click', () => window.location.reload());
+        const downloadBtn = document.getElementById('pwa-version-banner-download');
+        if (downloadBtn) downloadBtn.addEventListener('click', () => {
+            // '_system' é a convenção Cordova/Capacitor pra abrir no navegador padrão do
+            // aparelho em vez de navegar dentro da própria WebView (que não sabe lidar com
+            // o download/instalação de um .apk). Sem isso a WebView provavelmente só
+            // tentaria renderizar o arquivo binário e falharia em silêncio.
+            window.open(this.APK_DOWNLOAD_URL, '_system');
+        });
         const closeBtn = document.getElementById('pwa-version-banner-close');
         if (closeBtn) closeBtn.addEventListener('click', () => banner.remove());
     },

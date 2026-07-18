@@ -6,7 +6,8 @@
   "scripts": {
     "build:www": "node scripts/build-www.js",
     "cap:sync": "npm run build:www && cap sync android",
-    "cap:open": "cap open android"
+    "cap:open": "cap open android",
+    "release:apk": "node scripts/release-apk.js"
   },
   "devDependencies": {
     "@capacitor/android": "^6.2.0",

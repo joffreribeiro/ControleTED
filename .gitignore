@@ -32,6 +32,9 @@ out/
 # reais pro wrapper Android) — não é código-fonte, não precisa ser versionado.
 www/
 
+# scripts/release-apk.js: cópia do APK só pra publicar no GitHub Releases, não é fonte.
+dist-release/
+
 # Database
 *.sqlite
 *.db

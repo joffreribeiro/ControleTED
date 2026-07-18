@@ -26,7 +26,22 @@
       "*.sh",
       "*.exe",
       "*.dll",
-      "*.msi"
+      "*.msi",
+      ".claude/**",
+      "android/**",
+      "www/**",
+      "dist-release/**",
+      "backup/**",
+      "mockup-mobile/**",
+      "resources/**",
+      "scripts/**",
+      "docs/**",
+      "dados/**",
+      "package.json",
+      "package-lock.json",
+      "capacitor.config.json",
+      "ARCHITECTURE.md",
+      "*.py"
     ]
   }
 }
