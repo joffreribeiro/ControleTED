@@ -354,25 +354,6 @@
         }
         .detalhes-header h2 { margin: 0; }
 
-        /* Indicador compacto do TED na sidebar */
-        .sidebar-ted-indicator {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            padding: 6px 8px;
-            border-radius: 6px;
-            background: rgba(255,255,255,0.10);
-            color: rgba(255,255,255,0.85);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-bottom: 8px;
-            white-space: nowrap;
-            overflow: hidden;
-        }
-        .sidebar-ted-indicator:hover { background: rgba(255,255,255,0.16); }
-        .sidebar-ted-indicator .ted-status-dot { flex-shrink: 0; }
-
         .tab-btn i {
             width: 18px;
             height: 18px;
@@ -6083,4 +6064,20 @@ table.ef-table tbody td.right  { text-align: right; }
        centralizada com margens simétricas em vez de ancorados no canto. */
     .toast-container { left: 12px; right: 12px; top: 12px; align-items: center; }
     .toast { max-width: 100%; width: 100%; box-sizing: border-box; }
+}
+
+/* ===== Numeração P Trab: cabeçalho congelado =====
+   .table-wrapper já é contexto de scroll (overflow-x:auto), então o sticky do thead
+   precisa de rolagem vertical no próprio wrapper — sem max-height quem rola é a
+   página e o cabeçalho nunca "gruda". */
+#tabPlanoTrabalho .table-wrapper {
+    max-height: calc(100vh - 230px);
+    overflow-y: auto;
+}
+#tabPlanoTrabalho .tabela-plano-trabalho thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    /* border-collapse:collapse descarta as bordas do th ao grudar; box-shadow mantém a linha */
+    box-shadow: inset 0 -1px 0 var(--border-light, rgba(0,0,0,0.12));
 }

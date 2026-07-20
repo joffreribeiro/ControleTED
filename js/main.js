@@ -3596,6 +3596,7 @@
             // ── DADOS CADASTRAIS ──────────────────────────────────
             const todasAlteracoes = {};
             alteracoes.forEach(item => {
+                if (item.excluido) return; // alteração excluída não marca campo como alterado
                 if (item.camposAlterados && typeof item.camposAlterados === 'object') {
                     Object.keys(item.camposAlterados).forEach(key => {
                         if (!todasAlteracoes[key]) todasAlteracoes[key] = [];
@@ -3634,7 +3635,7 @@
             document.getElementById('info_inicioVigencia').textContent = _fmtData(ted.inicioVigencia);
             document.getElementById('info_primeiraDescentralizacao').textContent = _fmtData(ted.primeiraDescentralizacao);
 
-            if (aditivos.length > 0) {
+            if (totalAditivoMeses > 0) {
                 const vigOrig = Number(ted.vigencia) || 0;
                 document.getElementById('info_vigencia').innerHTML =
                     `<span class="vig-orig-tachado">${vigOrig}m</span><span class="vig-novo-valor">${vigTotalMeses}m</span>`;
@@ -4337,7 +4338,8 @@
         function atualizarTabelaPlanoTrabalho() {
             const tbody = document.getElementById('tabelaPlanoTrabalho');
             if (!tbody) return;
-            const itens = (dados.planosTrabalho || []).slice().sort((a, b) => (a.nrOrdem || 0) - (b.nrOrdem || 0));
+            // Ordem decrescente: registro mais recente (maior nº de ordem) na primeira linha
+            const itens = (dados.planosTrabalho || []).slice().sort((a, b) => (b.nrOrdem || 0) - (a.nrOrdem || 0));
 
             try { const c = document.getElementById('count-planoTrabalho'); if (c) c.textContent = String(itens.length); } catch(e) {}
 
@@ -15873,15 +15875,6 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             initLucideIcons();
-
-            // Espelha o texto do chip de detalhes no indicador da sidebar
-            const tedTextEl = document.getElementById('selectedTedText');
-            const sidebarEl = document.getElementById('sidebarTedText');
-            if (tedTextEl && sidebarEl) {
-                const sync = () => { sidebarEl.textContent = tedTextEl.textContent; };
-                sync();
-                new MutationObserver(sync).observe(tedTextEl, { childList: true, characterData: true, subtree: true });
-            }
 
             // ── MELHORIA 5: Rodapé de rastreabilidade ──────────────
             _injetarRodapeAbas();

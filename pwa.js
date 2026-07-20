@@ -1,18 +1,13 @@
 /**
- * pwa.js — registro do Service Worker e gestão de instalação/atualização da PWA.
- * Padrão portado de ../Ponto/pwa.js, adaptado para os helpers já existentes no
- * Controle TED (showToast/confirmarAcao em js/main.js) em vez do módulo Notifications
- * do Ponto, e injetando o botão de instalação na sidebar em vez de um <header>.
+ * pwa.js — registro do Service Worker e checagem de versão (site e APK Android).
+ * O prompt de "instalar como app" (beforeinstallprompt) foi removido por pedido do
+ * usuário — o app continua funcionando como PWA/instalável pelo menu nativo do
+ * navegador, só não oferece mais um botão próprio convidando pra isso.
  */
 
 const PWA = {
-    deferredPrompt: null,
-    isInstalled: false,
-
     init() {
         this.registerServiceWorker();
-        this.setupInstallPrompt();
-        this.checkInstallStatus();
         this.setupUpdateNotification();
         this.checkAppVersion();
     },
@@ -121,83 +116,6 @@ const PWA = {
             });
         } catch (error) {
             console.error('[PWA] Erro ao registrar Service Worker:', error);
-        }
-    },
-
-    setupInstallPrompt() {
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('[PWA] Prompt de instalação disponível');
-            e.preventDefault();
-            this.deferredPrompt = e;
-            this.showInstallButton();
-        });
-
-        window.addEventListener('appinstalled', () => {
-            console.log('[PWA] App instalado');
-            this.isInstalled = true;
-            this.hideInstallButton();
-            if (typeof window.showToast === 'function') window.showToast('App instalado com sucesso!', 'success');
-        });
-    },
-
-    showInstallButton() {
-        let btn = document.getElementById('pwa-install-btn');
-
-        if (!btn) {
-            btn = document.createElement('button');
-            btn.id = 'pwa-install-btn';
-            btn.className = 'topbar-btn';
-            btn.title = 'Instalar como aplicativo';
-            btn.innerHTML = '<i data-lucide="download" class="inline-icon-sm"></i> Instalar App';
-            btn.onclick = () => this.promptInstall();
-
-            const actions = document.querySelector('.sidebar-actions');
-            if (actions) {
-                const row = document.createElement('div');
-                row.className = 'sidebar-action-btns';
-                row.style.marginTop = '6px';
-                row.appendChild(btn);
-                actions.appendChild(row);
-                try { if (typeof window.initLucideIcons === 'function') window.initLucideIcons(); else if (window.lucide) window.lucide.createIcons(); } catch (e) {}
-            }
-        }
-
-        btn.style.display = 'inline-flex';
-    },
-
-    hideInstallButton() {
-        const btn = document.getElementById('pwa-install-btn');
-        if (btn) btn.style.display = 'none';
-    },
-
-    async promptInstall() {
-        if (!this.deferredPrompt) {
-            if (typeof window.showToast === 'function') window.showToast('App já está instalado ou não pode ser instalado neste navegador', 'info');
-            return;
-        }
-
-        this.deferredPrompt.prompt();
-        const { outcome } = await this.deferredPrompt.userChoice;
-        console.log('[PWA] Resultado da instalação:', outcome);
-
-        if (outcome === 'accepted' && typeof window.showToast === 'function') {
-            window.showToast('Instalando aplicativo...', 'success');
-        }
-
-        this.deferredPrompt = null;
-        this.hideInstallButton();
-    },
-
-    checkInstallStatus() {
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const isIOSStandalone = isIOS && window.navigator && !!window.navigator.standalone;
-
-        this.isInstalled = isStandalone || isIOSStandalone;
-
-        if (this.isInstalled) {
-            console.log('[PWA] App está rodando como instalado');
-            this.hideInstallButton();
         }
     },
 
