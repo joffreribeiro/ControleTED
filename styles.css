@@ -6081,3 +6081,35 @@ table.ef-table tbody td.right  { text-align: right; }
     /* border-collapse:collapse descarta as bordas do th ao grudar; box-shadow mantém a linha */
     box-shadow: inset 0 -1px 0 var(--border-light, rgba(0,0,0,0.12));
 }
+
+/* Separador de ano na tabela de Numeração P Trab */
+#tabPlanoTrabalho .tabela-plano-trabalho tbody tr.pt-ano-sep td {
+    background: #EEF2F7;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-align: left;
+    padding: 6px 12px;
+    border-top: 2px solid #94A3B8;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    white-space: nowrap;
+}
+/* Primeiro bloco encosta no cabeçalho — a borda grossa ali vira ruído */
+#tabPlanoTrabalho .tabela-plano-trabalho tbody tr.pt-ano-sep:first-child td {
+    border-top: none;
+}
+#tabPlanoTrabalho .tabela-plano-trabalho tbody tr.pt-ano-sep .pt-ano-sep-count {
+    margin-left: 10px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: #64748B;
+}
+[data-theme="dark"] #tabPlanoTrabalho .tabela-plano-trabalho tbody tr.pt-ano-sep td {
+    background: #16233c;
+    color: #cbd5e1;
+    border-top-color: #475569;
+}
+[data-theme="dark"] #tabPlanoTrabalho .tabela-plano-trabalho tbody tr.pt-ano-sep .pt-ano-sep-count {
+    color: #94a3b8;
+}

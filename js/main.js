@@ -4335,11 +4335,26 @@
             return `${partes[2]}/${partes[1]}/${partes[0]}`;
         }
 
+        // Ano de um registro do Plano de Trabalho.
+        // O nº do P Trab ("001/2024-DRCOM/IMBEL") é a fonte mais confiável — o campo `data`
+        // costuma vir com placeholder (01/01 do ano). Cai para `data` quando não houver pTrab.
+        function _anoPlanoTrabalho(item) {
+            const m = String(item && item.pTrab || '').match(/\/(\d{4})/);
+            if (m) return m[1];
+            const d = String(item && item.data || '');
+            return /^\d{4}-/.test(d) ? d.slice(0, 4) : '';
+        }
+
         function atualizarTabelaPlanoTrabalho() {
             const tbody = document.getElementById('tabelaPlanoTrabalho');
             if (!tbody) return;
-            // Ordem decrescente: registro mais recente (maior nº de ordem) na primeira linha
-            const itens = (dados.planosTrabalho || []).slice().sort((a, b) => (b.nrOrdem || 0) - (a.nrOrdem || 0));
+            // Ordem decrescente por ano e, dentro do ano, por nº de ordem — mantém o mais
+            // recente na primeira linha e garante que cada ano fique em bloco contíguo.
+            const itens = (dados.planosTrabalho || []).slice().sort((a, b) => {
+                const anoA = _anoPlanoTrabalho(a), anoB = _anoPlanoTrabalho(b);
+                if (anoA !== anoB) return anoB.localeCompare(anoA);
+                return (b.nrOrdem || 0) - (a.nrOrdem || 0);
+            });
 
             try { const c = document.getElementById('count-planoTrabalho'); if (c) c.textContent = String(itens.length); } catch(e) {}
 
@@ -4351,7 +4366,21 @@
             const editBtnHtml = (id) => !window._readOnlyMode ? `<button class="btn-icon-action edit" onclick="editarPlanoTrabalho(${id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>` : '';
             const delBtnHtml = (id) => !window._readOnlyMode ? `<button class="btn-icon-action delete" onclick="removerPlanoTrabalho(${id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>` : '';
 
-            tbody.innerHTML = itens.map((item) => `
+            // Contagem por ano para o rótulo do separador
+            const porAno = {};
+            itens.forEach(it => { const a = _anoPlanoTrabalho(it); porAno[a] = (porAno[a] || 0) + 1; });
+
+            let anoAtual = null;
+            tbody.innerHTML = itens.map((item) => {
+                const ano = _anoPlanoTrabalho(item);
+                let sep = '';
+                if (ano !== anoAtual) {
+                    anoAtual = ano;
+                    const n = porAno[ano];
+                    const rotulo = ano || 'Sem ano';
+                    sep = `<tr class="pt-ano-sep"><td colspan="9">${rotulo}<span class="pt-ano-sep-count">${n} registro${n > 1 ? 's' : ''}</span></td></tr>`;
+                }
+                return sep + `
                 <tr>
                     <td>${item.nrOrdem || ''}</td>
                     <td>${formatarDataBR(item.data)}</td>
@@ -4363,7 +4392,8 @@
                     <td>${item.ted || ''}</td>
                     <td class="col-acao">${editBtnHtml(item.id)}${delBtnHtml(item.id)}</td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
 
             initLucideIcons();
         }
@@ -8067,9 +8097,13 @@
                 const chaveNdUp = normND(e.nd || e.numero) + '|' + String(e.up || e.ug || '');
                 recebidoPorNdUp[chaveNdUp] = (recebidoPorNdUp[chaveNdUp] || 0) + (parseNumber(e.valor) || 0);
             });
-            // linhas CadFin ordenadas por ND+UP (mesma ordem de dadosFiltrados)
+            // linhas CadFin ordenadas por ND+UP (mesma ordem de dadosFiltrados).
+            // Linhas revertidas por aditivo/apostilamento (tachadas) NÃO entram no rateio:
+            // se entrassem, absorveriam o recebimento antes das linhas vigentes e a coluna
+            // "A Receber" das vigentes continuaria mostrando o valor cheio.
             const linhasPorNdUp = {};
             dadosFiltrados.forEach(f => {
+                if (isFinExcluded(f)) return;
                 const chaveNdUp = normND(f.numero || f.nd) + '|' + String(f.up || f.ug || '');
                 if (!linhasPorNdUp[chaveNdUp]) linhasPorNdUp[chaveNdUp] = [];
                 linhasPorNdUp[chaveNdUp].push(f);
