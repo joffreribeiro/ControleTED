@@ -3,8 +3,9 @@
  * Padrão portado de ../Ponto/sw.js (mesmo autor, mesma stack Firebase vanilla-JS sem build).
  */
 
-// v3: força re-cache de app.js/firebase-init.js (fix da regravação de cache velho pelo autosave)
-const CACHE_NAME = 'controle-ted-v3';
+// v4: sincronização em tempo real entre aparelhos (sync/state) + aviso visível quando o
+// save é bloqueado por perfil ainda não carregado
+const CACHE_NAME = 'controle-ted-v4';
 const CACHE_ASSETS = [
     'index.html',
     'styles.css',

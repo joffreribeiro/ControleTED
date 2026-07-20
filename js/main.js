@@ -11840,7 +11840,14 @@
             // Bloquear gravação em modo leitura (somente admin e editor podem gravar)
             const _role = window.currentUserProfile && window.currentUserProfile.role;
             if (_role !== 'admin' && _role !== 'editor') {
-                console.warn('[Modo Leitura] Gravação bloqueada. Faça login como admin ou editor.');
+                // Perfil ainda não carregou (janela de segundos após abrir o app): a edição
+                // fica em memória e o loop de 30s regrava quando o perfil chegar — mas o
+                // usuário PRECISA saber que ainda não foi, senão fecha o app e perde tudo.
+                if (!window.currentUserProfile) {
+                    showToast('⏳ Autenticando... a alteração será salva em instantes. Não feche o app ainda.', 'warning');
+                } else {
+                    console.warn('[Modo Leitura] Gravação bloqueada. Faça login como admin ou editor.');
+                }
                 return;
             }
             // Agendar salvamento debounced (1.5s) para não sobrecarregar
@@ -11855,7 +11862,14 @@
         // Salvamento imediato (sem debounce) → para usar em importações etc.
         async function salvarDadosImediato() {
             const _role = window.currentUserProfile && window.currentUserProfile.role;
-            if (_role !== 'admin' && _role !== 'editor') return;
+            if (_role !== 'admin' && _role !== 'editor') {
+                // Mesmo aviso do salvarDados(): retorno silencioso aqui já perdeu edição de
+                // usuário que editou antes do perfil terminar de carregar e fechou o app.
+                if (!window.currentUserProfile) {
+                    showToast('⏳ Autenticando... a alteração será salva em instantes. Não feche o app ainda.', 'warning');
+                }
+                return;
+            }
             if (_salvarDebounceTimer) { clearTimeout(_salvarDebounceTimer); _salvarDebounceTimer = null; }
             await _executarSalvamento();
         }
@@ -11890,6 +11904,20 @@
                     if (ok) {
                         // Atualizar snapshot de referência para o autosave loop
                         window._lastSavedTedsSnapshot = JSON.stringify(dados.teds || []);
+                        // Marcador de sincronização (padrão do Controle-Estoque): avisa os
+                        // outros aparelhos, via onSnapshot em app.js, que há dados novos no
+                        // servidor — eles recarregam sozinhos em vez de ficarem com estado
+                        // velho em memória (que foi o que ressuscitou TEDs/aditivos excluídos).
+                        // Best-effort: falha aqui não invalida o save que já foi confirmado.
+                        try {
+                            if (window.firestoreSetDoc) {
+                                window.firestoreSetDoc('sync/state', {
+                                    at: Date.now(),
+                                    writer: window._syncClientId || null,
+                                    by: (window.currentUser && window.currentUser.email) || null
+                                }).catch(() => {});
+                            }
+                        } catch (e) { /* best-effort */ }
                         // Feedback visual de sucesso
                         if (syncEl) syncEl.textContent = 'Salvo: ' + new Date().toLocaleTimeString('pt-BR');
                         const iconEl = document.getElementById('cloudStatusIcon');
@@ -11927,7 +11955,11 @@
         window.addEventListener('beforeunload', function (e) {
             try {
                 const _role = window.currentUserProfile && window.currentUserProfile.role;
-                if (_role !== 'admin' && _role !== 'editor') return; // modo leitura não grava
+                // Só pular o aviso quando o papel é COMPROVADAMENTE somente-leitura. Se o
+                // perfil ainda não carregou (undefined), uma edição pendente é exatamente o
+                // caso mais perigoso — o save foi bloqueado pelo gate de role e fechar
+                // agora perde a alteração; o aviso precisa aparecer.
+                if (window.currentUserProfile && _role !== 'admin' && _role !== 'editor') return; // modo leitura não grava
                 let dirty = !!_salvarDebounceTimer || _salvandoEmAndamento || _salvarPendente;
                 if (!dirty && typeof window._lastSavedTedsSnapshot === 'string') {
                     dirty = JSON.stringify(dados.teds || []) !== window._lastSavedTedsSnapshot;

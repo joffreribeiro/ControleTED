@@ -7,6 +7,12 @@
 // App-level Firebase helpers and cloud save/load functions
 // Relies on `firebase-init.js` to initialize Firebase and expose window helpers
 
+// Identidade desta sessão/aparelho para a sincronização em tempo real (ver o listener de
+// 'sync/state' abaixo e o marcador gravado em _executarSalvamento, js/main.js). Serve para
+// distinguir "eu mesmo acabei de salvar" (eco — ignorar) de "outro aparelho salvou"
+// (recarregar). Aleatório por sessão de página; não precisa persistir.
+window._syncClientId = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+
 // Wait helper
 async function waitForHelper(name, timeout = 5000) {
   const start = Date.now();
@@ -150,6 +156,9 @@ window.carregarDoCloud = async function() {
     // vazia) fazia o loop de 30s regravar no servidor tudo que acabou de ser lido — inócuo
     // quando a leitura veio do servidor, mas destrutivo quando veio do cache local velho.
     window._lastSavedTedsSnapshot = JSON.stringify(window.dados.teds || []);
+    // Carimbo do último load: usado pelo listener de sync/state e pelo refresh de
+    // visibilidade para não recarregar de novo logo depois de já ter carregado.
+    window._lastCloudLoadAt = Date.now();
 
     try { atualizarDashboard(); } catch(e) {}
     try { atualizarListaTEDs(); } catch(e) {}
@@ -273,6 +282,58 @@ window.testFirestoreConnection = async function() {
         });
       }
     } catch (e) { console.warn('Erro anexando snapshot de teds para status', e); }
+
+    // Sem edições locais ainda não salvas? (referência: snapshot do último save/load)
+    function _semEdicoesPendentes() {
+      return typeof window._lastSavedTedsSnapshot === 'string'
+        && JSON.stringify((window.dados && window.dados.teds) || []) === window._lastSavedTedsSnapshot;
+    }
+
+    // Sincronização em tempo real (padrão portado do Controle-Estoque): todo save grava um
+    // marcador em sync/state (ver _executarSalvamento em js/main.js); aqui, cada aparelho
+    // escuta esse doc e recarrega sozinho quando OUTRO aparelho salvar. Isso elimina o
+    // cenário que vinha ressuscitando dados excluídos: um aparelho aberto há tempo, com
+    // estado velho em memória, gravando por cima do que os outros salvaram.
+    window._registrarSyncListener = function() {
+      if (window.__syncUnsub) return; // já registrado
+      if (!window.firestoreOnSnapshot) return;
+      try {
+        window.__syncUnsub = window.firestoreOnSnapshot('sync/state', async (snap) => {
+          try {
+            const data = snap && typeof snap.data === 'function' ? snap.data() : null;
+            if (!data || !data.writer) return;
+            // Eco do meu próprio save — ignorar
+            if (data.writer === window._syncClientId) return;
+            // Acabei de carregar (inclusive o disparo inicial do listener) — ignorar
+            if (window._lastCloudLoadAt && (Date.now() - window._lastCloudLoadAt) < 5000) return;
+            if (_semEdicoesPendentes()) {
+              console.log('[Sync] Outro aparelho salvou (' + (data.by || 'desconhecido') + ') — recarregando.');
+              await window.carregarDoCloud();
+              setLastSync(new Date());
+            } else {
+              // Há edição local ainda não salva: não sobrescrever o trabalho do usuário.
+              // O save dele (debounce/30s) vai gravar por cima — avisar do conflito.
+              showToast('⚠️ Outro usuário salvou alterações agora. Ao salvar, as suas prevalecem — recarregue depois para conferir.', 'warning');
+            }
+          } catch (e) { console.warn('[Sync] handler error', e); }
+        });
+      } catch (e) { console.warn('[Sync] falha ao registrar listener', e); }
+    };
+    window._cancelarSyncListener = function() {
+      try { if (window.__syncUnsub) { window.__syncUnsub(); window.__syncUnsub = null; } } catch (e) {}
+    };
+
+    // Ao voltar ao app (aba/janela reexibida — no celular, app trazido de volta do
+    // background, que é como o WebView "reabre" sem recarregar): se não há edição
+    // pendente e o último load já tem idade, atualizar do servidor. Cobre o aparelho
+    // que ficou dias em segundo plano com dados velhos em memória.
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!window.currentUser) return;
+      if (!_semEdicoesPendentes()) return;
+      if (window._lastCloudLoadAt && (Date.now() - window._lastCloudLoadAt) < 60000) return;
+      try { await window.carregarDoCloud(); } catch (e) { console.warn('refresh ao retomar falhou', e); }
+    });
 
     // Listen to online/offline browser events
     window.addEventListener('online', async () => {
@@ -655,9 +716,14 @@ window.testFirestoreConnection = async function() {
                 await window.carregarDoCloud();
               }
             } catch(e) { console.warn('recarregar após login falhou:', e && e.code ? e.code : e); }
+
+            // Sincronização em tempo real entre aparelhos (exige leitura autenticada)
+            try { if (window._registrarSyncListener) window._registrarSyncListener(); } catch(e) {}
           } else {
             window.currentUser = null;
             window.currentUserProfile = null;
+            // Cancelar o listener de sync — sem auth a leitura falharia com permission-denied
+            try { if (window._cancelarSyncListener) window._cancelarSyncListener(); } catch(e) {}
             // Login é obrigatório: sem usuário autenticado, sempre mostrar a tela de login
             // (cobre sessão expirada/revogada, não só o logout manual via doLogout()).
             try { if (window.showLoginModal) window.showLoginModal(); } catch(e) {}
