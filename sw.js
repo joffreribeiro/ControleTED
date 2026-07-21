@@ -3,10 +3,9 @@
  * Padrão portado de ../Ponto/sw.js (mesmo autor, mesma stack Firebase vanilla-JS sem build).
  */
 
-// v5: recarregamento automático (sync/state) não bloqueia mais a tela e agrupa rajadas
-// de saves num único fetch — corrige loader travado + timeouts de salvamento sob uso
-// concorrente
-const CACHE_NAME = 'controle-ted-v5';
+// v8: Valor do TED (calcularTotalObjetosValor) agora exclui linhas de Objetos removidas
+// por aditivo/apostilamento — antes inflava o total do TED pra sempre
+const CACHE_NAME = 'controle-ted-v8';
 const CACHE_ASSETS = [
     'index.html',
     'styles.css',

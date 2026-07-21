@@ -1124,7 +1124,15 @@
         // Calcula valor total de objetos (qtde * valorUnitario)
         function calcularTotalObjetosValor(ted) {
             if (!ted || !ted.objetos || !ted.objetos.length) return 0;
+            // Linhas de Objetos removidas por um aditivo/apostilamento ATIVO ficam no array
+            // (soft-delete — ver confirmarAlteracao: "NUNCA remover fisicamente") e não podem
+            // entrar nesta soma, senão o Valor do TED (usado no dashboard/lista/cabeçalho)
+            // fica permanentemente inflado pelo valor de itens que o usuário já excluiu.
+            // Mesmo critério de exclusão usado nas telas (getExcludedItemIds/isItemExcluded),
+            // parametrizado por `ted` para funcionar mesmo quando não é o TED selecionado.
+            const excludedIds = (typeof getExcludedItemIds === 'function') ? getExcludedItemIds('objetos', ted) : null;
             return ted.objetos.reduce((s, o) => {
+                if (excludedIds && typeof isItemExcluded === 'function' && isItemExcluded(o, excludedIds, 'objetos')) return s;
                 const qt = parseNumber(o.qtde) || 0;
                 const vu = parseNumber(o.valorUnitario) || 0;
                 return s + (qt * vu);
@@ -4569,7 +4577,18 @@
                     { field: 'm', label: 'M', type: 'number' },
                     { field: 'valor', label: 'Valor', type: 'currency' }
                 ],
-                idField: 'id', matchFields: ['id']
+                // matchFields é o FALLBACK usado por compararArrayTabela() quando nem todo
+                // item do array tem 'id' (dados legados/importados antes do backfill de ID
+                // em carregarDetalhes) — usar 'id' aqui era um erro: na ausência de id, TODOS
+                // os itens colapsam pra uma matchKey vazia idêntica, e o algoritmo de
+                // pareamento por posição então casa o item ERRADO como "modificado" e aponta
+                // outro item (que o usuário nem tocou) como removido. Isso é exatamente o bug
+                // relatado: excluir um lançamento no aditivo não tirava seu valor da soma (o
+                // diff apontava pro item errado), e desfazer o aditivo não revertia nada
+                // corretamente (o diff gerado nunca esteve certo). Chave natural (ND+UP+M+
+                // valor, mesmos campos de finNaturalKey) distingue linhas corretamente mesmo
+                // sem id.
+                idField: 'id', matchFields: ['numero', 'up', 'm', 'valor']
             }
         ];
 
@@ -4640,9 +4659,14 @@
             const ted = window.tedSelecionado;
             if (!ted) return null;
             // Percorrer alterações unificadas (ou legado) para achar o último que alterou esta tabela
+            // — ignorando alterações EXCLUÍDAS: senão, depois de excluir o(s) aditivo(s), a célula
+            // continua mostrando "valor antigo → valor novo" tachado como se a alteração ainda
+            // estivesse valendo (esse destaque é uma trilha visual separada da exclusão da soma,
+            // que já respeitava `excluido` — ver isFinExcluded/_finRemovedEntries).
             const fontes = [];
             const lista = ted.alteracoes || [...(ted.aditivos || []), ...(ted.apostilamentos || [])];
             lista.forEach(item => {
+                if (item.excluido) return;
                 if (item.tabelasAlteradas && item.tabelasAlteradas[tabelaKey]) {
                     fontes.push(item.tabelasAlteradas[tabelaKey]);
                 }
@@ -5756,10 +5780,11 @@
         // Retorna um Set de IDs/matchKeys de itens que devem aparecer tachados e fora dos cálculos:
         // - Linhas ADICIONADAS por aditivos/apostilamentos EXCLUÍDOS
         // - Linhas REMOVIDAS por aditivos/apostilamentos ATIVOS (ficaram no array mas foram removidas logicamente)
-        function getExcludedItemIds(tabelaKey) {
+        function getExcludedItemIds(tabelaKey, tedParam) {
             const ids = new Set();
+            const ted = tedParam || window.tedSelecionado;
             const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
-            ((window.tedSelecionado && window.tedSelecionado.alteracoes) || []).forEach(alt => {
+            ((ted && ted.alteracoes) || []).forEach(alt => {
                 const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas[tabelaKey];
                 if (!diffs) return;
                 const addToSet = (item) => {
