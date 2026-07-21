@@ -71,20 +71,27 @@ window.salvarNoCloud = async function() {
   }
 };
 
-window.carregarDoCloud = async function() {
+window.carregarDoCloud = async function(opts) {
+  // silent: usado por atualizações automáticas em segundo plano (listener de sync/state,
+  // retomada de visibilidade) — NUNCA deve bloquear a tela com o loader de tela cheia,
+  // que é para ações explícitas do usuário (botão "Carregar", pós-login). Um recarregamento
+  // automático mostrando esse overlay travava a digitação toda vez que outra pessoa salvava.
+  const silent = !!(opts && opts.silent);
   try {
     const ok = await waitForHelper('firestoreGetCollection', 5000);
     if (!ok) throw new Error('Firestore helpers indisponíveis');
-    // show loader (fallback if helper not yet defined)
-    (function(msg){
-      if (typeof window.showGlobalLoader === 'function') return window.showGlobalLoader(msg);
-      const g = document.getElementById('globalLoader');
-      if (g) {
-        try { const m = g.querySelector('.global-loader-message'); if (m) m.textContent = msg; } catch(e){}
-        g.classList.add('active'); g.setAttribute('aria-hidden','false');
-      }
-    })('Carregando dados da nuvem...');
-    console.log('[Cloud] iniciar carregarDoCloud');
+    if (!silent) {
+      // show loader (fallback if helper not yet defined)
+      (function(msg){
+        if (typeof window.showGlobalLoader === 'function') return window.showGlobalLoader(msg);
+        const g = document.getElementById('globalLoader');
+        if (g) {
+          try { const m = g.querySelector('.global-loader-message'); if (m) m.textContent = msg; } catch(e){}
+          g.classList.add('active'); g.setAttribute('aria-hidden','false');
+        }
+      })('Carregando dados da nuvem...');
+    }
+    console.log('[Cloud] iniciar carregarDoCloud' + (silent ? ' (silencioso)' : ''));
     // Preferir SEMPRE a leitura direta do servidor: com enableIndexedDbPersistence,
     // getDocs() pode responder do cache local (dados de dias atrás). Se esses dados
     // velhos entrarem em window.dados e depois forem regravados (autosave/salvar),
@@ -181,11 +188,18 @@ window.carregarDoCloud = async function() {
       }
     } catch(e) { console.warn('re-sync tedSelecionado após carregarDoCloud:', e); }
 
-    try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
+    if (!silent) {
+      try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
+    }
   } catch (e) {
     console.error(e);
-    showToast('Erro ao carregar da nuvem: ' + (e.message || e), 'error');
-    try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
+    // Falha num recarregamento silencioso em segundo plano não é acionável pelo usuário —
+    // a próxima tentativa (próximo save de alguém, ou o loop de 30s) resolve sozinha.
+    if (!silent) showToast('Erro ao carregar da nuvem: ' + (e.message || e), 'error');
+    else console.warn('[Cloud] carregarDoCloud silencioso falhou:', e);
+    if (!silent) {
+      try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
+    }
   }
 };
 
@@ -294,11 +308,13 @@ window.testFirestoreConnection = async function() {
     // escuta esse doc e recarrega sozinho quando OUTRO aparelho salvar. Isso elimina o
     // cenário que vinha ressuscitando dados excluídos: um aparelho aberto há tempo, com
     // estado velho em memória, gravando por cima do que os outros salvaram.
+    let _syncReloadDebounceTimer = null;
+    let _syncReloadPendingBy = null;
     window._registrarSyncListener = function() {
       if (window.__syncUnsub) return; // já registrado
       if (!window.firestoreOnSnapshot) return;
       try {
-        window.__syncUnsub = window.firestoreOnSnapshot('sync/state', async (snap) => {
+        window.__syncUnsub = window.firestoreOnSnapshot('sync/state', (snap) => {
           try {
             const data = snap && typeof snap.data === 'function' ? snap.data() : null;
             if (!data || !data.writer) return;
@@ -306,21 +322,37 @@ window.testFirestoreConnection = async function() {
             if (data.writer === window._syncClientId) return;
             // Acabei de carregar (inclusive o disparo inicial do listener) — ignorar
             if (window._lastCloudLoadAt && (Date.now() - window._lastCloudLoadAt) < 5000) return;
-            if (_semEdicoesPendentes()) {
-              console.log('[Sync] Outro aparelho salvou (' + (data.by || 'desconhecido') + ') — recarregando.');
-              await window.carregarDoCloud();
-              setLastSync(new Date());
-            } else {
+            if (!_semEdicoesPendentes()) {
               // Há edição local ainda não salva: não sobrescrever o trabalho do usuário.
               // O save dele (debounce/30s) vai gravar por cima — avisar do conflito.
               showToast('⚠️ Outro usuário salvou alterações agora. Ao salvar, as suas prevalecem — recarregue depois para conferir.', 'warning');
+              return;
             }
+            // Agrupar rajadas: com várias pessoas editando ao mesmo tempo (ex.: Cadastro
+            // Financeiro linha a linha), cada save individual reagendava um recarregamento
+            // completo da coleção em TODOS os outros aparelhos — a sobreposição desses
+            // recarregamentos concorrentes competia com os próprios saves e estourava o
+            // timeout de 15s deles (toast "Erro ao salvar dados"). Esperar uma pausa de 3s
+            // sem novos saves antes de recarregar reduz isso a um único fetch por rajada.
+            _syncReloadPendingBy = data.by || _syncReloadPendingBy;
+            if (_syncReloadDebounceTimer) clearTimeout(_syncReloadDebounceTimer);
+            _syncReloadDebounceTimer = setTimeout(async () => {
+              _syncReloadDebounceTimer = null;
+              if (!_semEdicoesPendentes()) return; // pode ter começado a editar durante a espera
+              try {
+                console.log('[Sync] Outro aparelho salvou (' + (_syncReloadPendingBy || 'desconhecido') + ') — recarregando em segundo plano.');
+                await window.carregarDoCloud({ silent: true });
+                setLastSync(new Date());
+              } catch (e) { console.warn('[Sync] recarregamento em segundo plano falhou', e); }
+              _syncReloadPendingBy = null;
+            }, 3000);
           } catch (e) { console.warn('[Sync] handler error', e); }
         });
       } catch (e) { console.warn('[Sync] falha ao registrar listener', e); }
     };
     window._cancelarSyncListener = function() {
       try { if (window.__syncUnsub) { window.__syncUnsub(); window.__syncUnsub = null; } } catch (e) {}
+      try { if (_syncReloadDebounceTimer) { clearTimeout(_syncReloadDebounceTimer); _syncReloadDebounceTimer = null; } } catch (e) {}
     };
 
     // Ao voltar ao app (aba/janela reexibida — no celular, app trazido de volta do
@@ -332,7 +364,7 @@ window.testFirestoreConnection = async function() {
       if (!window.currentUser) return;
       if (!_semEdicoesPendentes()) return;
       if (window._lastCloudLoadAt && (Date.now() - window._lastCloudLoadAt) < 60000) return;
-      try { await window.carregarDoCloud(); } catch (e) { console.warn('refresh ao retomar falhou', e); }
+      try { await window.carregarDoCloud({ silent: true }); } catch (e) { console.warn('refresh ao retomar falhou', e); }
     });
 
     // Listen to online/offline browser events
@@ -346,7 +378,7 @@ window.testFirestoreConnection = async function() {
           const semEdicoesPendentes = typeof window._lastSavedTedsSnapshot === 'string'
             && JSON.stringify((window.dados && window.dados.teds) || []) === window._lastSavedTedsSnapshot;
           if (semEdicoesPendentes && typeof window.carregarDoCloud === 'function') {
-            await window.carregarDoCloud();
+            await window.carregarDoCloud({ silent: true });
           }
         }
       } catch (e) { console.warn('re-sync após reconectar falhou', e); }

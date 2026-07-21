@@ -1,4 +1,4 @@
 {
-  "version": "2026.07.20.1",
+  "version": "2026.07.20.2",
   "note": "Bump manual junto com window.APP_BUILD_VERSION em index.html a cada release relevante. Lido remotamente (fetch cross-origin, no-store) por checkAppVersion() em pwa.js para detectar apps instalados (APK Capacitor) desatualizados em relação ao Hosting."
 }

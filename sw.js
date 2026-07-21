@@ -3,9 +3,10 @@
  * Padrão portado de ../Ponto/sw.js (mesmo autor, mesma stack Firebase vanilla-JS sem build).
  */
 
-// v4: sincronização em tempo real entre aparelhos (sync/state) + aviso visível quando o
-// save é bloqueado por perfil ainda não carregado
-const CACHE_NAME = 'controle-ted-v4';
+// v5: recarregamento automático (sync/state) não bloqueia mais a tela e agrupa rajadas
+// de saves num único fetch — corrige loader travado + timeouts de salvamento sob uso
+// concorrente
+const CACHE_NAME = 'controle-ted-v5';
 const CACHE_ASSETS = [
     'index.html',
     'styles.css',
