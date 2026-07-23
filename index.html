@@ -1892,20 +1892,75 @@
         </div>
     </div>
 
+    <!-- Modal: Editar Usuário (somente admin) -->
+    <!-- z-index abaixo de 9999 de propósito: as confirmações do confirmarAcao() usam 9999
+         e precisam aparecer por cima deste modal. -->
+    <div id="editUserModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9990;justify-content:center;align-items:center;">
+        <div style="background:white;border-radius:0.75rem;padding:2rem;max-width:440px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,0.25);position:relative;">
+            <button onclick="hideEditUserModal()" style="position:absolute;top:0.75rem;right:0.75rem;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#94a3b8;line-height:1;">&times;</button>
+            <h3 style="margin:0 0 1.25rem;color:#0C447C;font-size:1.1rem;">Editar usuário</h3>
+            <div id="editUserError" style="display:none;background:#fee2e2;color:#dc2626;padding:0.5rem 0.75rem;border-radius:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;"></div>
+            <div id="editUserSuccess" style="display:none;background:#d1fae5;color:#059669;padding:0.5rem 0.75rem;border-radius:0.4rem;margin-bottom:0.75rem;font-size:0.85rem;"></div>
+
+            <input id="edit_user_uid" type="hidden">
+
+            <label style="display:block;margin-bottom:3px;font-size:13px;font-weight:600;color:#374151;">E-mail</label>
+            <input id="edit_user_email" type="email" readonly style="width:100%;padding:0.55rem 0.75rem;margin-bottom:0.25rem;border:1px solid #d1d5db;border-radius:0.4rem;font-size:0.95rem;box-sizing:border-box;background:#f3f4f6;color:#6b7280;">
+            <p style="margin:0 0 0.75rem;font-size:11px;color:#94a3b8;">O e-mail é a identidade de login e não pode ser alterado aqui.</p>
+
+            <label style="display:block;margin-bottom:3px;font-size:13px;font-weight:600;color:#374151;">Nome</label>
+            <input id="edit_user_name" type="text" placeholder="Nome completo" style="width:100%;padding:0.55rem 0.75rem;margin-bottom:0.75rem;border:1px solid #d1d5db;border-radius:0.4rem;font-size:0.95rem;box-sizing:border-box;">
+
+            <label style="display:block;margin-bottom:3px;font-size:13px;font-weight:600;color:#374151;">Perfil</label>
+            <select id="edit_user_role" style="width:100%;padding:0.55rem 0.75rem;margin-bottom:0.75rem;border:1px solid #d1d5db;border-radius:0.4rem;font-size:0.95rem;box-sizing:border-box;"
+                onchange="(function(v){var r=document.getElementById('edit_up_row');if(r){r.style.display=v==='editor'?'block':'none';if(v==='editor')popularUpsFormUsuario('edit_up');}})(this.value)">
+                <option value="leitor">📖 Leitor (somente leitura)</option>
+                <option value="editor">✏️ Editor (pode editar TEDs)</option>
+                <option value="admin">🔑 Admin (acesso total)</option>
+            </select>
+
+            <div id="edit_up_row" style="display:none">
+                <label style="display:block;margin-bottom:3px;font-size:13px;font-weight:600;color:#374151;">UP Restrita <span style="font-weight:400;color:#94a3b8;">(opcional)</span></label>
+                <select id="edit_up" style="width:100%;padding:0.55rem 0.75rem;margin-bottom:0.75rem;border:1px solid #d1d5db;border-radius:0.4rem;font-size:0.95rem;box-sizing:border-box;">
+                    <option value="">Todas as UPs</option>
+                </select>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;">
+                <input id="edit_user_active" type="checkbox" style="width:16px;height:16px;cursor:pointer">
+                <label for="edit_user_active" style="font-size:13px;cursor:pointer;color:#374151;">Usuário ativo</label>
+            </div>
+
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                <button onclick="saveEditUser()" style="flex:1;padding:0.65rem;background:linear-gradient(135deg,#185FA5,#0C447C);color:white;border:none;border-radius:0.4rem;font-size:0.95rem;font-weight:600;cursor:pointer;">Salvar</button>
+                <button onclick="hideEditUserModal()" style="padding:0.65rem 1rem;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:0.4rem;font-size:0.95rem;cursor:pointer;">Cancelar</button>
+            </div>
+
+            <div style="border-top:1px solid #e5e7eb;padding-top:1rem;">
+                <label style="display:block;margin-bottom:3px;font-size:13px;font-weight:600;color:#374151;">Senha</label>
+                <p style="margin:0 0 0.6rem;font-size:11px;color:#94a3b8;line-height:1.4;">
+                    Por segurança, o Firebase não permite que um administrador defina a senha de outra pessoa
+                    pelo aplicativo. Envie um link de redefinição — o próprio usuário escolhe a nova senha.
+                </p>
+                <button onclick="adminResetUserPassword()" style="width:100%;padding:0.6rem;background:#fff;color:#0C447C;border:1px solid #0C447C;border-radius:0.4rem;font-size:0.9rem;font-weight:600;cursor:pointer;">✉️ Enviar link de redefinição de senha</button>
+            </div>
+        </div>
+    </div>
+
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260723c"></script>
+    <script src="js/main.js?v=20260723d"></script>
 
     <!-- Identidade da versão empacotada NESTA build (index.html + js/main.js + app.js +
          firebase-init.js). Bump manual sempre que uma correção/versão for lançada — deve
          acompanhar o mesmo valor em version.json (fonte remota, lida por pwa.js para saber
          se o app instalado no celular ficou desatualizado). Ver checkAppVersion() em pwa.js. -->
-    <script>window.APP_BUILD_VERSION = '2026.07.23.3';</script>
+    <script>window.APP_BUILD_VERSION = '2026.07.23.4';</script>
 
     <!-- PWA: registro do service worker e botão de instalação (depende de showToast/confirmarAcao acima) -->
-    <script src="pwa.js?v=20260723c"></script>
+    <script src="pwa.js?v=20260723d"></script>
 
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js?v=20260720a"></script>
-    <script type="module" src="./app.js?v=20260723c"></script>
+    <script type="module" src="./app.js?v=20260723d"></script>
 </body>
 </html>

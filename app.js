@@ -550,11 +550,16 @@ window.testFirestoreConnection = async function() {
     }
   };
 
+  // Última lista carregada por loadUsersList — usada pelo modal de edição para
+  // recuperar o registro completo (inclusive o _docId real) sem uma nova leitura.
+  let lastUsersList = [];
+
   // Load and render users list
   window.loadUsersList = async function() {
     try {
       await waitForHelper('firestoreGetCollection', 3000);
       const users = await window.firestoreGetCollection('users');
+      lastUsersList = Array.isArray(users) ? users : [];
       const wrap = document.getElementById('usersListContainer');
       if (!wrap) return;
       wrap.innerHTML = '';
@@ -590,6 +595,13 @@ window.testFirestoreConnection = async function() {
         actions.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
 
         if (isCurrentUserAdmin() && uid) {
+          const btnEdit = document.createElement('button');
+          btnEdit.className = 'btn';
+          btnEdit.style.cssText = 'font-size:12px;padding:4px 8px';
+          btnEdit.textContent = 'Editar';
+          btnEdit.addEventListener('click', () => window.showEditUserModal(uid));
+          actions.appendChild(btnEdit);
+
           // Botão ativar/desativar
           const btnToggle = document.createElement('button');
           btnToggle.className = 'btn';
@@ -636,6 +648,177 @@ window.testFirestoreConnection = async function() {
       }, 'Confirmar');
       return;
     } catch (e) { console.warn('deleteUser', e); showToast('Erro ao remover usuário', 'error'); }
+  };
+
+  // ===== Edição de usuário (somente admin) =====
+  function setEditUserError(msg) {
+    const err = document.getElementById('editUserError');
+    const ok = document.getElementById('editUserSuccess');
+    if (ok) ok.style.display = 'none';
+    if (err) { err.textContent = msg; err.style.display = 'block'; }
+  }
+
+  function setEditUserSuccess(msg) {
+    const err = document.getElementById('editUserError');
+    const ok = document.getElementById('editUserSuccess');
+    if (err) err.style.display = 'none';
+    if (ok) { ok.textContent = msg; ok.style.display = 'block'; }
+  }
+
+  // Localiza o registro do usuário na última lista carregada. O caminho de escrita
+  // precisa ser o _docId real do documento — nem sempre igual ao campo uid.
+  function findUserRecord(uid) {
+    const key = String(uid || '');
+    return lastUsersList.find(u => String(u._docId || '') === key)
+        || lastUsersList.find(u => String(u.uid || '') === key)
+        || null;
+  }
+
+  window.showEditUserModal = async function(uid) {
+    try {
+      if (!isCurrentUserAdmin()) { showToast('Apenas administradores podem editar usuários', 'error'); return; }
+      const modal = document.getElementById('editUserModal');
+      if (!modal) return;
+
+      let user = findUserRecord(uid);
+      if (!user && window.firestoreGetDoc) {
+        const data = await window.firestoreGetDoc('users/' + uid);
+        if (data) user = Object.assign({ _docId: uid }, data);
+      }
+      if (!user) { showToast('Usuário não encontrado', 'error'); return; }
+
+      const role = user.role === 'user' ? 'leitor' : (user.role || 'leitor');
+
+      const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      set('edit_user_uid', user._docId || user.uid || uid);
+      set('edit_user_email', user.email || '');
+      set('edit_user_name', user.displayName || '');
+      set('edit_user_role', role);
+
+      const activeEl = document.getElementById('edit_user_active');
+      if (activeEl) activeEl.checked = user.active !== false;
+
+      const upRow = document.getElementById('edit_up_row');
+      if (upRow) upRow.style.display = role === 'editor' ? 'block' : 'none';
+      if (role === 'editor') {
+        window.popularUpsFormUsuario('edit_up');
+        const upSel = document.getElementById('edit_up');
+        if (upSel) {
+          const atual = user.upRestrita || '';
+          // A UP gravada pode não constar mais na lista de TEDs carregada; mantém a opção
+          // para que salvar sem mexer nesse campo não apague a restrição existente.
+          if (atual && !Array.from(upSel.options).some(o => o.value === atual)) {
+            const opt = document.createElement('option');
+            opt.value = atual;
+            opt.textContent = atual + ' (não consta nos TEDs carregados)';
+            upSel.appendChild(opt);
+          }
+          upSel.value = atual;
+        }
+      }
+
+      const err = document.getElementById('editUserError');
+      const ok = document.getElementById('editUserSuccess');
+      if (err) { err.style.display = 'none'; err.textContent = ''; }
+      if (ok) { ok.style.display = 'none'; ok.textContent = ''; }
+
+      modal.style.display = 'flex';
+    } catch (e) {
+      console.warn('showEditUserModal error', e);
+      showToast('Erro ao abrir edição do usuário', 'error');
+    }
+  };
+
+  window.hideEditUserModal = function() {
+    const m = document.getElementById('editUserModal');
+    if (m) m.style.display = 'none';
+  };
+
+  window.saveEditUser = async function() {
+    try {
+      if (!isCurrentUserAdmin()) { setEditUserError('Apenas administradores podem editar usuários.'); return; }
+
+      const docId = (document.getElementById('edit_user_uid') || {}).value || '';
+      if (!docId) { setEditUserError('Usuário inválido.'); return; }
+
+      const displayName = ((document.getElementById('edit_user_name') || {}).value || '').trim();
+      const role = (document.getElementById('edit_user_role') || {}).value || 'leitor';
+      const activeEl = document.getElementById('edit_user_active');
+      const active = activeEl ? activeEl.checked : true;
+      const upSel = document.getElementById('edit_up');
+      const upRestrita = (role === 'editor' && upSel && upSel.value) ? upSel.value : null;
+
+      // Rebaixar ou desativar a própria conta tira o acesso de administração em seguida —
+      // exige confirmação explícita para não acontecer por descuido.
+      const euMesmo = window.currentUser && String(window.currentUser.uid) === String(docId);
+      if (euMesmo && (role !== 'admin' || !active)) {
+        const confirmado = await new Promise(resolve => {
+          confirmarAcao(
+            'Você está alterando a própria conta e vai perder o acesso de administrador. Continuar?',
+            () => resolve(true),
+            'Confirmar'
+          );
+          // confirmarAcao não avisa no cancelamento; o Promise só resolve no OK.
+        });
+        if (!confirmado) return;
+      }
+
+      await waitForHelper('firestoreSetDoc', 2000);
+      const ok = await window.firestoreSetDoc('users/' + docId, {
+        displayName: displayName,
+        role: role,
+        upRestrita: upRestrita,
+        active: active
+      }, { merge: true });
+
+      if (!ok) { setEditUserError('Erro ao salvar. Verifique sua conexão e permissões.'); return; }
+
+      setEditUserSuccess('Usuário atualizado com sucesso.');
+      showToast('Usuário atualizado', 'success');
+      loadUsersList();
+
+      // Se o admin editou o próprio perfil, refletir na sessão atual sem precisar relogar.
+      if (euMesmo && window.currentUserProfile) {
+        window.currentUserProfile.displayName = displayName;
+        window.currentUserProfile.role = role;
+        window.currentUserProfile.upRestrita = upRestrita;
+        window.currentUserProfile.active = active;
+        applyRolePermissions();
+      }
+
+      setTimeout(window.hideEditUserModal, 1200);
+    } catch (e) {
+      console.warn('saveEditUser error', e);
+      setEditUserError('Erro ao salvar: ' + (e.message || e));
+    }
+  };
+
+  // Envia link de redefinição de senha para o usuário em edição.
+  // O SDK web do Firebase não permite que um admin defina a senha de outra conta —
+  // isso exigiria o Admin SDK rodando no servidor (Cloud Function), que este projeto
+  // não possui. O link de redefinição é o caminho suportado no cliente.
+  window.adminResetUserPassword = async function() {
+    try {
+      if (!isCurrentUserAdmin()) { setEditUserError('Apenas administradores podem redefinir senhas.'); return; }
+      const email = ((document.getElementById('edit_user_email') || {}).value || '').trim();
+      if (!email) { setEditUserError('Este usuário não tem e-mail cadastrado.'); return; }
+
+      confirmarAcao('Enviar link de redefinição de senha para ' + email + '?', async function() {
+        try {
+          await waitForHelper('authSendPasswordReset', 3000);
+          await window.authSendPasswordReset(email);
+          setEditUserSuccess('Link de redefinição enviado para ' + email + '.');
+        } catch (e) {
+          if (e && e.code === 'auth/user-not-found') setEditUserError('Nenhuma conta de login encontrada com este e-mail.');
+          else if (e && e.code === 'auth/invalid-email') setEditUserError('E-mail inválido.');
+          else if (e && e.code === 'auth/too-many-requests') setEditUserError('Muitas tentativas. Aguarde alguns minutos.');
+          else setEditUserError('Erro ao enviar link: ' + (e && e.message ? e.message : e));
+        }
+      }, 'Enviar');
+    } catch (e) {
+      console.warn('adminResetUserPassword error', e);
+      setEditUserError('Erro ao enviar link de redefinição.');
+    }
   };
 
   // Load and render audit log (admin only)
@@ -703,9 +886,9 @@ window.testFirestoreConnection = async function() {
     } catch (e) { console.warn('loadAuditLog error', e); }
   };
 
-  // Populate UP select in create user form
-  window.popularUpsFormUsuario = function() {
-    const sel = document.getElementById('create_up');
+  // Populate UP select in create/edit user form (default: formulário de criação)
+  window.popularUpsFormUsuario = function(selectId) {
+    const sel = document.getElementById(selectId || 'create_up');
     if (!sel) return;
     const ups = [...new Set((window.dados && window.dados.teds ? window.dados.teds : [])
       .map(t => t.upResponsavel || t.up || '').filter(Boolean))].sort();
