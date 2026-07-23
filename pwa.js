@@ -43,6 +43,24 @@ const PWA = {
                     // usuários (ver _bloqueadoPorVersaoDesatualizada). Só marcamos com
                     // mismatch confirmado — falha de rede/CORS cai no catch e não marca.
                     window._appDesatualizado = true;
+
+                    // Atualizar SOZINHO no navegador, em vez de depender de o usuário ver e
+                    // clicar no banner. Enquanto alguém fica numa build antiga o sistema é
+                    // inconsistente entre as máquinas, então quanto menos passos manuais,
+                    // melhor. Guarda em sessionStorage evita laço de recarga: tenta no
+                    // máximo UMA vez por versão-alvo por sessão; se ainda assim continuar
+                    // desatualizado, cai no banner manual.
+                    const isNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+                    let jaTentou = false;
+                    try { jaTentou = sessionStorage.getItem('pwa_auto_upd') === String(latest); } catch (e) {}
+                    // No app nativo recarregar não adianta (o código vem empacotado no APK),
+                    // então lá sempre mostramos o banner com o link de download.
+                    if (!isNative && !jaTentou) {
+                        try { sessionStorage.setItem('pwa_auto_upd', String(latest)); } catch (e) {}
+                        console.log('[PWA] Versão ' + latest + ' disponível — atualizando automaticamente.');
+                        this.limparCachesERecarregar();
+                        return;
+                    }
                     this.showVersionBanner(latest);
                 }
             } catch (e) {

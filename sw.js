@@ -10,7 +10,8 @@
 // uma máquina antiga apague do servidor o que outro usuário salvou)
 // v11: renderizar não grava mais no servidor (era o que apagava a entrega/alteração de
 // outro usuário) + app.js/firebase-init.js passam a ser rede-primeiro
-const CACHE_NAME = 'controle-ted-v12';
+// v13: atualização automática do navegador (pwa.js) + Hosting com Cache-Control: no-cache
+const CACHE_NAME = 'controle-ted-v13';
 const CACHE_ASSETS = [
     'index.html',
     'styles.css',
