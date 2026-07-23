@@ -32,42 +32,43 @@ const showToast = (...args) => {
   console[type === 'error' ? 'error' : 'log']('[Toast fallback][' + type + ']', message);
 };
 
+// Botão "Salvar" da barra. Antes: mostrava um loader BLOQUEANTE de tela cheia e fazia
+// `await firestoreBatchSet(...)` SEM timeout — com a persistência offline do Firestore,
+// batch.commit() fica pendente pra sempre quando a rede cai/instável (não rejeita), então
+// o loader "Salvando na nuvem..." travava a tela indefinidamente. Agora delega ao mesmo
+// caminho robusto do autosave (salvarDadosImediato → _executarSalvamento), que tem timeout
+// de 20s, escrita incremental (só TEDs alterados) e indicador NÃO-bloqueante. Sem overlay
+// de tela cheia = nada pra travar.
 window.salvarNoCloud = async function() {
   try {
-    const ok = await waitForHelper('firestoreBatchSet', 5000);
-    if (!ok) throw new Error('Firestore helpers indisponíveis');
-    showToast('Salvando na nuvem...', 'info');
-    // show loader (fallback if helper not yet defined)
-    (function(msg){
-      if (typeof window.showGlobalLoader === 'function') return window.showGlobalLoader(msg);
-      const g = document.getElementById('globalLoader');
-      if (g) {
-        try { const m = g.querySelector('.global-loader-message'); if (m) m.textContent = msg; } catch(e){}
-        g.classList.add('active'); g.setAttribute('aria-hidden','false');
-      }
-    })('Salvando na nuvem...');
-    console.log('[Cloud] iniciar salvarNoCloud');
-    // Ensure dados exists
-    if (!window.dados) window.dados = { teds: [], proxiId: 1, planosTrabalho: [], proxiIdPlano: 1, proxiNrOrdemPlano: 1 };
-    await window.firestoreBatchSet('teds', window.dados.teds || []);
-    await window.firestoreBatchSet('planosTrabalho', window.dados.planosTrabalho || []);
-    console.log('[Cloud] firestoreBatchSet ok');
-    // Update meta nextId so other clients can pick up current proxi
-    try {
-      if (window.firestoreSetDoc) {
-        await window.firestoreSetDoc('meta/teds', { nextId: window.dados.proxiId }, { merge: true });
-        console.log('[Cloud] meta/teds updated to', window.dados.proxiId);
-      }
-    } catch (e) {
-      console.warn('Não foi possível atualizar meta/teds', e);
+    const ok = await waitForHelper('salvarDadosImediato', 5000);
+    if (!ok || typeof window.salvarDadosImediato !== 'function') {
+      // Fallback defensivo: helper de save ainda não carregou.
+      showToast('Aguarde — o sistema ainda está inicializando. Tente salvar em instantes.', 'warning');
+      return;
     }
-    showToast('Dados salvos na nuvem com sucesso', 'success');
-    try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
-    try { if (typeof window.showSaveConfirmation === 'function') window.showSaveConfirmation('#btnSalvarTopo'); else { const b = document.getElementById('btnSalvarTopo'); if (b) { b.classList.add('btn-saved'); setTimeout(()=>b.classList.remove('btn-saved'),2000); } } } catch(e){}
+    if (!window.dados) window.dados = { teds: [], proxiId: 1, planosTrabalho: [], proxiIdPlano: 1, proxiNrOrdemPlano: 1 };
+    console.log('[Cloud] iniciar salvarNoCloud (delegado a salvarDadosImediato)');
+    const salvou = await window.salvarDadosImediato();
+    if (salvou) {
+      // Alinhar meta/teds pra que outros clientes escolham o próximo id sem colisão.
+      // Best-effort e com timeout curto próprio — nunca bloqueia o feedback ao usuário.
+      try {
+        if (window.firestoreSetDoc) {
+          const metaTimeout = new Promise((res) => setTimeout(() => res(), 6000));
+          await Promise.race([
+            window.firestoreSetDoc('meta/teds', { nextId: window.dados.proxiId }, { merge: true }),
+            metaTimeout
+          ]);
+        }
+      } catch (e) { console.warn('Não foi possível atualizar meta/teds', e); }
+      showToast('Dados salvos na nuvem com sucesso', 'success');
+      try { if (typeof window.showSaveConfirmation === 'function') window.showSaveConfirmation('#btnSalvarTopo'); else { const b = document.getElementById('btnSalvarTopo'); if (b) { b.classList.add('btn-saved'); setTimeout(()=>b.classList.remove('btn-saved'),2000); } } } catch(e){}
+    }
+    // Se salvou === false, _executarSalvamento já mostrou o toast de erro específico.
   } catch (e) {
     console.error(e);
     showToast('Erro ao salvar na nuvem: ' + (e.message || e), 'error');
-    try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
   }
 };
 
@@ -163,6 +164,11 @@ window.carregarDoCloud = async function(opts) {
     // vazia) fazia o loop de 30s regravar no servidor tudo que acabou de ser lido — inócuo
     // quando a leitura veio do servidor, mas destrutivo quando veio do cache local velho.
     window._lastSavedTedsSnapshot = JSON.stringify(window.dados.teds || []);
+    window._lastSavedPlanosSnapshot = JSON.stringify(window.dados.planosTrabalho || []);
+    // Reconstruir as assinaturas por-doc pra que o PRÓXIMO save só grave o que o usuário
+    // mudar a partir daqui (e não a coleção inteira). Sem isso o primeiro save após um load
+    // reescreveria todos os TEDs — inócuo, mas anula a otimização e o benefício multiusuário.
+    try { if (typeof window._rebuildTedDocHashes === 'function') window._rebuildTedDocHashes(); } catch (e) {}
     // Carimbo do último load: usado pelo listener de sync/state e pelo refresh de
     // visibilidade para não recarregar de novo logo depois de já ter carregado.
     window._lastCloudLoadAt = Date.now();
@@ -281,6 +287,7 @@ window.testFirestoreConnection = async function() {
 
     // Track last saved snapshot to detect changes
     window._lastSavedTedsSnapshot = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
+    window._lastSavedPlanosSnapshot = JSON.stringify((window.dados && window.dados.planosTrabalho) ? window.dados.planosTrabalho : []);
 
     // Attach collection snapshot to detect server connectivity and last sync
     try {

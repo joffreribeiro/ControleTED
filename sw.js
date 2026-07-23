@@ -3,9 +3,10 @@
  * Padrão portado de ../Ponto/sw.js (mesmo autor, mesma stack Firebase vanilla-JS sem build).
  */
 
-// v8: Valor do TED (calcularTotalObjetosValor) agora exclui linhas de Objetos removidas
-// por aditivo/apostilamento — antes inflava o total do TED pra sempre
-const CACHE_NAME = 'controle-ted-v8';
+// v9: salvamento não trava mais (botão "Salvar" sem loader bloqueante + timeout único de
+// 20s) e escreve só os TEDs alterados (incremental) — corrige loader preso, "erro ao
+// salvar" sob rede ruim e sobrescrita entre usuários simultâneos
+const CACHE_NAME = 'controle-ted-v9';
 const CACHE_ASSETS = [
     'index.html',
     'styles.css',

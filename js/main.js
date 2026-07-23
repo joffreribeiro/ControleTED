@@ -11861,6 +11861,36 @@
         // descartado silenciosamente — fica pendente e roda de novo ao final do atual.
         let _salvarPendente = false;
 
+        // ── Escrita incremental (só os TEDs que mudaram) ────────────────────────────
+        // Antes, cada save reescrevia a coleção 'teds' INTEIRA (todos os docs) toda vez.
+        // Com vários usuários + autosave de 30s isso: (a) estourava a quota de escrita do
+        // Firestore e deixava os saves lentos → timeout "Erro ao salvar"; (b) fazia um
+        // cliente defasado sobrescrever TEDs que outro acabou de salvar. Agora comparamos
+        // cada TED com sua assinatura do último save bem-sucedido e só gravamos os que de
+        // fato mudaram (ou são novos). Exclusão de TED continua no caminho próprio
+        // (firestoreDeleteDoc em removerTedDaBase), não aqui.
+        function _tedDocSignature(t) { try { return JSON.stringify(t); } catch (e) { return String(Math.random()); } }
+        function _computeTedsToWrite() {
+            const map = window._tedDocHashes || {};
+            const changed = [];
+            (dados.teds || []).forEach(t => {
+                if (t == null || t.id == null) { changed.push(t); return; }
+                const id = String(t.id);
+                if (map[id] !== _tedDocSignature(t)) changed.push(t);
+            });
+            return changed;
+        }
+        // Marca o estado atual como "salvo": chamado após um save bem-sucedido e após um
+        // load (app.js), pra que o próximo save só grave o que mudou a partir daqui.
+        function _commitTedHashes() {
+            const map = {};
+            (dados.teds || []).forEach(t => { if (t && t.id != null) map[String(t.id)] = _tedDocSignature(t); });
+            window._tedDocHashes = map;
+        }
+        // Exposto pra app.js resetar a linha-base logo após carregarDoCloud (dados
+        // recém-lidos do servidor não são "alteração pendente").
+        window._rebuildTedDocHashes = _commitTedHashes;
+
         async function salvarDados() {
             // Bloquear gravação em modo leitura (somente admin e editor podem gravar)
             const _role = window.currentUserProfile && window.currentUserProfile.role;
@@ -11885,6 +11915,8 @@
         }
 
         // Salvamento imediato (sem debounce) → para usar em importações etc.
+        // Retorna true/false indicando se o commit no servidor foi confirmado (usado pelo
+        // botão "Salvar" pra dar feedback de sucesso/erro sem loader bloqueante).
         async function salvarDadosImediato() {
             const _role = window.currentUserProfile && window.currentUserProfile.role;
             if (_role !== 'admin' && _role !== 'editor') {
@@ -11893,10 +11925,10 @@
                 if (!window.currentUserProfile) {
                     showToast('⏳ Autenticando... a alteração será salva em instantes. Não feche o app ainda.', 'warning');
                 }
-                return;
+                return false;
             }
             if (_salvarDebounceTimer) { clearTimeout(_salvarDebounceTimer); _salvarDebounceTimer = null; }
-            await _executarSalvamento();
+            return await _executarSalvamento();
         }
 
         async function _executarSalvamento() {
@@ -11904,7 +11936,7 @@
                 // Já existe um commit em voo: marcar pendência para re-executar ao final,
                 // senão as mudanças feitas durante o commit só seriam salvas pelo loop de 30s.
                 _salvarPendente = true;
-                return;
+                return false;
             }
             _salvandoEmAndamento = true;
             // sinalizar também em window para que listeners possam checar
@@ -11912,37 +11944,58 @@
             // Feedback visual: indicador de salvando
             const syncEl = document.getElementById('cloudLastSync');
             if (syncEl) syncEl.textContent = '💾 Salvando...';
+            let ok = false;
             try {
                 if (window && window.firestoreBatchSet) {
-                    // Timeout de segurança: se o commit ficar pendente (ex.: rede bloqueada
-                    // por adblock), não deixar _salvandoEmAndamento travado indefinidamente.
-                    const _timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000));
-                    let ok = await Promise.race([window.firestoreBatchSet('teds', dados.teds || []), _timeout]);
-                    // planosTrabalho faz parte do mesmo salvamento: se falhar, o usuário
-                    // precisa ver erro (antes a falha era só um console.warn).
-                    try {
-                        const okPlanos = await window.firestoreBatchSet('planosTrabalho', dados.planosTrabalho || []);
-                        if (!okPlanos) { console.warn('Erro salvando planosTrabalho'); ok = false; }
-                    } catch(e) { console.warn('Erro salvando planosTrabalho', e); ok = false; }
-                    // firestoreBatchSet engole exceções e retorna false em caso de erro —
-                    // tratar como falha real, não como sucesso silencioso.
+                    // UM único timeout cobrindo a sequência INTEIRA (teds + planos). Com
+                    // enableIndexedDbPersistence, batch.commit() fica pendente pra sempre
+                    // quando offline/rede ruim (não rejeita) — sem esse teto o save trava e
+                    // segura _salvandoEmAndamento, bloqueando todos os saves seguintes.
+                    const _timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000));
+                    let wroteTeds = 0, wrotePlanos = false;
+                    const seq = (async () => {
+                        // Só grava os TEDs que mudaram desde o último save (ver _computeTedsToWrite)
+                        const tedsToWrite = _computeTedsToWrite();
+                        if (tedsToWrite.length > 0) {
+                            const okTeds = await window.firestoreBatchSet('teds', tedsToWrite);
+                            if (!okTeds) return false;
+                            wroteTeds = tedsToWrite.length;
+                        }
+                        // planosTrabalho: grava só quando o conjunto mudou (é pequeno, mantém
+                        // escrita da coleção inteira, mas evita reescrever quando nada mudou).
+                        const planosNow = JSON.stringify(dados.planosTrabalho || []);
+                        if (planosNow !== window._lastSavedPlanosSnapshot) {
+                            const okPlanos = await window.firestoreBatchSet('planosTrabalho', dados.planosTrabalho || []);
+                            if (!okPlanos) return false;
+                            wrotePlanos = true;
+                        }
+                        return true;
+                    })();
+                    ok = await Promise.race([seq, _timeout]);
+
                     if (ok) {
-                        // Atualizar snapshot de referência para o autosave loop
+                        // Marcar o estado atual como salvo: assinaturas por-doc (pro próximo
+                        // save incremental) + snapshots de referência (autosave loop / sync).
+                        _commitTedHashes();
                         window._lastSavedTedsSnapshot = JSON.stringify(dados.teds || []);
+                        window._lastSavedPlanosSnapshot = JSON.stringify(dados.planosTrabalho || []);
                         // Marcador de sincronização (padrão do Controle-Estoque): avisa os
                         // outros aparelhos, via onSnapshot em app.js, que há dados novos no
                         // servidor — eles recarregam sozinhos em vez de ficarem com estado
-                        // velho em memória (que foi o que ressuscitou TEDs/aditivos excluídos).
-                        // Best-effort: falha aqui não invalida o save que já foi confirmado.
-                        try {
-                            if (window.firestoreSetDoc) {
-                                window.firestoreSetDoc('sync/state', {
-                                    at: Date.now(),
-                                    writer: window._syncClientId || null,
-                                    by: (window.currentUser && window.currentUser.email) || null
-                                }).catch(() => {});
-                            }
-                        } catch (e) { /* best-effort */ }
+                        // velho em memória. Só dispara se algo foi realmente gravado (não
+                        // acorda os outros clientes à toa). Best-effort: falha não invalida
+                        // o save já confirmado.
+                        if (wroteTeds > 0 || wrotePlanos) {
+                            try {
+                                if (window.firestoreSetDoc) {
+                                    window.firestoreSetDoc('sync/state', {
+                                        at: Date.now(),
+                                        writer: window._syncClientId || null,
+                                        by: (window.currentUser && window.currentUser.email) || null
+                                    }).catch(() => {});
+                                }
+                            } catch (e) { /* best-effort */ }
+                        }
                         // Feedback visual de sucesso
                         if (syncEl) syncEl.textContent = 'Salvo: ' + new Date().toLocaleTimeString('pt-BR');
                         const iconEl = document.getElementById('cloudStatusIcon');
@@ -11960,6 +12013,9 @@
                     showToast('Erro: conexão com banco de dados indisponível. Dados não salvos.', 'danger');
                 }
             } catch (e) {
+                // Inclui o caso do timeout de 20s: a escrita segue enfileirada offline e
+                // sincroniza sozinha quando a rede voltar — não é perda de dado, mas o
+                // usuário precisa saber que ainda não confirmou no servidor.
                 console.warn('Erro salvando no Firestore', e);
                 if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
                 showToast('Erro ao salvar dados. Tentando novamente em breve...', 'danger');
@@ -11973,6 +12029,7 @@
                     setTimeout(() => { _executarSalvamento(); }, 50);
                 }
             }
+            return ok;
         }
 
         // Proteção contra perda silenciosa: o salvamento é debounced (1,5s) e o loop de
