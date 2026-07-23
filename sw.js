@@ -6,7 +6,11 @@
 // v9: salvamento não trava mais (botão "Salvar" sem loader bloqueante + timeout único de
 // 20s) e escreve só os TEDs alterados (incremental) — corrige loader preso, "erro ao
 // salvar" sob rede ruim e sobrescrita entre usuários simultâneos
-const CACHE_NAME = 'controle-ted-v9';
+// v10: versão visível na sidebar + build desatualizada é BLOQUEADA de salvar (evita que
+// uma máquina antiga apague do servidor o que outro usuário salvou)
+// v11: renderizar não grava mais no servidor (era o que apagava a entrega/alteração de
+// outro usuário) + app.js/firebase-init.js passam a ser rede-primeiro
+const CACHE_NAME = 'controle-ted-v11';
 const CACHE_ASSETS = [
     'index.html',
     'styles.css',
@@ -81,7 +85,13 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(event.request.url);
     const isDocument = event.request.mode === 'navigate' || event.request.destination === 'document' || url.pathname.endsWith('/index.html');
-    const isCriticalAsset = isDocument || url.pathname.endsWith('/js/main.js') || url.pathname.endsWith('/styles.css');
+    // Todos os .js e .css são "rede primeiro". Antes a lista era só main.js + styles.css, e
+    // app.js / firebase-init.js / pwa.js caíam no "cache primeiro" logo abaixo — servindo
+    // código VELHO mesmo depois de publicar. Justamente esses arquivos têm carregarDoCloud()
+    // e a leitura forçada do servidor, então a máquina rodava o "Carregar" antigo (que lê do
+    // cache local) e nunca via a alteração de outro usuário. O `?v=` no index.html mitigava,
+    // mas só enquanto o próprio index.html viesse fresco da rede.
+    const isCriticalAsset = isDocument || url.pathname.endsWith('.js') || url.pathname.endsWith('.css');
 
     // HTML e assets críticos: Network First com fallback para cache — evita servir uma
     // versão desatualizada da lógica de negócio quando há conexão disponível.

@@ -1140,11 +1140,25 @@
         }
 
         // Atualiza o campo valorTed do TED a partir do Cadastro de Objetos
-        function atualizarValorTedFromObjetos(ted) {
+        function atualizarValorTedFromObjetos(ted, opts) {
             if (!ted) return;
+            // persistir:false → recalcula e atualiza a tela, mas NUNCA pede gravação. Usado
+            // pelas chamadas feitas de dentro de renderizações: normalizar um campo derivado
+            // ao desenhar a tela não é edição do usuário e não pode publicar esta cópia no
+            // servidor (era o que apagava a alteração recém-salva por outro usuário).
+            const persistir = !(opts && opts.persistir === false);
             const total = calcularTotalObjetosValor(ted);
-            ted.valorTed = total;
-            try { salvarDados(); } catch(e) {}
+            // Só mutar o dado e pedir gravação quando o valor REALMENTE mudou. Esta função
+            // também é chamada de dentro de RENDERIZAÇÕES (atualizarTabelaFinanceira e
+            // atualizarTabelaObjetos): reatribuir `valorTed` e chamar salvarDados() a cada
+            // render marcava os dados como alterados sem o usuário ter editado nada — e o
+            // salvamento então gravava o estado desta máquina (possivelmente DEFASADO) por
+            // cima do que outro usuário acabara de salvar. Era a causa de "o colega salvou
+            // e não aparece aqui": bastava abrir a aba Financeiro pra sobrescrever o servidor.
+            if (Number(ted.valorTed) !== Number(total)) {
+                ted.valorTed = total;
+                if (persistir) { try { salvarDados(); } catch(e) {} }
+            }
             if (window.tedSelecionado && window.tedSelecionado.id === ted.id) {
                 const createEl = document.getElementById('valorTed');
                 if (createEl) {
@@ -4133,8 +4147,13 @@
             let totalValor = 0;
             objetos.forEach(obj => {
                 const qt = parseNumber(obj.qtde); const vu = parseNumber(obj.valorUnitario);
-                obj.valorTotal = qt * vu;
-                if (!isItemExcluded(obj, excludedObjIds, 'objetos')) totalValor += obj.valorTotal;
+                const vt = qt * vu;
+                // Só escreve no dado quando o valor derivado realmente difere: mutar em toda
+                // renderização deixava o TED "sujo" sem edição do usuário, e o autosave
+                // acabava gravando esta cópia por cima da de outro usuário (mesma causa do
+                // problema em atualizarValorTedFromObjetos).
+                if (Number(obj.valorTotal) !== Number(vt)) obj.valorTotal = vt;
+                if (!isItemExcluded(obj, excludedObjIds, 'objetos')) totalValor += vt;
             });
 
             const rowsHtml = objetos.map(obj => {
@@ -8495,9 +8514,10 @@
                 </tr>
             `;
 
-            // Valor do TED deve refletir o total do cadastro de objetos
+            // Valor do TED deve refletir o total do cadastro de objetos.
+            // persistir:false — isto aqui é RENDERIZAÇÃO: só abrir a aba não pode gravar.
             if (window.tedSelecionado) {
-                atualizarValorTedFromObjetos(window.tedSelecionado);
+                atualizarValorTedFromObjetos(window.tedSelecionado, { persistir: false });
             }
 
             if (previstoAnualSpan) {
@@ -11891,7 +11911,26 @@
         // recém-lidos do servidor não são "alteração pendente").
         window._rebuildTedDocHashes = _commitTedHashes;
 
+        // Uma build ANTIGA rodando em qualquer máquina é perigosa num sistema multiusuário:
+        // o código velho lê do cache local (não vê alterações dos outros) e, ao salvar,
+        // regrava a coleção inteira com esse estado defasado — apagando do servidor o que
+        // outro usuário acabou de salvar. Bloquear a gravação nesse estado transforma uma
+        // perda silenciosa de dados numa mensagem clara. Só bloqueia com mismatch CONFIRMADO
+        // de versão (ver checkAppVersion em pwa.js); se a checagem não conseguiu rodar
+        // (offline/CORS), a flag não é setada e a gravação segue normal.
+        function _bloqueadoPorVersaoDesatualizada() {
+            if (!window._appDesatualizado) return false;
+            showToast('⚠️ Esta instalação está DESATUALIZADA e não pode salvar: gravar agora apagaria alterações de outros usuários. Atualize o aplicativo e tente de novo.', 'danger');
+            return true;
+        }
+
         async function salvarDados() {
+            if (_bloqueadoPorVersaoDesatualizada()) return;
+            // Marca que houve pedido REAL de gravação (edição do usuário). O laço de
+            // segurança de 30s em app.js só grava quando isso é verdade — sem esse gate,
+            // qualquer mutação feita durante a RENDERIZAÇÃO deixava o dado "sujo" e o laço
+            // publicava a cópia desta máquina por cima da de outro usuário.
+            try { window._userHasEdited = true; } catch(e) {}
             // Bloquear gravação em modo leitura (somente admin e editor podem gravar)
             const _role = window.currentUserProfile && window.currentUserProfile.role;
             if (_role !== 'admin' && _role !== 'editor') {
@@ -11918,6 +11957,8 @@
         // Retorna true/false indicando se o commit no servidor foi confirmado (usado pelo
         // botão "Salvar" pra dar feedback de sucesso/erro sem loader bloqueante).
         async function salvarDadosImediato() {
+            if (_bloqueadoPorVersaoDesatualizada()) return false;
+            try { window._userHasEdited = true; } catch(e) {}
             const _role = window.currentUserProfile && window.currentUserProfile.role;
             if (_role !== 'admin' && _role !== 'editor') {
                 // Mesmo aviso do salvarDados(): retorno silencioso aqui já perdeu edição de
@@ -16023,6 +16064,14 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             initLucideIcons();
+
+            // Versão visível no rodapé da sidebar: com vários usuários, "máquina numa build
+            // antiga" é a causa nº 1 de "o outro salvou e não aparece aqui" — dá pra comparar
+            // as máquinas de bate-pronto em vez de adivinhar.
+            try {
+                const vEl = document.getElementById('appVersionLabel');
+                if (vEl) vEl.textContent = 'v' + (window.APP_BUILD_VERSION || '?');
+            } catch (e) {}
 
             // ── MELHORIA 5: Rodapé de rastreabilidade ──────────────
             _injetarRodapeAbas();

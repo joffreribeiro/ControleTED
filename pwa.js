@@ -38,6 +38,11 @@ const PWA = {
                 const latest = data && data.version;
                 const current = window.APP_BUILD_VERSION;
                 if (latest && current && latest !== current) {
+                    // Marcar como desatualizado: js/main.js bloqueia a GRAVAÇÃO nesse estado,
+                    // porque uma build antiga salvando por cima apaga alterações de outros
+                    // usuários (ver _bloqueadoPorVersaoDesatualizada). Só marcamos com
+                    // mismatch confirmado — falha de rede/CORS cai no catch e não marca.
+                    window._appDesatualizado = true;
                     this.showVersionBanner(latest);
                 }
             } catch (e) {
@@ -77,7 +82,7 @@ const PWA = {
         document.body.appendChild(banner);
 
         const reloadBtn = document.getElementById('pwa-version-banner-reload');
-        if (reloadBtn) reloadBtn.addEventListener('click', () => window.location.reload());
+        if (reloadBtn) reloadBtn.addEventListener('click', () => this.limparCachesERecarregar());
         const downloadBtn = document.getElementById('pwa-version-banner-download');
         if (downloadBtn) downloadBtn.addEventListener('click', () => {
             // '_system' é a convenção Cordova/Capacitor pra abrir no navegador padrão do
@@ -88,6 +93,32 @@ const PWA = {
         });
         const closeBtn = document.getElementById('pwa-version-banner-close');
         if (closeBtn) closeBtn.addEventListener('click', () => banner.remove());
+    },
+
+    // Um reload simples NÃO era suficiente: o Service Worker podia continuar servindo os
+    // .js antigos do cache (app.js/firebase-init.js eram "cache primeiro"), então o usuário
+    // clicava "Atualizar agora", a página recarregava e continuava na versão velha — e sem
+    // saber disso ele seguia sobrescrevendo dados de outros usuários. Aqui apagamos os
+    // caches e desregistramos o SW antes de recarregar, pra garantir código novo.
+    async limparCachesERecarregar() {
+        try {
+            if (window.caches && caches.keys) {
+                const nomes = await caches.keys();
+                await Promise.all(nomes.map(n => caches.delete(n)));
+            }
+        } catch (e) { console.warn('[PWA] falha limpando caches', e); }
+        try {
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(regs.map(r => r.unregister()));
+            }
+        } catch (e) { console.warn('[PWA] falha desregistrando SW', e); }
+        // Cache-busting na própria navegação, pra não reaproveitar o HTML do cache HTTP.
+        try {
+            const u = new URL(window.location.href);
+            u.searchParams.set('_upd', Date.now().toString(36));
+            window.location.replace(u.toString());
+        } catch (e) { window.location.reload(); }
     },
 
     async registerServiceWorker() {

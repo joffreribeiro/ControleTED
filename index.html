@@ -112,6 +112,12 @@
                     <div class="sidebar-sync" title="Última sincronização">
                         <span id="cloudLastSync" style="font-size:10px;color:rgba(255,255,255,0.5);">→</span>
                     </div>
+                    <!-- Versão visível: permite comparar rapidamente se todas as máquinas
+                         estão na mesma build. Máquina desatualizada é a causa nº 1 de "o
+                         outro salvou e não aparece aqui". Preenchido por main.js. -->
+                    <div class="sidebar-sync" title="Versão desta instalação">
+                        <span id="appVersionLabel" style="font-size:10px;color:rgba(255,255,255,0.38);"></span>
+                    </div>
                     <div class="sidebar-action-btns">
                         <button id="btnCarregarTopo" class="topbar-btn topbar-btn-carregar" onclick="carregarDoCloud()">Carregar</button>
                         <button id="btnSalvarTopo" class="topbar-btn topbar-btn-salvar" onclick="salvarNoCloud()">Salvar</button>
@@ -1887,19 +1893,19 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260723a"></script>
+    <script src="js/main.js?v=20260723c"></script>
 
     <!-- Identidade da versão empacotada NESTA build (index.html + js/main.js + app.js +
          firebase-init.js). Bump manual sempre que uma correção/versão for lançada — deve
          acompanhar o mesmo valor em version.json (fonte remota, lida por pwa.js para saber
          se o app instalado no celular ficou desatualizado). Ver checkAppVersion() em pwa.js. -->
-    <script>window.APP_BUILD_VERSION = '2026.07.23.1';</script>
+    <script>window.APP_BUILD_VERSION = '2026.07.23.3';</script>
 
     <!-- PWA: registro do service worker e botão de instalação (depende de showToast/confirmarAcao acima) -->
-    <script src="pwa.js?v=20260718b"></script>
+    <script src="pwa.js?v=20260723c"></script>
 
     <!-- Firebase initialization (module) -->
     <script type="module" src="./firebase-init.js?v=20260720a"></script>
-    <script type="module" src="./app.js?v=20260723a"></script>
+    <script type="module" src="./app.js?v=20260723c"></script>
 </body>
 </html>

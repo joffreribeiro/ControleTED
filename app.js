@@ -169,6 +169,9 @@ window.carregarDoCloud = async function(opts) {
     // mudar a partir daqui (e não a coleção inteira). Sem isso o primeiro save após um load
     // reescreveria todos os TEDs — inócuo, mas anula a otimização e o benefício multiusuário.
     try { if (typeof window._rebuildTedDocHashes === 'function') window._rebuildTedDocHashes(); } catch (e) {}
+    // Acabamos de receber a verdade do servidor: nada aqui é edição do usuário. Zerar a
+    // flag impede que o laço de 30s publique de volta o que só foi normalizado na tela.
+    window._userHasEdited = false;
     // Carimbo do último load: usado pelo listener de sync/state e pelo refresh de
     // visibilidade para não recarregar de novo logo depois de já ter carregado.
     window._lastCloudLoadAt = Date.now();
@@ -196,6 +199,12 @@ window.carregarDoCloud = async function(opts) {
 
     if (!silent) {
       try { if (typeof window.hideGlobalLoader === 'function') window.hideGlobalLoader(); else { const g = document.getElementById('globalLoader'); if (g) { g.classList.remove('active'); g.setAttribute('aria-hidden','true'); } } } catch(e){}
+      // Dizer explicitamente QUANTOS e DE ONDE. Sem isso, um "Carregar" que caiu no cache
+      // local parece idêntico a um que leu do servidor — e o usuário fica sem saber por que
+      // a alteração do colega não apareceu. (O caso de cache já emite o aviso acima.)
+      if (!window._dadosOrigemCache) {
+        showToast('✅ ' + (window.dados.teds || []).length + ' TED(s) carregados do servidor.', 'success');
+      }
     }
   } catch (e) {
     console.error(e);
@@ -306,6 +315,11 @@ window.testFirestoreConnection = async function() {
 
     // Sem edições locais ainda não salvas? (referência: snapshot do último save/load)
     function _semEdicoesPendentes() {
+      // Sem edição REAL do usuário, qualquer diferença é só normalização de renderização —
+      // é seguro (e desejável) recarregar por cima. Antes, esse ruído fazia o app achar que
+      // havia trabalho pendente e recusar a atualização automática, deixando a máquina
+      // presa em dados velhos enquanto avisava de "conflito" sem motivo.
+      if (!window._userHasEdited) return true;
       return typeof window._lastSavedTedsSnapshot === 'string'
         && JSON.stringify((window.dados && window.dados.teds) || []) === window._lastSavedTedsSnapshot;
     }
@@ -396,6 +410,11 @@ window.testFirestoreConnection = async function() {
     // (O salvamento principal agora é via debounce de 1.5s em salvarDados())
     setInterval(async () => {
       try {
+        // Só reenviar quando o usuário DE FATO editou algo (flag setada em salvarDados).
+        // Renderizar uma tela pode normalizar campos derivados e deixar o array "diferente"
+        // do snapshot sem nenhuma edição real — publicar isso sobrescrevia, no servidor, o
+        // que outro usuário tinha acabado de salvar.
+        if (!window._userHasEdited) return;
         const current = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
         if (current !== window._lastSavedTedsSnapshot) {
           // dirty – forçar salvamento imediato
