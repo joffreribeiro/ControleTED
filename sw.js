@@ -11,7 +11,8 @@
 // v11: renderizar não grava mais no servidor (era o que apagava a entrega/alteração de
 // outro usuário) + app.js/firebase-init.js passam a ser rede-primeiro
 // v13: atualização automática do navegador (pwa.js) + Hosting com Cache-Control: no-cache
-const CACHE_NAME = 'controle-ted-v13';
+// v14: lista de TEDs (Dashboard) ordenada por data de início da vigência
+const CACHE_NAME = 'controle-ted-v14';
 const CACHE_ASSETS = [
     'index.html',
     'styles.css',

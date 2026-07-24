@@ -1444,6 +1444,19 @@
                 }
             } catch (e) { console.warn('Erro aplicando filtros TEDs', e); }
 
+            // Ordenar por data de início da vigência (mais antiga primeiro). TEDs sem
+            // início definido vão para o final, mantidos entre si na ordem original.
+            try {
+                listaFiltrada.sort((a, b) => {
+                    const da = normalizarData(a.inicioVigencia);
+                    const db = normalizarData(b.inicioVigencia);
+                    if (!da && !db) return 0;
+                    if (!da) return 1;
+                    if (!db) return -1;
+                    return da < db ? -1 : (da > db ? 1 : 0);
+                });
+            } catch (e) { console.warn('Erro ordenando TEDs por início de vigência', e); }
+
             const html = listaFiltrada.map(t => {
                 const hoje = new Date();
                 const inicioNorm = normalizarData(t.inicioVigencia);
