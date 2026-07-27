@@ -12,7 +12,7 @@
 // outro usuário) + app.js/firebase-init.js passam a ser rede-primeiro
 // v13: atualização automática do navegador (pwa.js) + Hosting com Cache-Control: no-cache
 // v14: lista de TEDs (Dashboard) ordenada por data de início da vigência
-const CACHE_NAME = 'controle-ted-v16';
+const CACHE_NAME = 'controle-ted-v18';
 const CACHE_ASSETS = [
     'index.html',
     'styles.css',

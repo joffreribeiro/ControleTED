@@ -168,14 +168,17 @@ const PWA = {
         }
     },
 
+    // Esta é a SEGUNDA checagem de atualização (a primeira é checkAppVersion, baseada em
+    // version.json). Esta aqui dispara pelo próprio ciclo de vida do Service Worker: toda
+    // vez que o navegador percebe que sw.js mudou (o que acontece a cada deploy, já que o
+    // CACHE_NAME é bumpado em toda release). Antes ela pedia confirmação manual — "Deseja
+    // atualizar agora?" — o que duplicava e confundia com a atualização automática já
+    // implementada, e deixava a máquina numa versão antiga (com os bugs de perda de dados
+    // já corrigidos) até alguém clicar em "Confirmar". Agora atualiza sozinha, do mesmo
+    // jeito e sem pedir nada — consistente com checkAppVersion.
     showUpdateNotification() {
-        if (typeof window.confirmarAcao === 'function') {
-            window.confirmarAcao('Nova versão disponível. Deseja atualizar agora?', () => {
-                window.location.reload();
-            }, 'Atualizar');
-        } else {
-            window.location.reload();
-        }
+        console.log('[PWA] Nova versão detectada pelo Service Worker — atualizando automaticamente.');
+        this.limparCachesERecarregar();
     },
 
     setupUpdateNotification() {

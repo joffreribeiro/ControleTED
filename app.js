@@ -391,14 +391,23 @@ window.testFirestoreConnection = async function() {
       if (window.__syncUnsub) return; // já registrado
       if (!window.firestoreOnSnapshot) return;
       try {
+        // O Firestore SEMPRE dispara o callback uma primeira vez, imediatamente ao
+        // assinar, entregando o valor JÁ EXISTENTE do documento — não é uma mudança nova.
+        // Antes, essa primeira entrega era descartada por um limite de TEMPO (5s desde o
+        // carregamento), o que é frágil: carregar 22 TEDs com todas as tabelas pode levar
+        // mais que isso, e o disparo inicial passava a ser tratado como "outro usuário
+        // salvou agora" mesmo quando ninguém salvou nada — daí o aviso aparecer toda vez
+        // que o sistema era aberto. Agora ignoramos por CONTAGEM: a primeira entrega deste
+        // listener nunca é uma mudança real, então é sempre descartada, sem depender de
+        // quanto tempo o carregamento anterior levou.
+        let _primeiraEntrega = true;
         window.__syncUnsub = window.firestoreOnSnapshot('sync/state', (snap) => {
           try {
+            if (_primeiraEntrega) { _primeiraEntrega = false; return; }
             const data = snap && typeof snap.data === 'function' ? snap.data() : null;
             if (!data || !data.writer) return;
             // Eco do meu próprio save — ignorar
             if (data.writer === window._syncClientId) return;
-            // Acabei de carregar (inclusive o disparo inicial do listener) — ignorar
-            if (window._lastCloudLoadAt && (Date.now() - window._lastCloudLoadAt) < 5000) return;
             if (!_semEdicoesPendentes()) {
               // Há edição local ainda não salva: não sobrescrever o trabalho do usuário.
               // O save dele (debounce/30s) vai gravar por cima — avisar do conflito.
