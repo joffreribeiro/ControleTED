@@ -286,9 +286,13 @@ window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
       continue;
     }
     const base = bases[id];
-    // base indefinida = TED novo nesta sessão; só é conflito se já existir no servidor.
+    // Só bloqueamos quando SABEMOS a base e o servidor está estritamente à frente dela.
+    // Se a base é desconhecida, NÃO dá para afirmar que houve alteração de outro usuário —
+    // e bloquear nesse caso impedia gravações legítimas (a entrega era aceita localmente e
+    // nunca chegava ao servidor). Entre falhar em bloquear uma sobrescrita rara e impedir o
+    // usuário de salvar seu trabalho, o segundo é pior.
     const houveConflito = (base === undefined)
-      ? revServidor > 0
+      ? false
       : revServidor > Number(base || 0);
     if (houveConflito) {
       resultado.conflitos.push(id);

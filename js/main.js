@@ -299,7 +299,11 @@
             f.entregas.push(e);
             const tedId = window.tedSelecionado.id;
             adicionarRegistroAuditoria(tedId, 'adicionar_entrega', f.id, { objeto: f.objeto, data: e.data, quantidade: e.quantidade, nf: e.nf });
-            try { sincronizarExecucaoFisica(); } catch(e) {}
+            // persistir:false — quem grava é o salvarDadosImediato logo abaixo. Antes as duas
+            // chamadas gravavam: a segunda encontrava a primeira em andamento, retornava
+            // "ocupado" (false) e a verificação consultava o servidor ANTES de a gravação
+            // real terminar, disparando o falso alerta "não foi confirmada no servidor".
+            try { sincronizarExecucaoFisica({ persistir: false }); } catch(e) {}
             // Atualização local é imediata de propósito (uso em campo depende disso — ver
             // window._isMobileShell): não travar a UI esperando confirmação do servidor.
             let salvarPromise;
@@ -409,22 +413,30 @@
             return `<button class="btn-icon-action done-action" onclick="entregas_toggleExpandir(event, '${itemId}')" title="Concluido" style="color:#16a34a;">✅</button>`;
         }
 
-        function sincronizarExecucaoFisica() {
+        // Reconstrói execFisicas a partir das entregas do cadastro físico.
+        // Duas correções importantes aqui:
+        // (1) o id de cada linha era gerado com Date.now()+random A CADA execução, então o
+        //     TED ficava DIFERENTE do servidor toda vez que era aberto — o app achava que
+        //     havia alteração pendente para sempre (daí o aviso "outro usuário salvou..."
+        //     aparecendo o tempo todo). Agora o id é gravado na própria entrega, uma única
+        //     vez, e reutilizado.
+        // (2) a função salvava incondicionalmente no fim — ou seja, só ABRIR um TED gravava
+        //     no servidor, podendo publicar uma cópia local por cima da de outro usuário.
+        //     Agora só grava se o conteúdo realmente mudou, e o chamador pode desligar a
+        //     gravação com { persistir: false } (usado ao abrir o TED).
+        function sincronizarExecucaoFisica(opts) {
             if (!window.tedSelecionado) return;
-            const execs = [];
-            const fis = window.tedSelecionado.fisicos || [];
-            fis.forEach(f => {
-                const arr = Array.isArray(f.entregas) ? f.entregas : [];
-                arr.forEach(ent => {
-                    if (!ent || !ent.data) return;
-                    execs.push({ id: ent.id || (Date.now() + Math.floor(Math.random()*9999)), objeto: f.objeto, qtde: parseNumber(ent.quantidade || ent.qtde || 0), data: ent.data, nf: ent.nf || '' });
-                });
-            });
-            window.tedSelecionado.execFisicas = execs;
-            try { atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado); } catch(e) {}
+            const persistir = !(opts && opts.persistir === false);
+            const execs = _derivarExecFisicas(window.tedSelecionado);
+            let mudou = false;
+            try { mudou = JSON.stringify(window.tedSelecionado.execFisicas || []) !== JSON.stringify(execs); } catch (e) { mudou = true; }
+            if (mudou) window.tedSelecionado.execFisicas = execs;
+            // Propaga o mesmo modo: se esta chamada não pode gravar (abertura de TED),
+            // o recálculo de progresso também não pode.
+            try { atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado, { persistir: persistir }); } catch(e) {}
             try { atualizarTabelaExecFisica(); } catch(e) {}
             try { atualizarTabelaFisicos(); } catch(e) {}
-            try { salvarDadosImediato(); } catch(e) { try { salvarDados(); } catch(_) {} }
+            if (mudou && persistir) { try { salvarDadosImediato(); } catch(e) { try { salvarDados(); } catch(_) {} } }
         }
 
         function fecharModalMarcarRealizada() {
@@ -1195,11 +1207,19 @@
             return Math.round((realizado / totalObj) * 100);
         }
 
-        function atualizarProgressoFisicoFromExecFisicas(ted) {
+        function atualizarProgressoFisicoFromExecFisicas(ted, opts) {
             if (!ted) return;
+            // Mesmo cuidado de atualizarValorTedFromObjetos: esta função é chamada de dentro
+            // de fluxos de RENDERIZAÇÃO (sincronizarExecucaoFisica ao abrir o TED). Só pode
+            // marcar o dado como alterado — e pedir gravação — quando o valor mudou de fato;
+            // caso contrário, abrir um TED sujava o registro e publicava a cópia local por
+            // cima da de outro usuário.
+            const persistir = !(opts && opts.persistir === false);
             const pct = calcularProgressoFisico(ted) || 0;
-            ted.progressoFisico = pct;
-            try { salvarDados(); } catch(e) {}
+            if (Number(ted.progressoFisico) !== Number(pct)) {
+                ted.progressoFisico = pct;
+                if (persistir) { try { salvarDados(); } catch(e) {} }
+            }
             if (window.tedSelecionado && window.tedSelecionado.id === ted.id) {
                 try { exibirInformacoesTED(); } catch(e) {}
                 try { atualizarListaTEDs(); } catch(e) {}
@@ -2664,6 +2684,74 @@
             }, 10);
         }
 
+        // Normalização ESTRUTURAL de um TED (arrays ausentes, ids de itens legados,
+        // migrações de formato). Precisa ser: (a) idempotente — rodar duas vezes não muda
+        // nada; (b) sem efeito colateral de gravação. Aplicada a todos os TEDs logo após o
+        // carregamento (ver window._normalizarTodosTeds) para que a linha-base de comparação
+        // já a inclua, e novamente ao abrir um TED (onde vira no-op).
+        function normalizarEstruturaTed(ted) {
+            if (!ted) return;
+            ted.objetos = ted.objetos || [];
+            ted.metas = ted.metas || [];
+            ted.fisicos = ted.fisicos || [];
+            ted.execFisicas = ted.execFisicas || [];
+            ted.financeiros = ted.financeiros || [];
+            ted.execFinanceiras = ted.execFinanceiras || [];
+            ted.recursosGerais = ted.recursosGerais || [];
+            // IDs em itens financeiros legados (atribuídos uma única vez e preservados)
+            let _nextFinId = Date.now();
+            ted.financeiros.forEach(f => { if (f && f.id == null) f.id = _nextFinId++; });
+            try { migrarParaAlteracoesUnificadas(ted); } catch(e) { console.warn('migrarParaAlteracoesUnificadas', e); }
+            // Entregas: campo novo em cada item do cadastro físico + migração dos legados
+            try {
+                (ted.fisicos || []).forEach((f, idx) => {
+                    if (!f) return;
+                    if (!Array.isArray(f.entregas)) {
+                        f.entregas = [];
+                        const qtdLeg = (f.qtdeRealizada != null && String(f.qtdeRealizada).trim() !== '') ? parseNumber(f.qtdeRealizada) : 0;
+                        if (qtdLeg && qtdLeg > 0) {
+                            f.entregas.push({ id: `migrado-${f.id || idx}-${Date.now()}`, data: (f.dataRealizada || ''), quantidade: qtdLeg, nf: (f.nfRealizada || f.nf || '(migrado)'), criadoEm: new Date().toISOString() });
+                        }
+                    }
+                    // id estável por entrega (evita reidentificação a cada abertura)
+                    f.entregas.forEach(ent => {
+                        if (ent && ent.id == null) ent.id = 'ent-' + Date.now() + '-' + Math.floor(Math.random() * 9999);
+                    });
+                });
+            } catch(e) { console.warn('Erro ao migrar entregas legadas:', e); }
+
+            // Campos DERIVADOS (calculados a partir das entregas/objetos). Precisam ser
+            // calculados aqui, no carregamento, e não só ao abrir o TED: como o cálculo
+            // acontecia depois de fixada a linha-base, o TED passava a divergir do servidor
+            // sem edição do usuário — e o app avisava "Outro usuário salvou alterações
+            // agora" o tempo todo, além de reenviar essa cópia por cima da dos colegas.
+            try {
+                const execs = _derivarExecFisicas(ted);
+                if (JSON.stringify(ted.execFisicas || []) !== JSON.stringify(execs)) ted.execFisicas = execs;
+                const pct = calcularProgressoFisico(ted) || 0;
+                if (Number(ted.progressoFisico) !== Number(pct)) ted.progressoFisico = pct;
+            } catch(e) { console.warn('Erro derivando execFisicas/progresso:', e); }
+        }
+
+        // Deriva execFisicas a partir das entregas do cadastro físico (fonte única, usada
+        // tanto na normalização de carga quanto em sincronizarExecucaoFisica).
+        function _derivarExecFisicas(ted) {
+            const execs = [];
+            ((ted && ted.fisicos) || []).forEach(f => {
+                const arr = (f && Array.isArray(f.entregas)) ? f.entregas : [];
+                arr.forEach(ent => {
+                    if (!ent || !ent.data) return;
+                    if (ent.id == null) ent.id = 'ent-' + Date.now() + '-' + Math.floor(Math.random() * 9999);
+                    execs.push({ id: ent.id, objeto: f.objeto, qtde: parseNumber(ent.quantidade || ent.qtde || 0), data: ent.data, nf: ent.nf || '' });
+                });
+            });
+            return execs;
+        }
+        // Chamado por app.js logo após carregarDoCloud, ANTES de fixar a linha-base.
+        window._normalizarTodosTeds = function() {
+            try { (dados.teds || []).forEach(t => normalizarEstruturaTed(t)); } catch (e) { console.warn('_normalizarTodosTeds', e); }
+        };
+
         // Carregar detalhes do TED selecionado
         function carregarDetalhes(tedId) {
             if (!tedId) {
@@ -2680,38 +2768,16 @@
                 if (st) st.textContent = `TED ${window.tedSelecionado.numTed || ''}`;
             } catch(e) {}
 
-            // Garantir arrays
-            window.tedSelecionado.objetos = window.tedSelecionado.objetos || [];
-            window.tedSelecionado.metas = window.tedSelecionado.metas || [];
-            window.tedSelecionado.fisicos = window.tedSelecionado.fisicos || [];
-            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas || [];
-            window.tedSelecionado.financeiros = window.tedSelecionado.financeiros || [];
-            // Garantir IDs em itens financeiros sem ID (dados legados)
-            let _nextFinId = Date.now();
-            window.tedSelecionado.financeiros.forEach(f => { if (f && f.id == null) f.id = _nextFinId++; });
-            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras || [];
-            window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
-            // Migrar aditivos/apostilamentos para lista unificada
-            migrarParaAlteracoesUnificadas(window.tedSelecionado);
+            // Normalização estrutural (arrays, ids legados, migrações). Idempotente e sem
+            // gravação: roda também para TODOS os TEDs logo após carregarDoCloud, de modo
+            // que a "linha-base" já contemple esses ajustes. Antes, como só rodava ao ABRIR
+            // o TED, cada abertura deixava o TED diferente do servidor e o app o marcava
+            // como alterado sem o usuário ter editado nada.
+            normalizarEstruturaTed(window.tedSelecionado);
 
-            // Migrar entregas antigas para novo campo `entregas` em cada item do cadastro físico
-            try {
-                (window.tedSelecionado.fisicos || []).forEach((f, idx) => {
-                    if (!f) return;
-                    if (!Array.isArray(f.entregas)) {
-                        f.entregas = [];
-                        // Se existirem campos legados (qtdeRealizada / dataRealizada), migrar para entregas[]
-                        const qtdLeg = (f.qtdeRealizada != null && String(f.qtdeRealizada).trim() !== '') ? parseNumber(f.qtdeRealizada) : 0;
-                        if (qtdLeg && qtdLeg > 0) {
-                            const migrated = { id: `migrado-${f.id || idx}-${Date.now()}`, data: (f.dataRealizada || ''), quantidade: qtdLeg, nf: (f.nfRealizada || f.nf || '(migrado)'), criadoEm: new Date().toISOString() };
-                            f.entregas.push(migrated);
-                        }
-                    }
-                });
-            } catch(e) { console.warn('Erro ao migrar entregas legadas:', e); }
-
-            // Garantir sincronização inicial da execução física a partir das sub-entregas
-            try { if (typeof sincronizarExecucaoFisica === 'function') sincronizarExecucaoFisica(); } catch(e) {}
+            // Sincronização inicial da execução física a partir das sub-entregas.
+            // persistir:false — abrir um TED nunca pode gravar no servidor.
+            try { if (typeof sincronizarExecucaoFisica === 'function') sincronizarExecucaoFisica({ persistir: false }); } catch(e) {}
 
             document.getElementById('tedsDetalheContainer').style.display = 'block';
             

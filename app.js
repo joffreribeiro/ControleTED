@@ -168,6 +168,11 @@ window.carregarDoCloud = async function(opts) {
     // Reconstruir as assinaturas por-doc pra que o PRÓXIMO save só grave o que o usuário
     // mudar a partir daqui (e não a coleção inteira). Sem isso o primeiro save após um load
     // reescreveria todos os TEDs — inócuo, mas anula a otimização e o benefício multiusuário.
+    // Normalizar TODOS os TEDs (arrays ausentes, ids legados, migrações) ANTES de fixar a
+    // linha-base. Essas correções antes só rodavam ao abrir cada TED — depois da linha-base
+    // — e por isso o app passava a considerar o TED "alterado" sem edição do usuário, o que
+    // fazia o aviso "Outro usuário salvou alterações agora" aparecer o tempo todo.
+    try { if (typeof window._normalizarTodosTeds === 'function') window._normalizarTodosTeds(); } catch (e) {}
     try { if (typeof window._rebuildTedDocHashes === 'function') window._rebuildTedDocHashes(); } catch (e) {}
     // Base de revisão por TED: é contra ESTE valor que a gravação confere se outro usuário
     // alterou o mesmo TED nesse meio-tempo (ver firestoreBatchSetTedsGuarded).
