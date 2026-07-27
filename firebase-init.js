@@ -249,6 +249,78 @@ window.firestoreBatchSet = async function(collPath, docs) {
   }
 };
 
+// Gravação de TEDs com CONTROLE DE CONCORRÊNCIA (evita um usuário apagar em silêncio a
+// alteração de outro no MESMO TED).
+//
+// Como funciona: cada TED carrega um contador `_rev`. Ao gravar, conferimos no servidor se
+// o `_rev` continua igual ao que tínhamos quando carregamos (a "base"). Se estiver maior,
+// alguém salvou nesse intervalo → é CONFLITO: não gravamos por cima, devolvemos o id para o
+// app recarregar e avisar o usuário. Sem isso, o último a salvar simplesmente vencia.
+//
+// Por que não usamos transação do Firestore: transação exige rede e falha offline, o que
+// quebraria o uso em campo. A checagem só roda quando o servidor está acessível; offline,
+// a escrita segue enfileirada como antes (comportamento degradado, porém não pior que o
+// anterior). A janela de corrida remanescente é de milissegundos, contra a ausência total
+// de verificação de antes.
+window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
+  const resultado = { ok: true, escritos: [], conflitos: [], revs: {} };
+  if (!Array.isArray(docs) || docs.length === 0) return resultado;
+  const bases = basesRev || {};
+  const aGravar = [];
+
+  for (const d of docs) {
+    if (!d || d.id == null) { aGravar.push({ doc: d, revNova: 1 }); continue; }
+    const id = String(d.id);
+    const ref = fsDoc(db, 'teds', id);
+    let revServidor = null;
+    try {
+      const snap = await fsGetDocFromServer(ref);
+      revServidor = snap.exists() ? Number(snap.data()._rev || 0) : 0;
+    } catch (e) {
+      // Servidor inacessível: não dá para verificar. Mantemos o comportamento antigo
+      // (gravar) em vez de bloquear o trabalho de quem está sem rede.
+      revServidor = null;
+    }
+    if (revServidor === null) {
+      aGravar.push({ doc: d, revNova: Number(bases[id] || 0) + 1 });
+      continue;
+    }
+    const base = bases[id];
+    // base indefinida = TED novo nesta sessão; só é conflito se já existir no servidor.
+    const houveConflito = (base === undefined)
+      ? revServidor > 0
+      : revServidor > Number(base || 0);
+    if (houveConflito) {
+      resultado.conflitos.push(id);
+    } else {
+      aGravar.push({ doc: d, revNova: revServidor + 1 });
+    }
+  }
+
+  if (aGravar.length > 0) {
+    try {
+      const batch = fsWriteBatch(db);
+      for (const item of aGravar) {
+        const d = item.doc;
+        const id = (d && d.id != null) ? String(d.id) : String(Date.now()) + Math.floor(Math.random() * 1000);
+        const copy = Object.assign({}, d);
+        copy.id = parseInt(id) || id;
+        copy._rev = item.revNova;
+        copy._updatedAt = Date.now();
+        if (autor) copy._updatedBy = autor;
+        batch.set(fsDoc(db, 'teds', id), copy);
+        resultado.escritos.push(id);
+        resultado.revs[id] = item.revNova;
+      }
+      await batch.commit();
+    } catch (e) {
+      console.warn('firestoreBatchSetTedsGuarded erro no commit', e);
+      resultado.ok = false;
+    }
+  }
+  return resultado;
+};
+
 window.firestoreDeleteDoc = async function(path) {
   try {
     const parts = String(path || '').split('/').filter(Boolean);

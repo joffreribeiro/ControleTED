@@ -169,6 +169,13 @@ window.carregarDoCloud = async function(opts) {
     // mudar a partir daqui (e não a coleção inteira). Sem isso o primeiro save após um load
     // reescreveria todos os TEDs — inócuo, mas anula a otimização e o benefício multiusuário.
     try { if (typeof window._rebuildTedDocHashes === 'function') window._rebuildTedDocHashes(); } catch (e) {}
+    // Base de revisão por TED: é contra ESTE valor que a gravação confere se outro usuário
+    // alterou o mesmo TED nesse meio-tempo (ver firestoreBatchSetTedsGuarded).
+    try {
+      const base = {};
+      (window.dados.teds || []).forEach(t => { if (t && t.id != null) base[String(t.id)] = Number(t._rev || 0); });
+      window._tedRevBase = base;
+    } catch (e) {}
     // Acabamos de receber a verdade do servidor: nada aqui é edição do usuário. Zerar a
     // flag impede que o laço de 30s publique de volta o que só foi normalizado na tela.
     window._userHasEdited = false;
@@ -313,16 +320,60 @@ window.testFirestoreConnection = async function() {
       }
     } catch (e) { console.warn('Erro anexando snapshot de teds para status', e); }
 
-    // Sem edições locais ainda não salvas? (referência: snapshot do último save/load)
+    // Sem edições locais ainda não salvas?
+    // Usa o mapa de assinaturas por-doc (fonte única, em js/main.js) em vez de comparar o
+    // array inteiro por JSON: campos derivados normalizados na renderização davam
+    // falso-positivo de "há trabalho pendente".
     function _semEdicoesPendentes() {
-      // Sem edição REAL do usuário, qualquer diferença é só normalização de renderização —
-      // é seguro (e desejável) recarregar por cima. Antes, esse ruído fazia o app achar que
-      // havia trabalho pendente e recusar a atualização automática, deixando a máquina
-      // presa em dados velhos enquanto avisava de "conflito" sem motivo.
+      try {
+        if (typeof window._haAlteracoesPendentes === 'function') return !window._haAlteracoesPendentes();
+      } catch (e) {}
       if (!window._userHasEdited) return true;
       return typeof window._lastSavedTedsSnapshot === 'string'
         && JSON.stringify((window.dados && window.dados.teds) || []) === window._lastSavedTedsSnapshot;
     }
+
+    // ── Guarda contra recarregar POR CIMA de quem está editando ───────────────────
+    // Um recarregamento em segundo plano re-renderiza todas as tabelas. Se acontecer
+    // enquanto o usuário preenche um formulário (ex.: lançar uma entrega), o formulário é
+    // destruído no meio da digitação: a tela "pisca", volta pro topo e o que estava sendo
+    // digitado se perde. Como o dado ainda não foi salvo, `_semEdicoesPendentes()` era
+    // true e o reload passava direto. Aqui detectamos "usuário ocupado" por dois sinais:
+    // (a) algum modal/painel de edição aberto; (b) interação de teclado/foco recente.
+    const _SELETORES_EDICAO_ABERTA = [
+      '.modal-backdrop.open',
+      '.modal-objeto-backdrop.open',
+      '.aditivo-modal-overlay.active',
+      '.mini-form-entrega.open',
+      '#alteracaoModalOverlay.active'
+    ];
+    window._ultimaInteracaoEdicao = 0;
+    ['input', 'keydown', 'focusin'].forEach(evt => {
+      document.addEventListener(evt, (e) => {
+        const alvo = e && e.target;
+        if (!alvo) return;
+        const tag = (alvo.tagName || '').toUpperCase();
+        const editavel = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || alvo.isContentEditable;
+        if (editavel) window._ultimaInteracaoEdicao = Date.now();
+      }, true);
+    });
+    function _usuarioEditandoAgora() {
+      try {
+        for (const sel of _SELETORES_EDICAO_ABERTA) {
+          if (document.querySelector(sel)) return true;
+        }
+        // Digitou/focou um campo nos últimos 15s — provavelmente ainda está preenchendo.
+        if (window._ultimaInteracaoEdicao && (Date.now() - window._ultimaInteracaoEdicao) < 15000) return true;
+        // Foco atual num campo de edição (parado, mas com o cursor dentro).
+        const ae = document.activeElement;
+        if (ae) {
+          const tag = (ae.tagName || '').toUpperCase();
+          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || ae.isContentEditable) return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+    window._usuarioEditandoAgora = _usuarioEditandoAgora;
 
     // Sincronização em tempo real (padrão portado do Controle-Estoque): todo save grava um
     // marcador em sync/state (ver _executarSalvamento em js/main.js); aqui, cada aparelho
@@ -357,16 +408,24 @@ window.testFirestoreConnection = async function() {
             // sem novos saves antes de recarregar reduz isso a um único fetch por rajada.
             _syncReloadPendingBy = data.by || _syncReloadPendingBy;
             if (_syncReloadDebounceTimer) clearTimeout(_syncReloadDebounceTimer);
-            _syncReloadDebounceTimer = setTimeout(async () => {
-              _syncReloadDebounceTimer = null;
-              if (!_semEdicoesPendentes()) return; // pode ter começado a editar durante a espera
-              try {
-                console.log('[Sync] Outro aparelho salvou (' + (_syncReloadPendingBy || 'desconhecido') + ') — recarregando em segundo plano.');
-                await window.carregarDoCloud({ silent: true });
-                setLastSync(new Date());
-              } catch (e) { console.warn('[Sync] recarregamento em segundo plano falhou', e); }
-              _syncReloadPendingBy = null;
-            }, 3000);
+            const _agendarReload = (delay) => {
+              if (_syncReloadDebounceTimer) clearTimeout(_syncReloadDebounceTimer);
+              _syncReloadDebounceTimer = setTimeout(async () => {
+                _syncReloadDebounceTimer = null;
+                if (!_semEdicoesPendentes()) return; // começou a editar durante a espera
+                // NUNCA recarregar por cima de quem está preenchendo um formulário: isso
+                // destruía o formulário no meio da digitação (tela piscava e voltava ao
+                // topo). Reagenda e só atualiza quando o usuário parar.
+                if (_usuarioEditandoAgora()) { _agendarReload(5000); return; }
+                try {
+                  console.log('[Sync] Outro aparelho salvou (' + (_syncReloadPendingBy || 'desconhecido') + ') — recarregando em segundo plano.');
+                  await window.carregarDoCloud({ silent: true });
+                  setLastSync(new Date());
+                } catch (e) { console.warn('[Sync] recarregamento em segundo plano falhou', e); }
+                _syncReloadPendingBy = null;
+              }, delay);
+            };
+            _agendarReload(3000);
           } catch (e) { console.warn('[Sync] handler error', e); }
         });
       } catch (e) { console.warn('[Sync] falha ao registrar listener', e); }
@@ -384,6 +443,7 @@ window.testFirestoreConnection = async function() {
       if (document.visibilityState !== 'visible') return;
       if (!window.currentUser) return;
       if (!_semEdicoesPendentes()) return;
+      if (_usuarioEditandoAgora()) return; // não recarregar por cima de quem está digitando
       if (window._lastCloudLoadAt && (Date.now() - window._lastCloudLoadAt) < 60000) return;
       try { await window.carregarDoCloud({ silent: true }); } catch (e) { console.warn('refresh ao retomar falhou', e); }
     });
@@ -395,12 +455,9 @@ window.testFirestoreConnection = async function() {
       // agora que há conexão — mas só quando NÃO houver edição local pendente, para não
       // descartar trabalho feito offline (esse caso continua com o fluxo de autosave).
       try {
-        if (window._dadosOrigemCache) {
-          const semEdicoesPendentes = typeof window._lastSavedTedsSnapshot === 'string'
-            && JSON.stringify((window.dados && window.dados.teds) || []) === window._lastSavedTedsSnapshot;
-          if (semEdicoesPendentes && typeof window.carregarDoCloud === 'function') {
-            await window.carregarDoCloud({ silent: true });
-          }
+        if (window._dadosOrigemCache && _semEdicoesPendentes() && !_usuarioEditandoAgora()
+            && typeof window.carregarDoCloud === 'function') {
+          await window.carregarDoCloud({ silent: true });
         }
       } catch (e) { console.warn('re-sync após reconectar falhou', e); }
     });
@@ -415,19 +472,24 @@ window.testFirestoreConnection = async function() {
         // do snapshot sem nenhuma edição real — publicar isso sobrescrevia, no servidor, o
         // que outro usuário tinha acabado de salvar.
         if (!window._userHasEdited) return;
-        const current = JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []);
-        if (current !== window._lastSavedTedsSnapshot) {
+        // Dirty-check pelo mapa de assinaturas por-doc (fonte única): comparar o array
+        // inteiro por JSON marcava como "salvo" edições feitas durante um commit em voo.
+        const temPendencia = (typeof window._haAlteracoesPendentes === 'function')
+          ? window._haAlteracoesPendentes()
+          : JSON.stringify((window.dados && window.dados.teds) ? window.dados.teds : []) !== window._lastSavedTedsSnapshot;
+        if (temPendencia) {
           // dirty – forçar salvamento imediato
           if (typeof window.salvarDadosImediato === 'function') {
             await window.salvarDadosImediato();
           } else if (typeof window.salvarDados === 'function') {
             await window.salvarDados();
           }
-          // NÃO atualizar _lastSavedTedsSnapshot aqui: quem atualiza é o próprio
-          // salvamento (_executarSalvamento) e somente em caso de sucesso. Atualizar
-          // incondicionalmente marcava como "salvo" dados cujo commit falhou, e o
-          // loop parava de tentar de novo.
-          if (window._lastSavedTedsSnapshot === current) {
+          // NÃO marcar nada como salvo aqui: quem atualiza a linha-base é o próprio
+          // salvamento (_executarSalvamento) e somente em caso de sucesso. Se ainda houver
+          // pendência depois da tentativa, o commit falhou — manter o estado "sujo" para
+          // o próximo ciclo tentar de novo.
+          const persistiu = (typeof window._haAlteracoesPendentes === 'function') && !window._haAlteracoesPendentes();
+          if (persistiu) {
             setLastSync(new Date());
             setCloudStatus(true);
           }

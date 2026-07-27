@@ -11902,27 +11902,62 @@
         // cada TED com sua assinatura do último save bem-sucedido e só gravamos os que de
         // fato mudaram (ou são novos). Exclusão de TED continua no caminho próprio
         // (firestoreDeleteDoc em removerTedDaBase), não aqui.
-        function _tedDocSignature(t) { try { return JSON.stringify(t); } catch (e) { return String(Math.random()); } }
+        // Metadados de controle de concorrência são gerenciados pelo servidor
+        // (firestoreBatchSetTedsGuarded). Precisam ficar FORA da assinatura: como o `_rev`
+        // muda a cada gravação, incluí-lo faria o TED parecer sempre "alterado" e o app
+        // entraria em laço de gravação contínua.
+        const _CAMPOS_META_REV = ['_rev', '_updatedAt', '_updatedBy'];
+        function _tedDocSignature(t) {
+            try {
+                if (!t || typeof t !== 'object') return JSON.stringify(t);
+                const copia = Object.assign({}, t);
+                _CAMPOS_META_REV.forEach(k => { delete copia[k]; });
+                return JSON.stringify(copia);
+            } catch (e) { return String(Math.random()); }
+        }
+        // Retorna { docs, sigs }: os TEDs a gravar E as assinaturas capturadas NO MESMO
+        // instante. Capturar as assinaturas aqui (antes do await do commit) é essencial:
+        // marcar como "salvo" o estado lido DEPOIS do await incluiria edições feitas pelo
+        // usuário DURANTE a gravação, que nunca foram enviadas — elas ficariam marcadas
+        // como persistidas e sumiriam no próximo reload (era a causa de "salvei e ao
+        // recarregar não estava lá").
         function _computeTedsToWrite() {
             const map = window._tedDocHashes || {};
-            const changed = [];
+            const docs = [];
+            const sigs = {};
             (dados.teds || []).forEach(t => {
-                if (t == null || t.id == null) { changed.push(t); return; }
+                if (t == null) return;
+                const sig = _tedDocSignature(t);
+                if (t.id == null) { docs.push(t); return; } // sem id: sempre grava (não dá pra rastrear)
                 const id = String(t.id);
-                if (map[id] !== _tedDocSignature(t)) changed.push(t);
+                if (map[id] !== sig) { docs.push(t); sigs[id] = sig; }
             });
-            return changed;
+            return { docs, sigs };
         }
-        // Marca o estado atual como "salvo": chamado após um save bem-sucedido e após um
-        // load (app.js), pra que o próximo save só grave o que mudou a partir daqui.
-        function _commitTedHashes() {
+        // Marca como salvo APENAS os docs efetivamente gravados (merge, não substituição).
+        function _commitTedHashesParciais(sigs) {
+            const map = window._tedDocHashes || (window._tedDocHashes = {});
+            Object.keys(sigs || {}).forEach(id => { map[id] = sigs[id]; });
+        }
+        // Reconstrói a linha-base inteira a partir do estado atual. Só é correto quando o
+        // estado local ACABOU de vir do servidor (carregarDoCloud) — nunca após um save.
+        function _rebuildTedHashes() {
             const map = {};
             (dados.teds || []).forEach(t => { if (t && t.id != null) map[String(t.id)] = _tedDocSignature(t); });
             window._tedDocHashes = map;
         }
         // Exposto pra app.js resetar a linha-base logo após carregarDoCloud (dados
         // recém-lidos do servidor não são "alteração pendente").
-        window._rebuildTedDocHashes = _commitTedHashes;
+        window._rebuildTedDocHashes = _rebuildTedHashes;
+        // Fonte única de verdade sobre "existe algo não gravado?". app.js usa isto no laço
+        // de autosave e na decisão de recarregar — comparar o array inteiro por JSON dava
+        // falso-positivo com campos derivados normalizados na renderização.
+        window._haAlteracoesPendentes = function() {
+            try {
+                if (_computeTedsToWrite().docs.length > 0) return true;
+                return JSON.stringify(dados.planosTrabalho || []) !== window._lastSavedPlanosSnapshot;
+            } catch (e) { return false; }
+        };
 
         // Uma build ANTIGA rodando em qualquer máquina é perigosa num sistema multiusuário:
         // o código velho lê do cache local (não vê alterações dos outros) e, ao salvar,
@@ -12007,13 +12042,39 @@
                     // segura _salvandoEmAndamento, bloqueando todos os saves seguintes.
                     const _timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000));
                     let wroteTeds = 0, wrotePlanos = false;
+                    // Capturados ANTES do await, para marcar como salvo exatamente o que foi
+                    // enviado — nunca o estado da tela ao terminar (ver _computeTedsToWrite).
+                    let sigsGravadas = {};
+                    let planosSnapshotEnviado = null;
+                    let _conflitosDetectados = [];
                     const seq = (async () => {
                         // Só grava os TEDs que mudaram desde o último save (ver _computeTedsToWrite)
-                        const tedsToWrite = _computeTedsToWrite();
+                        const { docs: tedsToWrite, sigs } = _computeTedsToWrite();
                         if (tedsToWrite.length > 0) {
-                            const okTeds = await window.firestoreBatchSet('teds', tedsToWrite);
-                            if (!okTeds) return false;
-                            wroteTeds = tedsToWrite.length;
+                            if (window.firestoreBatchSetTedsGuarded) {
+                                // Caminho com verificação de conflito: não grava por cima de
+                                // um TED que outro usuário alterou depois que carregamos.
+                                const autor = (window.currentUser && window.currentUser.email) || null;
+                                const r = await window.firestoreBatchSetTedsGuarded(tedsToWrite, window._tedRevBase || {}, autor);
+                                if (!r.ok) return false;
+                                // Só marcar como salvo o que passou pela verificação.
+                                const escritosSet = new Set(r.escritos);
+                                Object.keys(sigs).forEach(id => { if (escritosSet.has(id)) sigsGravadas[id] = sigs[id]; });
+                                // Atualizar a base de revisão dos que gravamos.
+                                window._tedRevBase = window._tedRevBase || {};
+                                Object.keys(r.revs).forEach(id => {
+                                    window._tedRevBase[id] = r.revs[id];
+                                    const alvo = (dados.teds || []).find(t => t && String(t.id) === id);
+                                    if (alvo) { alvo._rev = r.revs[id]; alvo._updatedAt = Date.now(); if (autor) alvo._updatedBy = autor; }
+                                });
+                                wroteTeds = r.escritos.length;
+                                if (r.conflitos.length > 0) _conflitosDetectados = r.conflitos.slice();
+                            } else {
+                                const okTeds = await window.firestoreBatchSet('teds', tedsToWrite);
+                                if (!okTeds) return false;
+                                sigsGravadas = sigs;
+                                wroteTeds = tedsToWrite.length;
+                            }
                         }
                         // planosTrabalho: grava só quando o conjunto mudou (é pequeno, mantém
                         // escrita da coleção inteira, mas evita reescrever quando nada mudou).
@@ -12021,6 +12082,7 @@
                         if (planosNow !== window._lastSavedPlanosSnapshot) {
                             const okPlanos = await window.firestoreBatchSet('planosTrabalho', dados.planosTrabalho || []);
                             if (!okPlanos) return false;
+                            planosSnapshotEnviado = planosNow; // o que foi enviado, não o atual
                             wrotePlanos = true;
                         }
                         return true;
@@ -12028,11 +12090,12 @@
                     ok = await Promise.race([seq, _timeout]);
 
                     if (ok) {
-                        // Marcar o estado atual como salvo: assinaturas por-doc (pro próximo
-                        // save incremental) + snapshots de referência (autosave loop / sync).
-                        _commitTedHashes();
+                        // Marcar como salvo SOMENTE o que foi realmente gravado. Edições que o
+                        // usuário fez durante o commit continuam pendentes e são gravadas pela
+                        // re-execução agendada em _salvarPendente (bloco finally).
+                        _commitTedHashesParciais(sigsGravadas);
+                        if (planosSnapshotEnviado !== null) window._lastSavedPlanosSnapshot = planosSnapshotEnviado;
                         window._lastSavedTedsSnapshot = JSON.stringify(dados.teds || []);
-                        window._lastSavedPlanosSnapshot = JSON.stringify(dados.planosTrabalho || []);
                         // Marcador de sincronização (padrão do Controle-Estoque): avisa os
                         // outros aparelhos, via onSnapshot em app.js, que há dados novos no
                         // servidor — eles recarregam sozinhos em vez de ficarem com estado
@@ -12049,6 +12112,23 @@
                                     }).catch(() => {});
                                 }
                             } catch (e) { /* best-effort */ }
+                        }
+                        // Conflito: outro usuário alterou o MESMO TED depois que carregamos.
+                        // Nada foi gravado por cima. Avisar de forma inequívoca e trazer a
+                        // versão do servidor, para o usuário refazer sobre o dado atual —
+                        // antes disso, o último a salvar apagava o outro em silêncio.
+                        if (_conflitosDetectados.length > 0) {
+                            const nums = _conflitosDetectados.map(id => {
+                                const t = (dados.teds || []).find(x => x && String(x.id) === id);
+                                return t ? (t.numTed || id) : id;
+                            });
+                            showToast('⚠️ CONFLITO: o(s) TED(s) ' + nums.join(', ') + ' foram alterados por outro usuário enquanto você editava.\n\nSuas alterações NESSE(S) TED(S) não foram gravadas para não apagar o trabalho dele. Os dados foram atualizados — refaça a alteração.', 'danger');
+                            // Recarregar para o usuário ver o estado real do servidor.
+                            try {
+                                if (typeof window.carregarDoCloud === 'function') {
+                                    setTimeout(() => { window.carregarDoCloud({ silent: true }); }, 400);
+                                }
+                            } catch (e) {}
                         }
                         // Feedback visual de sucesso
                         if (syncEl) syncEl.textContent = 'Salvo: ' + new Date().toLocaleTimeString('pt-BR');
@@ -12077,10 +12157,13 @@
                 _salvandoEmAndamento = false;
                 try { window._salvandoEmAndamento = false; } catch(e) {}
                 // Houve pedido de salvamento durante o commit? Re-executar para não perder
-                // as mudanças feitas nesse intervalo.
-                if (_salvarPendente) {
+                // as mudanças feitas nesse intervalo. Também re-executa quando o mapa de
+                // assinaturas ainda acusa pendência (edição feita durante o await sem passar
+                // por salvarDados) — rede de segurança para não depender só do laço de 30s.
+                const aindaPendente = _salvarPendente || (ok && typeof window._haAlteracoesPendentes === 'function' && window._haAlteracoesPendentes());
+                if (aindaPendente) {
                     _salvarPendente = false;
-                    setTimeout(() => { _executarSalvamento(); }, 50);
+                    setTimeout(() => { _executarSalvamento(); }, 250);
                 }
             }
             return ok;
