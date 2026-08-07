@@ -12113,6 +12113,7 @@
                     let sigsGravadas = {};
                     let planosSnapshotEnviado = null;
                     let _conflitosDetectados = [];
+                    let _puladosDetectados = [];
                     const seq = (async () => {
                         // Só grava os TEDs que mudaram desde o último save (ver _computeTedsToWrite)
                         const { docs: tedsToWrite, sigs } = _computeTedsToWrite();
@@ -12135,6 +12136,7 @@
                                 });
                                 wroteTeds = r.escritos.length;
                                 if (r.conflitos.length > 0) _conflitosDetectados = r.conflitos.slice();
+                                if (r.pulados && r.pulados.length > 0) _puladosDetectados = r.pulados.slice();
                             } else {
                                 const okTeds = await window.firestoreBatchSet('teds', tedsToWrite);
                                 if (!okTeds) return false;
@@ -12195,6 +12197,17 @@
                                     setTimeout(() => { window.carregarDoCloud({ silent: true }); }, 400);
                                 }
                             } catch (e) {}
+                        }
+                        // Um ou mais TEDs foram pulados do lote (documento ficaria vazio, ou
+                        // rejeitado individualmente mesmo fora do lote — ver console para o
+                        // erro exato e o objeto original). Os demais TEDs do save foram
+                        // gravados normalmente; só o(s) pulado(s) precisa(m) de atenção.
+                        if (_puladosDetectados.length > 0) {
+                            const nums = _puladosDetectados.map(id => {
+                                const t = (dados.teds || []).find(x => x && String(x.id) === id);
+                                return t ? (t.numTed || id) : id;
+                            });
+                            showToast('❌ Falha ao salvar o(s) TED(s) ' + nums.join(', ') + ' — os demais foram salvos normalmente. Abra o console (F12) para o detalhe técnico e avise o suporte.', 'danger');
                         }
                         // Feedback visual de sucesso
                         if (syncEl) syncEl.textContent = 'Salvo: ' + new Date().toLocaleTimeString('pt-BR');

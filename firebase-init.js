@@ -263,13 +263,36 @@ window.firestoreBatchSet = async function(collPath, docs) {
 // anterior). A janela de corrida remanescente é de milissegundos, contra a ausência total
 // de verificação de antes.
 window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
-  const resultado = { ok: true, escritos: [], conflitos: [], revs: {} };
+  const resultado = { ok: true, escritos: [], conflitos: [], pulados: [], revs: {} };
   if (!Array.isArray(docs) || docs.length === 0) return resultado;
   const bases = basesRev || {};
-  const aGravar = [];
 
-  for (const d of docs) {
-    if (!d || d.id == null) { aGravar.push({ doc: d, revNova: 1 }); continue; }
+  // Tirar uma cópia CONGELADA de cada TED antes de qualquer `await`. `docs` chega com
+  // referências VIVAS para os objetos de `dados.teds` (não cópias) — se o laço de
+  // checagem de revisão abaixo continuasse segurando essas referências através de vários
+  // `await` sequenciais (uma ida-e-volta de rede por TED), qualquer código concorrente
+  // rodando nesse intervalo (o app inteiro roda num único processo JS) poderia mutar o
+  // mesmo objeto e corromper o que acaba sendo gravado — inclusive esvaziá-lo, causando
+  // exatamente "Document fields must not be empty" no commit. Clonar via JSON aqui
+  // resolve os dois pontos de uma vez: isola de mutação concorrente E expõe na hora
+  // qualquer campo não serializável (função, undefined em posição que quebra JSON, etc.)
+  // como um erro claro por-documento, em vez de derrubar o lote inteiro depois.
+  const snapshots = docs.map(d => {
+    if (d == null) return { original: d, clone: null, erro: 'documento nulo/indefinido' };
+    try {
+      return { original: d, clone: JSON.parse(JSON.stringify(d)), erro: null };
+    } catch (e) {
+      return { original: d, clone: null, erro: 'não foi possível clonar (provável referência circular ou valor não serializável): ' + (e && e.message) };
+    }
+  });
+
+  // Checagem de revisão em PARALELO. Além de mais rápido (relevante com muitos TEDs
+  // pendentes — sequencial já foi causa de timeout/"Erro ao salvar" antes), reduz ainda
+  // mais a janela de exposição a mutação concorrente, já redundante com o clone acima.
+  const checks = await Promise.all(snapshots.map(async (s) => {
+    const d = s.clone;
+    if (s.erro || !d) return { s, erro: s.erro || 'clone vazio' };
+    if (d.id == null) return { s, revNova: 1 };
     const id = String(d.id);
     const ref = fsDoc(db, 'teds', id);
     let revServidor = null;
@@ -281,45 +304,74 @@ window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
       // (gravar) em vez de bloquear o trabalho de quem está sem rede.
       revServidor = null;
     }
-    if (revServidor === null) {
-      aGravar.push({ doc: d, revNova: Number(bases[id] || 0) + 1 });
-      continue;
-    }
+    if (revServidor === null) return { s, revNova: Number(bases[id] || 0) + 1 };
     const base = bases[id];
     // Só bloqueamos quando SABEMOS a base e o servidor está estritamente à frente dela.
     // Se a base é desconhecida, NÃO dá para afirmar que houve alteração de outro usuário —
     // e bloquear nesse caso impedia gravações legítimas (a entrega era aceita localmente e
     // nunca chegava ao servidor). Entre falhar em bloquear uma sobrescrita rara e impedir o
     // usuário de salvar seu trabalho, o segundo é pior.
-    const houveConflito = (base === undefined)
-      ? false
-      : revServidor > Number(base || 0);
-    if (houveConflito) {
-      resultado.conflitos.push(id);
-    } else {
-      aGravar.push({ doc: d, revNova: revServidor + 1 });
+    const houveConflito = (base === undefined) ? false : revServidor > Number(base || 0);
+    return houveConflito ? { s, conflito: true } : { s, revNova: revServidor + 1 };
+  }));
+
+  const CAMPOS_META = ['id', '_rev', '_updatedAt', '_updatedBy'];
+  const aGravar = [];
+  checks.forEach(c => {
+    const original = c.s.original;
+    const idFallback = (original && original.id != null) ? String(original.id) : '(sem id)';
+    if (c.erro) {
+      console.error('[firestoreBatchSetTedsGuarded] TED ' + idFallback + ' pulado — ' + c.erro + '. Objeto original:', original);
+      resultado.pulados.push(idFallback);
+      return;
     }
-  }
+    if (c.conflito) { resultado.conflitos.push(String(c.s.clone.id)); return; }
+
+    const d = c.s.clone;
+    const id = (d.id != null) ? String(d.id) : String(Date.now()) + Math.floor(Math.random() * 1000);
+    const copy = Object.assign({}, d);
+    copy.id = parseInt(id) || id;
+    copy._rev = c.revNova;
+    copy._updatedAt = Date.now();
+    if (autor) copy._updatedBy = autor;
+
+    // Validação defensiva: um TED que gravaria SEM nenhum campo real (só os metadados de
+    // controle que esta função sempre preenche) não pode entrar no lote — o Firestore
+    // rejeita esse documento e, como o commit de um WriteBatch é tudo-ou-nada, isso
+    // travaria o salvamento de TODOS os outros TEDs do lote junto, não só este.
+    const camposReais = Object.keys(copy).filter(k => !CAMPOS_META.includes(k));
+    if (camposReais.length === 0) {
+      console.error('[firestoreBatchSetTedsGuarded] TED ' + id + ' seria gravado VAZIO (só metadados) — pulado do lote. Objeto original recebido nesta chamada:', original);
+      resultado.pulados.push(id);
+      return;
+    }
+    aGravar.push({ id, copy, revNova: c.revNova });
+  });
 
   if (aGravar.length > 0) {
     try {
       const batch = fsWriteBatch(db);
-      for (const item of aGravar) {
-        const d = item.doc;
-        const id = (d && d.id != null) ? String(d.id) : String(Date.now()) + Math.floor(Math.random() * 1000);
-        const copy = Object.assign({}, d);
-        copy.id = parseInt(id) || id;
-        copy._rev = item.revNova;
-        copy._updatedAt = Date.now();
-        if (autor) copy._updatedBy = autor;
-        batch.set(fsDoc(db, 'teds', id), copy);
-        resultado.escritos.push(id);
-        resultado.revs[id] = item.revNova;
-      }
+      aGravar.forEach(item => { batch.set(fsDoc(db, 'teds', item.id), item.copy); });
       await batch.commit();
+      aGravar.forEach(item => { resultado.escritos.push(item.id); resultado.revs[item.id] = item.revNova; });
     } catch (e) {
-      console.warn('firestoreBatchSetTedsGuarded erro no commit', e);
-      resultado.ok = false;
+      // O lote inteiro falhou por algo que a validação acima não previu (ex.: um tipo de
+      // dado que só o próprio SDK do Firestore rejeita). Em vez de perder TODOS os TEDs
+      // do lote por causa de UM ruim, gravamos cada um individualmente: os válidos são
+      // salvos normalmente, e só o(s) documento(s) realmente problemático(s) falha(m) —
+      // isolados e registrados, sem arrastar os demais.
+      console.warn('[firestoreBatchSetTedsGuarded] commit em lote falhou — tentando gravar cada TED individualmente para isolar o problema.', e);
+      for (const item of aGravar) {
+        try {
+          await fsSetDoc(fsDoc(db, 'teds', item.id), item.copy);
+          resultado.escritos.push(item.id);
+          resultado.revs[item.id] = item.revNova;
+        } catch (e2) {
+          console.error('[firestoreBatchSetTedsGuarded] TED ' + item.id + ' falhou mesmo gravado individualmente — pulado. Documento que tentamos gravar:', item.copy, e2);
+          resultado.pulados.push(item.id);
+        }
+      }
+      if (resultado.escritos.length === 0) resultado.ok = false;
     }
   }
   return resultado;
