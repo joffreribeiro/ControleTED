@@ -20,7 +20,30 @@
       "PowerShell(New-Item -ItemType Directory -Path \"e:\\\\MEUS DOCUMENTOS\\\\OneDrive\\\\Documentos\\\\Sistemas\\\\TESTE\\\\frontend\\\\src\\\\services\" -Force)",
       "Bash(Get-ChildItem -Path \"e:\\\\MEUS DOCUMENTOS\\\\OneDrive\\\\Documentos\\\\Sistemas\\\\TESTE\" -Force)",
       "Bash(Select-Object Name, PSIsContainer)",
-      "Bash(Get-ChildItem -Path \"e:\\\\MEUS DOCUMENTOS\\\\OneDrive\\\\Documentos\\\\Sistemas\\\\TESTE\" -Recurse -File)"
+      "Bash(Get-ChildItem -Path \"e:\\\\MEUS DOCUMENTOS\\\\OneDrive\\\\Documentos\\\\Sistemas\\\\TESTE\" -Recurse -File)",
+      "PowerShell($nodePath = \\(Get-Command node -ErrorAction SilentlyContinue\\).Source; if \\($nodePath\\) { Write-Output $nodePath } else { Write-Output \"Node não encontrado\" })",
+      "PowerShell(python --version)",
+      "PowerShell($nodePath = \\(Get-Command node -ErrorAction SilentlyContinue\\).Source; if \\($nodePath\\) { Write-Output $nodePath } else { Write-Output \"Node não encontrado no PATH atual\" })",
+      "PowerShell(@\\(\"C:\\\\Program Files\\\\nodejs\\\\node.exe\", \"C:\\\\Program Files \\(x86\\)\\\\nodejs\\\\node.exe\"\\) | ForEach-Object { if \\(Test-Path $_\\) { Write-Output \"Encontrado: $_\" } })",
+      "Bash(ls -la \"C:\\\\Users\\\\Joffre\\\\Downloads\" 2>/dev/null | grep -iE \"main|style|mudan|ted|diff\" | head -30)",
+      "Bash(grep -iE \"\\\\.diff$|\\\\.patch$|mudan\")",
+      "Bash(diff js/main.js \"/c/Users/Joffre/Downloads/main.js\")",
+      "Read(//tmp/**)",
+      "Bash(xxd)",
+      "Bash(mkdir -p /tmp/tedcmp)",
+      "Bash(sed 's/\\\\r$//' js/main.js)",
+      "Bash(cp \"/c/Users/Joffre/Downloads/main.js\" /tmp/tedcmp/dl_main.js)",
+      "Bash(diff /tmp/tedcmp/repo_main.js /tmp/tedcmp/dl_main.js)",
+      "Read(//tmp/tedcmp/**)",
+      "Bash(sed 's/$/\\\\r/' dl_main.js)",
+      "Bash(cp dl_main_crlf.js \"C:/Users/Joffre/Documents/GitHub/ControleTED/js/main.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" --check js/main.js)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash('/c/Program Files/nodejs/node.exe' -e ' *)",
+      "Bash(git show *)",
+      "Bash(git reset *)",
+      "Bash(cp \"C:/Users/Joffre/AppData/Local/Temp/tedcmp/dl_main.js\" js/main.js)"
     ]
   }
 }

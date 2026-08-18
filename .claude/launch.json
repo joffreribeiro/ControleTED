@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "controle-ted-app",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["--yes", "serve", ".", "-l", "4322"],
-      "port": 4322
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": ["servidor.js"],
+      "port": 5000
     },
     {
       "name": "controle-ted-app-alt",
