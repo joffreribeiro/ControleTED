@@ -4381,23 +4381,6 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-modo-seg button.on { background: var(--primary, #0c447c); color: #fff; }
 .table-actions-bar:has(.cf-modo-seg) { justify-content: flex-start; gap: 10px; }
 
-/* Faixa de conciliação no topo da Execução Financeira / Recursos Gerais IMBEL:
-   evidencia quando o Previsto difere do Cadastro Financeiro por causa de um
-   aditivo/apostilamento, em vez de deixar a diferença como uma dúvida silenciosa. */
-.fin-recon-banner {
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 11px 16px;
-    background: linear-gradient(90deg, #f0f6fd, #fbfdff); border: 1px solid #cfe0f2;
-    border-radius: 10px; font-size: 13px; margin-bottom: 12px;
-}
-[data-theme="dark"] .fin-recon-banner {
-    background: linear-gradient(90deg, #1e3a5f, #1e293b); border-color: #2d4a6b;
-}
-.fin-recon-item { display: inline-flex; flex-direction: column; gap: 1px; }
-.fin-recon-item .k { color: var(--text-secondary, #64748b); font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; }
-.fin-recon-item .v { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text, #1e293b); }
-.fin-recon-item .v.delta { color: #b91c1c; }
-.fin-recon-arrow { color: #94a3b8; font-size: 16px; }
-
 /* ============================================================
    ABAS INTERNAS — DETALHES TED (dt-tab-*)
    ============================================================ */

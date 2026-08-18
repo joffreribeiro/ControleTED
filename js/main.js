@@ -8533,47 +8533,6 @@
             try { atualizarTabelaFinanceira(); } catch (e) { console.warn(e); }
         }
 
-        // Faixa de conciliação exibida no topo da Execução Financeira e do Recursos Gerais
-        // IMBEL: quando um aditivo/apostilamento suprime lançamentos do Cadastro Financeiro,
-        // o Previsto dessas tabelas cai em relação ao total original — em vez de deixar essa
-        // diferença como uma dúvida silenciosa, a faixa explicita os dois números e a origem.
-        function renderFinReconBanner(containerId) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            const ted = window.tedSelecionado;
-            if (!ted) { container.innerHTML = ''; return; }
-
-            const todos = ted.financeiros || [];
-            const vigentes = financeirosVigentes(ted);
-            const totalOriginal = todos.reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
-            const totalVigente = vigentes.reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
-            const delta = totalVigente - totalOriginal;
-
-            if (Math.abs(delta) < 0.01) { container.innerHTML = ''; return; }
-
-            const mapa = mapaSupressaoFinanceira(ted);
-            const nSuprimidos = todos.filter(f => mapa.get(f) === true).length;
-            const origem = obterOrigemAlteracaoTabela('financeiros');
-            const fmt = v => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
-            let origemHtml = '';
-            if (origem) {
-                const isAditivo = origem.tipo === 'aditivo';
-                const label = isAditivo ? `${origem.ordinal}º Aditivo` : `${origem.ordinal}º Apostilamento`;
-                const dataStr = origem.data ? _fmtData(origem.data) : '';
-                const supStr = nSuprimidos ? ` · ${nSuprimidos} lançamento${nSuprimidos !== 1 ? 's' : ''} suprimido${nSuprimidos !== 1 ? 's' : ''}` : '';
-                origemHtml = `<span class="fin-recon-item"><span class="k">Origem</span><span class="v" style="font-size:12.5px">${label}${dataStr ? ' · ' + dataStr : ''}${supStr}</span></span>`;
-            }
-
-            container.innerHTML = `<div class="fin-recon-banner">
-                <span class="fin-recon-item"><span class="k">Previsto original</span><span class="v">R$ ${fmt(totalOriginal)}</span></span>
-                <span class="fin-recon-arrow">→</span>
-                <span class="fin-recon-item"><span class="k">Previsto vigente</span><span class="v">R$ ${fmt(totalVigente)}</span></span>
-                <span class="fin-recon-item"><span class="k">Efeito das alterações</span><span class="v delta">${delta < 0 ? '− ' : '+ '}R$ ${fmt(Math.abs(delta))}</span></span>
-                ${origemHtml}
-            </div>`;
-        }
-
         function atualizarTabelaFinanceira() {
             const tbody = document.getElementById('tabelaFinanceira');
             const headerGantt = document.getElementById('ganttHeaderFinanceira');
@@ -10660,8 +10619,6 @@
                 const tableEl = tbody.closest('table');
                 if (!tableEl) { console.warn('tabelaExecFinanceira table parent not found'); return; }
 
-                try { renderFinReconBanner('execfin-recon-banner'); } catch (e) { console.warn(e); }
-
                 const resumoPrev       = document.getElementById('resExecPrevisto');
                 const resumoReceberAnt = document.getElementById('resExecReceberAnterior');
                 const resumoRecebido   = document.getElementById('resExecRecebido');
@@ -11774,7 +11731,6 @@
             if (!tbody || !tableEl) return;
 
             try { popularFiltrosRecGeral(); } catch(e) {}
-            try { renderFinReconBanner('recgeral-recon-banner'); } catch (e) { console.warn(e); }
 
             if (!window.tedSelecionado) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align:center;padding:1rem;">Selecione um TED</td></tr>';
