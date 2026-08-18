@@ -1,0 +1,16558 @@
+// Helpers: global loader, empty-state rendering, and save confirmation
+(function(){
+    function createGlobalLoader() {
+        if (document.getElementById('globalLoader')) return;
+        const loader = document.createElement('div');
+        loader.id = 'globalLoader';
+        loader.className = 'global-loader';
+        loader.setAttribute('aria-hidden','true');
+        loader.innerHTML = `
+            <div class="global-loader-backdrop" aria-hidden="true"></div>
+            <div class="global-loader-content" role="status" aria-live="polite">
+                <div class="spinner" aria-hidden="true"></div>
+                <div class="global-loader-message">Carregando dados...</div>
+            </div>`;
+        document.body.appendChild(loader);
+    }
+
+    window.showGlobalLoader = function(msg){
+        if (typeof document === 'undefined') return;
+        createGlobalLoader();
+        const el = document.getElementById('globalLoader');
+        if (!el) return;
+        if (msg) {
+            const m = el.querySelector('.global-loader-message');
+            if (m) m.textContent = msg;
+        }
+        el.classList.add('active');
+        el.setAttribute('aria-hidden','false');
+    };
+
+    window.hideGlobalLoader = function(){
+        const el = document.getElementById('globalLoader');
+        if (!el) return;
+        el.classList.remove('active');
+        el.setAttribute('aria-hidden','true');
+    };
+
+    window.renderEmptyState = function(container, title, subtitle){
+        if (!container) return;
+        const subtitleHtml = subtitle ? `<div class="empty-sub">${subtitle}</div>` : '';
+        container.innerHTML = `\n            <div class="empty-state" role="status" aria-live="polite">\n                <svg width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">\n                    <rect x="1" y="3" width="22" height="14" rx="2" stroke="currentColor" stroke-width="1.2" fill="none"></rect>\n                    <path d="M7 10h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"></path>\n                    <circle cx="9" cy="18" r="2" fill="currentColor"></circle>\n                    <circle cx="15" cy="18" r="2" fill="currentColor"></circle>\n                </svg>\n                <div class="empty-title">${title || 'Nenhum resultado'}</div>\n                ${subtitleHtml}\n            </div>`;
+    };
+
+    window.enhanceEmptyStates = function(root=document){
+        try {
+            const candidates = Array.from(root.querySelectorAll('div, p, span'));
+            for (const el of candidates) {
+                const txt = (el.textContent || '').trim();
+                if (!txt) continue;
+                if (/^Nenhum\b|^Sem\b|^Não há|^Nenhuma\b/i.test(txt) && el.children.length === 0) {
+                    if (el.classList.contains('empty-state')) continue;
+                    window.renderEmptyState(el, txt, '');
+                }
+            }
+        } catch(e) { /* safe fail */ }
+    };
+
+    window.showSaveConfirmation = function(selectorOrEl){
+        const el = typeof selectorOrEl === 'string' ? document.querySelector(selectorOrEl) : selectorOrEl;
+        if (!el) return;
+        const original = el.innerHTML;
+        el.classList.add('btn-saved');
+        el.setAttribute('data-orig', original);
+        el.innerHTML = '<span class="save-check">✓</span>';
+        setTimeout(() => {
+            el.classList.remove('btn-saved');
+            const orig = el.getAttribute('data-orig') || original;
+            el.innerHTML = orig;
+            el.removeAttribute('data-orig');
+        }, 2000);
+    };
+
+    // Ensure enhancement runs whether DOMContentLoaded already fired or not
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(() => window.enhanceEmptyStates(), 20);
+    } else {
+        document.addEventListener('DOMContentLoaded', () => window.enhanceEmptyStates());
+    }
+    // Pagination helpers
+    window._pagination = window._pagination || {};
+    window.setTablePage = function(key, page) {
+        window._pagination[key] = window._pagination[key] || { page: 1, pageSize: 25 };
+        window._pagination[key].page = Number(page) || 1;
+        if (key === 'cadFin' && typeof atualizarTabelaFinanceira === 'function') {
+            try { atualizarTabelaFinanceira(); } catch(e) {}
+        } else if (key === 'execFin' && typeof atualizarTabelaExecFinanceira === 'function') {
+            try { atualizarTabelaExecFinanceira(); } catch(e) {}
+        }
+    };
+
+    window.setTablePageSize = function(key, size) {
+        window._pagination[key] = window._pagination[key] || { page: 1, pageSize: 25 };
+        window._pagination[key].pageSize = Number(size) || 25;
+        window._pagination[key].page = 1;
+        if (key === 'cadFin' && typeof atualizarTabelaFinanceira === 'function') {
+            try { atualizarTabelaFinanceira(); } catch(e) {}
+        } else if (key === 'execFin' && typeof atualizarTabelaExecFinanceira === 'function') {
+            try { atualizarTabelaExecFinanceira(); } catch(e) {}
+        }
+    };
+
+})();
+
+
+/* --- extracted script 1 --- */
+
+        // Wrapper kept for backward compatibility: opens modal to mark realized
+        function marcarFisicoRealizado(id) { abrirModalMarcarRealizada(id); }
+
+        function abrirModalMarcarRealizada(id) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            if (!window.tedSelecionado) return;
+            const fisicos = window.tedSelecionado.fisicos || [];
+            const f = fisicos.find(x => x.id == id);
+            if (!f) return;
+            window._modalFisicoId = id;
+            // populate modal fields
+            const objEl = document.getElementById('modalMarcarRealizadaObj');
+            const dataEl = document.getElementById('modalDataRealizada');
+            const qtdEl = document.getElementById('modalQtdRealizada');
+            const nfEl = document.getElementById('modalNfRealizada');
+            const errEl = document.getElementById('modalMarcarRealizadaError');
+            if (objEl) objEl.textContent = 'Objeto: ' + (f.objeto || '');
+            if (dataEl) dataEl.value = f.dataRealizada || '';
+            if (qtdEl) {
+                const sumEnt = (Array.isArray(f.entregas) ? f.entregas.reduce((s,e) => s + (parseNumber(e.quantidade || e.qtde || 0)||0), 0) : 0);
+                qtdEl.value = sumEnt ? formatarMilharesPtBR(Number(sumEnt)) : '';
+            }
+            if (nfEl) nfEl.value = f.nfRealizada || f.nf || '';
+            if (errEl) { errEl.textContent = ''; errEl.classList.remove('open'); }
+
+            // render audit snippet
+            const auditContainer = document.getElementById('modalAuditoriaContainer');
+            if (auditContainer) {
+                auditContainer.innerHTML = renderizarAuditoriaModal();
+            }
+
+            const backdrop = document.getElementById('modalMarcarRealizadaBackdrop');
+            if (backdrop) {
+                backdrop.classList.add('open');
+                backdrop.setAttribute('aria-hidden','false');
+            }
+
+            // save previously focused element to restore on close
+            window._prevFocus = document.activeElement;
+
+            // autofocus date input
+            setTimeout(() => {
+                if (dataEl) try { dataEl.focus(); } catch(e) {}
+            }, 50);
+
+            // keyboard handlers: Enter=save, Esc=close ; focus trap
+            window._modalKeyHandler = function(e) {
+                if (!document.getElementById('modalMarcarRealizadaBackdrop') || !document.getElementById('modalMarcarRealizadaBackdrop').classList.contains('open')) return;
+                if (e.key === 'Escape') { e.preventDefault(); fecharModalMarcarRealizada(); }
+                if (e.key === 'Enter') {
+                    // don't submit when pressing Enter inside a text input while composing
+                    const tag = (document.activeElement || {}).tagName || '';
+                    if (tag.toLowerCase() === 'input' || tag.toLowerCase() === 'textarea' || tag.toLowerCase() === 'select') {
+                        // allow Enter when in number/date fields to save
+                        const t = document.activeElement.type || '';
+                        if (t === 'text' || t === 'number' || t === 'date') { e.preventDefault(); salvarModalMarcarRealizada(); }
+                    }
+                }
+            };
+            document.addEventListener('keydown', window._modalKeyHandler);
+
+            // focus trap
+            window._modalTrapHandler = function(e) {
+                if (e.key !== 'Tab') return;
+                const modal = document.querySelector('#modalMarcarRealizadaBackdrop .modal-realizada');
+                if (!modal) return;
+                const focusable = modal.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])');
+                if (!focusable || focusable.length === 0) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length -1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                } else {
+                    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
+            };
+            document.addEventListener('keydown', window._modalTrapHandler);
+        }
+
+        // ===== Entregas (sub-registros do Cadastro Físico) =====
+        function entregas_toggleExpand(faseId) {
+            try {
+                const row = document.querySelector(`tr[data-fisico-id="${faseId}"]`);
+                if (!row) return;
+                const existing = document.getElementById(`subentregas-${faseId}`);
+                if (existing) { existing.remove(); return; }
+
+                const tr = document.createElement('tr');
+                tr.id = `subentregas-${faseId}`;
+                tr.className = 'subentregas-row';
+                const td = document.createElement('td');
+                td.colSpan = 999;
+
+                const f = (window.tedSelecionado.fisicos || []).find(x => x.id == faseId);
+                const entregas = f && Array.isArray(f.entregas) ? f.entregas : [];
+                const canEditEntregas = !window._readOnlyMode;
+
+                let html = `<div class="subentregas-panel"><div class="subentregas-list">`;
+                if (!entregas.length) html += '<div class="subentregas-empty">Nenhuma entrega registrada</div>';
+                entregas.forEach(e => {
+                    const ddisp = (e && e.data) ? (new Date(normalizarData(e.data) + 'T00:00:00').toLocaleDateString('pt-BR')) : '';
+                    const removeBtn = canEditEntregas
+                        ? `<button class="btn-small" onclick="entregas_remover(${faseId}, '${e.id}')">Remover</button>`
+                        : `<button class="btn-small" disabled style="opacity:.45;cursor:not-allowed;" title="Faça login como Admin para remover entrega">Remover</button>`;
+                    html += `<div class="subentrega-item"><div class="subentrega-meta"><strong>${ddisp}</strong> · Qtd: ${formatNumber(e.quantidade || e.qtde || 0)}${e.nf ? ' · NF: ' + e.nf : ''}</div><div class="subentrega-actions">${removeBtn}</div></div>`;
+                });
+                const addBtn = canEditEntregas
+                    ? `<button class="btn" onclick="abrirModalAdicionarEntrega(${faseId})">+ Adicionar Nova Entrega</button>`
+                    : `<button class="btn" disabled style="opacity:.45;cursor:not-allowed;" title="Faça login como Admin para adicionar entrega">+ Adicionar Nova Entrega</button>`;
+                html += `</div><div class="subentregas-actions">${addBtn} <button class="btn btn-ghost" onclick="document.getElementById('subentregas-${faseId}')?.remove()">Fechar</button></div></div>`;
+
+                td.innerHTML = html;
+                tr.appendChild(td);
+                row.parentNode.insertBefore(tr, row.nextSibling);
+            } catch(e) { console.warn('entregas_toggleExpand erro', e); }
+        }
+
+        // Abre modal/form para adicionar uma nova entrega (data mostrada em DD/MM/AAAA)
+        function abrirModalAdicionarEntrega(faseId) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            window._modalAddEntregaFaseId = faseId;
+            const backdrop = document.getElementById('modalAddEntregaBackdrop');
+            const dateEl = document.getElementById('modalAddEntregaDate');
+            const qtdEl = document.getElementById('modalAddEntregaQtd');
+            const nfEl = document.getElementById('modalAddEntregaNf');
+            const errEl = document.getElementById('modalAddEntregaError');
+            if (errEl) { errEl.textContent = ''; errEl.classList.remove('open'); }
+            // preencher valores padrão (data exibida em DD/MM/AAAA)
+            const todayIso = new Date().toISOString().split('T')[0];
+            if (dateEl) dateEl.value = (typeof formatarData === 'function') ? formatarData(todayIso) : (new Date(todayIso + 'T00:00:00')).toLocaleDateString('pt-BR');
+            if (qtdEl) qtdEl.value = '1';
+            if (nfEl) nfEl.value = '';
+            if (dateEl) applyDateMaskToInput(dateEl);
+            if (nfEl) applyNumberMaskToInput(nfEl);
+            if (backdrop) { backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden','false'); }
+            window._prevFocus = document.activeElement;
+            setTimeout(() => { if (dateEl) try { dateEl.focus(); } catch(e) {} }, 50);
+
+            window._modalAddEntregaKeyHandler = function(e) {
+                if (!document.getElementById('modalAddEntregaBackdrop') || !document.getElementById('modalAddEntregaBackdrop').classList.contains('open')) return;
+                if (e.key === 'Escape') { e.preventDefault(); fecharModalAdicionarEntrega(); }
+                if (e.key === 'Enter') {
+                    const tag = (document.activeElement || {}).tagName || '';
+                    if (tag.toLowerCase() === 'input' || tag.toLowerCase() === 'textarea' || tag.toLowerCase() === 'select') {
+                        e.preventDefault(); salvarModalAdicionarEntrega();
+                    }
+                }
+            };
+            document.addEventListener('keydown', window._modalAddEntregaKeyHandler);
+        }
+
+        function fecharModalAdicionarEntrega() {
+            const backdrop = document.getElementById('modalAddEntregaBackdrop');
+            if (backdrop) { backdrop.classList.remove('open'); backdrop.setAttribute('aria-hidden','true'); }
+            try { document.removeEventListener('keydown', window._modalAddEntregaKeyHandler); } catch(e) {}
+            window._modalAddEntregaKeyHandler = null;
+            try { if (window._prevFocus && window._prevFocus.focus) window._prevFocus.focus(); } catch(e) {}
+            window._prevFocus = null;
+            window._modalAddEntregaFaseId = null;
+        }
+
+        function salvarModalAdicionarEntrega() {
+            const errEl = document.getElementById('modalAddEntregaError'); if (errEl) { errEl.textContent=''; errEl.classList.remove('open'); }
+            const dateEl = document.getElementById('modalAddEntregaDate');
+            const qtdEl = document.getElementById('modalAddEntregaQtd');
+            const nfEl = document.getElementById('modalAddEntregaNf');
+            const dataPt = dateEl ? (dateEl.value || '').trim() : '';
+            const qtdRaw = qtdEl ? (qtdEl.value || '').trim() : '';
+            const nf = nfEl ? (nfEl.value || '').trim() : '';
+
+            // parse DD/MM/YYYY -> YYYY-MM-DD
+            const iso = (function parsePtBRToISO(s){ if(!s) return null; const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if(!m) return null; const d=m[1], mo=m[2], y=m[3]; const iso = `${y}-${mo}-${d}`; if(isNaN(new Date(iso + 'T00:00:00').getTime())) return null; return iso; })(dataPt);
+            if (!iso) { if (errEl) { errEl.textContent='Data inválida. Use DD/MM/AAAA.'; errEl.classList.add('open'); dateEl.focus(); } return; }
+            const qtd = parseNumber(qtdRaw);
+            if (isNaN(qtd) || qtd < 0) { if (errEl) { errEl.textContent='Quantidade inválida.'; errEl.classList.add('open'); qtdEl.focus(); } return; }
+            const faseId = window._modalAddEntregaFaseId;
+            if (!faseId) { fecharModalAdicionarEntrega(); return; }
+
+            entregas_adicionar(faseId, { data: iso, quantidade: qtd, nf: nf });
+            fecharModalAdicionarEntrega();
+            showToast('Entrega adicionada.', 'success');
+        }
+
+        // Compatibilidade: manter função antiga chamando o modal
+        function entregas_promptAdd(faseId) { abrirModalAdicionarEntrega(faseId); }
+
+        function entregas_adicionar(faseId, entrega) {
+            if (!window.tedSelecionado) return;
+            const f = (window.tedSelecionado.fisicos || []).find(x => x.id == faseId);
+            if (!f) return;
+            f.entregas = Array.isArray(f.entregas) ? f.entregas : [];
+            const e = { id: entrega.id || (Date.now() + Math.floor(Math.random()*9999)), data: entrega.data || '', quantidade: entrega.quantidade || parseNumber(f.qtde) || 0, nf: entrega.nf || '' };
+            f.entregas.push(e);
+            const tedId = window.tedSelecionado.id;
+            adicionarRegistroAuditoria(tedId, 'adicionar_entrega', f.id, { objeto: f.objeto, data: e.data, quantidade: e.quantidade, nf: e.nf });
+            // persistir:false — quem grava é o salvarDadosImediato logo abaixo. Antes as duas
+            // chamadas gravavam: a segunda encontrava a primeira em andamento, retornava
+            // "ocupado" (false) e a verificação consultava o servidor ANTES de a gravação
+            // real terminar, disparando o falso alerta "não foi confirmada no servidor".
+            try { sincronizarExecucaoFisica({ persistir: false }); } catch(e) {}
+            // Atualização local é imediata de propósito (uso em campo depende disso — ver
+            // window._isMobileShell): não travar a UI esperando confirmação do servidor.
+            let salvarPromise;
+            try { salvarPromise = salvarDadosImediato(); } catch(e) { salvarPromise = null; try { salvarDados(); } catch(_) {} }
+            try { atualizarTabelaFisicos(); } catch(e) {}
+            _verificarEntregaNoServidor(tedId, f.id, e.id, salvarPromise);
+        }
+
+        // Confirma em segundo plano que a entrega chegou de fato ao Firestore — mesmo
+        // raciocínio do fix em firestoreDeleteDoc: com enableIndexedDbPersistence, o
+        // salvamento "parece" bem-sucedido assim que entra na fila local, antes do servidor
+        // confirmar/rejeitar. Se estiver genuinamente offline, isso NÃO é erro (sincroniza
+        // sozinho quando a conexão voltar); só avisa se estiver online e mesmo assim a
+        // entrega não aparecer no servidor (ex.: rejeição silenciosa por falta de permissão).
+        async function _verificarEntregaNoServidor(tedId, faseId, entregaId, salvarPromise) {
+            try {
+                if (salvarPromise && typeof salvarPromise.then === 'function') await salvarPromise;
+                if (!navigator.onLine) return; // offline real — o autosave/SW cuidam de sincronizar depois
+                if (!window.firestoreGetDocFromServer) return;
+
+                const result = await window.firestoreGetDocFromServer('teds/' + String(tedId));
+                if (!result.ok) {
+                    if (result.offline) return; // timeout/sem rede no momento da checagem — não é erro
+                    return; // falha ao verificar por outro motivo: não afirmar erro sem certeza
+                }
+                const tedServidor = result.data;
+                const faseServidor = tedServidor && Array.isArray(tedServidor.fisicos) ? tedServidor.fisicos.find(x => x.id == faseId) : null;
+                const entregaServidor = faseServidor && Array.isArray(faseServidor.entregas) ? faseServidor.entregas.find(x => String(x.id) === String(entregaId)) : null;
+
+                if (!entregaServidor) {
+                    showToast('⚠️ A entrega foi salva neste aparelho, mas não foi confirmada no servidor. Verifique sua permissão/conexão e tente salvar de novo.', 'warning');
+                }
+            } catch (e) { console.warn('_verificarEntregaNoServidor error', e); }
+        }
+
+        function entregas_remover(faseId, entregaId) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para remover entrega.', 'warning'); return; }
+            if (!window.tedSelecionado) return;
+            const f = (window.tedSelecionado.fisicos || []).find(x => x.id == faseId);
+            if (!f || !Array.isArray(f.entregas)) return;
+            const before = f.entregas.length;
+            f.entregas = f.entregas.filter(e => String(e.id) !== String(entregaId));
+            if (f.entregas.length === before) return; // nada removido
+            adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_entrega', f.id, { entregaId });
+            try { sincronizarExecucaoFisica(); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { try { salvarDados(); } catch(_) {} }
+            try { atualizarTabelaFisicos(); } catch(e) {}
+            const sub = document.getElementById(`subentregas-${faseId}`);
+            if (sub) { sub.remove(); entregas_toggleExpand(faseId); }
+        }
+
+        function entregas_getQtdEntregue(f) {
+            if (!f) return 0;
+            const arr = Array.isArray(f.entregas) ? f.entregas : [];
+            return arr.reduce((s, e) => s + (parseNumber(e.quantidade || e.qtde || 0) || 0), 0);
+        }
+
+        function entregas_getStatus(item) {
+            const previsto = Math.max(0, parseNumber(item && item.qtde) || 0);
+            const totalEntregue = Math.max(0, entregas_getQtdEntregue(item) || 0);
+
+            let percentual = 0;
+            if (previsto > 0) {
+                percentual = (totalEntregue / previsto) * 100;
+            } else if (totalEntregue > 0) {
+                // quando não há quantidade prevista mas existem entregas, mostrar barra preenchida
+                percentual = 100;
+            }
+            percentual = Math.max(0, Math.min(100, percentual));
+
+            let estado = 'vazio';
+            if (totalEntregue > 0) {
+                if (previsto > 0) {
+                    estado = totalEntregue >= previsto ? 'concluido' : 'parcial';
+                } else {
+                    estado = 'parcial';
+                }
+            }
+
+            return {
+                estado,
+                totalEntregue,
+                percentual
+            };
+        }
+
+        function entregas_toggleExpandir(event, faseId) {
+            if (event && event.preventDefault) event.preventDefault();
+            if (event && event.stopPropagation) event.stopPropagation();
+            entregas_toggleExpand(faseId);
+        }
+
+        function entregas_renderIconeStatus(item) {
+            const s = entregas_getStatus(item);
+            const itemId = String(item && item.id != null ? item.id : '');
+            const total = formatNumber(s.totalEntregue || 0);
+            const previsto = formatNumber(parseNumber(item && item.qtde) || 0);
+
+            if (s.estado === 'vazio') {
+                return `<button class="btn-icon-action done-action" onclick="entregas_toggleExpandir(event, '${itemId}')" title="Sem entrega" style="color:#9ca3af;">⬜</button>`;
+            }
+
+            if (s.estado === 'parcial') {
+                return `<button class="btn-icon-action done-action" onclick="entregas_toggleExpandir(event, '${itemId}')" title="${total}/${previsto} un" style="color:#ca8a04;">🟡 <span style="font-size:10px; font-weight:600; vertical-align:middle;">${total}/${previsto} un</span></button>`;
+            }
+
+            return `<button class="btn-icon-action done-action" onclick="entregas_toggleExpandir(event, '${itemId}')" title="Concluido" style="color:#16a34a;">✅</button>`;
+        }
+
+        // Reconstrói execFisicas a partir das entregas do cadastro físico.
+        // Duas correções importantes aqui:
+        // (1) o id de cada linha era gerado com Date.now()+random A CADA execução, então o
+        //     TED ficava DIFERENTE do servidor toda vez que era aberto — o app achava que
+        //     havia alteração pendente para sempre (daí o aviso "outro usuário salvou..."
+        //     aparecendo o tempo todo). Agora o id é gravado na própria entrega, uma única
+        //     vez, e reutilizado.
+        // (2) a função salvava incondicionalmente no fim — ou seja, só ABRIR um TED gravava
+        //     no servidor, podendo publicar uma cópia local por cima da de outro usuário.
+        //     Agora só grava se o conteúdo realmente mudou, e o chamador pode desligar a
+        //     gravação com { persistir: false } (usado ao abrir o TED).
+        function sincronizarExecucaoFisica(opts) {
+            if (!window.tedSelecionado) return;
+            const persistir = !(opts && opts.persistir === false);
+            const execs = _derivarExecFisicas(window.tedSelecionado);
+            let mudou = false;
+            try { mudou = JSON.stringify(window.tedSelecionado.execFisicas || []) !== JSON.stringify(execs); } catch (e) { mudou = true; }
+            if (mudou) window.tedSelecionado.execFisicas = execs;
+            // Propaga o mesmo modo: se esta chamada não pode gravar (abertura de TED),
+            // o recálculo de progresso também não pode.
+            try { atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado, { persistir: persistir }); } catch(e) {}
+            try { atualizarTabelaExecFisica(); } catch(e) {}
+            try { atualizarTabelaFisicos(); } catch(e) {}
+            if (mudou && persistir) { try { salvarDadosImediato(); } catch(e) { try { salvarDados(); } catch(_) {} } }
+        }
+
+        function fecharModalMarcarRealizada() {
+            const backdrop = document.getElementById('modalMarcarRealizadaBackdrop');
+            if (backdrop) { backdrop.classList.remove('open'); backdrop.setAttribute('aria-hidden','true'); }
+            window._modalFisicoId = null;
+            // remove keyboard handlers
+            try { document.removeEventListener('keydown', window._modalKeyHandler); } catch(e) {}
+            try { document.removeEventListener('keydown', window._modalTrapHandler); } catch(e) {}
+            window._modalKeyHandler = null; window._modalTrapHandler = null;
+            // restore focus
+            try { if (window._prevFocus && window._prevFocus.focus) window._prevFocus.focus(); } catch(e) {}
+            window._prevFocus = null;
+            // clear any inline error
+            const errEl = document.getElementById('modalMarcarRealizadaError'); if (errEl) { errEl.textContent=''; errEl.classList.remove('open'); }
+        }
+
+        function salvarModalMarcarRealizada() {
+            const errEl = document.getElementById('modalMarcarRealizadaError');
+            if (errEl) { errEl.textContent=''; errEl.classList.remove('open'); }
+            if (!window.tedSelecionado) return;
+
+            // Support single or multi selection mode (window._modalFisicoIds may contain multiple ids)
+            const dataEl = document.getElementById('modalDataRealizada');
+            const qtdEl = document.getElementById('modalQtdRealizada');
+            const nfEl = document.getElementById('modalNfRealizada');
+            const dt = dataEl ? (dataEl.value || '').trim() : '';
+            const qtdRaw = qtdEl ? (qtdEl.value || '').trim() : '';
+            const qtdParsed = (qtdRaw === '' ? null : parseNumber(qtdRaw));
+            const nf = nfEl ? (nfEl.value || '').trim() : '';
+
+            if (!dt) { if (errEl) { errEl.textContent='Informe a data de realização.'; errEl.classList.add('open'); dataEl.focus(); } return; }
+            if (isNaN(new Date(dt + 'T00:00:00').getTime())) { if (errEl) { errEl.textContent='Data inválida.'; errEl.classList.add('open'); dataEl.focus(); } return; }
+            if (qtdParsed !== null && (isNaN(qtdParsed) || qtdParsed < 0)) { if (errEl) { errEl.textContent='Quantidade inválida.'; errEl.classList.add('open'); qtdEl.focus(); } return; }
+
+            const fisicos = window.tedSelecionado.fisicos || [];
+            const ids = Array.isArray(window._modalFisicoIds) && window._modalFisicoIds.length ? window._modalFisicoIds : (window._modalFisicoId ? [window._modalFisicoId] : []);
+            if (!ids.length) return fecharModalMarcarRealizada();
+
+            ids.forEach((fid, idx) => {
+                const f = fisicos.find(x => x.id == fid);
+                if (!f) return;
+                // garantir array de entregas
+                f.entregas = Array.isArray(f.entregas) ? f.entregas : [];
+                const quantidade = (qtdParsed === null) ? (parseNumber(f.qtde) || 0) : qtdParsed;
+                const entrada = { id: Date.now() + idx, data: dt, quantidade: quantidade, nf: nf || '', criadoEm: new Date().toISOString() };
+                f.entregas.push(entrada);
+
+                // registrar auditoria por fase
+                adicionarRegistroAuditoria(window.tedSelecionado.id, 'marcar_realizada_entrega', f.id, {
+                    objeto: f.objeto,
+                    data: dt,
+                    quantidade: quantidade,
+                    nf: nf
+                });
+            });
+
+            // Atualizar execuções derivadas e persistir
+            try { sincronizarExecucaoFisica(); } catch(e) {}
+            try { salvarDados(); } catch(e) {}
+            try { atualizarTabelasEmCascata('fisicos'); } catch(e) {}
+            fecharModalMarcarRealizada();
+            showToast('Entrega(s) registrada(s) no Cadastro Físico e Execução sincronizada.', 'success');
+        }
+
+        function desmarcarModalRealizada() {
+            if (!window.tedSelecionado) return;
+            const id = window._modalFisicoId;
+            if (!id) return fecharModalMarcarRealizada();
+            const fisicos = window.tedSelecionado.fisicos || [];
+            const f = fisicos.find(x => x.id == id);
+            if (!f) return fecharModalMarcarRealizada();
+
+            // Remover entregas que correspondam à data atual marcada (compatibilidade com modal)
+            const removedDate = f.dataRealizada || '';
+            if (removedDate) {
+                f.entregas = (Array.isArray(f.entregas) ? f.entregas : []).filter(e => (e.data || '') !== removedDate);
+            }
+            // Remover campos legados, caso existam
+            delete f.realizada; delete f.dataRealizada; delete f.qtdeRealizada; delete f.nfRealizada; delete f.realizadaAntes;
+
+            // Re-sincronizar execuções derivadas
+            try { sincronizarExecucaoFisica(); } catch(e) {}
+
+            // registrar auditoria
+            adicionarRegistroAuditoria(window.tedSelecionado.id, 'desmarcar_realizado', f.id, {
+                objeto: f.objeto,
+                dataRemovida: removedDate
+            });
+
+            try { salvarDados(); } catch(e) {}
+            try { atualizarTabelasEmCascata('fisicos'); } catch(e) {}
+            fecharModalMarcarRealizada();
+            showToast('Marcação removida.', 'success');
+        }
+
+        // AUDITORIA: Registrar ações de alteração em realizações
+        function adicionarRegistroAuditoria(tedId, acao, fisicoId, detalhes) {
+            const profile = window.currentUserProfile || { uid: 'anonimo', displayName: 'Anônimo', email: '' };
+
+            dados.auditLog = dados.auditLog || [];
+
+            const registro = {
+                id: Date.now(),
+                tedId: tedId,
+                fisicoId: fisicoId,
+                acao: acao,
+                usuarioId: profile.uid || profile.id || 'anonimo',
+                usuarioNome: profile.displayName || profile.nome || profile.email || 'Anônimo',
+                dataHora: new Date().toISOString(),
+                detalhes: detalhes || {}
+            };
+
+            dados.auditLog.push(registro);
+
+            // Manter apenas últimos 1000 registros na memória
+            if (dados.auditLog.length > 1000) {
+                dados.auditLog = dados.auditLog.slice(-1000);
+            }
+
+            // Persistir no Firestore (assíncrono, sem bloquear)
+            try {
+                if (window.firestoreAddDoc && profile.uid !== 'anonimo') {
+                    const ted = (dados.teds || []).find(t => t.id == tedId);
+                    const logEntry = {
+                        tedId: tedId,
+                        tedNumero: ted ? (ted.numTed || String(tedId)) : String(tedId),
+                        usuarioUid: profile.uid || 'anonimo',
+                        usuarioNome: profile.displayName || profile.nome || profile.email || 'Anônimo',
+                        acao: acao,
+                        campo: (detalhes && detalhes.campo) ? detalhes.campo : null,
+                        valorAnterior: (detalhes && detalhes.anterior !== undefined) ? detalhes.anterior : null,
+                        valorNovo: (detalhes && detalhes.novo !== undefined) ? detalhes.novo : null,
+                        dataHora: registro.dataHora
+                    };
+                    window.firestoreAddDoc('auditLog', logEntry).catch(function(e) {
+                        console.warn('auditLog Firestore save failed', e);
+                    });
+                }
+            } catch(e) { console.warn('adicionarRegistroAuditoria Firestore error', e); }
+        }
+
+        // Obter registros de auditoria para um TED
+        function obterRegistrosAuditoriaTED(tedId) {
+            const logs = dados.auditLog || [];
+            return logs.filter(r => r.tedId === tedId).sort((a, b) => {
+                return new Date(b.dataHora) - new Date(a.dataHora);
+            });
+        }
+
+        // Renderizar painel de auditoria na modal
+        function renderizarAuditoriaModal() {
+            if (!window.tedSelecionado || !window._modalFisicoId) return '';
+            
+            const registros = obterRegistrosAuditoriaTED(window.tedSelecionado.id);
+            const registrosRelevantes = registros.filter(r => 
+                r.fisicoId == window._modalFisicoId && 
+                ['marcar_realizado', 'desmarcar_realizado', 'editar_realizado'].includes(r.acao)
+            ).slice(0, 3); // mostrar últimos 3
+            
+            if (registrosRelevantes.length === 0) return '';
+            
+            let html = '<div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.85rem; color:var(--text-secondary);">';
+            html += '<div style="font-weight:600; margin-bottom:0.5rem;">Historico recente</div>';
+            
+            registrosRelevantes.forEach(r => {
+                const dt = new Date(r.dataHora);
+                const dataHora = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const acaoLabel = {
+                    'marcar_realizado': 'Marcado como realizado',
+                    'desmarcar_realizado': 'Marcação removida',
+                    'editar_realizado': 'Editado'
+                }[r.acao] || r.acao;
+                
+                html += `<div style="padding:0.5rem; background:var(--bg-secondary); border-radius:0.25rem; margin-bottom:0.25rem;">
+                    <div>${acaoLabel} por ${r.usuarioNome} em ${dataHora}</div>
+                </div>`;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+
+    
+
+/* --- extracted script 2 --- */
+
+        // ===== Detectar abertura via file:// =====
+        // Em vez de um overlay bloqueante, exibir um banner informativo não-bloqueante.
+        if (window.location.protocol === 'file:') {
+            document.addEventListener('DOMContentLoaded', function() {
+                try {
+                    var banner = document.createElement('div');
+                    banner.id = 'fileProtocolBanner';
+                    banner.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:#f59e0b;color:#07203a;padding:0.6rem 1rem;z-index:9999;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-family:sans-serif;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.12);';
+                    banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.05rem;">⚠️️</span><div>Você abriu o arquivo localmente. O Firebase pode não funcionar sem servidor.</div></div>' +
+                        '<div style="display:flex;align-items:center;gap:8px;">' +
+                        '<a href="http://localhost:5000" style="color:#07203a;font-weight:700;text-decoration:underline;">Abrir no servidor</a>' +
+                        '<button id="closeFileBanner" style="background:transparent;border:1px solid rgba(0,0,0,0.08);padding:6px 10px;border-radius:6px;cursor:pointer;">Fechar</button>' +
+                        '</div>';
+                    document.body.appendChild(banner);
+                    var btn = document.getElementById('closeFileBanner');
+                    if (btn) btn.addEventListener('click', function() { try { banner.remove(); } catch(e) {} });
+                } catch(e) { console.warn('Could not create file-protocol banner', e); }
+            });
+        }
+
+        // Firestore-only persistence (localStorage removed)
+
+        // ===== SISTEMA DE TOAST/NOTIFICA→.ES =====
+        function showToast(message, type = 'info', duration = 3000) {
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'OK',
+                error: 'X',
+                warning: '⚠️️',
+                info: 'i'
+            };
+            
+            toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ===== Modal global de confirmação =====
+        function confirmarAcao(mensagem, onConfirmar, titulo) {
+            titulo = titulo || 'Confirmar';
+            var id = 'modalConfirmGlobal';
+            var el = document.getElementById(id);
+            if (!el) {
+                el = document.createElement('div');
+                el.id = id;
+                el.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;';
+                el.innerHTML =
+                    '<div style="background:#fff;border-radius:12px;padding:1.5rem;max-width:420px;width:90%;">' +
+                    '<p id="' + id + '_titulo" style="font-size:14px;font-weight:500;color:#1a1a1a;margin:0 0 8px;"></p>' +
+                    '<p id="' + id + '_msg" style="font-size:13px;color:#6b6b6b;margin:0 0 1.5rem;"></p>' +
+                    '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+                    '<button onclick="document.getElementById(\'' + id + '\').style.display=\'none\'" style="padding:7px 16px;border-radius:7px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;font-size:13px;cursor:pointer;">Cancelar</button>' +
+                    '<button id="' + id + '_ok" style="padding:7px 16px;border-radius:7px;border:none;background:#E24B4A;color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Confirmar</button>' +
+                    '</div></div>';
+                document.body.appendChild(el);
+            }
+            document.getElementById(id + '_titulo').textContent = titulo;
+            document.getElementById(id + '_msg').textContent = mensagem;
+            el.style.display = 'flex';
+            document.getElementById(id + '_ok').onclick = function() {
+                el.style.display = 'none';
+                try { onConfirmar(); } catch(e) { setTimeout(function(){ try { onConfirmar(); } catch(_){} }, 0); }
+            };
+        }
+
+        // ===== Modal de duplicatas na importação =====
+        // Diferente do confirmarAcao: tem três saídas (cancelar / tudo / consolidar) e
+        // renderiza uma tabela, então precisa de innerHTML em vez de textContent.
+        function confirmarDuplicatas(dups, onEscolha) {
+            var esc = function(s) {
+                return String(s == null ? '' : s)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            };
+            var id = 'modalDupGlobal';
+            var el = document.getElementById(id);
+            if (!el) {
+                el = document.createElement('div');
+                el.id = id;
+                el.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;';
+                el.innerHTML =
+                    '<div style="background:#fff;border-radius:12px;padding:1.5rem;max-width:720px;width:92%;">' +
+                    '<p style="font-size:14px;font-weight:500;color:#1a1a1a;margin:0 0 8px;">Linhas repetidas no arquivo</p>' +
+                    '<p id="' + id + '_msg" style="font-size:13px;color:#6b6b6b;margin:0 0 12px;"></p>' +
+                    '<div id="' + id + '_lista" style="max-height:320px;overflow:auto;border:0.5px solid rgba(0,0,0,0.12);border-radius:8px;margin-bottom:1rem;"></div>' +
+                    '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+                    '<button id="' + id + '_cancel" style="padding:7px 16px;border-radius:7px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;font-size:13px;cursor:pointer;">Cancelar</button>' +
+                    '<button id="' + id + '_tudo" style="padding:7px 16px;border-radius:7px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;font-size:13px;cursor:pointer;">Importar tudo como está</button>' +
+                    '<button id="' + id + '_cons" style="padding:7px 16px;border-radius:7px;border:none;background:#E24B4A;color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Consolidar (1 de cada)</button>' +
+                    '</div></div>';
+                document.body.appendChild(el);
+            }
+
+            var excedentes = dups.reduce(function(s, d) { return s + (d.vezes - 1); }, 0);
+            document.getElementById(id + '_msg').textContent =
+                dups.length + ' linha(s) do arquivo aparecem mais de uma vez, somando ' + excedentes +
+                ' registro(s) excedente(s). Linhas idênticas em todas as colunas são o mesmo lançamento repetido e inflam o realizado. ' +
+                'Se preferir, cancele e reemita o extrato.';
+
+            document.getElementById(id + '_lista').innerHTML =
+                '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+                '<thead><tr style="background:#f5f5f5;">' +
+                '<th style="padding:6px 8px;text-align:left;">TED</th>' +
+                '<th style="padding:6px 8px;text-align:left;">NC</th>' +
+                '<th style="padding:6px 8px;text-align:center;">ND</th>' +
+                '<th style="padding:6px 8px;text-align:right;">Valor</th>' +
+                '<th style="padding:6px 8px;text-align:center;">Data</th>' +
+                '<th style="padding:6px 8px;text-align:center;">Vezes</th>' +
+                '</tr></thead><tbody>' +
+                dups.map(function(d) {
+                    return '<tr style="border-top:0.5px solid rgba(0,0,0,0.08);">' +
+                        '<td style="padding:6px 8px;">' + esc(d.siafi) + '</td>' +
+                        '<td style="padding:6px 8px;">' + esc(d.nc) + '</td>' +
+                        '<td style="padding:6px 8px;text-align:center;">' + esc(d.nd) + '</td>' +
+                        '<td style="padding:6px 8px;text-align:right;">' + (Number(d.valor) || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}) + '</td>' +
+                        '<td style="padding:6px 8px;text-align:center;">' + esc(d.data) + '</td>' +
+                        '<td style="padding:6px 8px;text-align:center;font-weight:600;">' + d.vezes + '×</td>' +
+                        '</tr>';
+                }).join('') +
+                '</tbody></table>';
+
+            el.style.display = 'flex';
+            var responder = function(escolha) {
+                el.style.display = 'none';
+                try { onEscolha(escolha); } catch(e) { console.error('confirmarDuplicatas', e); }
+            };
+            document.getElementById(id + '_cancel').onclick = function() { el.style.display = 'none'; };
+            document.getElementById(id + '_tudo').onclick = function() { responder('tudo'); };
+            document.getElementById(id + '_cons').onclick = function() { responder('consolidar'); };
+        }
+
+        // Global helper: format numeric quantities with thousands separator (pt-BR)
+        function formatNumber(v) {
+            if (v === undefined || v === null || v === '') return '';
+            const n = Number(v);
+            if (!isFinite(n)) return '' + v;
+            if (Number.isInteger(n)) return formatarMilharesPtBR(n);
+            return n.toLocaleString('pt-BR');
+        }
+
+        // Helper to parse numbers that may come with thousand separators/double delimiters (e.g., "1.234,56")
+        function parseNumber(value) {
+            if (value === undefined || value === null || value === '') return 0;
+            if (typeof value === 'number') return isFinite(value) ? value : 0;
+            let str = String(value).trim();
+            // Normalizar caracteres Unicode especiais usados como separadores de milhares
+            // U+00A0 (non-breaking space), U+202F (narrow no-break space), U+2009 (thin space)
+            str = str.replace(/[\u00A0\u202F\u2009]/g, '.');
+            // remove spaces
+            str = str.replace(/\s+/g, '');
+            // remover caracteres estranhos (manter apenas dígitos, vírgula, ponto e sinal)
+            str = str.replace(/[^\d,\.\-]/g, '');
+            // if contains comma as decimal, normalize: remove dots then replace comma with dot
+            if (str.includes(',')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else if (str.includes('.')) {
+                // No comma: check if dots are thousand separators (e.g. "1.000" or "1.000.000")
+                // Pattern: digits followed by groups of .XXX (exactly 3 digits after each dot)
+                const ptBrThousandPattern = /^\d{1,3}(\.\d{3})+$/;
+                if (ptBrThousandPattern.test(str)) {
+                    str = str.replace(/\./g, '');
+                }
+            }
+            const n = parseFloat(str);
+            return isNaN(n) ? 0 : n;
+        }
+
+        // Inject styles and small helpers to center specific headers only
+        (function(){
+            const css = `
+                /* Center only the Valor header in Cadastro Financeiro table */
+                #tabelaFinanceiraCompleta thead th.col-valor { text-align: center; }
+
+                /* Center only the Saldo header in Execução Financeira (table id added below) */
+                #tabelaExecFinanceiraTable thead th.col-saldo { text-align: center; }
+
+                /* Highlight equal quantities in Cadastro Físico */
+                .tabela-padrao td.equal-qtde { color: #16a34a; font-weight: 600; }
+            `;
+            const s = document.createElement('style');
+            s.setAttribute('data-auto','center-specific-headers');
+            s.appendChild(document.createTextNode(css));
+            document.head.appendChild(s);
+
+            // Function to center any 'Devolvido' header cells inside the Resumo Anual area
+            window.centerResumoAnualDevolvidoHeader = function() {
+                const wrap = document.getElementById('resumoAnualPorAno');
+                if (!wrap) return;
+                const ths = wrap.querySelectorAll('thead th');
+                ths.forEach(th => {
+                    if (!th) return;
+                    const txt = (th.textContent || '').trim().toLowerCase();
+                    if (txt.includes('devolvido')) {
+                        th.style.textAlign = 'center';
+                    }
+                });
+            };
+
+            // Observe changes to resumo container so header centering reapplies after dynamic renders
+            const resumoEl = document.getElementById('resumoAnualPorAno');
+            if (resumoEl) {
+                const mo = new MutationObserver(() => {
+                    try { window.centerResumoAnualDevolvidoHeader(); } catch(e){}
+                });
+                mo.observe(resumoEl, { childList: true, subtree: true });
+            }
+        })();
+
+        // Dados Iniciais (usar var para expor em window para módulos)
+        var dados = {
+            teds: [],
+            proxiId: 1,
+            planosTrabalho: [],
+            proxiIdPlano: 1,
+            proxiNrOrdemPlano: 1
+        };
+
+        // Função auxiliar para normalizar data (aceita DD/MM/YYYY ou YYYY-MM-DD)
+        function normalizarData(dataStr) {
+            if (!dataStr) return '';
+            dataStr = String(dataStr).trim();
+            
+            // Se já está no formato YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
+                return dataStr;
+            }
+            
+            // Se está no formato DD/MM/YYYY
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dataStr)) {
+                const partes = dataStr.split('/');
+                const dia = partes[0].padStart(2, '0');
+                const mes = partes[1].padStart(2, '0');
+                const ano = partes[2];
+                return `${ano}-${mes}-${dia}`;
+            }
+            
+            // Se está no formato DD-MM-YYYY
+            if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(dataStr)) {
+                const partes = dataStr.split('-');
+                const dia = partes[0].padStart(2, '0');
+                const mes = partes[1].padStart(2, '0');
+                const ano = partes[2];
+                return `${ano}-${mes}-${dia}`;
+            }
+            
+            return dataStr; // Retorna original se não reconhecer
+        }
+
+        // Inicializar
+        function inicializar() {
+            // Inicialização simplificada — placeholder sem listener Firestore
+            (async function() {
+                try {
+                    // Placeholder: se houver lógica de carregamento assíncrono, inserir aqui.
+                } catch (e) {
+                    console.warn('Erro inicializando aplicação (placeholder):', e);
+                }
+            })();
+
+            atualizarDashboard();
+            atualizarListaTEDs();
+            atualizarSeletorTED();
+            atualizarGantt();
+            // atualizar filtro e gráfico de entregas
+            try { atualizarFiltroTedEntregas(); } catch(e) {}
+            try { renderEntregasFromFilter(); } catch(e) {}
+            try { renderResumoFinanceiroFromFilter(); } catch(e) {}
+            try { popularFiltrosRelatorios(); } catch(e) {}
+            // ensure resumo anual headers (e.g., 'Devolvido') are centered on init
+            try { if (window.centerResumoAnualDevolvidoHeader) window.centerResumoAnualDevolvidoHeader(); } catch(e) {}
+
+            // Pré-popular aba de relatórios em background
+            setTimeout(function() {
+                try { renderRelatoriosSimples(); } catch(e) {}
+            }, 3000);
+        }
+
+        // Retorna o status a ser exibido para um TED e sua origem.
+        // Retorna um objeto: { text: string, origin: 'campo'|'inferido', vigenciaVencida: boolean }
+        // Regra de negócio: TED somente é tratado como finalizado/denunciado quando
+        // houver data de entrega/denúncia (ou data de entrega do relatório).
+        function getDisplayStatus(t) {
+            if (!t) return { text: '-', origin: 'inferido', vigenciaVencida: false };
+
+            // Verificar se a vigência está vencida (considerando aditivos)
+            const hoje = new Date();
+            let vigenciaVencida = false;
+            const fimEfetivo = calcularFimComAditivos(t);
+            if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
+                vigenciaVencida = fimEfetivo < hoje;
+            } else {
+                const fimNormChk = normalizarData(t.fimVigencia);
+                const fimChk = fimNormChk ? new Date(fimNormChk + 'T00:00:00') : null;
+                if (fimChk && !isNaN(fimChk.getTime()) && fimChk < hoje) {
+                    vigenciaVencida = true;
+                }
+            }
+
+            const situacaoNorm = String(t.situacaoTED || '').toLowerCase();
+            const dtEncNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || t.dataEntregaRelatorio || '');
+            const temDataEncerramento = !!dtEncNorm;
+
+            // Encerrado somente quando existe data de entrega/denúncia
+            if (temDataEncerramento) {
+                if (situacaoNorm.includes('denunci')) {
+                    return { text: 'TED Denunciado', origin: 'calculado (dataEntregaDenuncia)', vigenciaVencida: false };
+                }
+                return { text: 'TED Finalizado', origin: 'calculado (dataEntregaDenuncia)', vigenciaVencida: false };
+            }
+
+            // Situação marcada sem data de encerramento -> fase de relatório
+            if (situacaoNorm === 'finalizado' || situacaoNorm === 'denunciado' || situacaoNorm.includes('denunci')) {
+                return { text: 'Relatório Final', origin: 'calculado (situacaoTED sem data)', vigenciaVencida: vigenciaVencida };
+            }
+
+            // Sem situação especial → "Em Execução" (consistente com Detalhes)
+            return { text: 'Em Execução', origin: 'calculado', vigenciaVencida: vigenciaVencida };
+        }
+
+        // Helper: returns true when a TED should be considered finalizado
+        // (used to style select options in filters/reports)
+        function isTedFinalizado(ted) {
+            if (!ted) return false;
+            try {
+                const dtEncNorm = normalizarData(ted.dataEntregaDenuncia || ted.dataEntrega || ted.dataEntregaRelatorio || '');
+                if (dtEncNorm) return true;
+            } catch(e) { /* ignore */ }
+            return false;
+        }
+
+        // Modo mobile (recorte de campo): mesma media query usada em styles.css pra
+        // esconder a sidebar e mostrar a bottom nav — precisa ser IDÊNTICA à do CSS, senão
+        // JS e CSS discordam sobre se está em modo mobile. max-width sozinho só cobre
+        // celular em pé; "OR altura baixa" pega também celular deitado (largura passa de
+        // 768px girado, mas a altura fica baixa) sem confundir com tablet/desktop de verdade.
+        (function() {
+            var mq = window.matchMedia('(max-width: 768px), (max-height: 500px)');
+            function atualizarMobileShell() { window._isMobileShell = mq.matches; }
+            atualizarMobileShell();
+            if (mq.addEventListener) mq.addEventListener('change', atualizarMobileShell);
+            else if (mq.addListener) mq.addListener(atualizarMobileShell); // fallback p/ WebViews antigos
+        })();
+
+        // Trocar Abas
+        function switchTab(tabName, btnEl) {
+            // Bloquear acesso à aba de configurações quando não for admin
+            try {
+                if (tabName === 'config') {
+                    var isAdmin = (window.currentUserProfile && window.currentUserProfile.role === 'admin');
+                    if (!isAdmin) {
+                        // redirecionar para dashboard se tentativa de acesso não-autorizado
+                        tabName = 'dashboard';
+                    }
+                }
+            } catch(e) {}
+
+            // Modo mobile (recorte de campo — ver window._isMobileShell): restringe a
+            // navegação às abas do recorte aprovado no mockup. Fora delas, redireciona
+            // para 'teds' — mesmo padrão do guard de 'config' acima.
+            try {
+                if (window._isMobileShell) {
+                    var abasPermitidasMobile = ['teds', 'detalhes'];
+                    if (abasPermitidasMobile.indexOf(tabName) === -1) {
+                        tabName = 'teds';
+                    }
+                }
+            } catch(e) {}
+
+            // Ocultar todas as abas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+            });
+            document.querySelectorAll('.tab-btn, .nav-item, .mobile-nav-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Mostrar aba selecionada
+            var tabEl = document.getElementById(tabName);
+            if (tabEl) {
+                tabEl.classList.add('active');
+                tabEl.style.display = 'block';
+            }
+            // Ativar tanto o item do sidebar desktop quanto o botão da bottom nav mobile
+            // (os dois convivem no DOM o tempo todo; o CSS decide qual fica visível).
+            document.querySelectorAll('[data-tab="' + tabName + '"]').forEach(function(btn) { btn.classList.add('active'); });
+            if (btnEl) btnEl.classList.add('active');
+
+            // Inicializar conteúdo específico da aba
+            if (tabName === 'relatorios') {
+                setTimeout(function() {
+                    try { inicializarFiltrosGlobais(); } catch(e) { console.warn('inicializarFiltrosGlobais error', e); }
+                    try {
+                        const primeiroCard = document.querySelector('.rel-card[data-relatorio="cadastro"]');
+                        ativarRelatorio('cadastro', primeiroCard);
+                    } catch(e) {
+                        console.warn('ativarRelatorio error', e);
+                        try { renderRelatoriosSimples(); } catch(e2) {}
+                    }
+                    try { initLucideIcons(); } catch(e) {}
+                }, 100);
+            }
+            if (tabName === 'config') {
+                try {
+                    // Mostrar painel admin se logado como admin
+                    var ap = document.getElementById('adminPanel');
+                    var isAdm = !!(window.currentUserProfile && 
+                                   window.currentUserProfile.role === 'admin');
+                    if (ap) ap.style.display = isAdm ? 'block' : 'none';
+                    var al = document.getElementById('adminLoggedAs');
+                    if (al && window.currentUserProfile) {
+                        al.textContent = window.currentUserProfile.displayName || 
+                                         window.currentUserProfile.email || '-';
+                    }
+                    // Carregar lista de usuários e popular filtro de auditoria
+                    if (isAdm && typeof window.loadUsersList === 'function') {
+                        setTimeout(function() {
+                            try { window.loadUsersList(); } catch(e) {}
+                            // Popular select de TED no filtro de auditoria
+                            try {
+                                var selAudit = document.getElementById('auditFilterTed');
+                                if (selAudit) {
+                                    selAudit.innerHTML = '<option value="">Todos os TEDs</option>';
+                                    (dados.teds || []).forEach(function(t) {
+                                        var opt = document.createElement('option');
+                                        opt.value = t.numTed || t.id;
+                                        opt.textContent = 'TED ' + (t.numTed || t.id) + (t.objetivo ? ' — ' + t.objetivo.substring(0, 40) : '');
+                                        selAudit.appendChild(opt);
+                                    });
+                                }
+                            } catch(e) {}
+                            // Popular UP no formulário de criar usuário
+                            try { if (typeof window.popularUpsFormUsuario === 'function') window.popularUpsFormUsuario(); } catch(e) {}
+                        }, 100);
+                    }
+                } catch(e) {}
+            }
+
+            // Ações específicas ao trocar de aba
+            try {
+                // Reaplicar ajustes visuais
+                try { refreshFrozenColumnsAllTables(); } catch(e) {}
+
+                if (tabName === 'detalhes') {
+                    try { exibirInformacoesTED(); } catch(e) {}
+                }
+                if (tabName === 'dashboard') { try { atualizarDashboard(); } catch(e) {} }
+                if (tabName === 'teds') { try { atualizarListaTEDs(); } catch(e) {} }
+                if (tabName === 'tabPlanoTrabalho') { try { atualizarTabelaPlanoTrabalho(); } catch(e) {} }
+
+                if (tabName === 'relatorios') {
+                    setTimeout(function() {
+                        try { renderRelatoriosSimples(); } catch(e) {
+                            console.warn('renderRelatoriosSimples error', e);
+                        }
+                    }, 100);
+                }
+
+                if (tabName === 'config') {
+                    try {
+                        var ap = document.getElementById('adminPanel');
+                        var isAdm = !!(window.currentUserProfile && window.currentUserProfile.role === 'admin');
+                        if (ap) ap.style.display = isAdm ? 'block' : 'none';
+                        var al = document.getElementById('adminLoggedAs');
+                        if (al && window.currentUserProfile) {
+                            al.textContent = window.currentUserProfile.displayName || window.currentUserProfile.email || '-';
+                        }
+                    } catch(e) {}
+                }
+
+                // Execução Física é derivada do Cadastro Físico; avisar sobre edição
+                if (tabName === 'execFis') {
+                    showToast('Edição desabilitada: para registrar entregas use o Cadastro Físico.', 'info');
+                }
+            } catch(e) { /* ignore */ }
+        }
+
+        // Botão "Registrar" da bottom nav mobile: não existe uma aba dedicada de registro
+        // (uma entrega sempre pertence a uma fase/objeto específico do TED selecionado —
+        // ver abrirModalAdicionarEntrega(faseId)), então aqui vai direto pra aba Detalhe
+        // e rola até a seção de Entregas, onde o fluxo real de registro já existe.
+        function irParaRegistrarEntrega() {
+            if (!window.tedSelecionado) {
+                showToast('Selecione um TED na Lista antes de registrar uma entrega.', 'warning');
+                switchTab('teds', null);
+                return;
+            }
+            switchTab('detalhes', null);
+            document.querySelectorAll('.mobile-nav-btn').forEach(function(btn) { btn.classList.remove('active'); });
+            var btnRegistrar = document.querySelector('.mobile-nav-btn[data-mobile-action="registrar"]');
+            if (btnRegistrar) btnRegistrar.classList.add('active');
+            setTimeout(function() {
+                var sec = document.getElementById('secaoEntregasDetalhe');
+                if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 60);
+        }
+        window.irParaRegistrarEntrega = irParaRegistrarEntrega;
+
+        // Calcula valor total de objetos (qtde * valorUnitario)
+        function calcularTotalObjetosValor(ted) {
+            if (!ted || !ted.objetos || !ted.objetos.length) return 0;
+            // Linhas de Objetos removidas por um aditivo/apostilamento ATIVO ficam no array
+            // (soft-delete — ver confirmarAlteracao: "NUNCA remover fisicamente") e não podem
+            // entrar nesta soma, senão o Valor do TED (usado no dashboard/lista/cabeçalho)
+            // fica permanentemente inflado pelo valor de itens que o usuário já excluiu.
+            // Mesmo critério de exclusão usado nas telas (getExcludedItemIds/isItemExcluded),
+            // parametrizado por `ted` para funcionar mesmo quando não é o TED selecionado.
+            const excludedIds = (typeof getExcludedItemIds === 'function') ? getExcludedItemIds('objetos', ted) : null;
+            return ted.objetos.reduce((s, o) => {
+                if (excludedIds && typeof isItemExcluded === 'function' && isItemExcluded(o, excludedIds, 'objetos')) return s;
+                const qt = parseNumber(o.qtde) || 0;
+                const vu = parseNumber(o.valorUnitario) || 0;
+                return s + (qt * vu);
+            }, 0);
+        }
+
+        // Atualiza o campo valorTed do TED a partir do Cadastro de Objetos
+        function atualizarValorTedFromObjetos(ted, opts) {
+            if (!ted) return;
+            // persistir:false → recalcula e atualiza a tela, mas NUNCA pede gravação. Usado
+            // pelas chamadas feitas de dentro de renderizações: normalizar um campo derivado
+            // ao desenhar a tela não é edição do usuário e não pode publicar esta cópia no
+            // servidor (era o que apagava a alteração recém-salva por outro usuário).
+            const persistir = !(opts && opts.persistir === false);
+            const total = calcularTotalObjetosValor(ted);
+            // Só mutar o dado e pedir gravação quando o valor REALMENTE mudou. Esta função
+            // também é chamada de dentro de RENDERIZAÇÕES (atualizarTabelaFinanceira e
+            // atualizarTabelaObjetos): reatribuir `valorTed` e chamar salvarDados() a cada
+            // render marcava os dados como alterados sem o usuário ter editado nada — e o
+            // salvamento então gravava o estado desta máquina (possivelmente DEFASADO) por
+            // cima do que outro usuário acabara de salvar. Era a causa de "o colega salvou
+            // e não aparece aqui": bastava abrir a aba Financeiro pra sobrescrever o servidor.
+            if (Number(ted.valorTed) !== Number(total)) {
+                ted.valorTed = total;
+                if (persistir) { try { salvarDados(); } catch(e) {} }
+            }
+            if (window.tedSelecionado && window.tedSelecionado.id === ted.id) {
+                const createEl = document.getElementById('valorTed');
+                if (createEl) {
+                    const cents = Math.round(total * 100);
+                    const units = Math.floor(cents / 100);
+                    const rem = cents % 100;
+                    createEl.value = formatarMilharesPtBR(units) + ',' + String(rem).padStart(2, '0');
+                }
+                try { exibirInformacoesTED(); } catch(e) {}
+                try { atualizarListaTEDs(); } catch(e) {}
+            }
+        }
+
+        // Compatibilidade com chamadas antigas (antes era por financeiros)
+        function atualizarValorTedFromFinanceiros(ted) {
+            atualizarValorTedFromObjetos(ted);
+        }
+
+        // --- Execução Física: cálculos de progresso ---
+        function calcularTotalObjetosQtde(ted) {
+            if (!ted || !ted.objetos || !ted.objetos.length) return 0;
+            return ted.objetos.reduce((s, o) => s + (parseNumber(o.qtde) || 0), 0);
+        }
+
+        function calcularTotalExecFisicaQtde(ted) {
+            if (!ted || !ted.execFisicas || !ted.execFisicas.length) return 0;
+            return ted.execFisicas.reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
+        }
+
+        function calcularProgressoFisico(ted) {
+            const totalObj = calcularTotalObjetosQtde(ted);
+            if (!totalObj || totalObj <= 0) return 0;
+            const realizado = calcularTotalExecFisicaQtde(ted);
+            return Math.round((realizado / totalObj) * 100);
+        }
+
+        function atualizarProgressoFisicoFromExecFisicas(ted, opts) {
+            if (!ted) return;
+            // Mesmo cuidado de atualizarValorTedFromObjetos: esta função é chamada de dentro
+            // de fluxos de RENDERIZAÇÃO (sincronizarExecucaoFisica ao abrir o TED). Só pode
+            // marcar o dado como alterado — e pedir gravação — quando o valor mudou de fato;
+            // caso contrário, abrir um TED sujava o registro e publicava a cópia local por
+            // cima da de outro usuário.
+            const persistir = !(opts && opts.persistir === false);
+            const pct = calcularProgressoFisico(ted) || 0;
+            if (Number(ted.progressoFisico) !== Number(pct)) {
+                ted.progressoFisico = pct;
+                if (persistir) { try { salvarDados(); } catch(e) {} }
+            }
+            if (window.tedSelecionado && window.tedSelecionado.id === ted.id) {
+                try { exibirInformacoesTED(); } catch(e) {}
+                try { atualizarListaTEDs(); } catch(e) {}
+                try { atualizarDashboard(); } catch(e) {}
+            }
+        }
+
+        // Criar TED
+        async function criarTED(event) {
+            event.preventDefault();
+
+            // Extrair mês e ano da data de descentralização
+            const dataDesc = document.getElementById('primeiraDescentralizacao').value;
+            const dateObj = new Date(dataDesc + 'T00:00:00');
+            const primeiroMesDesc = dateObj.getMonth() + 1; // getMonth() retorna 0-11
+            const primeiroAnoDesc = dateObj.getFullYear();
+
+            // garantir cálculo de prazo/status do formulário de criação
+            try { calcularPrazoRelatorioCreate(); } catch(e) {}
+            try { atualizarStatusCreate(); } catch(e) {}
+
+            // Allocate a numeric id atomically via Firestore if available (with 3s timeout to avoid hanging)
+            let allocatedId = null;
+            try {
+                if (window && window.firestoreGetNextId) {
+                    const _timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
+                    allocatedId = await Promise.race([window.firestoreGetNextId('teds'), _timeout]);
+                }
+            } catch (e) {
+                console.warn('Erro alocando id via Firestore, fallback local', e);
+            }
+
+            if (!allocatedId) {
+                allocatedId = dados.proxiId++;
+            } else {
+                // ensure local proxiId stays ahead
+                if (!dados.proxiId || Number(allocatedId) >= dados.proxiId) dados.proxiId = Number(allocatedId) + 1;
+            }
+
+            const ted = {
+                id: allocatedId,
+                planoTrabalho: document.getElementById('planoTrabalho').value,
+                numTed: document.getElementById('numTed').value,
+                codigoPlano: document.getElementById('codigoPlano').value,
+                upResponsavel: document.getElementById('upResponsavel').value,
+                ugExecutora: document.getElementById('ugExecutora').value,
+                egExecutora: document.getElementById('ugExecutora') ? document.getElementById('ugExecutora').value : (document.getElementById('egExecutora') ? document.getElementById('egExecutora').value : ''),
+                numTedSiafi: document.getElementById('numTedSiafi').value,
+                notaSistema: document.getElementById('notaSistema').value,
+                unidadeDesc: document.getElementById('unidadeDesc').value,
+                ugDesc: document.getElementById('ugDesc').value,
+                valorTed: 0,
+                vigencia: parseInt(document.getElementById('vigencia').value) || 0,
+                vigilancia: parseInt(document.getElementById('vigencia') ? document.getElementById('vigencia').value : (document.getElementById('vigilancia') ? document.getElementById('vigilancia').value : 0)) || 0,
+                inicioVigencia: document.getElementById('inicioVigencia').value,
+                fimVigencia: document.getElementById('fimVigencia').value,
+                primeiraDescentralizacao: dataDesc,
+                primeiroMesDesc: primeiroMesDesc,
+                primeiroAnoDesc: primeiroAnoDesc,
+                objetivo: document.getElementById('objetivo').value,
+                gasto: 0,
+                progressoFisico: 0,
+                objetos: [],
+                metas: [],
+                fisicos: [],
+                execFisicas: [],
+                financeiros: [],
+                execFinanceiras: [],
+                recursosGerais: [],
+                marcos: [],
+                despesas: [],
+                dataCriacao: new Date().toLocaleDateString('pt-BR'),
+                // Autoria: dataCriacao sozinha (só a data, sem hora) não permite saber quem
+                // criou o TED nem quando exatamente
+                criadoEm: new Date().toISOString(),
+                criadoPorUid: (window.currentUserProfile && window.currentUserProfile.uid) || '',
+                criadoPorNome: (window.currentUserProfile &&
+                    (window.currentUserProfile.displayName || window.currentUserProfile.email)) || ''
+            };
+
+            // Garantir que valorTed seja derivado do cadastro de objetos (inicialmente 0)
+            ted.valorTed = calcularTotalObjetosValor(ted) || 0;
+
+            // Campos adicionais (não obrigatórios)
+            ted.situacaoTED = document.getElementById('create_situacaoTED') ? document.getElementById('create_situacaoTED').value : '';
+            ted.dataEntregaDenuncia = document.getElementById('create_dataEntregaDenuncia') ? document.getElementById('create_dataEntregaDenuncia').value : '';
+            ted.prazoRelatorio = document.getElementById('create_prazoRelatorio') ? document.getElementById('create_prazoRelatorio').value : '';
+            ted.dataEntregaRelatorio = document.getElementById('create_dataEntregaRelatorio') ? document.getElementById('create_dataEntregaRelatorio').value : '';
+            ted.statusTED = document.getElementById('create_statusTED') ? document.getElementById('create_statusTED').value : '';
+
+            dados.teds.push(ted);
+            salvarDados();
+            atualizarSeletorTED();
+            atualizarFiltroTedEntregas();
+            try { adicionarRegistroAuditoria(ted.id, 'criar_ted', null, { campo: 'TED', novo: { numTed: ted.numTed, numTedSiafi: ted.numTedSiafi } }); } catch(e) {}
+
+            // Mostrar sucesso
+            showToast('TED criado com sucesso!', 'success');
+            event.target.reset();
+            // limpar helper/status do formulário de criação
+            const helper = document.getElementById('create_prazo_helper'); if (helper) helper.textContent = '';
+            const st = document.getElementById('create_statusTED'); if (st) st.value = '';
+            switchTab('teds');
+            atualizarListaTEDs();
+            atualizarDashboard();
+        }
+
+        // Atualizar Dashboard
+        function atualizarDashboard() {
+            document.getElementById('totalTeds').textContent = dados.teds.length;
+            // Regra de negócio: Em Execução = TED não encerrado,
+            // independentemente de a vigência já ter vencido.
+            const tedsEmExecucao = (dados.teds || []).filter(t => !isTedFinalizado(t)).length;
+            document.getElementById('tedsExecucao').textContent = tedsEmExecucao;
+
+            const valorTotal = dados.teds.reduce((sum, t) => sum + t.valorTed, 0);
+            const gastoTotal = dados.teds.reduce((sum, t) => sum + t.gasto, 0);
+
+            document.getElementById('orcamentoTotal').textContent = valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('totalGasto').textContent = gastoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+            // Aplicar accent-red no card "Total Recebido" se saldo global negativo
+            const saldoGlobal = valorTotal - gastoTotal;
+            const cardRecebido = document.getElementById('statTotalRecebido');
+            if (cardRecebido) {
+                if (saldoGlobal < -0.01) {
+                    cardRecebido.classList.remove('accent-green');
+                    cardRecebido.classList.add('accent-red');
+                } else {
+                    cardRecebido.classList.remove('accent-red');
+                    cardRecebido.classList.add('accent-green');
+                }
+            }
+
+            // Atualizar blocos de próximas entregas e próximos recebimentos (30 dias)
+            try { renderUpcomingEntregas(); } catch(e) { console.warn('renderUpcomingEntregas error', e); }
+            try { renderUpcomingRecebimentos(); } catch(e) { console.warn('renderUpcomingRecebimentos error', e); }
+            try { renderUpcomingVigencias(); } catch(e) { console.warn('renderUpcomingVigencias error', e); }
+            try { renderVigenciasVencidas(); } catch(e) { console.warn('renderVigenciasVencidas error', e); }
+            try { renderProximasVigenciasVencidas(); } catch(e) { console.warn('renderProximasVigenciasVencidas error', e); }
+            // Atualizar Gantt de vigência também
+            try { renderGanttVigencia(); } catch(e) { console.warn('renderGanttVigencia error', e); }
+            // Atualizar resumo geral (assinados/encerrados por mês e por UP)
+            try { renderResumoGeralAssinadosEncerrados(); } catch(e) { console.warn('renderResumoGeralAssinadosEncerrados error', e); }
+            // Atualizar distribuição de TEDs por status (donut)
+            try { renderDistribuicaoStatus(); } catch(e) { console.warn('renderDistribuicaoStatus error', e); }
+            // Garantir atualização dos gráficos do dashboard
+            try { renderEntregasFromFilter(); } catch(e) { console.warn('renderEntregasFromFilter error', e); }
+            try { renderResumoFinanceiroFromFilter(); } catch(e) { console.warn('renderResumoFinanceiroFromFilter error', e); }
+        }
+
+        // Distribuição de TEDs por status: reusa getDisplayStatus (a mesma função que já
+        // decide o badge de cada ted-card) e desdobra "Em Execução" em dois buckets quando a
+        // vigência está vencida, espelhando a nota que já aparece sob o badge nesse caso.
+        function renderDistribuicaoStatus() {
+            const container = document.getElementById('distribuicaoStatusContainer');
+            if (!container) return;
+
+            const buckets = [
+                { key: 'execucao',      label: 'Em Execução',                 cor: '#0C447C' },
+                { key: 'execucaoVenc',  label: 'Em Execução — vigência vencida', cor: '#854F0B' },
+                { key: 'finalizado',    label: 'TED Finalizado',              cor: '#3B6D11' },
+                { key: 'denunciado',    label: 'TED Denunciado',              cor: '#A32D2D' },
+                { key: 'relatorio',     label: 'Relatório Final (pendente)',  cor: '#4A3B6E' }
+            ];
+            const counts = { execucao: 0, execucaoVenc: 0, finalizado: 0, denunciado: 0, relatorio: 0 };
+
+            (dados.teds || []).forEach(t => {
+                const st = getDisplayStatus(t) || { text: '', vigenciaVencida: false };
+                const txt = String(st.text || '');
+                if (/denunci/i.test(txt)) counts.denunciado++;
+                else if (/finaliz/i.test(txt)) counts.finalizado++;
+                else if (/relat/i.test(txt)) counts.relatorio++;
+                else if (/execu/i.test(txt)) counts[st.vigenciaVencida ? 'execucaoVenc' : 'execucao']++;
+            });
+
+            const total = (dados.teds || []).length;
+            if (total === 0) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Nenhum TED cadastrado.</p>';
+                return;
+            }
+
+            // Montar o conic-gradient em fatias contíguas, pulando buckets vazios
+            let acc = 0;
+            const stops = [];
+            buckets.forEach(b => {
+                const n = counts[b.key];
+                if (n <= 0) return;
+                const pct = (n / total) * 100;
+                stops.push(`${b.cor} ${acc}% ${acc + pct}%`);
+                acc += pct;
+            });
+            const gradient = stops.length ? `conic-gradient(${stops.join(', ')})` : 'var(--color-bg-surface)';
+
+            const legendaHtml = buckets.map(b => {
+                const n = counts[b.key];
+                if (n <= 0) return '';
+                return `
+                    <div class="status-donut-row">
+                        <span class="status-donut-label"><i style="background:${b.cor};"></i>${b.label}</span>
+                        <span class="status-donut-count">${n}</span>
+                    </div>`;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="status-donut-card">
+                    <div class="status-donut" style="background:${gradient};"></div>
+                    <div class="status-donut-legend">${legendaHtml}</div>
+                </div>`;
+        }
+
+        // Atualizar Lista de TEDs
+        function atualizarListaTEDs() {
+            try { popularFiltrosTEDs(); } catch(e) {}
+
+            if (dados.teds.length === 0) {
+                document.getElementById('listaTeds').innerHTML = '<div class="empty-state"><p>Nenhum TED cadastrado</p></div>';
+                return;
+            }
+
+            // Aplicar filtros selecionados (UP e Status)
+            let listaFiltrada = dados.teds.slice();
+            try {
+                const upEl = document.getElementById('filterUP_teds');
+                const statusEl = document.getElementById('filterStatus_teds');
+                const selUp = upEl ? String(upEl.value || '').trim() : '';
+                const selStatus = statusEl ? String(statusEl.value || '').trim() : '';
+                if (selUp) {
+                    listaFiltrada = listaFiltrada.filter(t => String(t.upResponsavel || t.up || '').trim() === selUp);
+                }
+                // Se o usuário escolheu uma situação específica (exceto 'Todos'), filtrar por ela
+                if (selStatus && selStatus !== 'Todos') {
+                    listaFiltrada = listaFiltrada.filter(t => {
+                        const situacaoFiltro = getSituacaoGantt(t);
+                        return String(situacaoFiltro || '').trim() === selStatus;
+                    });
+                } else if (!selStatus) {
+                    // Padrão: quando nenhum valor for selecionado, mostrar apenas Em Execução
+                    listaFiltrada = listaFiltrada.filter(t => {
+                        return getSituacaoGantt(t) === 'Em Execução';
+                    });
+                }
+            } catch (e) { console.warn('Erro aplicando filtros TEDs', e); }
+
+            // Ordenar por data de início da vigência (mais antiga primeiro). TEDs sem
+            // início definido vão para o final, mantidos entre si na ordem original.
+            try {
+                listaFiltrada.sort((a, b) => {
+                    const da = normalizarData(a.inicioVigencia);
+                    const db = normalizarData(b.inicioVigencia);
+                    if (!da && !db) return 0;
+                    if (!da) return 1;
+                    if (!db) return -1;
+                    return da < db ? -1 : (da > db ? 1 : 0);
+                });
+            } catch (e) { console.warn('Erro ordenando TEDs por início de vigência', e); }
+
+            const html = listaFiltrada.map(t => {
+                const hoje = new Date();
+                const inicioNorm = normalizarData(t.inicioVigencia);
+                const fimNorm = normalizarData(t.fimVigencia);
+                const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
+                const fimOriginal = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                // Considerar aditivos na data fim efetiva
+                const fimEfetivo = calcularFimComAditivos(t) || fimOriginal;
+                const fim = fimEfetivo;
+                const inicioValido = inicio && !isNaN(inicio.getTime());
+                const fimValido = fim && !isNaN(fim.getTime());
+                const emExecucao = inicioValido && fimValido && hoje >= inicio && hoje <= fim;
+                const diasRestantes = fimValido ? Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24)) : 0;
+                // Execução financeira baseada na tabela Recursos Gerais (IMBEL)
+                const recsRealizados = (t.recursosGerais || []).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+                const percentualGasto = t.valorTed > 0 ? parseFloat(((recsRealizados / t.valorTed) * 100).toFixed(2)) : 0;
+                const percentualFisicoRaw = (typeof t.progressoFisico !== 'undefined' ? t.progressoFisico : calcularProgressoFisico(t)) || 0;
+                const percentualFisico = parseFloat(parseFloat(percentualFisicoRaw).toFixed(2));
+                const inicioStr = inicioValido ? inicio.toLocaleDateString('pt-BR') : '-';
+                const fimStr = fimValido ? fim.toLocaleDateString('pt-BR') : '-';
+                // Determinar status a partir do campo de informações do TED quando disponível
+                const statusObj = getDisplayStatus(t) || { text: '-', origin: 'inferido', vigenciaVencida: false };
+                const computedStatusLocal = statusObj.text || '';
+                const originLocal = statusObj.origin || '';
+                const vigenciaVencidaFlag = statusObj.vigenciaVencida || false;
+                const stNorm = String(computedStatusLocal).toLowerCase();
+                let badgeClassLocal = 'badge-planejamento';
+                if (/execu|em execução/.test(stNorm)) {
+                    badgeClassLocal = 'badge-execucao';
+                } else if (/vigênc.*venc|vigencia.*venc/.test(stNorm)) {
+                    badgeClassLocal = 'badge-vigencia-vencida';
+                } else if (/finaliz|finalizado/.test(stNorm)) {
+                    badgeClassLocal = 'badge-finalizado';
+                } else if (/conclu/.test(stNorm)) {
+                    badgeClassLocal = 'badge-concluido';
+                } else if (/denunci/.test(stNorm)) {
+                    badgeClassLocal = 'badge-denunciado';
+                } else if (/suspens|suspenso/.test(stNorm)) {
+                    badgeClassLocal = 'badge-suspenso';
+                } else if (/encerr/.test(stNorm)) {
+                    badgeClassLocal = 'badge-vigencia-vencida';
+                } else if (vigenciaVencidaFlag) {
+                    badgeClassLocal = 'badge-vigencia-vencida';
+                }
+
+                // ---- Borda lateral por status ----
+                const isFinalizado = /finaliz|finalizado|conclu|denunci|encerr/.test(stNorm);
+                const isVigenciaVencida = vigenciaVencidaFlag || /vigênc.*venc|vigencia.*venc/.test(stNorm);
+                const saldoTedCard = (t.valorTed || 0) - (recsRealizados || 0);
+                let cardBorderColor;
+                if (isFinalizado) {
+                    cardBorderColor = '#E24B4A'; // vermelho: finalizado / encerrado / denunciado
+                } else if (isVigenciaVencida) {
+                    cardBorderColor = '#EF9F27'; // laranja: vigência vencida
+                } else {
+                    cardBorderColor = '#639922'; // verde: em execução
+                }
+
+                // ---- Chip de Prazo (colorido por urgência) ----
+                // Mesmos cortes usados no dashboard: vencido/crítico (≤15d) em vermelho,
+                // atenção (≤30d) em âmbar, ok em tom neutro. buildAlertasInteligentes só
+                // sinaliza vigência JÁ vencida — este chip antecipa visualmente antes disso.
+                let prazoChipHtml = '';
+                if (isFinalizado) {
+                    prazoChipHtml = '<span class="ted-card-prazo prazo-encerrado">Encerrado</span>';
+                } else if (fimValido) {
+                    let prazoClasse, prazoTexto;
+                    if (diasRestantes < 0) {
+                        prazoClasse = 'prazo-vencido';
+                        prazoTexto = `Vencido há ${Math.abs(diasRestantes)}d`;
+                    } else if (diasRestantes <= 15) {
+                        prazoClasse = 'prazo-critico';
+                        prazoTexto = `${diasRestantes}d`;
+                    } else if (diasRestantes <= 30) {
+                        prazoClasse = 'prazo-atencao';
+                        prazoTexto = `${diasRestantes}d`;
+                    } else {
+                        prazoClasse = 'prazo-ok';
+                        prazoTexto = `${diasRestantes}d`;
+                    }
+                    prazoChipHtml = `<span class="ted-card-prazo ${prazoClasse}">${prazoTexto}</span>`;
+                }
+
+                // ---- Metadados em linha ----
+                const metaParts = [];
+                if (inicioStr !== '-' || fimStr !== '-') metaParts.push(`${inicioStr} → ${fimStr}`);
+                if (prazoChipHtml) metaParts.push(prazoChipHtml);
+                const up = t.upResponsavel || t.up || '';
+                if (up) metaParts.push(up);
+                const metaLine = metaParts.join(' · ');
+
+                // ---- Saldo ----
+                const fmtMoeda = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                const saldoHtml = saldoTedCard < 0
+                    ? `<span class="ted-card-saldo-neg">- ${fmtMoeda(saldoTedCard)}</span>`
+                    : `<span class="ted-card-saldo-pos">${fmtMoeda(saldoTedCard)}</span>`;
+
+                const vigenciaSubHtml = (/execu|em execução/.test(stNorm) && vigenciaVencidaFlag)
+                    ? '<div class="ted-card-status-note">Vigência Vencida</div>'
+                    : '';
+
+                return `
+                    <div class="ted-card" style="border-left-color:${cardBorderColor};">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="flex:1; min-width:0;">
+                                <a class="ted-card-title" href="#" onclick="carregarDetalhes(${t.id}); switchTab('detalhes', null); return false;">TED ${t.numTed}</a>
+                                <p class="ted-card-obj">${t.objetivo || '→'}</p>
+                                <p class="ted-card-meta">${metaLine}</p>
+                            </div>
+                            <div class="ted-card-status-col" style="margin-left:10px;">
+                                <div class="ted-card-status-row">
+                                    <span class="badge ${badgeClassLocal}" title="Origem: ${originLocal}">${computedStatusLocal}</span>
+                                    ${!window._readOnlyMode ? `<button onclick="excluirTED(${t.id}); return false;" title="Excluir TED" class="btn-icon-action delete"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>` : ''}
+                                </div>
+                                ${vigenciaSubHtml}
+                            </div>
+                        </div>
+
+                        <div class="ted-card-progress">
+                            <div class="ted-card-progress-header">
+                                <span class="ted-card-progress-label">Exec. Financeira</span>
+                                <span class="ted-card-progress-pct">${percentualGasto.toFixed(2)}%</span>
+                            </div>
+                            <div class="ted-card-progress-track">
+                                <div style="background:#4CAF50; height:100%; width:${Math.min(100,percentualGasto)}%; border-radius:4px;"></div>
+                            </div>
+                        </div>
+
+                        <div class="ted-card-progress">
+                            <div class="ted-card-progress-header">
+                                <span class="ted-card-progress-label">Exec. Física</span>
+                                <span class="ted-card-progress-pct">${percentualFisico.toFixed(2)}%</span>
+                            </div>
+                            <div class="ted-card-progress-track">
+                                <div style="background:#2196F3; height:100%; width:${Math.min(100,percentualFisico)}%; border-radius:4px;"></div>
+                            </div>
+                        </div>
+
+                        <div class="ted-card-footer">
+                            <span style="font-size:11px; color:#9b9b9b;">Saldo</span>
+                            ${saldoHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('listaTeds').innerHTML = html;
+            // Reinicializar ícones Lucide após renderizar conteúdo dinâmico
+            initLucideIcons();
+        }
+
+        // Renderizar resumo de TEDs assinados/encerrados → tabela transposta (UPs nas linhas, Meses nas colunas)
+        function renderResumoGeralAssinadosEncerrados() {
+            // Garantir que o container exista
+            if (!document.getElementById('resumoGeralGrid')) {
+                const w = document.createElement('div');
+                w.id = 'resumoGeralGrid';
+                (document.getElementById('dashboard') || document.body).appendChild(w);
+            }
+            const teds = dados.teds || [];
+            const hoje = new Date();
+            // grid[monthKey][up] = { signed: N, closed: N, signedTeds: [], closedTeds: [] }
+            const grid = {};
+            const allUps = new Set();
+            const nomeMeses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+            function monthKey(d) {
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            }
+            function ensure(mk, up) {
+                if (!grid[mk]) grid[mk] = {};
+                if (!grid[mk][up]) grid[mk][up] = { signed: 0, closed: 0, signedTeds: [], closedTeds: [] };
+            }
+
+            teds.forEach(t => {
+                const up = (t.upResponsavel || t.up || 'Sem UP');
+                const numTed = t.numTed || t.numero || ('ID ' + t.id);
+                allUps.add(up);
+
+                // Assinados -> inicioVigencia
+                const inicioNorm = normalizarData(t.inicioVigencia);
+                if (inicioNorm) {
+                    const dt = new Date(inicioNorm + 'T00:00:00');
+                    if (!isNaN(dt.getTime())) {
+                        const mk = monthKey(dt);
+                        ensure(mk, up);
+                        grid[mk][up].signed++;
+                        grid[mk][up].signedTeds.push(numTed);
+                    }
+                }
+
+                // Encerrados -> considerar apenas dataEntregaDenuncia / dataEntrega (sem fallback para fimVigencia)
+                const entregaNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
+                if (entregaNorm) {
+                    const fDt = new Date(entregaNorm + 'T00:00:00');
+                    if (!isNaN(fDt.getTime()) && fDt <= hoje) {
+                        const mk2 = monthKey(fDt);
+                        ensure(mk2, up);
+                        grid[mk2][up].closed++;
+                        grid[mk2][up].closedTeds.push(numTed);
+                    }
+                }
+            });
+
+            const months = Object.keys(grid).sort((a, b) => b.localeCompare(a));
+            const ups = Array.from(allUps).sort();
+            const el = document.getElementById('resumoGeralGrid');
+
+            if (months.length === 0 || ups.length === 0) {
+                if (el) el.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para exibir.</p>';
+                return;
+            }
+
+            function monthLabel(mk) {
+                const p = mk.split('-');
+                return nomeMeses[parseInt(p[1]) - 1] + '/' + p[0];
+            }
+
+            const thS = 'text-align:center; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text); font-size:0.78rem; white-space:nowrap;';
+            const thL = 'text-align:left; padding:4px 6px; border-bottom:2px solid var(--border); color:var(--text); font-size:0.78rem; white-space:nowrap;';
+            const tdC = 'padding:3px 5px; text-align:center; border-bottom:1px solid var(--border-light); font-size:0.78rem;';
+            const tdL = 'padding:3px 5px; border-bottom:1px solid var(--border-light); font-weight:500; font-size:0.78rem; white-space:nowrap;';
+
+            const h = [];
+            h.push('<table style="border-collapse:collapse; font-size:0.78rem;">');
+            // Cabeçalho: vazio + meses como colunas
+            h.push(`<thead><tr><th style="${thL}"></th>`);
+            months.forEach(mk => h.push(`<th style="${thS}">${monthLabel(mk)}</th>`));
+            h.push('</tr></thead><tbody>');
+
+            // Linhas: uma por UP
+            ups.forEach(u => {
+                h.push('<tr>');
+                h.push(`<td style="${tdL}">${u}</td>`);
+                months.forEach(mk => {
+                    const cell = (grid[mk] && grid[mk][u]) ? grid[mk][u] : { signed: 0, closed: 0, signedTeds: [], closedTeds: [] };
+                    let content = '';
+                    if (cell.signed === 0 && cell.closed === 0) {
+                        content = '';
+                    } else {
+                        const sTip = cell.signedTeds.length ? 'Assinados: TED ' + cell.signedTeds.join(', TED ') : '';
+                        const cTip = cell.closedTeds.length ? 'Encerrados: TED ' + cell.closedTeds.join(', TED ') : '';
+                        const sPart = `<span style="color:var(--success-dark); font-weight:600; cursor:default;" title="${sTip}">${cell.signed}</span>`;
+                        const cPart = `<span style="color:var(--danger-dark); font-weight:600; cursor:default;" title="${cTip}">${cell.closed}</span>`;
+                        content = sPart + '<span style="color:var(--text-muted);"> / </span>' + cPart;
+                    }
+                    h.push(`<td style="${tdC}">${content}</td>`);
+                });
+                h.push('</tr>');
+            });
+
+            // Linha de Vigentes (saldo acumulado: anterior + assinados - encerrados)
+            // Ordenar meses cronologicamente (asc) para calcular o saldo
+            const monthsAsc = months.slice().sort((a, b) => a.localeCompare(b));
+            const vigentesMap = {};
+            let saldo = 0;
+            monthsAsc.forEach(mk => {
+                let totalSigned = 0;
+                let totalClosed = 0;
+                ups.forEach(u => {
+                    const cell = (grid[mk] && grid[mk][u]) ? grid[mk][u] : { signed: 0, closed: 0 };
+                    totalSigned += cell.signed;
+                    totalClosed += cell.closed;
+                });
+                saldo += totalSigned - totalClosed;
+                vigentesMap[mk] = saldo;
+            });
+
+            h.push('<tr style="border-top:2px solid var(--border);">');
+            h.push(`<td style="${tdL} font-weight:600; color:var(--primary);">Vigentes</td>`);
+            months.forEach(mk => {
+                h.push(`<td style="${tdC} font-weight:600; color:var(--primary);">${vigentesMap[mk]}</td>`);
+            });
+            h.push('</tr>');
+
+            h.push('</tbody></table>');
+            if (el) el.innerHTML = h.join('');
+        }
+
+        // === Relatório Mensal: vigentes e encerrados por mês ===
+        function buildRelatorioData() {
+            const tedsList = dados.teds || [];
+            if (!tedsList || tedsList.length === 0) return { months: [], vigentes: {}, encerrados: {}, nomeMeses: [] };
+            const monthsSet = new Set();
+            const nomeMeses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            const monthKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+
+            const today = new Date();
+
+            // Pré-processar TEDs
+            const processed = tedsList.map(t => {
+                const id = t.id;
+                const num = t.numTed || t.numero || ('ID ' + id);
+                const iniNorm = normalizarData(t.inicioVigencia);
+                const inicio = iniNorm ? new Date(iniNorm + 'T00:00:00') : null;
+                const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
+                const encDate = encNorm ? new Date(encNorm + 'T00:00:00') : null;
+                const fimNorm = normalizarData(t.fimVigencia || '');
+                const fimOrig = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+                const fimEfet = calcularFimComAditivos(t) || fimOrig || null;
+
+                // determinar fim real: encerramento antecipado tem prioridade; se não houver fim, tratar como até hoje (ativo)
+                let fimReal = null;
+                if (encDate && !isNaN(encDate.getTime())) {
+                    if (fimEfet && !isNaN(fimEfet.getTime())) {
+                        fimReal = encDate < fimEfet ? encDate : fimEfet;
+                    } else {
+                        fimReal = encDate;
+                    }
+                } else if (fimEfet && !isNaN(fimEfet.getTime())) {
+                    fimReal = fimEfet;
+                } else {
+                    fimReal = new Date();
+                }
+
+                return { id, num, inicio, fimReal, encDate };
+            });
+
+            // Construir conjunto de meses presentes (meses com assinados ou encerrados até hoje)
+            processed.forEach(p => {
+                if (p.inicio && !isNaN(p.inicio.getTime())) monthsSet.add(monthKey(p.inicio));
+                if (p.encDate && !isNaN(p.encDate.getTime()) && p.encDate <= today) monthsSet.add(monthKey(p.encDate));
+            });
+
+            const months = Array.from(monthsSet).sort((a,b) => b.localeCompare(a)); // desc
+
+            // inicializar containers
+            const vigentes = {}; // lista de TEDs vigentes por mês (para relatório detalhado)
+            const encerrados = {}; // lista de TEDs encerrados por mês
+            const signedTotals = {}; // total de assinados por mês
+            const closedTotals = {}; // total de encerrados por mês
+            months.forEach(mk => { vigentes[mk] = []; encerrados[mk] = []; signedTotals[mk] = 0; closedTotals[mk] = 0; });
+
+            // preencher assinados/encerrados
+            processed.forEach(p => {
+                if (!p.inicio || isNaN(p.inicio.getTime())) return;
+                const encKeyOfP = (p.encDate && !isNaN(p.encDate.getTime()) && p.encDate <= today) ? monthKey(p.encDate) : null;
+
+                // Assinado: contar no mês de início
+                const mkStart = monthKey(p.inicio);
+                if (monthsSet.has(mkStart)) {
+                    signedTotals[mkStart] = (signedTotals[mkStart] || 0) + 1;
+                }
+
+                // Encerrado: somente pela data de entrega/denúncia e somente se já ocorreu (<= hoje)
+                if (encKeyOfP) {
+                    if (monthsSet.has(encKeyOfP)) {
+                        closedTotals[encKeyOfP] = (closedTotals[encKeyOfP] || 0) + 1;
+                        encerrados[encKeyOfP].push({ id: p.id, num: p.num });
+                    }
+                }
+
+                // Construir lista de vigentes no fechamento de cada mês (usar fimReal)
+                months.forEach(mk => {
+                    const parts = mk.split('-');
+                    const y = parseInt(parts[0], 10); const m = parseInt(parts[1], 10);
+                    const ultimoDia = new Date(y, m, 0);
+                    if (p.inicio <= ultimoDia && p.fimReal >= ultimoDia) {
+                        // Se foi encerrado exatamente neste mês, considerá-lo como encerrado (não listar como vigente)
+                        if (encKeyOfP === mk) {
+                            // skip
+                        } else {
+                            vigentes[mk].push({ id: p.id, num: p.num });
+                        }
+                    }
+                });
+            });
+
+            // calcular vigentes numéricos por saldo acumulado (asc)
+            const monthsAsc = months.slice().sort((a,b) => a.localeCompare(b));
+            const vigentesNumeric = {};
+            let saldo = 0;
+            monthsAsc.forEach(mk => {
+                const s = signedTotals[mk] || 0;
+                const c = closedTotals[mk] || 0;
+                saldo += s - c;
+                vigentesNumeric[mk] = saldo;
+            });
+
+            return { months, vigentes, encerrados, nomeMeses, signedTotals, closedTotals, vigentesNumeric };
+        }
+
+        function generateRelatorioHTML(data) {
+            if (!data || !data.months || data.months.length === 0) return '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Sem dados para gerar relatório.</p>';
+            const h = [];
+            h.push('<div class="card">');
+            h.push('<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;"><h3 style="margin:0; font-size:1rem">Relatório Mensal</h3><div><button class="btn" onclick="downloadRelatorioCSV()">Exportar CSV</button> <button class="btn" onclick="document.getElementById(\'relatorioMensalContainer\').innerHTML = \'' + '' + '\'">Fechar</button></div></div>');
+            h.push('<table style="width:100%; border-collapse:collapse; font-size:11px;">');
+            h.push('<thead><tr>' +
+                '<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border); font-size:11px;">Mês</th>' +
+                '<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border); font-size:11px;">Vigentes</th>' +
+                '<th style="text-align:left; padding:6px 8px; border-bottom:2px solid var(--border); font-size:11px;">Encerrados</th>' +
+                '</tr></thead>');
+            h.push('<tbody>');
+
+            let lastYear = null;
+            data.months.forEach(mk => {
+                const p = mk.split('-');
+                const year = p[0];
+                const mesLabel = data.nomeMeses[parseInt(p[1], 10) - 1] + '/' + year;
+
+                // Separador visual de ano
+                if (year !== lastYear) {
+                    if (lastYear !== null) {
+                        // linha separadora entre anos
+                        h.push(`<tr><td colspan="3" style="background:#E6F1FB; text-align:center; font-weight:600; font-size:11px; padding:4px 8px; color:#0C447C; border-top:1px solid #B5D4F4;">${year}</td></tr>`);
+                    } else {
+                        h.push(`<tr><td colspan="3" style="background:#E6F1FB; text-align:center; font-weight:600; font-size:11px; padding:4px 8px; color:#0C447C;">${year}</td></tr>`);
+                    }
+                    lastYear = year;
+                }
+
+                const vig = (data.vigentes[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;" style="font-size:11px;">TED ${x.num}</a>`).join(', ');
+                const enc = (data.encerrados[mk] || []).map(x => `<a href="#" onclick="carregarDetalhes(${x.id}); return false;" style="font-size:11px;">TED ${x.num}</a>`).join(', ');
+                h.push(`<tr><td style="padding:5px 8px; vertical-align:top; font-weight:600; font-size:11px; white-space:nowrap;">${mesLabel}</td><td style="padding:5px 8px; font-size:11px;">${vig || '<span style="color:var(--text-muted);">→</span>'}</td><td style="padding:5px 8px; font-size:11px;">${enc || '<span style="color:var(--text-muted);">→</span>'}</td></tr>`);
+            });
+
+            h.push('</tbody></table></div>');
+            return h.join('');
+        }
+
+        function showRelatorioMensal() {
+            const data = buildRelatorioData();
+            window._lastRelatorioData = data;
+            const el = document.getElementById('relatorioMensalContainer');
+            if (el) {
+                el.innerHTML = generateRelatorioHTML(data);
+                // Inserir botão Exportar XLSX ao lado do Exportar CSV, se ainda não existir
+                setTimeout(() => {
+                    const csvBtn = el.querySelector('button[onclick="downloadRelatorioCSV()"]');
+                    if (csvBtn && !el.querySelector('button[onclick="downloadRelatorioXLSX()"]')) {
+                        const xlsxBtn = document.createElement('button');
+                        xlsxBtn.className = 'btn';
+                        xlsxBtn.textContent = 'Exportar XLSX';
+                        xlsxBtn.onclick = downloadRelatorioXLSX;
+                        csvBtn.parentNode.insertBefore(document.createTextNode(' '), csvBtn.nextSibling);
+                        csvBtn.parentNode.insertBefore(xlsxBtn, csvBtn.nextSibling);
+                    }
+                }, 50);
+            }
+            setTimeout(() => { const node = document.getElementById('relatorioMensalContainer'); if (node) node.scrollIntoView({ behavior: 'smooth' }); }, 120);
+        }
+
+        function downloadRelatorioCSV() {
+            const data = window._lastRelatorioData || buildRelatorioData();
+            if (!data || !data.months) return showToast('Nenhum dado para exportar', 'info');
+            const rows = [];
+            rows.push(['Mês','Vigentes','Encerrados']);
+            data.months.forEach(mk => {
+                const p = mk.split('-');
+                const mesLabel = data.nomeMeses[parseInt(p[1],10)-1] + '/' + p[0];
+                const vig = (data.vigentes[mk] || []).map(x => `TED ${x.num}`).join(' | ');
+                const enc = (data.encerrados[mk] || []).map(x => `TED ${x.num}`).join(' | ');
+                rows.push([mesLabel, vig, enc]);
+            });
+            const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'relatorio_mensal_teds.csv';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        // Fecha o card do relatório
+        function closeRelatorio() {
+            const el = document.getElementById('relatorioMensalContainer');
+            if (el) el.innerHTML = '';
+        }
+
+        // Carrega SheetJS dinamicamente (retorna Promise que resolve com XLSX)
+        function loadSheetJS() {
+            return new Promise((resolve, reject) => {
+                if (window.XLSX) return resolve(window.XLSX);
+                const s = document.createElement('script');
+                s.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+                s.onload = () => {
+                    if (window.XLSX) resolve(window.XLSX);
+                    else reject(new Error('SheetJS carregado, porém objeto XLSX não encontrado'));
+                };
+                s.onerror = () => reject(new Error('Falha ao carregar SheetJS'));
+                document.head.appendChild(s);
+            });
+        }
+
+        function downloadRelatorioXLSX() {
+            const data = window._lastRelatorioData || buildRelatorioData();
+            if (!data || !data.months) return showToast('Nenhum dado para exportar', 'info');
+            loadSheetJS().then(XLSX => {
+                const rows = [];
+                rows.push(['Mês','Vigentes','Encerrados']);
+                data.months.forEach(mk => {
+                    const p = mk.split('-');
+                    const mesLabel = data.nomeMeses[parseInt(p[1],10)-1] + '/' + p[0];
+                    const vig = (data.vigentes[mk] || []).map(x => `TED ${x.num}`).join(' | ');
+                    const enc = (data.encerrados[mk] || []).map(x => `TED ${x.num}`).join(' | ');
+                    rows.push([mesLabel, vig, enc]);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Relatório Mensal');
+                XLSX.writeFile(wb, 'relatorio_mensal_teds.xlsx');
+            }).catch(e => {
+                console.warn('downloadRelatorioXLSX error', e);
+                showToast('Erro ao gerar XLSX: ' + (e && e.message ? e.message : e), 'danger');
+            });
+        }
+
+        // Render upcoming deliveries (execFisicas) within next 30 days
+        function renderUpcomingEntregas() {
+            const container = document.getElementById('proximasEntregas');
+            if (!container) return;
+            const today = new Date();
+            const maxDate = new Date();
+            maxDate.setDate(today.getDate() + 30);
+
+            const items = [];
+            (dados.teds || []).forEach(t => {
+                (t.execFisicas || []).forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    if (isNaN(d.getTime())) return;
+                    // include if in [today, maxDate]
+                    if (d >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) && d <= new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate())) {
+                        items.push({ date: d, ted: t, objeto: e.objeto, qtde: parseFloat(e.qtde) || 0, up: t.upResponsavel || t.up || '' });
+                    }
+                });
+            });
+
+            if (!items.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem entregas programadas nos próximos 30 dias.</p>';
+                return;
+            }
+
+            items.sort((a,b) => a.date - b.date);
+
+            let html = '<div class="table-wrapper"><table class="tabela-padrao" style="width:100%;">';
+            html += '<thead><tr><th>Data</th><th>TED</th><th>UP</th><th>Objeto</th><th class="col-qtde">Qtde</th></tr></thead><tbody>';
+            items.forEach(it => {
+                html += `<tr>`;
+                html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
+                html += `<td><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td>${it.up}</td>`;
+                html += `<td>${it.objeto}</td>`;
+                html += `<td class="col-qtde">${formatNumber(it.qtde)}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Render upcoming financial receipts (execFinanceiras) within next 30 days
+        function renderUpcomingRecebimentos() {
+            const container = document.getElementById('proximosRecebimentos');
+            if (!container) return;
+            const today = new Date();
+            const maxDate = new Date();
+            maxDate.setDate(today.getDate() + 30);
+
+            const items = [];
+            (dados.teds || []).forEach(t => {
+                (t.execFinanceiras || []).forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    if (isNaN(d.getTime())) return;
+                    if (d >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) && d <= new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate())) {
+                        items.push({ date: d, ted: t, nd: e.nd || e.numero || '', up: e.up || e.ug || t.upResponsavel || '', valor: parseNumber(e.valor || e.valorRealizado) || 0 });
+                    }
+                });
+            });
+
+            if (!items.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem recebimentos programados nos próximos 30 dias.</p>';
+                return;
+            }
+
+            items.sort((a,b) => a.date - b.date);
+
+            let html = '<div class="table-wrapper"><table class="tabela-padrao" style="width:100%;">';
+            html += '<thead><tr><th>Data</th><th>TED</th><th>ND</th><th>UP</th><th class="col-valor">Valor (R$)</th></tr></thead><tbody>';
+            items.forEach(it => {
+                html += `<tr>`;
+                html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
+                html += `<td><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td>${formatarNDComPontos(it.nd)}</td>`;
+                html += `<td>${it.up}</td>`;
+                html += `<td class="col-valor" style="text-align:center;">${it.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Render TEDs with expiring validity (fimVigencia) within next 30 days (apenas próximos)
+        function renderUpcomingVigencias() {
+            const container = document.getElementById('proximasVigencias');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const maxDate = new Date();
+            maxDate.setDate(today.getDate() + 30);
+            maxDate.setHours(23, 59, 59, 999);
+
+            const items = [];
+            (dados.teds || []).forEach(t => {
+                if (!t.fimVigencia && !t.inicioVigencia) return;
+                const fimEfetivo = calcularFimComAditivos(t);
+                let d;
+                if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
+                    d = fimEfetivo;
+                } else {
+                    const fimNorm = normalizarData(t.fimVigencia);
+                    if (!fimNorm) return;
+                    d = new Date(fimNorm + 'T00:00:00');
+                    if (isNaN(d.getTime())) return;
+                }
+
+                // Excluir já vencidos (eles são exibidos em card separado)
+                if (d < today) return;
+
+                if (d >= today && d <= maxDate) {
+                    const diasRestantes = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+                    items.push({ date: d, ted: t, diasRestantes: diasRestantes, up: t.upResponsavel || t.up || '', status: t.statusTED || 'Em Execução' });
+                }
+            });
+
+            if (!items.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Sem TEDs com vigência terminando nos próximos 30 dias.</p>';
+                return;
+            }
+
+            items.sort((a,b) => a.date - b.date);
+
+            let html = '<div style="max-height:300px; overflow-y:auto;">';
+            html += '<table class="tabela-padrao" style="width:100%; font-size:0.85rem;">';
+            html += '<thead><tr><th>Fim Vigência</th><th>TED</th><th>UP</th><th style="text-align:center;">Dias</th></tr></thead><tbody>';
+            items.forEach(it => {
+                let corDias = '#059669';
+                if (it.diasRestantes <= 7) corDias = '#dc2626';
+                else if (it.diasRestantes <= 15) corDias = '#d97706';
+                html += `<tr>`;
+                html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
+                html += `<td><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td>${it.up}</td>`;
+                html += `<td style="text-align:center; font-weight:600; color:${corDias};">${it.diasRestantes}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Render TEDs com vigência vencida que não foram encerrados
+        function renderVigenciasVencidas() {
+            const container = document.getElementById('vigenciasVencidasContainer');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expired = [];
+
+            (dados.teds || []).forEach(t => {
+                if (!t.fimVigencia && !t.inicioVigencia) return;
+                const fimEfetivo = calcularFimComAditivos(t);
+                let d;
+                if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
+                    d = fimEfetivo;
+                } else {
+                    const fimNorm = normalizarData(t.fimVigencia);
+                    if (!fimNorm) return;
+                    d = new Date(fimNorm + 'T00:00:00');
+                    if (isNaN(d.getTime())) return;
+                }
+
+                const encNorm = normalizarData(t.dataEntregaDenuncia || t.dataEntrega || '');
+                const encDate = encNorm ? new Date(encNorm + 'T00:00:00') : null;
+
+                if (d < today) {
+                    if (!encDate || encDate > today) {
+                        const diasAtraso = Math.ceil((today - d) / (1000 * 60 * 60 * 24));
+                        expired.push({ date: d, ted: t, diasAtraso: diasAtraso, up: t.upResponsavel || t.up || '' });
+                    }
+                }
+            });
+
+            if (!expired.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.75rem; color:var(--text);">Nenhum TED com vigência vencida e não encerrado.</p>';
+                return;
+            }
+
+            expired.sort((a,b) => a.date - b.date);
+            let html = '<div style="max-height:300px; overflow-y:auto;">';
+            html += '<table class="tabela-padrao" style="width:100%; font-size:0.85rem;">';
+            html += '<thead><tr><th>Fim Vigência</th><th>TED</th><th>UP</th><th style="text-align:center;">Atraso (dias)</th></tr></thead><tbody>';
+            expired.forEach(it => {
+                html += `<tr>`;
+                html += `<td style="white-space:nowrap;">${it.date.toLocaleDateString('pt-BR')}</td>`;
+                html += `<td><a href="#" onclick="carregarDetalhes(${it.ted.id}); switchTab('detalhes'); return false;">TED ${it.ted.numTed}</a></td>`;
+                html += `<td>${it.up}</td>`;
+                html += `<td style="text-align:center; font-weight:600; color:#dc2626;">${it.diasAtraso}</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Monta a lista unificada de alertas inteligentes: vigência vencida,
+        // orçamento próximo do limite e descompasso entre execução física e financeira.
+        // Cada TED finalizado é ignorado (já encerrado, não precisa de alerta).
+        function buildAlertasInteligentes() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const alerts = [];
+
+            (dados.teds || []).forEach(t => {
+                if (isTedFinalizado(t)) return;
+
+                const up = t.upResponsavel || t.up || '';
+                const valorTed = parseFloat(t.valorTed) || 0;
+                const recsRealizados = (t.recursosGerais || []).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+                const percentualGasto = valorTed > 0 ? (recsRealizados / valorTed) * 100 : 0;
+                const percentualFisicoRaw = (typeof t.progressoFisico !== 'undefined' ? t.progressoFisico : calcularProgressoFisico(t)) || 0;
+                const percentualFisico = parseFloat(percentualFisicoRaw) || 0;
+
+                // 1. Vigência vencida e não encerrada
+                if (t.fimVigencia || t.inicioVigencia) {
+                    const fimEfetivo = calcularFimComAditivos(t);
+                    let fimDate = null;
+                    if (fimEfetivo && !isNaN(fimEfetivo.getTime())) {
+                        fimDate = fimEfetivo;
+                    } else {
+                        const fimNorm = normalizarData(t.fimVigencia);
+                        if (fimNorm) {
+                            const d = new Date(fimNorm + 'T00:00:00');
+                            if (!isNaN(d.getTime())) fimDate = d;
+                        }
+                    }
+                    if (fimDate && fimDate < today) {
+                        const diasAtraso = Math.ceil((today - fimDate) / (1000 * 60 * 60 * 24));
+                        alerts.push({
+                            severity: 'danger', rank: 0, icon: 'alert-triangle', tedId: t.id,
+                            title: `TED ${t.numTed}`, up,
+                            detail: `Vigência encerrada há ${diasAtraso} dia${diasAtraso !== 1 ? 's' : ''}`,
+                            value: `${diasAtraso}d`, sortValue: -diasAtraso,
+                        });
+                    }
+                }
+
+                // 2. Orçamento próximo do limite (>= 90% executado)
+                if (valorTed > 0 && percentualGasto >= 90) {
+                    alerts.push({
+                        severity: 'warn', rank: 1, icon: 'wallet', tedId: t.id,
+                        title: `TED ${t.numTed}`, up,
+                        detail: `${percentualGasto.toFixed(0)}% do orçamento já executado`,
+                        value: `${percentualGasto.toFixed(0)}%`, sortValue: -percentualGasto,
+                    });
+                }
+
+                // 3. Descompasso entre execução física e financeira (>= 25 pontos)
+                const gap = Math.abs(percentualFisico - percentualGasto);
+                if (valorTed > 0 && gap >= 25) {
+                    alerts.push({
+                        severity: 'info', rank: 2, icon: 'bar-chart-3', tedId: t.id,
+                        title: `TED ${t.numTed}`, up,
+                        detail: `Física ${percentualFisico.toFixed(0)}% vs. financeira ${percentualGasto.toFixed(0)}%`,
+                        value: `${gap.toFixed(0)}pp`, sortValue: -gap,
+                    });
+                }
+            });
+
+            alerts.sort((a, b) => a.rank - b.rank || a.sortValue - b.sortValue);
+            return alerts;
+        }
+
+        // Render compacto para a coluna em 'Próximas Ações' (mostra contagem e top itens)
+        function renderProximasVigenciasVencidas() {
+            const container = document.getElementById('proximasVigenciasVencidas');
+            if (!container) return;
+
+            const alerts = buildAlertasInteligentes();
+
+            if (!alerts.length) {
+                container.innerHTML = '<p class="empty-state" style="padding:0.5rem; color:var(--text);">Nenhum alerta no momento.</p>';
+                return;
+            }
+
+            const severityColor = { danger: '#dc2626', warn: '#d97706', info: '#0C447C' };
+            const maxShow = 6;
+            let html = `<div style="font-weight:600; color:#dc2626; margin-bottom:6px;">${alerts.length} alerta${alerts.length !== 1 ? 's' : ''} ativo${alerts.length !== 1 ? 's' : ''}</div>`;
+            html += '<ul style="margin:0; padding-left:0; list-style:none; font-size:0.85rem;">';
+            alerts.slice(0, maxShow).forEach(a => {
+                const cor = severityColor[a.severity] || '#6b6b6b';
+                html += `<li style="margin-bottom:0.35rem; display:flex; justify-content:space-between; gap:8px;" title="${a.detail}">`;
+                html += `<div style="display:flex; align-items:center; gap:4px; min-width:0;">`;
+                html += `<i data-lucide="${a.icon}" class="inline-icon-sm" style="color:${cor}; width:12px; height:12px; flex-shrink:0;"></i>`;
+                html += `<a href="#" onclick="carregarDetalhes(${a.tedId}); switchTab('detalhes'); return false;">${a.title}</a>`;
+                html += `<span style="color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a.up}</span>`;
+                html += `</div>`;
+                html += `<div style="color:${cor}; font-weight:600; white-space:nowrap;">${a.value}</div>`;
+                html += `</li>`;
+            });
+            if (alerts.length > maxShow) html += `<li style="color:var(--text-muted); margin-top:4px;">+${alerts.length - maxShow} outros...</li>`;
+            html += '</ul>';
+            container.innerHTML = html;
+            try { initLucideIcons(); } catch (e) {}
+        }
+
+        // Abrir Detalhes
+        function abrirDetalhes(id) {
+            const ted = dados.teds.find(t => t.id === id);
+            if (!ted) return;
+
+            const inicioNorm = normalizarData(ted.inicioVigencia);
+            const fimNorm = normalizarData(ted.fimVigencia);
+            const inicio = inicioNorm ? new Date(inicioNorm + 'T00:00:00') : null;
+            const fim = fimNorm ? new Date(fimNorm + 'T00:00:00') : null;
+            const hoje = new Date();
+            const inicioValido = inicio && !isNaN(inicio.getTime());
+            const fimValido = fim && !isNaN(fim.getTime());
+            const emExecucao = inicioValido && fimValido && hoje >= inicio && hoje <= fim;
+            const percentualGasto = ted.valorTed > 0 ? parseFloat(((ted.gasto / ted.valorTed) * 100).toFixed(2)) : 0;
+
+            document.getElementById('modalTitulo').textContent = `TED ${ted.numTed} - ${ted.objetivo}`;
+            document.getElementById('modalBody').innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Plano de Trabalho</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.planoTrabalho}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">TED</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.numTed}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Código do Plano de Ação</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.codigoPlano}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Status</p>
+                        <p style="margin: 0;">
+                            ${(() => {
+                                const statusModalObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido', vigenciaVencida: false };
+                                const computedStatusModal = statusModalObj.text || '';
+                                const originModal = statusModalObj.origin || '';
+                                const vigVencModal = statusModalObj.vigenciaVencida || false;
+                                const sNorm = computedStatusModal.toLowerCase();
+                                let cls = 'badge-planejamento';
+                                if (/execu|em execução/.test(sNorm)) cls = vigVencModal ? 'badge-vigencia-vencida' : 'badge-execucao';
+                                else if (/vigênc.*venc|vigencia.*venc/.test(sNorm)) cls = 'badge-vigencia-vencida';
+                                else if (/encerr/.test(sNorm)) cls = 'badge-vigencia-vencida';
+                                else if (/finaliz|finalizado/.test(sNorm)) cls = 'badge-finalizado';
+                                else if (/conclu/.test(sNorm)) cls = 'badge-concluido';
+                                else if (/denunci/.test(sNorm)) cls = 'badge-denunciado';
+                                else if (/suspens|suspenso/.test(sNorm)) cls = 'badge-suspenso';
+                                else if (vigVencModal) cls = 'badge-vigencia-vencida';
+                                const isFinalizadoModal = /finaliz|finalizado/.test(sNorm);
+                                const mostrarNotaModal = vigVencModal && !/vigênc.*venc|vigencia.*venc|encerr/.test(sNorm) && !isFinalizadoModal;
+                                const notaModal = mostrarNotaModal ? '<span style="font-size:0.7rem; color:#b45309; font-weight:600; margin-left:6px;">⚠️ Vigência Vencida</span>' : '';
+                                return `<span class="badge ${cls}" title="Origem: ${originModal}">${computedStatusModal}</span>${notaModal}`;
+                            })()}
+                        </p>
+                    </div>
+                </div>
+                
+                
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">UP Responsável pela Execução</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.upResponsavel}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">UG Executora</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.ugExecutora || ted.egExecutora}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Nº TED - SIAFI</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.numTedSiafi}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Nota do Sistema do TED</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.notaSistema}</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Unidade Descentralizadora</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.unidadeDesc}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">UG Descentralizadora</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.ugDesc}</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Valor do TED</p>
+                        <p style="margin: 0; font-size: 1.25rem; font-weight: bold; color: var(--primary);">${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Vigilância (Meses)</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.vigencia || ted.vigilancia}</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Início da Vigência</p>
+                        <p style="margin: 0; font-weight: 500;">${inicio.toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Fim da Vigência</p>
+                        <p style="margin: 0; font-weight: 500;">${fim.toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div>
+<<<<<<< Updated upstream
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Jd Descentralização</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.jdDescentralizacao}</p>
+=======
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">1ª Descentralização</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.primeiraDescentralizacao || ''}</p>
+>>>>>>> Stashed changes
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: var(--text);">Objetivo</p>
+                        <p style="margin: 0; font-weight: 500;">${ted.objetivo}</p>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-alt); border-radius: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                        <span>Execução Financeira</span>
+                        <span><strong>${percentualGasto.toFixed(2)}%</strong></span>
+                    </div>
+                    <div style="background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
+                        <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; width: ${percentualGasto}%;"></div>
+                    </div>
+                    <p style="margin: 0; font-size: 0.75rem; color: var(--text);">Gasto: ${ted.gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de ${ted.valorTed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                </div>
+
+                <p style="margin: 0; font-size: 0.75rem; color: var(--text);">Criado em: ${ted.dataCriacao}</p>
+            `;
+
+            document.getElementById('modalDetalhes').classList.add('active');
+            window.tedAtual = id;
+        }
+
+        // Remove o TED do Firestore E da memória.
+        // O firestoreBatchSet só faz set() — nunca delete. Tirar o TED apenas do array e
+        // salvar deixava o documento intacto no servidor, e como carregarDoCloud() relê a
+        // coleção inteira a cada login, o TED "excluído" reaparecia.
+        // Apaga no servidor PRIMEIRO: se falhar, nada é alterado localmente e o usuário
+        // recebe erro em vez de um "excluído com sucesso" que não aconteceu.
+        async function removerTedDaBase(id) {
+            // Checar role ANTES de chamar o Firestore: com enableIndexedDbPersistence,
+            // deleteDoc() resolve com sucesso assim que a escrita entra na fila local,
+            // antes do servidor confirmar. Se as regras rejeitarem (usuário 'leitor'),
+            // a rejeição chega depois, em silêncio — o app já teria mostrado "excluído
+            // com sucesso" e o TED reaparece no próximo carregarDoCloud().
+            const _role = window.currentUserProfile && window.currentUserProfile.role;
+            if (_role !== 'admin' && _role !== 'editor') {
+                showToast('Modo leitura: faça login como admin ou editor para excluir TED.', 'warning');
+                return false;
+            }
+            const idx = dados.teds.findIndex(t => t.id === id);
+            if (idx === -1) { showToast('TED não encontrado.', 'error'); return false; }
+            const ted = dados.teds[idx];
+
+            let apagado = false;
+            try {
+                if (window.firestoreDeleteDoc) apagado = await window.firestoreDeleteDoc('teds/' + String(id));
+            } catch (e) { console.warn('firestoreDeleteDoc falhou', e); }
+
+            if (!apagado) {
+                showToast('❌ Não foi possível excluir o TED no servidor.\nNada foi removido — verifique sua conexão e permissão, e tente de novo.', 'danger');
+                return false;
+            }
+
+            // Auditar antes do splice: o log resolve o número do TED a partir do array
+            try {
+                adicionarRegistroAuditoria(id, 'excluir_ted', null, {
+                    campo: 'TED', anterior: { numTed: ted.numTed, numTedSiafi: ted.numTedSiafi || '' }
+                });
+            } catch (e) {}
+
+            dados.teds.splice(idx, 1);
+            try { await salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            showToast('TED excluído com sucesso!', 'success');
+            return true;
+        }
+
+        // Deletar TED
+        function deletarTED() {
+            confirmarAcao('Tem certeza que deseja deletar este TED?', async function() {
+                const ok = await removerTedDaBase(window.tedAtual);
+                if (!ok) return;
+                fecharModal();
+                atualizarListaTEDs();
+                atualizarSeletorTED();
+                atualizarDashboard();
+                atualizarFiltroTedEntregas();
+            }, 'Confirmar');
+            return;
+        }
+
+        // Excluir TED a partir da lista (botão na aba TEDs)
+        function excluirTED(id) {
+            confirmarAcao('Tem certeza que deseja excluir este TED? Esta ação não pode ser desfeita.', async function() {
+                const ok = await removerTedDaBase(id);
+                if (!ok) return;
+                atualizarListaTEDs();
+                atualizarSeletorTED();
+                atualizarFiltroTedEntregas();
+                atualizarDashboard();
+            }, 'Confirmar');
+            return;
+        }
+
+        // Editar TED
+        function editarTED() {
+            showToast('⚠️ Edição será implementada na próxima versão', 'warning');
+        }
+
+        // FUN→.ES PARA DETALHES TED
+        // Carregar seletor de TEDs na aba detalhes
+        function atualizarSeletorTED() {
+            const seletor = document.getElementById('seletorTED');
+            const teds = (typeof dados !== 'undefined' && Array.isArray(dados.teds)) ? dados.teds : [];
+
+            // Se o elemento select ainda não estiver presente (por exemplo em páginas/parciais),
+            // atualizar apenas o chip de seleção e retornar sem lançar erro.
+            if (!seletor) {
+                const st = document.getElementById('selectedTedText');
+                if (st) {
+                    if (window.tedSelecionado && window.tedSelecionado.numTed) st.textContent = `TED ${window.tedSelecionado.numTed}`;
+                    else st.textContent = 'Selecionar TED';
+                }
+                return;
+            }
+
+            seletor.innerHTML = '<option value="">-- Escolha um TED --</option>';
+
+            teds.forEach(ted => {
+                const option = document.createElement('option');
+                option.value = ted.id;
+                const encerrado = !!(isTedFinalizado && typeof isTedFinalizado === 'function' && isTedFinalizado(ted));
+                option.textContent = encerrado
+                    ? `TED ${ted.numTed} - ${ted.objetivo || ''} (Encerrado)`
+                    : `TED ${ted.numTed} - ${ted.objetivo || ''}`;
+                if (isTedFinalizado && typeof isTedFinalizado === 'function' && isTedFinalizado(ted)) {
+                    option.style.color = '#ef4444';
+                }
+                // Marcar como selecionado se for o TED atualmente ativo
+                try {
+                    if (window.tedSelecionado && String(window.tedSelecionado.id) === String(ted.id)) option.selected = true;
+                } catch(e) {}
+                seletor.appendChild(option);
+            });
+
+            // Sincronizar label do chip superior com seleção atual
+            const st = document.getElementById('selectedTedText');
+            if (st) {
+                if (window.tedSelecionado && window.tedSelecionado.numTed) st.textContent = `TED ${window.tedSelecionado.numTed}`;
+                else st.textContent = 'Selecionar TED';
+            }
+        }
+
+        // Toggle do dropdown rápido de TED no topo (abre uma lista flutuante)
+        function toggleTedDropdown() {
+            const chip = document.getElementById('selectedTedChip');
+            if (!chip) return;
+
+            // Se já existe o menu, fechar
+            const existing = document.getElementById('tedDropdownMenu');
+            if (existing) { existing.remove(); return; }
+
+            const teds = (typeof dados !== 'undefined' && Array.isArray(dados.teds)) ? dados.teds : [];
+            const dd = document.createElement('div');
+            dd.id = 'tedDropdownMenu';
+            dd.className = 'ted-dropdown-menu';
+            dd.style.position = 'fixed';
+            dd.style.zIndex = 2147483647;
+            dd.style.boxSizing = 'border-box';
+            dd.style.maxHeight = '60vh';
+            dd.style.overflowY = 'auto';
+
+            // Use as variáveis de tema quando disponíveis, com fallback
+            try {
+                const docStyle = getComputedStyle(document.documentElement);
+                const bg = (docStyle.getPropertyValue('--bg') || '#ffffff').trim();
+                const border = (docStyle.getPropertyValue('--border') || '#e5e7eb').trim();
+                const text = (docStyle.getPropertyValue('--text') || '#0f172a').trim();
+                dd.style.background = bg || '#ffffff';
+                dd.style.border = `1px solid ${border || '#e5e7eb'}`;
+                dd.style.color = text || '#0f172a';
+            } catch(e) {
+                dd.style.background = '#ffffff';
+                dd.style.border = '1px solid #e5e7eb';
+                dd.style.color = '#0f172a';
+            }
+
+            dd.style.boxShadow = '0 8px 24px rgba(15,23,42,0.12)';
+            dd.style.borderRadius = '8px';
+            dd.style.padding = '6px';
+            dd.style.fontSize = '0.9rem';
+
+            if (!teds || teds.length === 0) {
+                const p = document.createElement('div');
+                p.textContent = 'Nenhum TED cadastrado';
+                p.style.padding = '8px';
+                dd.appendChild(p);
+            } else {
+                teds.forEach(t => {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.style.display = 'flex';
+                    a.style.alignItems = 'center';
+                    a.style.gap = '8px';
+                    a.style.padding = '8px 10px';
+                    a.style.textDecoration = 'none';
+                    a.style.color = 'inherit';
+                    a.style.borderRadius = '6px';
+                    a.style.fontSize = '0.86rem';
+                    a.style.whiteSpace = 'nowrap';
+                    a.style.textOverflow = 'ellipsis';
+                    a.style.overflow = 'hidden';
+                    a.onmouseover = () => a.style.background = 'rgba(0,0,0,0.04)';
+                    a.onmouseout = () => a.style.background = 'transparent';
+
+                    const txt = document.createElement('div');
+                    const encerrado = !!(isTedFinalizado && typeof isTedFinalizado === 'function' && isTedFinalizado(t));
+                    txt.textContent = encerrado
+                        ? `TED ${t.numTed} - ${t.objetivo || ''} (Encerrado)`
+                        : `TED ${t.numTed} - ${t.objetivo || ''}`;
+                    txt.style.flex = '1 1 auto';
+                    txt.style.overflow = 'hidden';
+                    txt.style.textOverflow = 'ellipsis';
+                    txt.style.whiteSpace = 'nowrap';
+                    if (encerrado) txt.style.color = '#b91c1c';
+
+                    a.appendChild(txt);
+                    a.onclick = function(ev) {
+                        ev.preventDefault();
+                        try { carregarDetalhes(t.id); } catch(e) {}
+                        // Atualizar chip
+                        const st = document.getElementById('selectedTedText');
+                        if (st) st.textContent = `TED ${t.numTed}`;
+                        // Fechar menu e ir para aba detalhes
+                        dd.remove();
+                        try { switchTab('detalhes'); } catch(e) {}
+                    };
+                    dd.appendChild(a);
+                });
+            }
+
+            // Posicionar abaixo do chip com largura limitada e ajuste de overflow
+            const rect = chip.getBoundingClientRect();
+            const viewportPad = 12;
+            const prefWidth = Math.min(680, Math.max(320, Math.round(rect.width * 1.85)));
+            const allowedWidth = Math.min(prefWidth, window.innerWidth - viewportPad * 2);
+            dd.style.width = allowedWidth + 'px';
+
+            let left = rect.left + window.scrollX;
+            if (left + allowedWidth > window.scrollX + window.innerWidth - viewportPad) {
+                left = window.scrollX + window.innerWidth - viewportPad - allowedWidth;
+            }
+            if (left < window.scrollX + viewportPad) left = window.scrollX + viewportPad;
+
+            // Tentar abrir abaixo; se pouco espaço, abrir acima
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            const openBelow = spaceBelow > 160 || spaceBelow >= spaceAbove;
+            if (openBelow) {
+                dd.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+            } else {
+                // abrir acima
+                const estHeight = Math.min(window.innerHeight - viewportPad * 2, 320);
+                dd.style.top = Math.max(window.scrollY + viewportPad, (rect.top + window.scrollY) - 8 - estHeight) + 'px';
+            }
+            dd.style.left = left + 'px';
+
+            document.body.appendChild(dd);
+
+            // Fechar ao clicar fora ou pressionar Escape
+            setTimeout(() => {
+                function onDocClick(e) {
+                    if (!dd.contains(e.target) && e.target !== chip && !chip.contains(e.target)) {
+                        dd.remove();
+                        document.removeEventListener('click', onDocClick);
+                        document.removeEventListener('keydown', onKeyDown);
+                    }
+                }
+                function onKeyDown(e) {
+                    if (e.key === 'Escape') {
+                        dd.remove();
+                        document.removeEventListener('click', onDocClick);
+                        document.removeEventListener('keydown', onKeyDown);
+                    }
+                }
+                document.addEventListener('click', onDocClick);
+                document.addEventListener('keydown', onKeyDown);
+            }, 10);
+        }
+
+        // Normalização ESTRUTURAL de um TED (arrays ausentes, ids de itens legados,
+        // migrações de formato). Precisa ser: (a) idempotente — rodar duas vezes não muda
+        // nada; (b) sem efeito colateral de gravação. Aplicada a todos os TEDs logo após o
+        // carregamento (ver window._normalizarTodosTeds) para que a linha-base de comparação
+        // já a inclua, e novamente ao abrir um TED (onde vira no-op).
+        function normalizarEstruturaTed(ted) {
+            if (!ted) return;
+            ted.objetos = ted.objetos || [];
+            ted.metas = ted.metas || [];
+            ted.fisicos = ted.fisicos || [];
+            ted.execFisicas = ted.execFisicas || [];
+            ted.financeiros = ted.financeiros || [];
+            ted.execFinanceiras = ted.execFinanceiras || [];
+            ted.recursosGerais = ted.recursosGerais || [];
+            // IDs em itens financeiros legados (atribuídos uma única vez e preservados)
+            let _nextFinId = Date.now();
+            ted.financeiros.forEach(f => { if (f && f.id == null) f.id = _nextFinId++; });
+            try { migrarParaAlteracoesUnificadas(ted); } catch(e) { console.warn('migrarParaAlteracoesUnificadas', e); }
+            // Entregas: campo novo em cada item do cadastro físico + migração dos legados
+            try {
+                (ted.fisicos || []).forEach((f, idx) => {
+                    if (!f) return;
+                    if (!Array.isArray(f.entregas)) {
+                        f.entregas = [];
+                        const qtdLeg = (f.qtdeRealizada != null && String(f.qtdeRealizada).trim() !== '') ? parseNumber(f.qtdeRealizada) : 0;
+                        if (qtdLeg && qtdLeg > 0) {
+                            f.entregas.push({ id: `migrado-${f.id || idx}-${Date.now()}`, data: (f.dataRealizada || ''), quantidade: qtdLeg, nf: (f.nfRealizada || f.nf || '(migrado)'), criadoEm: new Date().toISOString() });
+                        }
+                    }
+                    // id estável por entrega (evita reidentificação a cada abertura)
+                    f.entregas.forEach(ent => {
+                        if (ent && ent.id == null) ent.id = 'ent-' + Date.now() + '-' + Math.floor(Math.random() * 9999);
+                    });
+                });
+            } catch(e) { console.warn('Erro ao migrar entregas legadas:', e); }
+
+            // Campos DERIVADOS (calculados a partir das entregas/objetos). Precisam ser
+            // calculados aqui, no carregamento, e não só ao abrir o TED: como o cálculo
+            // acontecia depois de fixada a linha-base, o TED passava a divergir do servidor
+            // sem edição do usuário — e o app avisava "Outro usuário salvou alterações
+            // agora" o tempo todo, além de reenviar essa cópia por cima da dos colegas.
+            try {
+                const execs = _derivarExecFisicas(ted);
+                if (JSON.stringify(ted.execFisicas || []) !== JSON.stringify(execs)) ted.execFisicas = execs;
+                const pct = calcularProgressoFisico(ted) || 0;
+                if (Number(ted.progressoFisico) !== Number(pct)) ted.progressoFisico = pct;
+            } catch(e) { console.warn('Erro derivando execFisicas/progresso:', e); }
+        }
+
+        // Deriva execFisicas a partir das entregas do cadastro físico (fonte única, usada
+        // tanto na normalização de carga quanto em sincronizarExecucaoFisica).
+        function _derivarExecFisicas(ted) {
+            const execs = [];
+            ((ted && ted.fisicos) || []).forEach(f => {
+                const arr = (f && Array.isArray(f.entregas)) ? f.entregas : [];
+                arr.forEach(ent => {
+                    if (!ent || !ent.data) return;
+                    if (ent.id == null) ent.id = 'ent-' + Date.now() + '-' + Math.floor(Math.random() * 9999);
+                    execs.push({ id: ent.id, objeto: f.objeto, qtde: parseNumber(ent.quantidade || ent.qtde || 0), data: ent.data, nf: ent.nf || '' });
+                });
+            });
+            return execs;
+        }
+        // Chamado por app.js logo após carregarDoCloud, ANTES de fixar a linha-base.
+        window._normalizarTodosTeds = function() {
+            try { (dados.teds || []).forEach(t => normalizarEstruturaTed(t)); } catch (e) { console.warn('_normalizarTodosTeds', e); }
+        };
+
+        // Carregar detalhes do TED selecionado
+        function carregarDetalhes(tedId) {
+            if (!tedId) {
+                document.getElementById('tedsDetalheContainer').style.display = 'none';
+                return;
+            }
+
+            window.tedSelecionado = dados.teds.find(t => t.id == tedId);
+            if (!window.tedSelecionado) return;
+
+            // Sincronizar label do chip superior com o TED selecionado
+            try {
+                const st = document.getElementById('selectedTedText');
+                if (st) st.textContent = `TED ${window.tedSelecionado.numTed || ''}`;
+            } catch(e) {}
+
+            // Normalização estrutural (arrays, ids legados, migrações). Idempotente e sem
+            // gravação: roda também para TODOS os TEDs logo após carregarDoCloud, de modo
+            // que a "linha-base" já contemple esses ajustes. Antes, como só rodava ao ABRIR
+            // o TED, cada abertura deixava o TED diferente do servidor e o app o marcava
+            // como alterado sem o usuário ter editado nada.
+            normalizarEstruturaTed(window.tedSelecionado);
+
+            // Sincronização inicial da execução física a partir das sub-entregas.
+            // persistir:false — abrir um TED nunca pode gravar no servidor.
+            try { if (typeof sincronizarExecucaoFisica === 'function') sincronizarExecucaoFisica({ persistir: false }); } catch(e) {}
+
+            document.getElementById('tedsDetalheContainer').style.display = 'block';
+            
+            // Preencher informações do TED
+            exibirInformacoesTED();
+            
+            atualizarTabelaObjetos();
+            atualizarOpcoesObjetoFisico();
+            atualizarTabelaMetas();
+            atualizarTabelaFisicos();
+            atualizarOpcoesObjetoExecFisica();
+            atualizarTabelaExecFisica();
+            atualizarTabelaFinanceira();
+            atualizarOpcoesExecFinanceira();
+            atualizarTabelaExecFinanceira();
+            atualizarOpcoesRecGeral();
+            atualizarTabelaRecursosGerais();
+            atualizarGantt();
+            // Atualizar gráfico de entregas na visualização de detalhes (se ativo)
+            try { renderEntregasChart(tedId, 'entregasChartFull'); } catch(e) {}
+            // Reinicializar ícones Lucide após carregar detalhes
+            initLucideIcons();
+            // Atualizar badges de contadores das seções
+            try { atualizarTodosContadoresSecoes(); } catch(e) {}
+            try { renderCompactGanttFisico(); } catch(e) {}
+            // Restaurar aba interna que estava ativa (ou padrão overview)
+            try { restoreDetalhesLastTab(); } catch(e) {}
+            // Aplicar restrição de UP para editor com upRestrita
+            try {
+                var p = window.currentUserProfile;
+                if (p && p.role === 'editor' && p.upRestrita) {
+                    applyUpRestriction(p.upRestrita);
+                }
+            } catch(e) {}
+        }
+
+        // ── Navegação por abas internas do Detalhes TED ────────────────
+        function switchDt(btn) {
+            const tab = btn.getAttribute('data-tab');
+            document.querySelectorAll('.dt-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+            document.querySelectorAll('.dt-tab-panel').forEach(p =>
+                p.classList.toggle('active', p.getAttribute('data-panel') === tab)
+            );
+            try { localStorage.setItem('detalhes_lastTab', tab); } catch(e) {}
+            if (tab === 'billing') {
+                try { renderFaturamento(); } catch(e) { console.warn('renderFaturamento error', e); }
+            }
+        }
+
+        function restoreDetalhesLastTab() {
+            try {
+                const last = localStorage.getItem('detalhes_lastTab') || 'overview';
+                const btn = document.querySelector(`.dt-tab-btn[data-tab="${last}"]`);
+                if (btn) switchDt(btn);
+            } catch(e) {}
+        }
+
+        // ── Faturamento ─────────────────────────────────────────────────
+
+        function computarLinhasFaturamento(ted) {
+            if (!ted) return [];
+            // Previsto: cada item do Cadastro Físico (fisicos[]) — qtde + mesFinal/anoFinal
+            // Executado: f.entregas[] do próprio item do Cadastro Físico — quantidade + data + nf
+            // Valor unitário: Cadastro de Objetos (objetos[]) — valorUnitario, matched by objeto name
+            const fisicos = ted.fisicos  || [];
+            const objetos = ted.objetos  || [];
+            const hoje    = new Date();
+
+            // mapa: objeto name -> valorUnitario
+            const normalizar = s => String(s || '').toLowerCase().trim();
+            const mapaValorUnit = {};
+            objetos.forEach(o => {
+                const key = normalizar(o.objeto);
+                if (key) mapaValorUnit[key] = parseNumber(o.valorUnitario) || 0;
+            });
+
+            const linhas = [];
+            fisicos.forEach(f => {
+                const objKey    = normalizar(f.objeto);
+                const qtdePlan  = parseNumber(f.qtde) || 0;
+                const valorUnit = mapaValorUnit[objKey] || 0;
+                const valorPrev = qtdePlan * valorUnit;
+
+                // Data prevista: mesFinal/anoFinal do Cadastro Físico
+                let dataPrevista = null;
+                try {
+                    if (f.anoFinal && f.mesFinal) {
+                        dataPrevista = new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
+                    } else if (f.mFinal != null && ted.primeiraDescentralizacao) {
+                        const base = new Date(ted.primeiraDescentralizacao + 'T00:00:00');
+                        base.setMonth(base.getMonth() + parseInt(f.mFinal));
+                        base.setDate(28);
+                        dataPrevista = base;
+                    }
+                } catch(e) {}
+
+                // Executado: entregas cadastradas no próprio item do Cadastro Físico
+                const entregas = Array.isArray(f.entregas) ? f.entregas : [];
+                let qtdeReal = 0;
+                const entregasDetalhe = [];
+                entregas.forEach(ent => {
+                    const qtd = parseNumber(ent.quantidade != null ? ent.quantidade : ent.qtde) || 0;
+                    qtdeReal += qtd;
+                    let dataEnt = null;
+                    try { if (ent.data) dataEnt = new Date(ent.data + 'T00:00:00'); } catch(e) {}
+                    entregasDetalhe.push({ qtde: qtd, data: dataEnt, nf: ent.nf || '' });
+                });
+                const valorReal = qtdeReal * valorUnit;
+
+                // Data real: data da última entrega
+                const datasReais = entregasDetalhe.map(e => e.data).filter(Boolean);
+                const dataReal   = datasReais.length ? datasReais.reduce((a, b) => a > b ? a : b) : null;
+                const nfs        = entregasDetalhe.map(e => e.nf).filter(Boolean);
+
+                let status = 'planejado';
+                if (qtdeReal >= qtdePlan && qtdePlan > 0) {
+                    status = 'pago';
+                } else if (qtdeReal > 0) {
+                    status = 'em-curso';
+                } else if (dataPrevista && dataPrevista < hoje) {
+                    status = 'atrasado';
+                }
+
+                linhas.push({
+                    fase: f.fase || f.meta || '',
+                    objeto: f.objeto || '',
+                    qtdePlan,
+                    valorUnit,
+                    valorPrev,
+                    qtdeReal,
+                    valorReal,
+                    dataPrevista,
+                    dataReal,
+                    entregasDetalhe,
+                    nf: nfs.join(', '),
+                    status,
+                    mInicio: f.mInicio != null ? parseInt(f.mInicio) : null,
+                    mFinal:  f.mFinal  != null ? parseInt(f.mFinal)  : null,
+                });
+            });
+            return linhas;
+        }
+
+        function agruparPorFase(linhas) {
+            const mapa = {};
+            const ordem = [];
+            linhas.forEach(l => {
+                const chave = String(l.fase || '(Sem fase)');
+                if (!mapa[chave]) {
+                    mapa[chave] = { fase: chave, linhas: [], totalPrev: 0, totalReal: 0 };
+                    ordem.push(chave);
+                }
+                mapa[chave].linhas.push(l);
+                mapa[chave].totalPrev += l.valorPrev;
+                mapa[chave].totalReal += l.valorReal;
+            });
+            return ordem.map(k => mapa[k]);
+        }
+
+        function renderFaturamento(cutoffArg) {
+            const container = document.getElementById('faturamentoContainer');
+            if (!container) return;
+            const ted = window.tedSelecionado;
+            if (!ted) {
+                container.innerHTML = '<p class="fat-empty">Selecione um TED para ver o faturamento.</p>';
+                return;
+            }
+
+            const hoje = new Date();
+            let cutoff = cutoffArg instanceof Date ? cutoffArg : hoje;
+            if (typeof cutoffArg === 'string' && cutoffArg) {
+                const d = new Date(cutoffArg + 'T12:00:00');
+                if (!isNaN(d)) cutoff = d;
+            }
+
+            const fmtMesAno = d => {
+                if (!d) return '—';
+                const dt = d instanceof Date ? d : new Date(d);
+                if (isNaN(dt)) return '—';
+                return dt.toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
+            };
+            const fmtVal = v => (parseFloat(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const fmtQtde = v => (parseFloat(v) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 4 });
+
+            const linhas = computarLinhasFaturamento(ted);
+            const fases  = agruparPorFase(linhas);
+
+            // Totais globais
+            let totalPrevTed = 0, totalRealTed = 0;
+            linhas.forEach(l => { totalPrevTed += l.valorPrev; totalRealTed += l.valorReal; });
+            const pctTotal = totalPrevTed > 0 ? Math.min((totalRealTed / totalPrevTed) * 100, 999).toFixed(1) : '0.0';
+            const delta = totalRealTed - totalPrevTed;
+
+            // KPIs
+            const kpiHtml = `
+            <div class="fat-kpi-row">
+              <div class="fat-kpi">
+                <div class="fat-kpi-label">Total Previsto</div>
+                <div class="fat-kpi-value">R$ ${fmtVal(totalPrevTed)}</div>
+                <div class="fat-kpi-sub">Soma do Cadastro Físico × valor unit.</div>
+              </div>
+              <div class="fat-kpi">
+                <div class="fat-kpi-label">Total Faturado</div>
+                <div class="fat-kpi-value">R$ ${fmtVal(totalRealTed)}</div>
+                <div class="fat-kpi-delta ${delta >= 0 ? 'pos' : 'neg'}">${delta >= 0 ? '▲' : '▼'} R$ ${fmtVal(Math.abs(delta))} ${delta >= 0 ? 'acima' : 'abaixo'} do previsto</div>
+              </div>
+              <div class="fat-kpi">
+                <div class="fat-kpi-label">% Executado</div>
+                <div class="fat-kpi-value">${pctTotal}%</div>
+                <div class="fat-kpi-sub">do total previsto no TED</div>
+              </div>
+            </div>`;
+
+            // Tip banner
+            const tipHtml = `
+            <div class="fat-tip">
+              ⚙️ Previsto = Cadastro Físico (qtde × valor unit.). Executado = entregas registradas no Cadastro Físico × valor unit. do Objeto.
+              Para registrar entregas, <a href="#" onclick="switchDt(document.querySelector('.dt-tab-btn[data-tab=physical]')); return false;">↗ acesse a aba Execução Física</a>.
+            </div>`;
+
+            // Tabela por fase
+            let fasesHtml = '';
+            if (fases.length === 0) {
+                fasesHtml = '<p class="fat-empty">Nenhum item no Cadastro Físico. Adicione fases e objetos para ver o faturamento.</p>';
+            } else {
+                fases.forEach((grp, gIdx) => {
+                    const allPago     = grp.linhas.every(l => l.status === 'pago');
+                    const anyAtrasado = grp.linhas.some(l => l.status === 'atrasado');
+                    const anyEmCurso  = grp.linhas.some(l => l.status === 'em-curso');
+                    let grpStatus = 'planejado';
+                    if (allPago)          grpStatus = 'pago';
+                    else if (anyAtrasado) grpStatus = 'atrasado';
+                    else if (anyEmCurso)  grpStatus = 'em-curso';
+                    const badgeLabel = { pago:'PAGO', planejado:'PLANEJADO', atrasado:'ATRASADO', 'em-curso':'EM CURSO' }[grpStatus] || grpStatus;
+
+                    const diffGrp   = grp.totalReal - grp.totalPrev;
+                    const diffClass = diffGrp > 0 ? 'pos' : diffGrp < 0 ? 'neg' : 'zero';
+                    const diffSign  = diffGrp >= 0 ? '+' : '-';
+
+                    let rowsHtml = grp.linhas.map(l => {
+                        // Coluna Previsto
+                        const prevCol = `
+                          <div class="fat-cell-prev">
+                            <div class="fat-cell-data">${fmtMesAno(l.dataPrevista)}</div>
+                            <div class="fat-cell-qtde">${fmtQtde(l.qtdePlan)} un × R$ ${fmtVal(l.valorUnit)}</div>
+                            <div class="fat-cell-valor">R$ ${fmtVal(l.valorPrev)}</div>
+                          </div>`;
+
+                        // Coluna Executado — mostra cada entrega ou vazio
+                        let execCol = '';
+                        if (l.entregasDetalhe && l.entregasDetalhe.length > 0) {
+                            const entItems = l.entregasDetalhe.map(e => {
+                                const nfTag = e.nf ? `<span class="fat-nf">NF: ${e.nf}</span>` : '';
+                                return `<div class="fat-entrega-item">
+                                  <span class="fat-entrega-data">${fmtMesAno(e.data)}</span>
+                                  <span class="fat-entrega-qtde">${fmtQtde(e.qtde)} un</span>
+                                  <span class="fat-entrega-valor">R$ ${fmtVal(e.qtde * l.valorUnit)}</span>
+                                  ${nfTag}
+                                </div>`;
+                            }).join('');
+                            execCol = `<div class="fat-cell-exec">${entItems}</div>`;
+                        } else {
+                            execCol = `<div class="fat-cell-exec fat-cell-exec-vazio">Sem entrega registrada</div>`;
+                        }
+
+                        // Indicador de atraso/adiantamento de data
+                        let deltaDataHtml = '';
+                        if (l.dataPrevista && l.dataReal) {
+                            const diffMs   = l.dataReal - l.dataPrevista;
+                            const diffMes  = Math.round(diffMs / (1000 * 60 * 60 * 24 * 30));
+                            if (diffMes === 0) {
+                                deltaDataHtml = `<span class="fat-delta-data zero">No prazo</span>`;
+                            } else if (diffMes > 0) {
+                                deltaDataHtml = `<span class="fat-delta-data neg">${diffMes} mês${diffMes > 1 ? 'es' : ''} de atraso</span>`;
+                            } else {
+                                deltaDataHtml = `<span class="fat-delta-data pos">${Math.abs(diffMes)} mês${Math.abs(diffMes) > 1 ? 'es' : ''} adiantado</span>`;
+                            }
+                        } else if (!l.dataReal && l.dataPrevista && l.dataPrevista < hoje) {
+                            const diffMs  = hoje - l.dataPrevista;
+                            const diffMes = Math.round(diffMs / (1000 * 60 * 60 * 24 * 30));
+                            deltaDataHtml = `<span class="fat-delta-data neg">${diffMes}m sem entrega</span>`;
+                        }
+
+                        return `
+                        <tr class="fat-tr">
+                          <td class="fat-td-obj">${l.objeto || '—'}</td>
+                          <td class="fat-td-prev">${prevCol}</td>
+                          <td class="fat-td-exec">${execCol}</td>
+                          <td class="fat-td-delta">${deltaDataHtml}</td>
+                          <td class="fat-td-status"><span class="fat-badge ${l.status}">${badgeLabel}</span></td>
+                        </tr>`;
+                    }).join('');
+
+                    fasesHtml += `
+                    <div class="fat-fase-block" id="fat-fase-${gIdx}">
+                      <div class="fat-fase-head" onclick="toggleFatFase(${gIdx})">
+                        <span class="fat-fase-title">Fase ${grp.fase}</span>
+                        <span class="fat-badge ${grpStatus}">${badgeLabel}</span>
+                        <span class="fat-fase-totais">Prev: R$ ${fmtVal(grp.totalPrev)} &nbsp;|&nbsp; Fat: R$ ${fmtVal(grp.totalReal)}</span>
+                        <span class="fat-diff-chip ${diffClass}">${diffSign}R$ ${fmtVal(Math.abs(diffGrp))}</span>
+                        <span class="fat-fase-chevron">▾</span>
+                      </div>
+                      <div class="fat-fase-body">
+                        <table class="fat-table">
+                          <thead>
+                            <tr>
+                              <th class="fat-th-obj">Objeto</th>
+                              <th class="fat-th-prev">Previsto</th>
+                              <th class="fat-th-exec">Executado</th>
+                              <th class="fat-th-delta">Diferença datas</th>
+                              <th class="fat-th-status">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>${rowsHtml}</tbody>
+                          <tfoot>
+                            <tr class="fat-tfoot-row">
+                              <td colspan="2" class="fat-tfoot-label">Total da fase</td>
+                              <td class="fat-tfoot-val">R$ ${fmtVal(grp.totalReal)}</td>
+                              <td colspan="2" class="fat-tfoot-diff ${diffClass}">${diffSign}R$ ${fmtVal(Math.abs(diffGrp))}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>`;
+                });
+            }
+
+            // Rodapé totais
+            const totaisHtml = `
+            <div class="fat-totais">
+              <div><div class="fat-totais-item-label">Total previsto</div><div class="fat-totais-item-value">R$ ${fmtVal(totalPrevTed)}</div></div>
+              <div><div class="fat-totais-item-label">Total faturado</div><div class="fat-totais-item-value" style="color:#166534;">R$ ${fmtVal(totalRealTed)}</div></div>
+              <div><div class="fat-totais-item-label">Diferença</div><div class="fat-totais-item-value ${delta >= 0 ? '' : 'neg'}">${delta >= 0 ? '+' : '-'}R$ ${fmtVal(Math.abs(delta))}</div></div>
+              <div><div class="fat-totais-item-label">% Executado</div><div class="fat-totais-item-value">${pctTotal}%</div></div>
+            </div>`;
+
+            container.innerHTML = kpiHtml + tipHtml + fasesHtml + totaisHtml;
+        }
+
+        function toggleFatFase(idx) {
+            const el = document.getElementById('fat-fase-' + idx);
+            if (el) el.classList.toggle('collapsed');
+        }
+
+        function toggleFatMarco(idx) {
+            const el = document.getElementById('fat-marco-' + idx);
+            if (el) el.classList.toggle('collapsed');
+        }
+
+        // Atualizar todos os badges de contadores nas seções de detalhe
+        function atualizarTodosContadoresSecoes() {
+            try { const c = document.getElementById('count-objetos'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.objetos) ? window.tedSelecionado.objetos.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-metas'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.metas) ? window.tedSelecionado.metas.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.fisicos) ? window.tedSelecionado.fisicos.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-execfis'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.execFisicas) ? window.tedSelecionado.execFisicas.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-financeiro'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.financeiros) ? window.tedSelecionado.financeiros.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-execfin'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.execFinanceiras) ? window.tedSelecionado.execFinanceiras.length : 0); } catch(e) {}
+            try { const c = document.getElementById('count-recgeral'); if (c) c.textContent = String((window.tedSelecionado && window.tedSelecionado.recursosGerais) ? window.tedSelecionado.recursosGerais.length : 0); } catch(e) {}
+        }
+
+        // Renderizar Gantt compacto no rodapé do card de Cadastro Físico
+        function renderCompactGanttFisico() {
+            const container = document.getElementById('ganttCompactFisico');
+            if (!container || !window.tedSelecionado) return;
+
+                    // Respeitar toggle de meses do Cadastro Físico: ocultar compact gantt se meses estiverem colapsados
+                    try {
+                        const toggleBtn = document.getElementById('toggle-months-cadFis');
+                        if (toggleBtn && toggleBtn.getAttribute('data-expanded') !== '1') {
+                            container.style.display = 'none';
+                            return;
+                        } else {
+                            container.style.display = '';
+                        }
+                    } catch(e) {}
+
+            // Determinar data base (meses) usando mesma lógica da tabela
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, date: new Date(d) });
+            }
+
+            const previsto = new Array(meses.length).fill(false);
+            const realizado = new Array(meses.length).fill(false);
+
+            // Marcar meses previstos a partir dos cadastros físicos
+            (window.tedSelecionado.fisicos || []).forEach(f => {
+                let s = null, e = null;
+                if (!isNaN(f.mInicio) && !isNaN(f.mFinal)) {
+                    s = Number(f.mInicio); e = Number(f.mFinal);
+                } else if (f.mesInicio && f.anoInicio) {
+                    const d = new Date(f.anoInicio, (f.mesInicio || 1) -1, 1);
+                    s = Math.floor((d.getFullYear() - startDate.getFullYear())*12 + (d.getMonth() - startDate.getMonth()));
+                    if (f.mesFinal && f.anoFinal) {
+                        const d2 = new Date(f.anoFinal, (f.mesFinal || 1) -1, 1);
+                        e = Math.floor((d2.getFullYear() - startDate.getFullYear())*12 + (d2.getMonth() - startDate.getMonth()));
+                    }
+                }
+                if (s === null) return;
+                for (let i = Math.max(0, s); i <= Math.min(meses.length-1, e===null? s : e); i++) previsto[i] = true;
+            });
+
+            // Marcar meses realizados a partir das execuções físicas
+            (window.tedSelecionado.execFisicas || []).forEach(exec => {
+                if (!exec.data) return;
+                try {
+                    const d = new Date(exec.data + 'T00:00:00');
+                    const idx = Math.floor((d.getFullYear() - startDate.getFullYear())*12 + (d.getMonth() - startDate.getMonth()));
+                    if (idx >= 0 && idx < meses.length) realizado[idx] = true;
+                } catch(e) {}
+            });
+
+            // Construir HTML compacto
+            let html = '';
+            html += '<div class="gantt-anos" aria-hidden="true">';
+            // apenas exibir anos agrupados pela sequência de meses
+            const anos = {};
+            meses.forEach((m,i)=> { anos[m.date.getFullYear()] = (anos[m.date.getFullYear()]||0) + 1; });
+            Object.keys(anos).forEach(ano => { html += `<div style="min-width:36px; padding:2px 6px;">${ano}</div>`; });
+            html += '</div>';
+
+            html += '<div class="gantt-meses" role="list">';
+            meses.forEach(m => { html += `<div class="mes" title="${m.label}">${m.label.split('/')[0]}</div>`; });
+            html += '</div>';
+
+            html += '<div class="gantt-bars">';
+            // Previsto (linha)
+            html += '<div style="display:flex; gap:4px; align-items:center;">';
+            meses.forEach((m, i) => {
+                if (previsto[i]) html += '<div class="gantt-bar previsto" style="width:36px"></div>';
+                else html += '<div style="width:36px"></div>';
+            });
+            html += '</div>';
+            // Realizado (linha)
+            html += '<div style="display:flex; gap:4px; align-items:center; margin-top:6px">';
+            meses.forEach((m, i) => {
+                if (realizado[i]) html += '<div class="gantt-bar realizado" style="width:36px"></div>';
+                else html += '<div style="width:36px"></div>';
+            });
+            html += '</div>';
+            html += '</div>';
+
+            html += '<div class="gantt-legend"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:10px;background:#B5D4F4;border-radius:2px;display:inline-block"></span> Previsto</span>';
+            html += '<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:10px;background:#C0DD97;border-radius:2px;display:inline-block"></span> Realizado</span></div>';
+
+            container.innerHTML = html;
+        }
+
+        // ─── helpers para o redesign da Visão Geral ───────────────────────────
+
+        function _fmtData(data) {
+            if (!data) return '';
+            const norm = normalizarData(String(data));
+            const d = new Date(norm + 'T00:00:00');
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString('pt-BR');
+        }
+        function _fmtDataInput(data) {
+            if (!data) return '';
+            const norm = normalizarData(String(data));
+            const d = new Date(norm + 'T00:00:00');
+            if (isNaN(d.getTime())) return '';
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function _fmtMoeda(v) {
+            return `R$ ${Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+        }
+
+        function _renderVigenciaTimeline(ted, alteracoes) {
+            const wrap = document.getElementById('vig_barWrap');
+            const legend = document.getElementById('vig_legend');
+            const metaEl = document.getElementById('vig_meta');
+            const prorPill = document.getElementById('vig_prorPill');
+            if (!wrap) return;
+
+            const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
+            const totalMesesAdic = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
+            const vigOrigMeses = parseInt(ted.vigencia) || 0;
+            const vigTotalMeses = vigOrigMeses + totalMesesAdic;
+            const hasPror = totalMesesAdic > 0;
+
+            if (!ted.inicioVigencia || vigTotalMeses === 0) {
+                wrap.innerHTML = '<div style="text-align:center;padding:18px;color:#94a3b8;font-size:12px;">Datas de vigência não informadas</div>';
+                if (legend) legend.innerHTML = '';
+                if (metaEl) metaEl.textContent = '';
+                if (prorPill) prorPill.style.display = 'none';
+                return;
+            }
+
+            const dInicio = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+            const dFimOrig = new Date(dInicio); dFimOrig.setMonth(dFimOrig.getMonth() + vigOrigMeses);
+            const dFimTotal = new Date(dInicio); dFimTotal.setMonth(dFimTotal.getMonth() + vigTotalMeses);
+            const dHoje = new Date(); dHoje.setHours(0,0,0,0);
+            const dDesc = ted.primeiraDescentralizacao ? new Date(normalizarData(ted.primeiraDescentralizacao) + 'T00:00:00') : null;
+
+            const totalSpan = dFimTotal - dInicio || 1;
+            const pct = (d) => Math.max(0, Math.min(100, ((d - dInicio) / totalSpan) * 100));
+            const fmtBr = (d) => d.toLocaleDateString('pt-BR');
+
+            const origPct = hasPror ? pct(dFimOrig) : 100;
+            const hojePct = pct(dHoje);
+            const descPct = dDesc ? pct(dDesc) : null;
+
+            // Calcular pontos de cada aditivo
+            const aditivoPoints = [];
+            {
+                let acumMeses = vigOrigMeses;
+                aditivos.filter(a => !a.excluido && (a.meses || 0) > 0).forEach((a, ai) => {
+                    const dAditivoInicio = new Date(dInicio);
+                    dAditivoInicio.setMonth(dAditivoInicio.getMonth() + acumMeses);
+                    const dataStr = a.data ? fmtBr(new Date(a.data + 'T00:00:00')) : fmtBr(dAditivoInicio);
+                    aditivoPoints.push({ ai, p: pct(dAditivoInicio), dataStr, meses: a.meses });
+                    acumMeses += (a.meses || 0);
+                });
+            }
+
+            // ── SVG timeline ──────────────────────────────────────────────────
+            // Layout: barra em Y=70. Acima: 3 níveis. Abaixo: 1 nível.
+            const SVG_H = 132;
+            const BAR_Y = 64;
+            const BAR_H = 8;
+            const LEVELS = [
+                { labelY: 8,  subY: 20, stemY1: 24, stemY2: BAR_Y },        // nível 0: mais alto
+                { labelY: 28, subY: 40, stemY1: 44, stemY2: BAR_Y },        // nível 1: médio
+                { labelY: 48, subY: 60, stemY1: 64, stemY2: BAR_Y },        // nível 2: baixo (acima da barra)
+                { labelY: BAR_Y + BAR_H + 16, subY: BAR_Y + BAR_H + 28, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 12 }, // nível 3: abaixo
+            ];
+
+            // Eventos ACIMA da barra: Início, Fim orig., Fim
+            // Eventos ABAIXO da barra: 1ª Desc., Aditivos
+            const eventsAbove = [];
+            const eventsBelow = [];
+
+            eventsAbove.push({ p: 0,       color: '#185FA5', label: fmtBr(dInicio),   sub: 'Início' });
+            if (hasPror)
+                eventsAbove.push({ p: origPct, color: '#B45309', label: fmtBr(dFimOrig), sub: 'Fim orig.' });
+            eventsAbove.push({ p: 100,     color: '#185FA5', label: fmtBr(dFimTotal), sub: 'Fim' });
+
+            if (descPct !== null)
+                eventsBelow.push({ p: descPct, color: '#3B7A0E', label: fmtBr(dDesc), sub: '1ª Desc.' });
+            aditivoPoints.forEach(({ ai, p, dataStr, meses }) =>
+                eventsBelow.push({ p, color: '#2563EB', label: dataStr, sub: `${ai+1}º Adit. +${meses}m` })
+            );
+
+            // Níveis acima — próximos da barra (stem curto)
+            const ABOVE = [
+                { labelY: BAR_Y - 38, subY: BAR_Y - 26, stemY1: BAR_Y - 22, stemY2: BAR_Y },
+                { labelY: BAR_Y - 18, subY: BAR_Y -  6, stemY1: BAR_Y -  4, stemY2: BAR_Y },
+                { labelY: BAR_Y - 58, subY: BAR_Y - 46, stemY1: BAR_Y - 42, stemY2: BAR_Y },
+            ];
+            const BELOW = [
+                { labelY: BAR_Y + BAR_H + 24, subY: BAR_Y + BAR_H + 36, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 10 },
+                { labelY: BAR_Y + BAR_H + 44, subY: BAR_Y + BAR_H + 56, stemY1: BAR_Y + BAR_H, stemY2: BAR_Y + BAR_H + 30 },
+            ];
+
+            const GAP = 12;
+            // Atribuir nível nos eventos acima
+            const aboveLast = [null, null, null];
+            eventsAbove.sort((a,b) => a.p - b.p).forEach(ev => {
+                let li = 0;
+                for (; li < ABOVE.length; li++) {
+                    if (aboveLast[li] === null || (ev.p - aboveLast[li]) >= GAP) break;
+                }
+                if (li >= ABOVE.length) li = ABOVE.length - 1;
+                ev.lv = ABOVE[li]; aboveLast[li] = ev.p; ev.below = false;
+            });
+            // Atribuir nível nos eventos abaixo
+            const belowLast = [null, null];
+            eventsBelow.sort((a,b) => a.p - b.p).forEach(ev => {
+                let li = 0;
+                for (; li < BELOW.length; li++) {
+                    if (belowLast[li] === null || (ev.p - belowLast[li]) >= GAP) break;
+                }
+                if (li >= BELOW.length) li = BELOW.length - 1;
+                ev.lv = BELOW[li]; belowLast[li] = ev.p; ev.below = true;
+            });
+
+            const events = [...eventsAbove, ...eventsBelow];
+
+            // Gera defs para hachura da prorrogação
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="${SVG_H}" style="display:block;overflow:visible;">
+  <defs>
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#EAF3DE"/>
+      <rect x="0" y="0" width="4" height="8" fill="#C8E0A2"/>
+    </pattern>
+    <clipPath id="barClip"><rect x="0%" y="${BAR_Y}" width="100%" height="${BAR_H}" rx="4"/></clipPath>
+  </defs>`;
+
+            // Fundo da barra
+            svg += `<rect x="0%" y="${BAR_Y}" width="100%" height="${BAR_H}" rx="4" fill="#F0F4F8" stroke="rgba(0,0,0,0.06)" stroke-width="0.5"/>`;
+            // Segmento original
+            svg += `<rect x="0%" y="${BAR_Y}" width="${origPct}%" height="${BAR_H}" rx="4" fill="url(#vigGrad)" clip-path="url(#barClip)"/>`;
+            // Segmento prorrogação
+            if (hasPror)
+                svg += `<rect x="${origPct}%" y="${BAR_Y}" width="${100-origPct}%" height="${BAR_H}" rx="4" fill="url(#hatch)" clip-path="url(#barClip)"/>`;
+
+            // Gradiente (definido inline no defs)
+            svg = svg.replace('<defs>', `<defs><linearGradient id="vigGrad" x1="0" x2="1" y1="0" y2="0"><stop offset="0%" stop-color="#C8DEFF"/><stop offset="100%" stop-color="#7BAEE8"/></linearGradient>`);
+
+            // Linha "Hoje" — só a linha vertical, sem badge
+            if (hojePct >= 0 && hojePct <= 100) {
+                const hx = `${hojePct}%`;
+                svg += `<line x1="${hx}" y1="${BAR_Y - 4}" x2="${hx}" y2="${BAR_Y + BAR_H + 4}" stroke="#A32D2D" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.85"/>`;
+            }
+
+            // Pins: stem + dot + labels
+            events.forEach(ev => {
+                const lv = ev.lv;
+                const x = `${ev.p}%`;
+                const dotY = ev.below ? BAR_Y + BAR_H : BAR_Y;
+                svg += `<line x1="${x}" y1="${lv.stemY1}" x2="${x}" y2="${lv.stemY2}" stroke="${ev.color}" stroke-width="1.5" opacity="0.5"/>`;
+                svg += `<circle cx="${x}" cy="${dotY}" r="3.5" fill="${ev.color}" stroke="#fff" stroke-width="1.5"/>`;
+                svg += `<text x="${x}" y="${lv.labelY}" text-anchor="middle" fill="${ev.color}" font-size="9.5" font-family="IBM Plex Mono,monospace" font-weight="700">${ev.label}</text>`;
+                svg += `<text x="${x}" y="${lv.subY}" text-anchor="middle" fill="${ev.color}" font-size="8.5" font-family="IBM Plex Mono,monospace" opacity="0.8">${ev.sub}</text>`;
+            });
+
+            svg += `</svg>`;
+
+            wrap.style.height = SVG_H + 'px';
+            wrap.style.pointerEvents = 'none';
+            wrap.innerHTML = svg;
+
+            // legenda
+            let legHtml = `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:linear-gradient(to right,#E6F1FB,#B3D1EF);"></span>Vigência original (${vigOrigMeses}m)</span>`;
+            if (hasPror) legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:repeating-linear-gradient(45deg,#EAF3DE,#EAF3DE 3px,#C8E0A2 3px,#C8E0A2 6px);"></span>Prorrogação (+${totalMesesAdic}m · ${aditivos.filter(a=>!a.excluido&&a.meses>0).length} aditivo${aditivos.filter(a=>!a.excluido&&a.meses>0).length>1?'s':''})</span>`;
+            if (descPct !== null) legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:#639922;border-radius:50%;"></span>1ª Descentralização (${fmtBr(dDesc)})</span>`;
+            legHtml += `<span class="vig-legend-item"><span class="vig-legend-sw" style="background:#A32D2D;width:3px;border-radius:2px;"></span>Hoje</span>`;
+            if (legend) legend.innerHTML = legHtml;
+
+            if (metaEl) metaEl.textContent = `${fmtBr(dInicio)} → ${fmtBr(dFimTotal)} · ${vigTotalMeses} meses`;
+            if (prorPill) prorPill.style.display = hasPror ? '' : 'none';
+        }
+
+        // Escapar HTML de valores vindos do usuário antes de interpolar em template strings
+        function _escHtml(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // Valores de campos alterados: datas ISO viram dd/mm/aaaa; demais são escapados
+        function _fmtValorChip(v) {
+            if (v === undefined || v === null || v === '') return '—';
+            const s = String(v).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+                const f = _fmtData(s);
+                if (f) return f;
+            }
+            return _escHtml(s);
+        }
+
+        // Rótulos amigáveis para as tabelas alteradas por aditivo/apostilamento
+        const _TABELA_LABELS = {
+            objetos: 'Objetos',
+            metas: 'Metas',
+            fisicos: 'Cad. Físico',
+            financeiros: 'Cad. Financeiro',
+            recursosGerais: 'Recursos',
+            execFisica: 'Exec. Física',
+            execFinanceira: 'Exec. Financeira'
+        };
+
+        function _buildAditivoChips(a) {
+            const chips = [];
+            const isAditivo = a.tipo === 'aditivo';
+            // Vigência
+            if (isAditivo && a.meses) {
+                const s = a.meses >= 0 ? `+${a.meses}m` : `${a.meses}m`;
+                chips.push(`<span class="change-chip-new"><span class="ch-field">Vigência</span><span class="ch-new">${s}</span></span>`);
+            }
+            // Valor
+            const pRaw = (typeof a.prevValorTed !== 'undefined' && a.prevValorTed !== null) ? Number(a.prevValorTed) : null;
+            const nRaw = (typeof a.valorTed !== 'undefined' && a.valorTed !== null && a.valorTed !== '') ? Number(a.valorTed) : null;
+            if (nRaw !== null && !isNaN(nRaw) && pRaw !== nRaw) {
+                const pStr = (pRaw !== null && !isNaN(pRaw)) ? `R$${pRaw.toLocaleString('pt-BR',{minimumFractionDigits:2})}` : '—';
+                chips.push(`<span class="change-chip-new amber"><span class="ch-field">Valor</span><span class="ch-old">${pStr}</span><span class="ch-arrow">→</span><span class="ch-new">R$${nRaw.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></span>`);
+            }
+            // campos simples
+            if (a.camposAlterados) {
+                Object.keys(a.camposAlterados).forEach(k => {
+                    const ch = a.camposAlterados[k];
+                    const def = (typeof ADITIVO_CAMPOS_CLONE !== 'undefined') ? ADITIVO_CAMPOS_CLONE.find(c => c.key === k) : null;
+                    const label = _escHtml((def && def.label) || (ch && ch.label) || k);
+                    const deStr = _fmtValorChip(ch.de);
+                    const paraStr = _fmtValorChip(ch.para);
+                    chips.push(`<span class="change-chip-new"><span class="ch-field">${label}</span><span class="ch-old">${deStr}</span><span class="ch-arrow">→</span><span class="ch-new">${paraStr}</span></span>`);
+                });
+            }
+            // tabelas alteradas (resumo com rótulo amigável e contagem de mudanças)
+            if (a.tabelasAlteradas) {
+                if (Array.isArray(a.tabelasAlteradas)) {
+                    a.tabelasAlteradas.forEach(t => {
+                        const k = t.key || t;
+                        chips.push(`<span class="change-chip-new"><span class="ch-field">Tabela</span><span class="ch-new">${_escHtml(_TABELA_LABELS[k] || k)}</span></span>`);
+                    });
+                } else {
+                    Object.keys(a.tabelasAlteradas).forEach(k => {
+                        const diffs = a.tabelasAlteradas[k] || {};
+                        const nAdd = (diffs.adicionados || []).length;
+                        const nMod = (diffs.modificados || []).length;
+                        const nRem = (diffs.removidos || []).length;
+                        const partes = [];
+                        if (nAdd) partes.push(`+${nAdd}`);
+                        if (nMod) partes.push(`~${nMod}`);
+                        if (nRem) partes.push(`−${nRem}`);
+                        const resumo = partes.length ? ` ${partes.join(' ')}` : '';
+                        const titulo = [nAdd ? `${nAdd} inclusão(ões)` : '', nMod ? `${nMod} modificação(ões)` : '', nRem ? `${nRem} remoção(ões)` : ''].filter(Boolean).join(', ');
+                        chips.push(`<span class="change-chip-new" title="${_escHtml(titulo)}"><span class="ch-field">${_escHtml(_TABELA_LABELS[k] || k)}</span><span class="ch-new">${resumo || '✓'}</span></span>`);
+                    });
+                }
+            }
+            if (!chips.length) chips.push(`<span class="change-chip-new"><span class="ch-field" style="color:#94a3b8;">Sem alterações registradas</span></span>`);
+            return chips.join('');
+        }
+
+        function _renderAditivoCards(alteracoes, container) {
+            if (!container) return;
+            if (!alteracoes || !alteracoes.length) {
+                container.innerHTML = `<div style="text-align:center;padding:1.2rem;color:#94a3b8;font-size:12.5px;">Nenhum aditivo / apostilamento cadastrado</div>`;
+                return;
+            }
+            // Pré-calcular ordinals reais (contando apenas ativos, na ordem original)
+            let contAdit = 0, contApost = 0;
+            const ordinals = alteracoes.map(a => {
+                if (!a.excluido) {
+                    if (a.tipo === 'aditivo') contAdit++; else contApost++;
+                    return a.tipo === 'aditivo' ? contAdit : contApost;
+                }
+                // Para excluídos: calcular qual seria o ordinal na posição deles
+                const snap = a.tipo === 'aditivo' ? contAdit + 1 : contApost + 1;
+                return snap;
+            });
+
+            const temExcluidos = alteracoes.some(a => a.excluido);
+            const html = alteracoes.map((a, idx) => {
+                const isAditivo = a.tipo === 'aditivo';
+                const ordinal = ordinals[idx];
+                const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
+                const dataStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+                const badgeClass = isAditivo ? '' : ' apostilamento';
+                const chips = _buildAditivoChips(a);
+                const viewBtn = `<button class="btn-icon-action" onclick="abrirModalAlteracao(${idx}, true)" title="Ver"><i data-lucide="eye" class="inline-icon-sm"></i></button>`;
+                const editBtn = `<button class="btn-icon-action edit aditivo-edit-btn" onclick="abrirModalAlteracao(${idx})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>`;
+                const delBtn = `<button class="btn-icon-action delete aditivo-del-btn" onclick="removerAlteracao(${idx})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
+                const restoreBtn = `<button class="btn-icon-action restore aditivo-restore-btn" onclick="restaurarAlteracao(${idx})" title="Restaurar"><i data-lucide="corner-down-left" class="inline-icon-sm"></i></button>`;
+                // Sempre renderizar todos os botões; visibilidade controlada via CSS/enableEditButtons
+                const actions = a.excluido ? `${viewBtn}${restoreBtn}` : `${viewBtn}${editBtn}${delBtn}`;
+                const excTag = a.excluido ? `<span style="font-size:9px;font-weight:600;color:#94a3b8;letter-spacing:.04em;margin-left:6px;">EXCLUÍDO</span>` : '';
+                const obsHtml = a.obs ? `<div class="aditivo-card-obs" title="${_escHtml(a.obs)}"><i data-lucide="message-square" class="inline-icon-sm" style="width:11px;height:11px;flex-shrink:0;"></i>${_escHtml(a.obs)}</div>` : '';
+                return `<div class="aditivo-card-new${a.excluido ? ' excluido' : ''}">
+                    <div class="aditivo-num-badge${badgeClass}${a.excluido ? ' excluido' : ''}">${ordinal}</div>
+                    <div class="aditivo-card-body">
+                        <div class="aditivo-card-line1">
+                            <span class="aditivo-card-tipo">${tipoLabel}</span>${excTag}
+                            <span class="aditivo-card-date">${dataStr}</span>
+                        </div>
+                        <div class="change-chips">${chips}</div>
+                        ${obsHtml}
+                    </div>
+                    <div class="aditivo-card-actions">${actions}</div>
+                </div>`;
+            }).join('');
+            container.innerHTML = html;
+        }
+
+        // Exibir informações do TED
+        function exibirInformacoesTED() {
+            if (!window.tedSelecionado) return;
+
+            const ted = window.tedSelecionado;
+            const totalRecebido = (ted.recursosGerais || []).reduce((soma, item) => soma + (parseFloat(item.valor) || 0), 0);
+            const valorTedAtual = parseNumber(ted.valorTed) || 0;
+            const saldoTed = valorTedAtual - totalRecebido;
+            const statusObj = getDisplayStatus(ted) || { text: (ted.statusTED || ted.status || 'Em Execução'), origin: 'inferido', vigenciaVencida: false };
+            const statusText = statusObj.text || (ted.statusTED || ted.status || 'Em Execução');
+            const vigenciaVencidaFlag = !!statusObj.vigenciaVencida;
+
+            // Migrar dados legados antes de qualquer leitura de alterações
+            migrarParaAlteracoesUnificadas(ted);
+            const alteracoes = ted.alteracoes || [];
+            const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
+            const totalAditivoMeses = aditivos.filter(a => !a.excluido).reduce((s, a) => s + (a.meses || 0), 0);
+            const vigOrigMeses = parseInt(ted.vigencia) || 0;
+            const vigTotalMeses = vigOrigMeses + totalAditivoMeses;
+
+            // ── HERO ──────────────────────────────────────────────
+            const elCod = document.getElementById('info_tituloTedCodigo');
+            if (elCod) elCod.textContent = ted.numTed ? String(ted.numTed) : '';
+
+            const heroObj = document.getElementById('hero_objetivo');
+            if (heroObj) heroObj.textContent = ted.objetivo || '(sem descrição)';
+
+            const heroSub = document.getElementById('hero_sub');
+            if (heroSub) {
+                const partes = [];
+                if (ted.upResponsavel) partes.push(`UP: ${ted.upResponsavel}`);
+                if (ted.planoTrabalho) partes.push(`PT: ${ted.planoTrabalho}`);
+                heroSub.textContent = partes.join(' · ') || '—';
+            }
+
+            const heroPill = document.getElementById('hero_statusPill');
+            const heroStatusText = document.getElementById('hero_statusText');
+            const stNorm = String(statusText || '').toLowerCase();
+            const isVenc = vigenciaVencidaFlag && /em execu/.test(stNorm);
+            const isFinalizado = /finaliz/.test(stNorm);
+            const isDenunciado = /denunci/.test(stNorm);
+            if (heroPill) {
+                heroPill.className = 'ted-hero-status' + (isVenc ? ' status-vencido' : isFinalizado ? ' status-finalizado' : '');
+            }
+            if (heroStatusText) heroStatusText.textContent = isVenc ? 'Vigência Vencida' : statusText;
+
+            // Countdown
+            const heroCD = document.getElementById('hero_countdown');
+            const heroCDNum = document.getElementById('hero_cd_num');
+            const heroCDLabel = document.getElementById('hero_cd_label');
+            if (heroCD && heroCDNum && heroCDLabel && ted.inicioVigencia && vigTotalMeses > 0) {
+                const dInicio = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                const dFim = new Date(dInicio); dFim.setMonth(dFim.getMonth() + vigTotalMeses);
+                const hoje = new Date(); hoje.setHours(0,0,0,0);
+                const diffMs = dFim - hoje;
+                const diffDias = Math.round(diffMs / 86400000);
+                if (isFinalizado || isDenunciado) {
+                    heroCD.style.display = 'none';
+                } else {
+                    heroCD.style.display = '';
+                    heroCDNum.textContent = Math.abs(diffDias);
+                    heroCDLabel.textContent = diffDias < 0 ? 'dias vencido' : 'dias restantes';
+                }
+            } else if (heroCD) {
+                heroCD.style.display = 'none';
+            }
+
+            // ── KPI CARDS ─────────────────────────────────────────
+            // KPI 1: Valor do TED
+            const elKpiValor = document.getElementById('kpi_valorTed');
+            if (elKpiValor) elKpiValor.innerHTML = `<span class="cur">R$</span>${valorTedAtual.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            const elKpiValorSub = document.getElementById('kpi_valorTedSub');
+            if (elKpiValorSub) {
+                if (aditivos.length > 0) {
+                    const adivosComValor = aditivos.filter(a => typeof a.valorTed !== 'undefined' && a.valorTed !== null);
+                    if (adivosComValor.length) {
+                        const lastA = adivosComValor[adivosComValor.length - 1];
+                        const prevNum = Number(lastA.prevValorTed || 0);
+                        elKpiValorSub.innerHTML = prevNum ? `<span style="text-decoration:line-through;color:#94a3b8;">R$${prevNum.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span> original` : `${aditivos.length} aditivo(s)`;
+                    } else {
+                        elKpiValorSub.textContent = `${aditivos.length} aditivo(s)`;
+                    }
+                } else {
+                    elKpiValorSub.textContent = 'Valor contratado';
+                }
+            }
+
+            // KPI 2: Total recebido
+            const elKpiRecebido = document.getElementById('kpi_recebidoTed');
+            if (elKpiRecebido) elKpiRecebido.innerHTML = `<span class="cur">R$</span>${totalRecebido.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            const pct = valorTedAtual > 0 ? (totalRecebido / valorTedAtual) * 100 : 0;
+            const elBar = document.getElementById('kpi_recebidoBar');
+            if (elBar) elBar.style.width = Math.min(100, pct) + '%';
+            const elKpiPerc = document.getElementById('kpi_recebidoPercentual');
+            if (elKpiPerc) elKpiPerc.textContent = `${pct.toFixed(1).replace('.',',')}% do valor contratado`;
+
+            // KPI 3: Saldo
+            const elKpiSaldo = document.getElementById('kpi_saldoTed');
+            const saldoCard = document.getElementById('kpi_saldoCard');
+            if (elKpiSaldo) {
+                const saldoIcon = saldoCard ? saldoCard.querySelector('.kpi-icon') : null;
+                if (saldoTed < 0) {
+                    elKpiSaldo.innerHTML = `<span class="cur">-R$</span>${Math.abs(saldoTed).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+                    elKpiSaldo.className = 'kpi-val red';
+                    if (saldoCard) { saldoCard.className = 'kpi lead-red'; }
+                    if (saldoIcon) saldoIcon.className = 'kpi-icon b-red';
+                } else {
+                    elKpiSaldo.innerHTML = `<span class="cur">R$</span>${saldoTed.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+                    elKpiSaldo.className = 'kpi-val green';
+                    if (saldoCard) { saldoCard.className = 'kpi lead-green'; }
+                    if (saldoIcon) saldoIcon.className = 'kpi-icon b-green';
+                }
+            }
+            const elKpiSaldoSub = document.getElementById('kpi_saldoSub');
+            if (elKpiSaldoSub) elKpiSaldoSub.textContent = saldoTed < 0 ? 'Valor a pagar excedido' : 'Disponível para receber';
+
+            // KPI 4: Vigência
+            const elVig = document.getElementById('kpi_vigenciaVal');
+            if (elVig) elVig.textContent = vigTotalMeses ? `${vigTotalMeses} meses` : '— meses';
+            const elVigChips = document.getElementById('kpi_vigenciaChips');
+            if (elVigChips) {
+                let chipsHtml = '';
+                if (ted.inicioVigencia) {
+                    const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    chipsHtml += `<span class="kpi-chip blue">${dI.toLocaleDateString('pt-BR')}</span>`;
+                }
+                if (vigTotalMeses && ted.inicioVigencia) {
+                    const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    const dF = new Date(dI); dF.setMonth(dF.getMonth() + vigTotalMeses);
+                    chipsHtml += `<span class="kpi-chip ${totalAditivoMeses > 0 ? 'green' : 'amber'}">${dF.toLocaleDateString('pt-BR')}</span>`;
+                }
+                elVigChips.innerHTML = chipsHtml;
+            }
+
+            // ── TIMELINE DE VIGÊNCIA ──────────────────────────────
+            _renderVigenciaTimeline(ted, alteracoes);
+
+            // ── DADOS CADASTRAIS ──────────────────────────────────
+            const todasAlteracoes = {};
+            alteracoes.forEach(item => {
+                if (item.excluido) return; // alteração excluída não marca campo como alterado
+                if (item.camposAlterados && typeof item.camposAlterados === 'object') {
+                    Object.keys(item.camposAlterados).forEach(key => {
+                        if (!todasAlteracoes[key]) todasAlteracoes[key] = [];
+                        todasAlteracoes[key].push(item.camposAlterados[key]);
+                    });
+                }
+            });
+
+            const exibirCampoComAlteracao = (elementId, valorAtual, campoKey) => {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                if (todasAlteracoes[campoKey] && todasAlteracoes[campoKey].length > 0) {
+                    const primeira = todasAlteracoes[campoKey][0];
+                    const valorOriginal = primeira.de || '(vazio)';
+                    const valorNovo = valorAtual || primeira.para || '-';
+                    el.innerHTML = `<span class="valor-alterado-aditivo"><span class="valor-antigo">${_escHtml(valorOriginal)}</span><span class="valor-novo">${_escHtml(valorNovo)}</span></span>`;
+                    el.title = `Original: ${valorOriginal} → Atual: ${valorNovo}`;
+                } else {
+                    el.textContent = valorAtual || '-';
+                    // Tooltip para valores longos truncados pelo layout
+                    el.title = (valorAtual && String(valorAtual).length > 40) ? String(valorAtual) : '';
+                }
+            };
+
+            exibirCampoComAlteracao('info_planoTrabalho', ted.planoTrabalho, 'planoTrabalho');
+            exibirCampoComAlteracao('info_numTed', ted.numTed, 'numTed');
+            exibirCampoComAlteracao('info_objetivo', ted.objetivo, 'objetivo');
+            exibirCampoComAlteracao('info_codigoPlano', ted.codigoPlano, 'codigoPlano');
+            exibirCampoComAlteracao('info_numTedSiafi', ted.numTedSiafi, 'numTedSiafi');
+            exibirCampoComAlteracao('info_notaSistema', ted.notaSistema, 'notaSistema');
+            exibirCampoComAlteracao('info_upResponsavel', ted.upResponsavel, 'upResponsavel');
+            exibirCampoComAlteracao('info_egExecutora', ted.ugExecutora || ted.egExecutora, 'ugExecutora');
+            exibirCampoComAlteracao('info_unidadeDesc', ted.unidadeDesc, 'unidadeDesc');
+            exibirCampoComAlteracao('info_ugDesc', ted.ugDesc, 'ugDesc');
+
+            document.getElementById('info_inicioVigencia').textContent = _fmtData(ted.inicioVigencia);
+            document.getElementById('info_primeiraDescentralizacao').textContent = _fmtData(ted.primeiraDescentralizacao);
+
+            if (totalAditivoMeses > 0) {
+                const vigOrig = Number(ted.vigencia) || 0;
+                document.getElementById('info_vigencia').innerHTML =
+                    `<span class="vig-orig-tachado">${vigOrig}m</span><span class="vig-novo-valor">${vigTotalMeses}m</span>`;
+                let novaDataFim = '';
+                if (ted.inicioVigencia) {
+                    const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    if (!isNaN(dI.getTime())) {
+                        const dF = new Date(dI); dF.setMonth(dF.getMonth() + vigTotalMeses);
+                        novaDataFim = dF.toLocaleDateString('pt-BR');
+                    }
+                }
+                document.getElementById('info_fimVigencia').innerHTML =
+                    `<span class="vig-orig-tachado">${_fmtData(ted.fimVigencia)}</span><span class="vig-novo-valor">${novaDataFim}</span>`;
+            } else {
+                document.getElementById('info_vigencia').textContent = ted.vigencia ? `${ted.vigencia}m` : '-';
+                document.getElementById('info_fimVigencia').textContent = _fmtData(ted.fimVigencia);
+            }
+
+            // Exibir valor do TED com aditivo (campo legado info_valorTed — pode não existir no novo layout)
+            const infoValorEl = document.getElementById('info_valorTed');
+            if (infoValorEl) {
+                const adivosComValorLeg = aditivos.filter(a => !a.excluido && typeof a.valorTed !== 'undefined' && a.valorTed !== null);
+                if (adivosComValorLeg.length) {
+                    const lastA = adivosComValorLeg[adivosComValorLeg.length - 1];
+                    const pN = Number(lastA.prevValorTed || 0); const nN = Number(lastA.valorTed || 0);
+                    if (pN !== nN && pN) {
+                        infoValorEl.innerHTML = `<span class="valor-original-tachado">${pN.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span><span class="valor-aditivo-novo">${nN.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`;
+                    } else { infoValorEl.textContent = nN ? nN.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-'; }
+                } else { infoValorEl.textContent = ted.valorTed ? Number(ted.valorTed).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-'; }
+            }
+
+            // ── ADITIVOS CARDS ───────────────────────────────────
+            const nAditivos = aditivos.filter(a => !a.excluido).length;
+            const nApost = alteracoes.filter(a => a.tipo === 'apostilamento' && !a.excluido).length;
+            const adCountEl = document.getElementById('aditivosCounter');
+            if (adCountEl) {
+                const parts = [];
+                if (nAditivos > 0) parts.push(`${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} (+${totalAditivoMeses}m)`);
+                if (nApost > 0) parts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
+                adCountEl.textContent = parts.join(' · ');
+            }
+            const infoAlt = document.getElementById('info_alteracoesHistorico');
+            _renderAditivoCards(alteracoes, infoAlt);
+
+            // campos hidden compatibilidade
+            const infoAltResumo = document.getElementById('info_alteracoesResumo');
+            if (infoAltResumo) {
+                const rParts = [];
+                if (nAditivos > 0) rParts.push(`${nAditivos} aditivo${nAditivos > 1 ? 's' : ''} (+${totalAditivoMeses} meses)`);
+                if (nApost > 0) rParts.push(`${nApost} apostilamento${nApost > 1 ? 's' : ''}`);
+                infoAltResumo.textContent = rParts.length ? `Total: ${rParts.join(', ')}` : '';
+            }
+
+            // ── SITUAÇÃO DO TED (condicional) ─────────────────────
+            const temSituacao = !!(ted.situacaoTED && (ted.situacaoTED === 'finalizado' || ted.situacaoTED === 'denunciado'));
+            const situacaoSection = document.getElementById('situacaoTEDSection');
+            const situacaoCard = document.getElementById('situacaoTEDCard');
+            if (situacaoSection) situacaoSection.style.display = temSituacao ? '' : 'none';
+            if (situacaoCard) {
+                situacaoCard.className = 'situacao-ted-card' + (ted.situacaoTED === 'finalizado' ? ' finalizado' : ted.situacaoTED === 'denunciado' ? ' denunciado' : '');
+            }
+            document.getElementById('info_situacaoTED').textContent = ted.situacaoTED === 'finalizado' ? 'TED Finalizado' : (ted.situacaoTED === 'denunciado' ? 'TED Denunciado' : '-');
+            document.getElementById('info_dataEntregaDenuncia').textContent = _fmtData(ted.dataEntregaDenuncia);
+            document.getElementById('info_prazoRelatorio').textContent = _fmtData(ted.prazoRelatorio);
+            if (ted.prazoRelatorio) {
+                try { mostrarAvisoPrazo('info_prazoRelatorio', new Date(ted.prazoRelatorio + 'T00:00:00')); } catch(e) {}
+            }
+            document.getElementById('info_dataEntregaRelatorio').textContent = _fmtData(ted.dataEntregaRelatorio);
+            const statusInfoObj = getDisplayStatus(ted) || { text: '-', origin: 'inferido', vigenciaVencida: false };
+            document.getElementById('info_statusTED').textContent = statusInfoObj.text || '-';
+
+            // ── CAMPOS DE EDIÇÃO ──────────────────────────────────
+            document.getElementById('edit_planoTrabalho').value = ted.planoTrabalho || '';
+            document.getElementById('edit_numTed').value = ted.numTed || '';
+            document.getElementById('edit_objetivo').value = ted.objetivo || '';
+            document.getElementById('edit_codigoPlano').value = ted.codigoPlano || '';
+            document.getElementById('edit_numTedSiafi').value = ted.numTedSiafi || '';
+            document.getElementById('edit_notaSistema').value = ted.notaSistema || '';
+            document.getElementById('edit_upResponsavel').value = ted.upResponsavel || '';
+            document.getElementById('edit_egExecutora').value = ted.egExecutora || '';
+            document.getElementById('edit_unidadeDesc').value = ted.unidadeDesc || '';
+            document.getElementById('edit_ugDesc').value = ted.ugDesc || '';
+            document.getElementById('edit_inicioVigencia').value = _fmtDataInput(ted.inicioVigencia);
+            document.getElementById('edit_vigencia').value = ted.vigencia || '';
+            document.getElementById('edit_fimVigencia').value = _fmtDataInput(ted.fimVigencia);
+            document.getElementById('edit_primeiraDescentralizacao').value = _fmtDataInput(ted.primeiraDescentralizacao);
+            document.getElementById('edit_situacaoTED').value = ted.situacaoTED || '';
+            document.getElementById('edit_dataEntregaDenuncia').value = _fmtDataInput(ted.dataEntregaDenuncia) || '';
+            document.getElementById('edit_prazoRelatorio').value = _fmtDataInput(ted.prazoRelatorio) || '';
+            document.getElementById('edit_dataEntregaRelatorio').value = _fmtDataInput(ted.dataEntregaRelatorio) || '';
+            document.getElementById('edit_statusTED').value = ted.statusTED || '';
+
+            // Permissão no botão de adicionar aditivo
+            try {
+                const btnAddAlt = document.querySelector('.btn-add-aditivo');
+                if (btnAddAlt) {
+                    btnAddAlt.disabled = !!window._readOnlyMode;
+                    btnAddAlt.style.opacity = window._readOnlyMode ? '0.5' : '1';
+                    btnAddAlt.style.pointerEvents = window._readOnlyMode ? 'none' : 'auto';
+                    btnAddAlt.title = window._readOnlyMode ? 'Faça login como Admin para adicionar aditivo/apostilamento' : '';
+                }
+            } catch(e) {}
+
+            try { calcularPrazoRelatorio(); } catch(e) {}
+            try { atualizarStatusPorEntregaRelatorio(); } catch(e) {}
+
+            try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) {}
+        }
+
+        // Variável para backup dos dados originais
+        let tedBackup = null;
+
+        // Alternar modo de edição
+        function toggleEditarInfo() {
+            if (!window.tedSelecionado) return;
+
+            tedBackup = JSON.parse(JSON.stringify(window.tedSelecionado));
+
+            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'codigoPlano', 'numTedSiafi',
+                           'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc',
+                           'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao',
+                           'situacaoTED', 'dataEntregaDenuncia', 'prazoRelatorio', 'dataEntregaRelatorio', 'statusTED'];
+
+            campos.forEach(campo => {
+                const infoEl = document.getElementById(`info_${campo}`);
+                const editEl = document.getElementById(`edit_${campo}`);
+                if (infoEl) infoEl.style.display = 'none';
+                if (editEl) editEl.style.display = 'block';
+            });
+
+            // Sempre mostrar a seção de situação em modo edição
+            const sitSection = document.getElementById('situacaoTEDSection');
+            if (sitSection) sitSection.style.display = '';
+
+            document.getElementById('btnEditarInfo').style.display = 'none';
+            document.getElementById('btnSalvarInfo').style.display = 'block';
+            document.getElementById('btnCancelarInfo').style.display = 'block';
+
+            calcularFimVigenciaEdit();
+        }
+
+        // Salvar edição
+        function salvarEdicaoInfo() {
+            if (!window.tedSelecionado) return;
+            
+            // Atualizar dados do TED
+            window.tedSelecionado.planoTrabalho = document.getElementById('edit_planoTrabalho').value;
+            window.tedSelecionado.numTed = document.getElementById('edit_numTed').value;
+            window.tedSelecionado.objetivo = document.getElementById('edit_objetivo').value;
+            // Valor do TED é sempre derivado do cadastro de objetos
+            window.tedSelecionado.valorTed = calcularTotalObjetosValor(window.tedSelecionado);
+            
+            window.tedSelecionado.codigoPlano = document.getElementById('edit_codigoPlano').value;
+            window.tedSelecionado.numTedSiafi = document.getElementById('edit_numTedSiafi').value;
+            window.tedSelecionado.notaSistema = document.getElementById('edit_notaSistema').value;
+            
+            window.tedSelecionado.upResponsavel = document.getElementById('edit_upResponsavel').value;
+            const _eg = document.getElementById('edit_egExecutora').value;
+            window.tedSelecionado.egExecutora = _eg;
+            // Manter também a propriedade UG executora para consistência
+            window.tedSelecionado.ugExecutora = _eg;
+            window.tedSelecionado.unidadeDesc = document.getElementById('edit_unidadeDesc').value;
+            window.tedSelecionado.ugDesc = document.getElementById('edit_ugDesc').value;
+            
+            window.tedSelecionado.inicioVigencia = document.getElementById('edit_inicioVigencia').value;
+            window.tedSelecionado.vigencia = document.getElementById('edit_vigencia').value;
+            // Recalcular Fim de Vigência automaticamente
+            calcularFimVigenciaEdit();
+            window.tedSelecionado.fimVigencia = document.getElementById('edit_fimVigencia').value;
+            window.tedSelecionado.primeiraDescentralizacao = document.getElementById('edit_primeiraDescentralizacao').value;
+            // Novos campos
+            window.tedSelecionado.situacaoTED = document.getElementById('edit_situacaoTED').value;
+            window.tedSelecionado.dataEntregaDenuncia = document.getElementById('edit_dataEntregaDenuncia').value;
+            window.tedSelecionado.prazoRelatorio = document.getElementById('edit_prazoRelatorio').value;
+            window.tedSelecionado.dataEntregaRelatorio = document.getElementById('edit_dataEntregaRelatorio').value;
+            window.tedSelecionado.statusTED = document.getElementById('edit_statusTED').value;
+            
+            // Recalcular meses dependentes da 1ª descentralização
+            recalcularMesesBaseadosEmDescentralizacao();
+            
+            // Salvar no localStorage
+            salvarDados();
+            
+            // Atualizar tabelas em cascata
+            atualizarTabelasEmCascata('ted');
+            
+            // Atualizar lista e dashboard
+            atualizarListaTEDs();
+            atualizarDashboard();
+            
+            // Voltar ao modo visualização
+            sairModoEdicao();
+            
+            // Atualizar visualização
+            exibirInformacoesTED();
+            
+            // Limpar backup
+            tedBackup = null;
+
+            // Auditoria
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'editar_info', null, { campo: 'informações gerais' }); } catch(e) {}
+
+            showToast('Informações do TED atualizadas com sucesso!', 'success');
+        }
+
+        // Cancelar edição
+        function cancelarEdicaoInfo() {
+            if (!window.tedSelecionado || !tedBackup) return;
+            
+            // Restaurar dados do backup
+            Object.assign(window.tedSelecionado, tedBackup);
+            
+            // Voltar ao modo visualização
+            sairModoEdicao();
+            
+            // Atualizar visualização
+            exibirInformacoesTED();
+            
+            // Limpar backup
+            tedBackup = null;
+        }
+
+        // Sair do modo de edição
+        function sairModoEdicao() {
+            const campos = ['planoTrabalho', 'numTed', 'objetivo', 'codigoPlano', 'numTedSiafi',
+                           'notaSistema', 'upResponsavel', 'egExecutora', 'unidadeDesc', 'ugDesc',
+                           'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao',
+                           'situacaoTED', 'dataEntregaDenuncia', 'prazoRelatorio', 'dataEntregaRelatorio', 'statusTED'];
+
+            campos.forEach(campo => {
+                const infoEl = document.getElementById(`info_${campo}`);
+                const editEl = document.getElementById(`edit_${campo}`);
+                if (infoEl) infoEl.style.display = 'block';
+                if (editEl) editEl.style.display = 'none';
+            });
+
+            document.getElementById('btnEditarInfo').style.display = 'block';
+            document.getElementById('btnSalvarInfo').style.display = 'none';
+            document.getElementById('btnCancelarInfo').style.display = 'none';
+        }
+
+        // Calcular prazo do relatório com base na situação e data de entrega/denúncia
+        function calcularPrazoRelatorio() {
+            const situacaoEl = document.getElementById('edit_situacaoTED');
+            const dataEl = document.getElementById('edit_dataEntregaDenuncia');
+            const prazoEl = document.getElementById('edit_prazoRelatorio');
+            const infoPrazo = document.getElementById('info_prazoRelatorio');
+            if (!situacaoEl || !dataEl) return;
+            const situacao = situacaoEl.value;
+            const data = dataEl.value;
+            if (!situacao || !data) {
+                if (prazoEl) prazoEl.value = '';
+                if (infoPrazo) infoPrazo.textContent = '';
+                return;
+            }
+            const addDays = situacao === 'finalizado' ? 120 : (situacao === 'denunciado' ? 30 : 0);
+            const d = new Date(data + 'T00:00:00');
+            d.setDate(d.getDate() + addDays);
+            const iso = d.toISOString().split('T')[0];
+            if (prazoEl) prazoEl.value = iso;
+            if (infoPrazo) infoPrazo.textContent = d.toLocaleDateString('pt-BR');
+            mostrarAvisoPrazo('info_prazoRelatorio', d);
+        }
+
+        // Atualizar status com base na seleção e na data da entrega do relatório
+        function atualizarStatusPorEntregaRelatorio() {
+            const situacaoEl = document.getElementById('edit_situacaoTED');
+            const dataEntregaRelEl = document.getElementById('edit_dataEntregaRelatorio');
+            const infoStatus = document.getElementById('info_statusTED');
+            const editStatus = document.getElementById('edit_statusTED');
+            if (!infoStatus && !editStatus) return;
+            const situacao = situacaoEl ? situacaoEl.value : '';
+            const dataEntregaRel = dataEntregaRelEl ? dataEntregaRelEl.value : '';
+            let status = 'Em Execução';
+            if (dataEntregaRel) {
+                status = 'TED Finalizado';
+            } else if (situacao === 'finalizado' || situacao === 'denunciado') {
+                status = 'Relatório Final';
+            }
+            if (infoStatus) infoStatus.textContent = status;
+            if (editStatus) editStatus.value = status;
+            // also show warning on prazo if needed
+            const prazoTextEl = document.getElementById('info_prazoRelatorio');
+            if (prazoTextEl) {
+                const prazoVal = document.getElementById('edit_prazoRelatorio') ? document.getElementById('edit_prazoRelatorio').value : '';
+                if (prazoVal) {
+                    mostrarAvisoPrazo('info_prazoRelatorio', new Date(prazoVal + 'T00:00:00'));
+                }
+            }
+        }
+
+        // Mostrar aviso visual se prazo passou
+        function mostrarAvisoPrazo(infoElementId, prazoDate) {
+            const el = document.getElementById(infoElementId);
+            if (!el) return;
+            const hoje = new Date();
+            // normalize dates to midnight
+            const p = new Date(prazoDate.getFullYear(), prazoDate.getMonth(), prazoDate.getDate());
+            const h = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            if (p < h) {
+                el.innerHTML = `${p.toLocaleDateString('pt-BR')} <span style="color:#ef4444; font-weight:700; margin-left:0.5rem;">(Vencido)</span>`;
+            } else {
+                el.textContent = p.toLocaleDateString('pt-BR');
+            }
+        }
+
+        // Versões para o formulário de criação
+        function calcularPrazoRelatorioCreate() {
+            const situacaoEl = document.getElementById('create_situacaoTED');
+            const dataEl = document.getElementById('create_dataEntregaDenuncia');
+            const prazoEl = document.getElementById('create_prazoRelatorio');
+            const statusEl = document.getElementById('create_statusTED');
+            if (!situacaoEl || !dataEl) return;
+            const situacao = situacaoEl.value;
+            const data = dataEl.value;
+            if (!situacao || !data) {
+                if (prazoEl) prazoEl.value = '';
+                if (statusEl) statusEl.value = '';
+                return;
+            }
+            const addDays = situacao === 'finalizado' ? 120 : (situacao === 'denunciado' ? 30 : 0);
+            const d = new Date(data + 'T00:00:00');
+            d.setDate(d.getDate() + addDays);
+            const iso = d.toISOString().split('T')[0];
+            if (prazoEl) prazoEl.value = iso;
+            if (statusEl) statusEl.value = document.getElementById('create_dataEntregaRelatorio') && document.getElementById('create_dataEntregaRelatorio').value ? 'TED Finalizado' : (situacao ? 'Relatório Final' : 'Em Execução');
+            // visual cue in creation form: if prazo passed, add a small red helper text under the input
+            const infoEl = document.getElementById('create_prazo_helper');
+            if (infoEl) {
+                const hoje = new Date();
+                const p = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const h = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+                if (p < h) infoEl.innerHTML = `<span style="color:#ef4444;font-weight:700">Prazo vencido</span>`; else infoEl.textContent = '';
+            }
+        }
+
+        function atualizarStatusCreate() {
+            const situacaoEl = document.getElementById('create_situacaoTED');
+            const dataEntregaRelEl = document.getElementById('create_dataEntregaRelatorio');
+            const statusEl = document.getElementById('create_statusTED');
+            if (!statusEl) return;
+            const situacao = situacaoEl ? situacaoEl.value : '';
+            const dataEntregaRel = dataEntregaRelEl ? dataEntregaRelEl.value : '';
+            let status = 'Em Execução';
+            if (dataEntregaRel) status = 'TED Finalizado';
+            else if (situacao === 'finalizado' || situacao === 'denunciado') status = 'Relatório Final';
+            statusEl.value = status;
+        }
+
+        // OBJETOS
+        //"?"? Modal Cadastro de Objetos"?"?
+        window._editandoObjetoId = null;
+
+        function abrirModalObjeto(editId) {
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalObjetoBackdrop');
+            const titulo = document.getElementById('modalObjetoTitulo');
+            const errEl = document.getElementById('modalObjetoError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            document.getElementById('modalObjetoNome').value = '';
+            document.getElementById('modalObjetoQtde').value = '';
+            document.getElementById('modalObjetoValor').value = '';
+            window._editandoObjetoId = null;
+
+            if (editId) {
+                const obj = (window.tedSelecionado.objetos || []).find(o => o.id === editId);
+                if (obj) {
+                    window._editandoObjetoId = editId;
+                    titulo.textContent = '🔑 Editar Objeto';
+                    document.getElementById('modalObjetoNome').value = obj.objeto;
+                    document.getElementById('modalObjetoQtde').value = formatarMilharesPtBR(Number(obj.qtde));
+                    const valUnit = Number(obj.valorUnitario);
+                    const valUnitCents = Math.round(valUnit * 100);
+                    const valUnitUnits = Math.floor(valUnitCents / 100);
+                    const valUnitRemainder = valUnitCents % 100;
+                    document.getElementById('modalObjetoValor').value = formatarMilharesPtBR(valUnitUnits) + ',' + String(valUnitRemainder).padStart(2, '0');
+                }
+            } else {
+                titulo.textContent = '📋 Novo Objeto';
+            }
+
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalObjetoNome').focus(), 80);
+        }
+
+        function fecharModalObjeto() {
+            const backdrop = document.getElementById('modalObjetoBackdrop');
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
+            window._editandoObjetoId = null;
+        }
+
+        function salvarModalObjeto() {
+            const errEl = document.getElementById('modalObjetoError');
+            const objeto = document.getElementById('modalObjetoNome').value.trim();
+            const qtde = parseNumber(document.getElementById('modalObjetoQtde').value);
+            const valorUnitario = parseNumber(document.getElementById('modalObjetoValor').value);
+
+            if (!objeto) { errEl.textContent = '⚠️ Preencha o nome do objeto!'; errEl.classList.add('open'); return; }
+            if (isNaN(qtde) || qtde <= 0) { errEl.textContent = '⚠️ Quantidade deve ser maior que zero!'; errEl.classList.add('open'); return; }
+            if (isNaN(valorUnitario) || valorUnitario <= 0) { errEl.textContent = '⚠️ Valor unitário deve ser maior que zero!'; errEl.classList.add('open'); return; }
+
+            if (!window.tedSelecionado.objetos) window.tedSelecionado.objetos = [];
+
+            if (window._editandoObjetoId) {
+                window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== window._editandoObjetoId);
+            }
+
+            window.tedSelecionado.objetos.push({
+                id: window._editandoObjetoId || Date.now(),
+                objeto: objeto,
+                qtde: qtde,
+                valorUnitario: valorUnitario,
+                valorTotal: valorUnitario * qtde
+            });
+
+            atualizarValorTedFromObjetos(window.tedSelecionado);
+            salvarDados();
+            atualizarTabelasEmCascata('objetos');
+            verificarConsistenciaQtdObjetoFisico(objeto, qtde);
+            fecharModalObjeto();
+        }
+
+        // Manter compatibilidade: adicionarObjeto abre o modal
+        function adicionarObjeto() { abrirModalObjeto(); }
+        function editarObjeto(id) { abrirModalObjeto(id); }
+
+        function removerObjeto(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.objetos = window.tedSelecionado.objetos.filter(o => o.id !== id);
+            atualizarValorTedFromObjetos(window.tedSelecionado);
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            atualizarTabelasEmCascata('objetos');
+        }
+
+        // Verificar consistência entre quantidade do Objeto e soma das quantidades no Cadastro Físico
+        function verificarConsistenciaQtdObjetoFisico(nomeObjeto, qtdeObjeto) {
+            if (!window.tedSelecionado || !window.tedSelecionado.fisicos) return;
+            const somaFisico = window.tedSelecionado.fisicos
+                .filter(f => f.objeto === nomeObjeto)
+                .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+            if (somaFisico > (parseNumber(qtdeObjeto) || 0)) {
+                showToast(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${nomeObjeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades no Cadastro Físico para manter a consistência.`, 'warning');
+            }
+        }
+
+        // Verificar consistência de todos os objetos com o Cadastro Físico (chamada após atualizar tabelas)
+        function verificarTodasConsistenciasObjetoFisico() {
+            if (!window.tedSelecionado || !window.tedSelecionado.objetos) return;
+            const alertas = [];
+            window.tedSelecionado.objetos.forEach(obj => {
+                const somaFisico = (window.tedSelecionado.fisicos || [])
+                    .filter(f => f.objeto === obj.objeto)
+                    .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+                const qtdeObj = parseNumber(obj.qtde) || 0;
+                if (somaFisico > qtdeObj) {
+                    alertas.push(`→ "${obj.objeto}": Físico = ${formatNumber(somaFisico)} > Objeto = ${formatNumber(qtdeObj)}`);
+                }
+            });
+            return alertas;
+        }
+
+        function atualizarTabelaObjetos() {
+            const container = document.getElementById('tabelaObjetos');
+            if (!container) return;
+
+            const objetos = (window.tedSelecionado && window.tedSelecionado.objetos) || [];
+            if (!window.tedSelecionado || objetos.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#94a3b8;font-size:12.5px;">Nenhum objeto cadastrado</div>';
+                const tfootEl = document.getElementById('obj_tfoot');
+                if (tfootEl) tfootEl.style.display = 'none';
+                const totalCardEl = document.getElementById('obj_totalCard');
+                if (totalCardEl) totalCardEl.textContent = 'R$ 0,00';
+                try { const c = document.getElementById('count-objetos'); if (c) c.textContent = '0'; } catch(e) {}
+                return;
+            }
+
+            // Obter mapa de alterações de aditivos para destacar linhas
+            const altObjetos = obterAlteracoesTabelaAditivos('objetos');
+            const tabDefObj = ADITIVO_TABELAS_CLONE.find(t => t.key === 'objetos');
+            const { modMap: modMapObj, addSet: addSetObj } = criarMapaAlteracoes(altObjetos, tabDefObj);
+            const matchKeyObj = (item) => tabDefObj ? tabDefObj.matchFields.map(f => String(item[f] || '')).join('||') : '';
+            const excludedObjIds = getExcludedItemIds('objetos');
+
+            let totalValor = 0;
+            objetos.forEach(obj => {
+                const qt = parseNumber(obj.qtde); const vu = parseNumber(obj.valorUnitario);
+                const vt = qt * vu;
+                // Só escreve no dado quando o valor derivado realmente difere: mutar em toda
+                // renderização deixava o TED "sujo" sem edição do usuário, e o autosave
+                // acabava gravando esta cópia por cima da de outro usuário (mesma causa do
+                // problema em atualizarValorTedFromObjetos).
+                if (Number(obj.valorTotal) !== Number(vt)) obj.valorTotal = vt;
+                if (!isItemExcluded(obj, excludedObjIds, 'objetos')) totalValor += vt;
+            });
+
+            const rowsHtml = objetos.map(obj => {
+                const qt = parseNumber(obj.qtde);
+                const vu = parseNumber(obj.valorUnitario);
+                const vt = obj.valorTotal || 0;
+                const sharePct = totalValor > 0 ? Math.min(100, (vt / totalValor) * 100) : 0;
+
+                const mKey = matchKeyObj(obj);
+                const mods = modMapObj[mKey];
+                const isAdded = addSetObj.has(mKey);
+                const isExcluded = isItemExcluded(obj, excludedObjIds, 'objetos');
+
+                // consistência com Cadastro Físico
+                const somaFisico = (window.tedSelecionado.fisicos || [])
+                    .filter(f => f.objeto === obj.objeto)
+                    .reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+                const alertaFisico = somaFisico > qt
+                    ? `<span title="Soma no Cad. Físico (${formatNumber(somaFisico)}) excede a qtde do Objeto (${formatNumber(qt)})" style="color:#ef4444;cursor:help;margin-left:4px;">⚠️</span>`
+                    : '';
+
+                const qtdeHtml = (mods && mods.qtde ? formatarCelulaAlterada(qt, mods.qtde.de, 'number') : formatNumber(qt)) + alertaFisico;
+                const vuHtml = mods && mods.valorUnitario
+                    ? formatarCelulaAlterada(vu.toLocaleString('pt-BR',{minimumFractionDigits:2}), Number(mods.valorUnitario.de||0).toLocaleString('pt-BR',{minimumFractionDigits:2}), '')
+                    : vu.toLocaleString('pt-BR',{minimumFractionDigits:2});
+                const vtHtml = mods && mods.valorTotal
+                    ? formatarCelulaAlterada(vt.toLocaleString('pt-BR',{minimumFractionDigits:2}), Number(mods.valorTotal.de||0).toLocaleString('pt-BR',{minimumFractionDigits:2}), '')
+                    : vt.toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+                const editBtn = !window._readOnlyMode ? `<button class="btn-icon-action edit" onclick="editarObjeto(${obj.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>` : '';
+                const delBtn = !window._readOnlyMode ? `<button class="btn-icon-action delete" onclick="removerObjeto(${obj.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>` : '';
+
+                return `<div class="obj-row-new${isExcluded?' linha-excluida-aditivo':isAdded?' linha-adicionada-aditivo':''}">
+                    <div>
+                        <div class="obj-name-new">${obj.objeto || '—'}</div>
+                        <div class="obj-share-bar-new"><div class="obj-share-fill-new" style="width:${sharePct.toFixed(1)}%;"></div></div>
+                        <div class="obj-sub-new">${sharePct.toFixed(1)}% do TED</div>
+                    </div>
+                    <div class="obj-num-new">${qtdeHtml} <span style="color:#cbd5e1;font-size:10px;">un</span></div>
+                    <div class="obj-num-new">R$ ${vuHtml}</div>
+                    <div class="obj-total-new">R$ ${vtHtml}</div>
+                    <div class="obj-actions-new">${editBtn}${delBtn}</div>
+                </div>`;
+            }).join('');
+
+            // cabeçalho de colunas (mesmo grid: 1fr 110px 150px 160px 56px)
+            const headerHtml = `<div class="obj-row-new" style="background:#F7F9FC;border-bottom:1px solid rgba(0,0,0,0.07);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;">
+                <div>Objeto</div>
+                <div style="text-align:right;">Qtde</div>
+                <div style="text-align:right;">V. Unitário</div>
+                <div style="text-align:right;">V. Total</div>
+                <div></div>
+            </div>`;
+            container.innerHTML = headerHtml + rowsHtml;
+
+            // tfoot — mesmo grid, total alinhado na coluna V. Total
+            const tfootEl = document.getElementById('obj_tfoot');
+            const tfootCount = document.getElementById('obj_tfootCount');
+            const tfootTotal = document.getElementById('obj_tfootTotal');
+            if (tfootEl) tfootEl.style.display = '';
+            if (tfootCount) tfootCount.textContent = `${objetos.length} objeto${objetos.length !== 1 ? 's' : ''}`;
+            if (tfootTotal) tfootTotal.textContent = `R$ ${totalValor.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+
+            // atualizar card header total e badge
+            const totalCardEl = document.getElementById('obj_totalCard');
+            if (totalCardEl) totalCardEl.textContent = `R$ ${totalValor.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            try { const c = document.getElementById('count-objetos'); if (c) c.textContent = String(objetos.length); } catch(e) {}
+
+            initLucideIcons();
+        }
+
+        // ===== PLANO DE TRABALHO (lista global, independente de TED) =====
+        // Numeração automática do P Trab: nnn/aaaa-DRCOM/IMBEL, reiniciando em 001 a cada ano.
+        function calcularProximoNumeroPTrab(ano, ignorarId) {
+            const itens = (dados.planosTrabalho || []).filter(p => p.id !== ignorarId);
+            let maxNum = 0;
+            itens.forEach(p => {
+                if (String(p.ano) !== String(ano)) return;
+                const m = String(p.pTrab || '').match(/^(\d+)\//);
+                if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10));
+            });
+            return maxNum + 1;
+        }
+
+        function gerarPTrab(ano, numero) {
+            if (!ano) return '';
+            return String(numero).padStart(3, '0') + '/' + ano + '-DRCOM/IMBEL';
+        }
+
+        function atualizarPreviewPTrab() {
+            const dataVal = document.getElementById('modalPlanoData').value;
+            const pTrabInput = document.getElementById('modalPlanoPTrab');
+            if (!dataVal) { pTrabInput.value = ''; return; }
+            const ano = dataVal.split('-')[0];
+            // Se estamos editando e o ano não mudou, mantém o número já atribuído (não recalcula).
+            if (window._editandoPlanoTrabalhoId) {
+                const item = (dados.planosTrabalho || []).find(p => p.id === window._editandoPlanoTrabalhoId);
+                if (item && String(item.ano) === String(ano) && item.pTrab) {
+                    pTrabInput.value = item.pTrab;
+                    return;
+                }
+            }
+            const numero = calcularProximoNumeroPTrab(ano, window._editandoPlanoTrabalhoId);
+            pTrabInput.value = gerarPTrab(ano, numero);
+        }
+
+        function abrirModalPlanoTrabalho(editId) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalPlanoTrabalhoBackdrop');
+            const titulo = document.getElementById('modalPlanoTrabalhoTitulo');
+            const errEl = document.getElementById('modalPlanoTrabalhoError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            document.getElementById('modalPlanoData').value = '';
+            document.getElementById('modalPlanoPTrab').value = '';
+            document.getElementById('modalPlanoCliente').value = '';
+            document.getElementById('modalPlanoObjeto').value = '';
+            document.getElementById('modalPlanoQtde').value = '';
+            document.getElementById('modalPlanoDocSolicitacao').value = '';
+            document.getElementById('modalPlanoTed').value = '';
+            window._editandoPlanoTrabalhoId = null;
+
+            if (editId) {
+                const item = (dados.planosTrabalho || []).find(p => p.id === editId);
+                if (item) {
+                    window._editandoPlanoTrabalhoId = editId;
+                    titulo.textContent = '🔑 Editar Registro';
+                    document.getElementById('modalPlanoData').value = item.data || '';
+                    document.getElementById('modalPlanoPTrab').value = item.pTrab || '';
+                    document.getElementById('modalPlanoCliente').value = item.cliente || '';
+                    document.getElementById('modalPlanoObjeto').value = item.objeto || '';
+                    document.getElementById('modalPlanoQtde').value = item.qtde || '';
+                    document.getElementById('modalPlanoDocSolicitacao').value = item.docSolicitacao || '';
+                    document.getElementById('modalPlanoTed').value = item.ted || '';
+                }
+            } else {
+                titulo.textContent = '📋 Novo Registro';
+            }
+
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalPlanoData').focus(), 80);
+        }
+
+        function fecharModalPlanoTrabalho() {
+            const backdrop = document.getElementById('modalPlanoTrabalhoBackdrop');
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
+            window._editandoPlanoTrabalhoId = null;
+        }
+
+        function salvarModalPlanoTrabalho() {
+            if (!dados.planosTrabalho) dados.planosTrabalho = [];
+            if (!dados.proxiIdPlano) dados.proxiIdPlano = 1;
+            if (!dados.proxiNrOrdemPlano) dados.proxiNrOrdemPlano = 1;
+
+            const data = document.getElementById('modalPlanoData').value;
+            const ano = data ? data.split('-')[0] : '';
+            const editId = window._editandoPlanoTrabalhoId;
+            const itemAnterior = editId ? (dados.planosTrabalho || []).find(p => p.id === editId) : null;
+
+            // P Trab: mantém o já atribuído se o ano não mudou; senão gera novo número para o ano.
+            let pTrab = '';
+            if (itemAnterior && String(itemAnterior.ano) === String(ano)) {
+                pTrab = itemAnterior.pTrab || '';
+            } else if (ano) {
+                const numero = calcularProximoNumeroPTrab(ano, editId);
+                pTrab = gerarPTrab(ano, numero);
+            }
+
+            const item = {
+                id: editId || dados.proxiIdPlano++,
+                nrOrdem: itemAnterior ? itemAnterior.nrOrdem : dados.proxiNrOrdemPlano++,
+                data: data,
+                ano: ano,
+                pTrab: pTrab,
+                cliente: document.getElementById('modalPlanoCliente').value.trim(),
+                objeto: document.getElementById('modalPlanoObjeto').value.trim(),
+                qtde: document.getElementById('modalPlanoQtde').value.trim(),
+                docSolicitacao: document.getElementById('modalPlanoDocSolicitacao').value.trim(),
+                ted: document.getElementById('modalPlanoTed').value.trim()
+            };
+
+            if (editId) {
+                dados.planosTrabalho = dados.planosTrabalho.filter(p => p.id !== editId);
+            }
+            dados.planosTrabalho.push(item);
+
+            try { salvarDados(); } catch(e) { console.warn('salvarDados falhou', e); }
+            atualizarTabelaPlanoTrabalho();
+            fecharModalPlanoTrabalho();
+        }
+
+        function editarPlanoTrabalho(id) { abrirModalPlanoTrabalho(id); }
+
+        function removerPlanoTrabalho(id) {
+            if (!confirm('Remover este registro do Plano de Trabalho?')) return;
+            dados.planosTrabalho = (dados.planosTrabalho || []).filter(p => p.id !== id);
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            atualizarTabelaPlanoTrabalho();
+        }
+
+        function formatarDataBR(dataIso) {
+            if (!dataIso) return '';
+            const partes = String(dataIso).split('-');
+            if (partes.length !== 3) return dataIso;
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        // Ano de um registro do Plano de Trabalho.
+        // O nº do P Trab ("001/2024-DRCOM/IMBEL") é a fonte mais confiável — o campo `data`
+        // costuma vir com placeholder (01/01 do ano). Cai para `data` quando não houver pTrab.
+        function _anoPlanoTrabalho(item) {
+            const m = String(item && item.pTrab || '').match(/\/(\d{4})/);
+            if (m) return m[1];
+            const d = String(item && item.data || '');
+            return /^\d{4}-/.test(d) ? d.slice(0, 4) : '';
+        }
+
+        function atualizarTabelaPlanoTrabalho() {
+            const tbody = document.getElementById('tabelaPlanoTrabalho');
+            if (!tbody) return;
+            // Ordem decrescente por ano e, dentro do ano, por nº de ordem — mantém o mais
+            // recente na primeira linha e garante que cada ano fique em bloco contíguo.
+            const itens = (dados.planosTrabalho || []).slice().sort((a, b) => {
+                const anoA = _anoPlanoTrabalho(a), anoB = _anoPlanoTrabalho(b);
+                if (anoA !== anoB) return anoB.localeCompare(anoA);
+                return (b.nrOrdem || 0) - (a.nrOrdem || 0);
+            });
+
+            try { const c = document.getElementById('count-planoTrabalho'); if (c) c.textContent = String(itens.length); } catch(e) {}
+
+            if (itens.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:#94a3b8;">Nenhum registro cadastrado</td></tr>';
+                return;
+            }
+
+            const editBtnHtml = (id) => !window._readOnlyMode ? `<button class="btn-icon-action edit" onclick="editarPlanoTrabalho(${id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>` : '';
+            const delBtnHtml = (id) => !window._readOnlyMode ? `<button class="btn-icon-action delete" onclick="removerPlanoTrabalho(${id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>` : '';
+
+            // Contagem por ano para o rótulo do separador
+            const porAno = {};
+            itens.forEach(it => { const a = _anoPlanoTrabalho(it); porAno[a] = (porAno[a] || 0) + 1; });
+
+            let anoAtual = null;
+            tbody.innerHTML = itens.map((item) => {
+                const ano = _anoPlanoTrabalho(item);
+                let sep = '';
+                if (ano !== anoAtual) {
+                    anoAtual = ano;
+                    const n = porAno[ano];
+                    const rotulo = ano || 'Sem ano';
+                    sep = `<tr class="pt-ano-sep"><td colspan="9">${rotulo}<span class="pt-ano-sep-count">${n} registro${n > 1 ? 's' : ''}</span></td></tr>`;
+                }
+                return sep + `
+                <tr>
+                    <td>${item.nrOrdem || ''}</td>
+                    <td>${formatarDataBR(item.data)}</td>
+                    <td>${item.pTrab || ''}</td>
+                    <td>${item.cliente || ''}</td>
+                    <td>${item.objeto || ''}</td>
+                    <td>${item.qtde || ''}</td>
+                    <td>${item.docSolicitacao || ''}</td>
+                    <td>${item.ted || ''}</td>
+                    <td class="col-acao">${editBtnHtml(item.id)}${delBtnHtml(item.id)}</td>
+                </tr>
+            `;
+            }).join('');
+
+            initLucideIcons();
+        }
+
+        // METAS
+        // Calcular meses automaticamente para Metas
+        function calcularMesesMeta() { calcularMesesMetaModal(); }
+        function calcularMesesMetaModal() {
+            if (!window.tedSelecionado) return;
+            const mInicio = parseInt(document.getElementById('modalMetaMInicio').value);
+            const mFinal = parseInt(document.getElementById('modalMetaMFinal').value);
+            if (isNaN(mInicio) && isNaN(mFinal)) return;
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else { return; }
+            const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+            if (!isNaN(mInicio)) {
+                const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+                document.getElementById('modalMetaMesInicio').value = `${nomesMeses[dI.getMonth()]}/${dI.getFullYear()}`;
+            }
+            if (!isNaN(mFinal)) {
+                const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+                document.getElementById('modalMetaMesFinal').value = `${nomesMeses[dF.getMonth()]}/${dF.getFullYear()}`;
+            }
+        }
+
+        // Calcular Fim de Vigência automaticamente (Início + Vigência em meses)
+        function calcularFimVigencia() {
+            const inicioEl = document.getElementById('inicioVigencia');
+            const vigenciaEl = document.getElementById('vigencia');
+            const fimEl = document.getElementById('fimVigencia');
+            if (!inicioEl || !vigenciaEl || !fimEl) return;
+
+            const inicioVal = inicioEl.value;
+            const meses = parseInt(vigenciaEl.value, 10);
+            if (!inicioVal || isNaN(meses)) return;
+
+            const d = new Date(inicioVal + 'T00:00:00');
+            const fim = new Date(d);
+            fim.setMonth(fim.getMonth() + meses);
+
+            const yyyy = fim.getFullYear();
+            const mm = String(fim.getMonth() + 1).padStart(2, '0');
+            const dd = String(fim.getDate()).padStart(2, '0');
+            fimEl.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Calcular Fim de Vigência na tela de edição (Detalhes TED)
+        function calcularFimVigenciaEdit() {
+            const inicioEl = document.getElementById('edit_inicioVigencia');
+            const vigenciaEl = document.getElementById('edit_vigencia');
+            const fimEl = document.getElementById('edit_fimVigencia');
+            if (!inicioEl || !vigenciaEl || !fimEl) return;
+
+            const inicioVal = inicioEl.value;
+            const meses = parseInt(vigenciaEl.value, 10);
+            if (!inicioVal || isNaN(meses) || meses <= 0) { fimEl.value = ''; return; }
+
+            // Considerar aditivos se existirem
+            let totalMeses = meses;
+            const alteracoesEdit = (window.tedSelecionado && (window.tedSelecionado.alteracoes || window.tedSelecionado.aditivos)) || [];
+            alteracoesEdit.filter(a => (a.tipo || 'aditivo') === 'aditivo').forEach(function(a) {
+                totalMeses += (parseInt(a.meses) || 0);
+            });
+
+            const d = new Date(inicioVal + 'T00:00:00');
+            const fim = new Date(d);
+            fim.setMonth(fim.getMonth() + totalMeses);
+
+            const yyyy = fim.getFullYear();
+            const mm = String(fim.getMonth() + 1).padStart(2, '0');
+            const dd = String(fim.getDate()).padStart(2, '0');
+            fimEl.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // ========== ADITIVOS DE VIGSNCIA ==========
+
+        // Migração: unificar ted.aditivos e ted.apostilamentos em ted.alteracoes
+        function migrarParaAlteracoesUnificadas(ted) {
+            if (!ted) return;
+            // (e) Pular se já há alterações migradas; mas NÃO pular se alteracoes existe mas
+            // está vazio e há dados legados (evita perda silenciosa ao salvar [] manualmente)
+            const _temAlteracoesMigradas = ted.alteracoes && ted.alteracoes.length > 0;
+            const _temDadosLegados = (ted.aditivos && ted.aditivos.length > 0) || (ted.apostilamentos && ted.apostilamentos.length > 0);
+            if (_temAlteracoesMigradas || !_temDadosLegados) return;
+            const alteracoes = [];
+            (ted.aditivos || []).forEach(a => {
+                alteracoes.push(Object.assign({}, a, { tipo: 'aditivo' }));
+            });
+            (ted.apostilamentos || []).forEach(ap => {
+                alteracoes.push(Object.assign({}, ap, { tipo: 'apostilamento' }));
+            });
+            // Ordenar por data
+            alteracoes.sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+            ted.alteracoes = alteracoes;
+            // Manter arrays antigos para compatibilidade de leitura mas não usar mais para escrita
+        }
+
+        // Recomputar ted.aditivos e ted.apostilamentos a partir de ted.alteracoes (sync de volta)
+        function sincronizarAlteracoesParaArraysLegado(ted) {
+            if (!ted || !ted.alteracoes) return;
+            // Incluir apenas alterações não excluídas nas listas legadas
+            ted.aditivos = ted.alteracoes.filter(a => a.tipo === 'aditivo' && !a.excluido);
+            ted.apostilamentos = ted.alteracoes.filter(a => a.tipo === 'apostilamento' && !a.excluido);
+        }
+
+        // Retornar contagem ordinal (nº) de um item na lista unificada, contando apenas itens do mesmo tipo
+        function obterOrdinalAlteracao(ted, idx) {
+            if (!ted || !ted.alteracoes || !ted.alteracoes[idx]) return 1;
+            const tipo = ted.alteracoes[idx].tipo;
+            let count = 0;
+            for (let i = 0; i <= idx; i++) {
+                if (ted.alteracoes[i].tipo === tipo && !ted.alteracoes[i].excluido) count++;
+            }
+            return count;
+        }
+
+        // Campos do TED que são clonados no aditivo
+        const ADITIVO_CAMPOS_CLONE = [
+            { key: 'planoTrabalho', label: 'Plano de Trabalho', type: 'text' },
+            { key: 'numTed', label: 'Nº do TED', type: 'text', readonly: true },
+            { key: 'codigoPlano', label: 'Código do Plano', type: 'text', readonly: true },
+            { key: 'numTedSiafi', label: 'Nº TED - SIAFI', type: 'text', readonly: true },
+            { key: 'notaSistema', label: 'Nota do Sistema do TED', type: 'text', readonly: true },
+            { key: 'upResponsavel', label: 'UP Responsável pela Execução', type: 'text' },
+            { key: 'ugExecutora', label: 'UG Executora', type: 'text' },
+            { key: 'unidadeDesc', label: 'Unidade Descentralizadora', type: 'text' },
+            { key: 'ugDesc', label: 'UG Descentralizadora', type: 'text' },
+            { key: 'objetivo', label: 'Objetivo', type: 'textarea', fullWidth: true },
+        ];
+
+        // Definição das tabelas do TED para clone/comparação
+        const ADITIVO_TABELAS_CLONE = [
+            {
+                key: 'objetos', label: 'Objetos',
+                colunas: [
+                    { field: 'objeto', label: 'Objeto' },
+                    { field: 'qtde', label: 'Qtde', type: 'number' },
+                    { field: 'valorUnitario', label: 'Valor Unit.', type: 'currency' },
+                    { field: 'valorTotal', label: 'Valor Total', type: 'currency' }
+                ],
+                idField: 'id', matchFields: ['objeto']
+            },
+            {
+                key: 'metas', label: 'Metas',
+                colunas: [
+                    { field: 'meta', label: 'Meta' },
+                    { field: 'descricao', label: 'Descrição' },
+                    { field: 'mInicio', label: 'M Início', type: 'number' },
+                    { field: 'mFinal', label: 'M Final', type: 'number' }
+                ],
+                idField: 'id', matchFields: ['meta']
+            },
+            {
+                key: 'fisicos', label: 'Físico',
+                colunas: [
+                    { field: 'fase', label: 'Fase' },
+                    { field: 'objeto', label: 'Objeto' },
+                    { field: 'qtde', label: 'Qtde', type: 'number' },
+                    { field: 'mInicio', label: 'M Início', type: 'number' },
+                    { field: 'mFinal', label: 'M Final', type: 'number' }
+                ],
+                idField: 'id', matchFields: ['fase', 'objeto']
+            },
+            {
+                key: 'financeiros', label: 'Financeiro',
+                colunas: [
+                    { field: 'numero', label: 'ND' },
+                    { field: 'up', label: 'UP' },
+                    { field: 'm', label: 'M', type: 'number' },
+                    { field: 'valor', label: 'Valor', type: 'currency' }
+                ],
+                // matchFields é o FALLBACK usado por compararArrayTabela() quando nem todo
+                // item do array tem 'id' (dados legados/importados antes do backfill de ID
+                // em carregarDetalhes) — usar 'id' aqui era um erro: na ausência de id, TODOS
+                // os itens colapsam pra uma matchKey vazia idêntica, e o algoritmo de
+                // pareamento por posição então casa o item ERRADO como "modificado" e aponta
+                // outro item (que o usuário nem tocou) como removido. Isso é exatamente o bug
+                // relatado: excluir um lançamento no aditivo não tirava seu valor da soma (o
+                // diff apontava pro item errado), e desfazer o aditivo não revertia nada
+                // corretamente (o diff gerado nunca esteve certo). Chave natural (ND+UP+M+
+                // valor, mesmos campos de finNaturalKey) distingue linhas corretamente mesmo
+                // sem id.
+                idField: 'id', matchFields: ['numero', 'up', 'm', 'valor']
+            }
+        ];
+
+        // Chave natural de um lançamento financeiro (ND+UP+M+valor), usada como fallback
+        // quando o id divergir entre o snapshot salvo em removidos/adicionados e a linha viva
+        // (única implementação — usada tanto no modal de apostilamento quanto no render das tabelas).
+        function finNaturalKey(f) {
+            return [
+                String(f.numero || f.nd || '').replace(/\D/g, ''),
+                String(f.up || f.ug || ''),
+                String(f.m ?? ''),
+                String(Math.round((parseNumber(f.valor) || 0) * 100))
+            ].join('|');
+        }
+
+        // Destaque inline (vence zebra/sticky) das linhas consolidadas do resumo financeiro:
+        // Total a Receber em azul, Resultado em vermelho. Compartilhado entre a Execução
+        // Financeira e o Recursos Gerais IMBEL (mesmo padrão visual nas duas tabelas).
+        function consHlEstilo(tipo) {
+            if (tipo === 'total') return 'background:#F0F4F9 !important;border-top:1px solid #B3D1EF !important;border-bottom:1px solid #B3D1EF !important;color:#0C447C;font-weight:700;';
+            if (tipo === 'resultado') return 'background:#FFF1F1 !important;border-top:2px solid #FCBFBF !important;border-bottom:2px solid #FCBFBF !important;color:#A32D2D;font-weight:700;';
+            return '';
+        }
+
+        // Resolve, para cada item de `liveItems`, se ele deve ser considerado "removido" com
+        // base numa lista de itens removidos/adicionados (soft-delete de aditivo/apostilamento).
+        // Casamento por ID tem prioridade; quando o ID do item removido não existir entre os
+        // itens vivos (id divergente), cai para a chave natural — mas com CONTAGEM: cada chave
+        // natural só exclui tantas linhas vivas quantas efetivamente foram removidas, evitando
+        // que múltiplas linhas idênticas (mesma ND+UP+M+valor) sejam todas tachadas quando
+        // apenas uma delas foi de fato removida.
+        function resolverExclusaoPorChaveNatural(liveItems, removedEntries) {
+            const liveIds = new Set((liveItems || []).filter(f => f.id != null).map(f => String(f.id)));
+            const excludedIds = new Set();
+            const keyCounts = new Map();
+            (removedEntries || []).forEach(entry => {
+                const item = entry.item || entry;
+                const idStr = item.id != null ? String(item.id) : null;
+                if (idStr != null && liveIds.has(idStr)) {
+                    excludedIds.add(idStr);
+                } else {
+                    const k = finNaturalKey(item);
+                    keyCounts.set(k, (keyCounts.get(k) || 0) + 1);
+                }
+            });
+            const resultMap = new Map();
+            const keyRemaining = new Map(keyCounts);
+            (liveItems || []).forEach(f => {
+                let excluded = false;
+                if (f.id != null && excludedIds.has(String(f.id))) {
+                    excluded = true;
+                } else {
+                    const k = finNaturalKey(f);
+                    const remaining = keyRemaining.get(k) || 0;
+                    if (remaining > 0) {
+                        excluded = true;
+                        keyRemaining.set(k, remaining - 1);
+                    }
+                }
+                resultMap.set(f, excluded);
+            });
+            return resultMap;
+        }
+
+        // ── Lançamentos financeiros VIGENTES ──────────────────────────────────
+        // Uma linha removida por aditivo/apostilamento ATIVO (ou adicionada por um
+        // que foi EXCLUÍDO) permanece dentro de ted.financeiros por soft-delete:
+        // ela existe para a trilha visual (tachado/histórico), mas NUNCA pode
+        // entrar em soma de previsto/saldo/%. Esta é a fonte única de verdade —
+        // todo cálculo sobre `financeiros` deve passar por aqui em vez de usar
+        // o array cru, senão volta a contar linhas que já foram suprimidas.
+        function mapaSupressaoFinanceira(ted) {
+            const cad = (ted && ted.financeiros) || [];
+            const lista = (ted && ted.alteracoes) ||
+                          [...((ted && ted.aditivos) || []), ...((ted && ted.apostilamentos) || [])];
+            const removidos = [];
+            (lista || []).forEach(alt => {
+                const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas['financeiros'];
+                if (!diffs) return;
+                // Apostilamento/aditivo excluído → itens que ele ADICIONOU ficam suprimidos.
+                // Apostilamento/aditivo ativo → itens que ele REMOVEU ficam suprimidos.
+                (alt.excluido ? (diffs.adicionados || []) : (diffs.removidos || []))
+                    .forEach(e => removidos.push(e));
+            });
+            return resolverExclusaoPorChaveNatural(cad, removidos);
+        }
+
+        function financeirosVigentes(ted) {
+            const cad = (ted && ted.financeiros) || [];
+            if (!cad.length) return cad;
+            const mapa = mapaSupressaoFinanceira(ted);
+            return cad.filter(f => mapa.get(f) !== true);
+        }
+        window.financeirosVigentes = financeirosVigentes;
+        window.mapaSupressaoFinanceira = mapaSupressaoFinanceira;
+
+        // Obter alterações de uma tabela específica a partir do último aditivo ou apostilamento que modificou essa tabela
+        // Retorna { modificados: [{matchKey, camposAlterados:{field:{de,para,label}}}], adicionados: [{item}], removidos: [{item}] } ou null
+        function obterAlteracoesTabelaAditivos(tabelaKey) {
+            const ted = window.tedSelecionado;
+            if (!ted) return null;
+            // Percorrer alterações unificadas (ou legado) para achar o último que alterou esta tabela
+            // — ignorando alterações EXCLUÍDAS: senão, depois de excluir o(s) aditivo(s), a célula
+            // continua mostrando "valor antigo → valor novo" tachado como se a alteração ainda
+            // estivesse valendo (esse destaque é uma trilha visual separada da exclusão da soma,
+            // que já respeitava `excluido` — ver isFinExcluded/_finRemovedEntries).
+            const fontes = [];
+            const lista = ted.alteracoes || [...(ted.aditivos || []), ...(ted.apostilamentos || [])];
+            lista.forEach(item => {
+                if (item.excluido) return;
+                if (item.tabelasAlteradas && item.tabelasAlteradas[tabelaKey]) {
+                    fontes.push(item.tabelasAlteradas[tabelaKey]);
+                }
+            });
+            if (!fontes.length) return null;
+            return fontes[fontes.length - 1];
+        }
+
+        // Como obterAlteracoesTabelaAditivos, mas devolve o próprio registro de aditivo/
+        // apostilamento (não só o diff) — usado para os chips de atribuição (nº, tipo,
+        // data) exibidos ao lado das células e linhas alteradas nas tabelas principais.
+        function obterOrigemAlteracaoTabela(tabelaKey) {
+            const ted = window.tedSelecionado;
+            if (!ted) return null;
+            const lista = ted.alteracoes || [...(ted.aditivos || []), ...(ted.apostilamentos || [])];
+            let origem = null, ordinalAditivo = 0, ordinalApost = 0;
+            lista.forEach(item => {
+                const isAditivo = item.tipo === 'aditivo';
+                if (!item.excluido) { isAditivo ? ordinalAditivo++ : ordinalApost++; }
+                if (item.excluido) return;
+                if (item.tabelasAlteradas && item.tabelasAlteradas[tabelaKey]) {
+                    origem = { tipo: item.tipo, data: item.data, ordinal: isAditivo ? ordinalAditivo : ordinalApost };
+                }
+            });
+            return origem;
+        }
+
+        // Gerar mapa de matchKey -> camposAlterados para busca rápida por linha
+        function criarMapaAlteracoes(alteracoes, tabDef) {
+            if (!alteracoes || !tabDef) return { modMap: {}, modItemsList: [], addSet: new Set(), remSet: new Set(), addItemsList: [], remItemsList: [] };
+            const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+            const modMap = {};
+            const modItemsList = [];
+            (alteracoes.modificados || []).forEach(mod => {
+                const k = matchKey(mod.atual || mod.original || {});
+                modMap[k] = mod.camposAlterados;
+                modItemsList.push({ k, original: mod.original || {}, atual: mod.atual || {}, camposAlterados: mod.camposAlterados || {} });
+            });
+            const addSet = new Set();
+            const addItems = {};
+            const addItemsList = [];
+            (alteracoes.adicionados || []).forEach(add => {
+                const item = add.item || add;
+                const k = matchKey(item);
+                addSet.add(k);
+                addItems[k] = item;
+                addItemsList.push({ k, item });
+            });
+            const remSet = new Set();
+            const remItems = {};
+            const remItemsList = [];
+            (alteracoes.removidos || []).forEach(rem => {
+                const item = rem.item || rem;
+                const k = matchKey(item);
+                remSet.add(k);
+                remItems[k] = item;
+                remItemsList.push({ k, item });
+            });
+            // Backward compatibility: if same key appears in both addSet and remSet,
+            // it means a field in the matchKey was changed (e.g., old M-based matchFields).
+            // Convert these to synthetic modifications.
+            // Remove from addItemsList/remItemsList any entries that get converted to modifications
+            addSet.forEach(k => {
+                if (remSet.has(k)) {
+                    // Both add and remove with same key → synthesize a modification
+                    const addItem = addItems[k];
+                    const remItem = remItems[k];
+                    const camposAlterados = {};
+                    (tabDef.colunas || []).forEach(col => {
+                        const vOrig = formatarValorTabela(remItem[col.field], col.type);
+                        const vNovo = formatarValorTabela(addItem[col.field], col.type);
+                        if (vOrig !== vNovo) {
+                            camposAlterados[col.field] = { de: remItem[col.field], para: addItem[col.field], label: col.label };
+                        }
+                    });
+                    if (Object.keys(camposAlterados).length > 0) {
+                        modMap[k] = camposAlterados;
+                        modItemsList.push({ k, original: remItem || {}, atual: addItem || {}, camposAlterados });
+                    }
+                    addSet.delete(k);
+                    remSet.delete(k);
+                    const ia = addItemsList.findIndex(x => x.k === k);
+                    if (ia !== -1) addItemsList.splice(ia, 1);
+                    const ir = remItemsList.findIndex(x => x.k === k);
+                    if (ir !== -1) remItemsList.splice(ir, 1);
+                }
+            });
+            return { modMap, modItemsList, addSet, remSet, addItemsList, remItemsList };
+        }
+
+        // Formatar valor de célula alterada: mostra valor antigo riscado → valor novo em destaque
+        function formatarCelulaAlterada(valorAtual, valorAntigo, tipo) {
+            let antigoFormatado = valorAntigo;
+            let novoFormatado = valorAtual;
+            if (tipo === 'currency') {
+                antigoFormatado = Number(valorAntigo || 0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+                novoFormatado = Number(valorAtual || 0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+            } else if (tipo === 'number') {
+                const antigoNum = (valorAntigo === '' || valorAntigo === null || valorAntigo === undefined) ? '' : parseNumber(valorAntigo);
+                const novoNum = (valorAtual === '' || valorAtual === null || valorAtual === undefined) ? '' : parseNumber(valorAtual);
+                antigoFormatado = antigoNum === '' ? '' : formatNumber(antigoNum);
+                novoFormatado = novoNum === '' ? '' : formatNumber(novoNum);
+            } else if (tipo === 'date' && valorAntigo) {
+                try { antigoFormatado = new Date(valorAntigo + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
+                try { novoFormatado = new Date(valorAtual + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
+            }
+            return `<span class="celula-alterada-aditivo"><span class="val-antigo">${antigoFormatado}</span><span class="alter-arrow">→</span><span class="val-novo">${novoFormatado}</span></span>`;
+        }
+
+        // Snapshot: captura valores atuais do TED para comparação futura (incluindo tabelas)
+        function capturarSnapshotTed(ted) {
+            const snap = {};
+            ADITIVO_CAMPOS_CLONE.forEach(c => { snap[c.key] = ted[c.key] || ''; });
+            snap.valorTed = ted.valorTed || 0;
+            snap.vigencia = ted.vigencia || 0;
+            snap.inicioVigencia = ted.inicioVigencia || '';
+            snap.fimVigencia = ted.fimVigencia || '';
+            snap.primeiraDescentralizacao = ted.primeiraDescentralizacao || '';
+            // Deep clone de todas as tabelas
+            ADITIVO_TABELAS_CLONE.forEach(t => {
+                snap[t.key] = JSON.parse(JSON.stringify(ted[t.key] || []));
+            });
+            return snap;
+        }
+
+        // Detectar campos modificados entre snapshot e valores do modal (campos simples)
+        function detectarAlteracoesAditivo(snapshot, novosValores) {
+            const alteracoes = {};
+            // Comparar campos simples
+            ADITIVO_CAMPOS_CLONE.forEach(c => {
+                const orig = String(snapshot[c.key] || '');
+                const novo = String(novosValores[c.key] || '');
+                if (orig !== novo) {
+                    alteracoes[c.key] = { de: snapshot[c.key], para: novosValores[c.key] };
+                }
+            });
+            // Comparar valorTed → somente se foi explicitamente definido (aditivo tem campo de valor; apostilamento não)
+            if (novosValores.hasOwnProperty('valorTed')) {
+                if (String(snapshot.valorTed || '') !== String(novosValores.valorTed || '')) {
+                    alteracoes.valorTed = { de: snapshot.valorTed, para: novosValores.valorTed };
+                }
+            }
+            return alteracoes;
+        }
+
+        // Comparar arrays de tabela entre snapshot e estado atual do TED
+        function compararTabelasAditivo(snapshot, tedAtual) {
+            const tabelasAlteradas = {};
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                const arrOriginal = snapshot[tabDef.key] || [];
+                const arrAtual = tedAtual[tabDef.key] || [];
+                const diffs = compararArrayTabela(arrOriginal, arrAtual, tabDef);
+                if (diffs.adicionados.length || diffs.removidos.length || diffs.modificados.length) {
+                    tabelasAlteradas[tabDef.key] = diffs;
+                }
+            });
+            return tabelasAlteradas;
+        }
+
+        // Comparar dois arrays de itens de uma tabela e retornar diferenças
+        function compararArrayTabela(arrOrig, arrNovo, tabDef) {
+            const result = { adicionados: [], removidos: [], modificados: [] };
+            const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] === null || item[f] === undefined ? '' : item[f])).join('||');
+            const getId = (item) => (item && item.id !== undefined && item.id !== null && String(item.id) !== '') ? String(item.id) : null;
+
+            // Priorizar matching por ID quando todos os itens originais têm ID
+            // (evita falsos positivos causados por diferenças de sanitização nos campos texto)
+            const allOrigHaveId = arrOrig.length > 0 && arrOrig.every(item => getId(item) !== null);
+            if (allOrigHaveId) {
+                const origMapById = {};
+                arrOrig.forEach((item, idx) => { origMapById[String(item.id)] = { item, idx }; });
+                const novoMapById = {};
+                arrNovo.forEach((item, idx) => { if (getId(item)) novoMapById[String(item.id)] = { item, idx }; });
+
+                arrOrig.forEach((origItem, origIdx) => {
+                    const id = String(origItem.id);
+                    const novoEntry = novoMapById[id];
+                    if (!novoEntry) {
+                        result.removidos.push({ item: origItem, index: origIdx });
+                    } else {
+                        const camposAlterados = {};
+                        tabDef.colunas.forEach(col => {
+                            const vOrig = formatarValorTabela(origItem[col.field], col.type);
+                            const vNovo = formatarValorTabela(novoEntry.item[col.field], col.type);
+                            if (vOrig !== vNovo) {
+                                camposAlterados[col.field] = { de: origItem[col.field], para: novoEntry.item[col.field], label: col.label };
+                            }
+                        });
+                        if (Object.keys(camposAlterados).length > 0) {
+                            result.modificados.push({ original: origItem, atual: novoEntry.item, camposAlterados, index: origIdx });
+                        }
+                    }
+                });
+
+                arrNovo.forEach(novoItem => {
+                    const id = getId(novoItem);
+                    if (!id || !origMapById[id]) {
+                        result.adicionados.push({ item: novoItem });
+                    }
+                });
+
+                return result;
+            }
+
+            // Fallback: matching por matchKey (para dados sem IDs)
+            const origMap = {};
+            arrOrig.forEach((item, idx) => {
+                const k = matchKey(item);
+                if (!origMap[k]) origMap[k] = [];
+                origMap[k].push({ item, idx });
+            });
+
+            const novoMap = {};
+            arrNovo.forEach((item, idx) => {
+                const k = matchKey(item);
+                if (!novoMap[k]) novoMap[k] = [];
+                novoMap[k].push({ item, idx });
+            });
+
+            // Encontrar removidos e modificados
+            arrOrig.forEach((origItem, origIdx) => {
+                const k = matchKey(origItem);
+                const matches = novoMap[k];
+                if (!matches || matches.length === 0) {
+                    result.removidos.push({ item: origItem, index: origIdx });
+                } else {
+                    // Pegar o primeiro match não consumido
+                    const match = matches.shift();
+                    // Comparar campos
+                    const camposAlterados = {};
+                    tabDef.colunas.forEach(col => {
+                        const vOrig = formatarValorTabela(origItem[col.field], col.type);
+                        const vNovo = formatarValorTabela(match.item[col.field], col.type);
+                        if (vOrig !== vNovo) {
+                            camposAlterados[col.field] = { de: origItem[col.field], para: match.item[col.field], label: col.label };
+                        }
+                    });
+                    if (Object.keys(camposAlterados).length > 0) {
+                        result.modificados.push({ original: origItem, atual: match.item, camposAlterados, index: origIdx });
+                    }
+                }
+            });
+
+            // Encontrar adicionados
+            arrNovo.forEach((novoItem) => {
+                const k = matchKey(novoItem);
+                // Se ainda sobrou em origMap ou não existe
+                const matches = origMap[k];
+                if (matches && matches.length > 0) {
+                    matches.shift(); // consumir
+                } else {
+                    result.adicionados.push({ item: novoItem });
+                }
+            });
+
+            return result;
+        }
+
+        // Formatar valor de tabela para comparação
+        function formatarValorTabela(val, type) {
+            if (val === undefined || val === null) return '';
+            if (type === 'currency') return String(Number(val) || 0);
+            if (type === 'number') return String(Number(val) || 0);
+            return String(val);
+        }
+
+        // Formatar valor para exibição no resumo de alterações
+        function formatarValorExibicao(val, type) {
+            if (val === undefined || val === null || val === '') return '(vazio)';
+            if (type === 'currency') return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            if (type === 'date') {
+                try { return new Date(val + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) { return val; }
+            }
+            return String(val);
+        }
+
+        // Gerar HTML resumo compacto das alterações em tabelas para o histórico
+        // Retorna apenas badges com contagens e um botão para abrir o detalhe completo
+        function gerarResumoTabelasAlteradas(tabelasAlteradas, altIndex) {
+            if (!tabelasAlteradas || Object.keys(tabelasAlteradas).length === 0) return '';
+            let html = '';
+            const fallbackLabels = { execFisicas: 'Execução Física', execFinanceiras: 'Execução Financeira', recursosGerais: 'Recursos Gerais' };
+            Object.keys(tabelasAlteradas).forEach(tabelaKey => {
+                const rawDiffs = tabelasAlteradas[tabelaKey];
+                if (!rawDiffs) return;
+                const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+                const labelTabela = tabDef ? tabDef.label : (fallbackLabels[tabelaKey] || tabelaKey);
+
+                const { modMap, modItemsList, addSet, remSet, addItemsList, remItemsList } = tabDef ? criarMapaAlteracoes(rawDiffs, tabDef) : { modMap: {}, modItemsList: [], addSet: new Set(), remSet: new Set(), addItemsList: [], remItemsList: [] };
+                const effectiveAdded = addSet.size;
+                const effectiveRemoved = remSet.size;
+                const effectiveModified = Object.keys(modMap).length;
+
+                html += `<div style="margin-top:4px;"><span class="aditivo-change-field">${labelTabela}:</span>`;
+                if (effectiveAdded > 0) html += ` <span class="aditivo-change-badge aditivo-change-new">+${effectiveAdded} novo${effectiveAdded > 1 ? 's' : ''}</span>`;
+                if (effectiveModified > 0) html += ` <span class="aditivo-change-badge" style="background:rgba(245,158,11,0.12);color:#d97706;">${effectiveModified} alterado${effectiveModified > 1 ? 's' : ''}</span>`;
+                if (effectiveRemoved > 0) html += ` <span class="aditivo-change-badge aditivo-change-old">-${effectiveRemoved} removido${effectiveRemoved > 1 ? 's' : ''}</span>`;
+                const callIdx = (typeof altIndex === 'number') ? altIndex : 'null';
+                html += ` <button class="btn btn-sm" onclick="abrirModalAlteracao(${callIdx}, true)" style="margin-left:8px;">Ver alterações</button>`;
+                html += '</div>';
+            });
+            return html;
+        }
+
+        // Gerar HTML detalhado (modo somente-visualização) em formato de tabela
+        // Exibe por tabela: linhas modificadas (campo a campo com antigo → novo), linhas adicionadas (linha toda em verde) e removidas (linha riscada em vermelho)
+        function gerarHtmlDetalhesAlteracoes(altObj) {
+            if (!altObj) return '<div>Nenhum detalhe disponível</div>';
+
+            // Cabeçalho com ordinal e data
+            let ordinalLabel = '';
+            try {
+                const overlay = document.getElementById('alteracaoModalOverlay');
+                const ted = window.tedSelecionado || {};
+                const idx = overlay && overlay.dataset && overlay.dataset.editIndex !== '' ? parseInt(overlay.dataset.editIndex, 10) : null;
+                const tipo = altObj.tipo || (idx !== null && ted.alteracoes && ted.alteracoes[idx] && ted.alteracoes[idx].tipo) || 'aditivo';
+                if (idx !== null && Array.isArray(ted.alteracoes)) {
+                    let count = 0;
+                    for (let i = 0; i <= idx && i < ted.alteracoes.length; i++) {
+                        if (ted.alteracoes[i] && ted.alteracoes[i].tipo === tipo) count++;
+                    }
+                    ordinalLabel = tipo === 'aditivo' ? `${count}º Aditivo` : `${count}º Apostilamento`;
+                } else {
+                    ordinalLabel = tipo === 'aditivo' ? 'Aditivo' : 'Apostilamento';
+                }
+            } catch (e) {
+                ordinalLabel = (altObj && altObj.tipo === 'apostilamento') ? 'Apostilamento' : 'Aditivo';
+            }
+            const dataStr = altObj && altObj.data ? new Date(altObj.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+
+            let html = '';
+            html += `<div style="margin-bottom:8px;"><div style="font-weight:700; font-size:1rem;">${ordinalLabel}</div><div style="color:var(--text-muted);">Data: <strong>${dataStr}</strong></div></div>`;
+
+            // Renderizar tabelas alteradas em formato tabular
+            if (altObj.tabelasAlteradas && Object.keys(altObj.tabelasAlteradas).length) {
+                const fallbackLabels = { execFisicas: 'Execução Física', execFinanceiras: 'Execução Financeira', recursosGerais: 'Recursos Gerais' };
+                Object.keys(altObj.tabelasAlteradas).forEach(tabelaKey => {
+                    const rawDiffs = altObj.tabelasAlteradas[tabelaKey];
+                    if (!rawDiffs) return;
+                    const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+                    const labelTabela = tabDef ? tabDef.label : (fallbackLabels[tabelaKey] || tabelaKey);
+
+                    const { modMap, modItemsList, addSet, remSet, addItemsList, remItemsList } = tabDef ? criarMapaAlteracoes(rawDiffs, tabDef) : { modMap: {}, modItemsList: [], addSet: new Set(), remSet: new Set(), addItemsList: [], remItemsList: [] };
+
+                    const hasAny = (addSet.size || remSet.size || (modItemsList && modItemsList.length));
+                    if (!hasAny) return;
+
+                    html += `<div class="aditivo-section-title">${labelTabela}</div>`;
+                    html += `<div style="overflow:auto;"><table class="aditivo-detalhe-table"><thead><tr>`;
+                    (tabDef.colunas || []).forEach(col => { html += `<th>${col.label}</th>`; });
+                    html += `</tr></thead><tbody>`;
+
+                    // Linhas modificadas: mostrar célula a célula (antigo → novo onde aplicável)
+                    (modItemsList || []).forEach(mi => {
+                        const original = mi.original || {};
+                        const atual = mi.atual || {};
+                        html += '<tr>';
+                        (tabDef.colunas || []).forEach(col => {
+                            const f = col.field;
+                            const tipo = col.type || 'text';
+                            if (mi.camposAlterados && mi.camposAlterados[f]) {
+                                // Para ND (campo 'numero') aplicar formatação de pontos antes de renderizar
+                                if (f === 'numero' && typeof formatarNDComPontos === 'function') {
+                                    const antigoFmt = formatarNDComPontos(original[f] || '');
+                                    const novoFmt = formatarNDComPontos(atual[f] || '');
+                                    html += `<td>${formatarCelulaAlterada(novoFmt, antigoFmt, '')}</td>`;
+                                } else {
+                                    html += `<td>${formatarCelulaAlterada(atual[f], original[f], tipo)}</td>`;
+                                }
+                            } else {
+                                const v = atual[f] !== undefined && atual[f] !== null ? atual[f] : '';
+                                if (f === 'numero' && typeof formatarNDComPontos === 'function') {
+                                    html += `<td>${formatarNDComPontos(v)}</td>`;
+                                } else {
+                                    html += `<td>${formatarValorExibicao(v, tipo)}</td>`;
+                                }
+                            }
+                        });
+                        html += '</tr>';
+                    });
+
+                    // Linhas adicionadas: linha inteira em destaque verde
+                    (addItemsList || []).filter(x => addSet.has(x.k)).forEach(({ item }) => {
+                        html += `<tr class="aditivo-row-new">`;
+                        (tabDef.colunas || []).forEach(col => {
+                            const v = item[col.field];
+                            const tipo = col.type || 'text';
+                            if (col.field === 'numero' && typeof formatarNDComPontos === 'function') {
+                                html += `<td><span class="val-novo">${formatarNDComPontos(v)}</span></td>`;
+                            } else {
+                                html += `<td><span class="val-novo">${formatarValorExibicao(v, tipo)}</span></td>`;
+                            }
+                        });
+                        html += `</tr>`;
+                    });
+
+                    // Linhas removidas: linha inteira riscada/em vermelho
+                    (remItemsList || []).filter(x => remSet.has(x.k)).forEach(({ item }) => {
+                        html += `<tr class="aditivo-row-removed">`;
+                        (tabDef.colunas || []).forEach(col => {
+                            const v = item[col.field];
+                            const tipo = col.type || 'text';
+                            if (col.field === 'numero' && typeof formatarNDComPontos === 'function') {
+                                html += `<td><span class="val-antigo">${formatarNDComPontos(v)}</span></td>`;
+                            } else {
+                                html += `<td><span class="val-antigo">${formatarValorExibicao(v, tipo)}</span></td>`;
+                            }
+                        });
+                        html += `</tr>`;
+                    });
+
+                    html += `</tbody></table></div>`;
+                });
+            }
+
+            // Campos simples do TED (se existirem)
+            if (altObj.camposAlterados && Object.keys(altObj.camposAlterados).length) {
+                html += `<div class="aditivo-section-title">Campos do TED alterados</div>`;
+                html += `<table class="aditivo-detalhe-table"><thead><tr><th style="width:40%">Campo</th><th>Alteração</th></tr></thead><tbody>`;
+                Object.keys(altObj.camposAlterados).forEach(key => {
+                    const ch = altObj.camposAlterados[key];
+                    const def = ADITIVO_CAMPOS_CLONE.find(c => c.key === key);
+                    const label = def ? def.label : (ch && ch.label) ? ch.label : key;
+                    const tipo = def ? def.type : (ch && ch.type ? ch.type : 'text');
+                    html += `<tr><td>${label}</td><td>${formatarCelulaAlterada(ch.para, ch.de, tipo)}</td></tr>`;
+                });
+                html += `</tbody></table>`;
+            }
+
+            return html || '<div>Nenhuma alteração detalhada</div>';
+        }
+
+        // Gerar HTML das tabelas clonadas para o modal (somente leitura, editável inline)
+        function gerarHtmlTabelasClone(ted, prefix, existente) {
+            let html = '';
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                const arr = ted[tabDef.key] || [];
+
+                // Construir set de IDs/matchKeys removidos neste apostilamento (para marcar tachado ao reabrir).
+                // Para financeiros (matchFields=['id']), o id pode divergir entre o snapshot e o item
+                // vivo — usa-se resolverExclusaoPorChaveNatural (id + chave natural com contagem, para
+                // não tachar múltiplas linhas idênticas quando só uma foi removida).
+                const removidosNesseAlt = new Set();
+                const diffsAtual = existente && existente.tabelasAlteradas && existente.tabelasAlteradas[tabDef.key];
+                const finExclusionMapModal = tabDef.key === 'financeiros'
+                    ? resolverExclusaoPorChaveNatural(arr, (diffsAtual && diffsAtual.removidos) || [])
+                    : null;
+                if (diffsAtual && tabDef.key !== 'financeiros') {
+                    (diffsAtual.removidos || []).forEach(rem => {
+                        const item = rem.item || rem;
+                        if (item.id != null) removidosNesseAlt.add(String(item.id));
+                        const mk = tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
+                        if (mk) removidosNesseAlt.add('mk:' + mk);
+                    });
+                }
+
+                const countRemovidosFin = finExclusionMapModal ? [...finExclusionMapModal.values()].filter(Boolean).length : removidosNesseAlt.size;
+                const countAtivo = arr.length - countRemovidosFin;
+                html += `<div class="aditivo-section-title">${tabDef.label} (<span id="${prefix}_count_${tabDef.key}">${countAtivo}</span> ${countAtivo === 1 ? 'item' : 'itens'})</div>`;
+                html += `<div class="table-wrapper" style="max-width:100%; overflow-x:auto; margin-bottom:0.5rem;"><table class="aditivo-clone-table" id="${prefix}_tabela_${tabDef.key}"><thead><tr>`;
+                tabDef.colunas.forEach(col => {
+                    html += `<th>${col.label}</th>`;
+                });
+                html += '<th style="width:32px;"></th></tr></thead><tbody>';
+                // Mostrar linhas em ordem desejada, mas preservar data-idx para mapear ao índice original
+                const indices = arr.map((_, i) => i);
+                if (tabDef.key === 'fisicos') {
+                    indices.sort((i, j) => {
+                        const a = arr[i] || {};
+                        const b = arr[j] || {};
+                        const af = Number(a.fase);
+                        const bf = Number(b.fase);
+                        if (!isNaN(af) && !isNaN(bf)) return af - bf;
+                        return String(a.fase || '').localeCompare(String(b.fase || ''), 'pt-BR', {numeric: true});
+                    });
+                } else if (tabDef.key === 'financeiros') {
+                    const getNum = v => { const s = String(v || '').replace(/[^0-9]/g, ''); return s ? parseInt(s, 10) : Number.POSITIVE_INFINITY; };
+                    indices.sort((i, j) => {
+                        const a = arr[i] || {};
+                        const b = arr[j] || {};
+                        const ma = Number(a.m);
+                        const mb = Number(b.m);
+                        const maVal = !isNaN(ma) ? ma : Number.POSITIVE_INFINITY;
+                        const mbVal = !isNaN(mb) ? mb : Number.POSITIVE_INFINITY;
+                        if (maVal !== mbVal) return maVal - mbVal;
+                        return getNum(a.numero) - getNum(b.numero);
+                    });
+                } else if (tabDef.key === 'metas') {
+                    indices.sort((i, j) => {
+                        const aMeta = arr[i] ? arr[i].meta : '';
+                        const bMeta = arr[j] ? arr[j].meta : '';
+                        const na = parseFloat(String(aMeta || '').replace(',', '.'));
+                        const nb = parseFloat(String(bMeta || '').replace(',', '.'));
+                        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+                        return String(aMeta || '').localeCompare(String(bMeta || ''), 'pt-BR', {numeric: true});
+                    });
+                }
+                indices.forEach(kidx => {
+                    const item = arr[kidx];
+                    const itemId = (item && item.id != null) ? String(item.id) : null;
+                    const itemMk = 'mk:' + tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
+                    const jaRemovido = finExclusionMapModal
+                        ? finExclusionMapModal.get(item) === true
+                        : ((itemId && removidosNesseAlt.has(itemId)) || removidosNesseAlt.has(itemMk));
+                    const removidoAttr = jaRemovido ? ' data-removido="1"' : '';
+                    // O tachado vermelho vem do CSS (.aditivo-clone-table tr[data-removido="1"]).
+                    html += `<tr data-tabela="${tabDef.key}" data-idx="${kidx}"${removidoAttr}>`;
+                    tabDef.colunas.forEach(col => {
+                        let rawVal = item[col.field];
+                        // sanitizar entrada textual primeiro
+                        if (typeof rawVal === 'string') rawVal = sanitizeString(rawVal);
+                        let val = rawVal;
+
+                        // Sanitizar ND (campo 'numero') para evitar símbolos/garbage vindo dos dados
+                        if (col.field === 'numero' || (col.label && String(col.label).toLowerCase().includes('nd'))) {
+                            const digits = String(rawVal || '').replace(/[^0-9]/g, '');
+                            val = digits ? formatarNDComPontos(digits) : '';
+                        } else if (col.type === 'currency' && rawVal !== undefined && rawVal !== null && rawVal !== '') {
+                            const _n = Number(rawVal || 0), _cents = Math.round(_n * 100), _units = Math.floor(_cents / 100), _rem = _cents % 100;
+                            val = formatarMilharesPtBR(_units) + ',' + String(_rem).padStart(2, '0');
+                        } else if (col.type === 'number' && rawVal !== undefined && rawVal !== null && rawVal !== '') {
+                            val = formatarMilharesPtBR(Number(rawVal));
+                        } else if (col.type === 'date' && rawVal) {
+                            try { val = new Date(rawVal + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) {}
+                        }
+
+                        // data-orig também com valor sanitizado para ND
+                        const dataOrig = (col.field === 'numero') ? String(item[col.field] || '').replace(/[^0-9]/g, '') : sanitizeString(String(item[col.field] || '')).replace(/\"/g, '&quot;');
+                        // Linha já removida neste apostilamento: não editável (evita re-edição de item excluído)
+                        html += `<td contenteditable="${jaRemovido ? 'false' : 'true'}" data-field="${col.field}" data-type="${col.type || 'text'}" data-orig="${dataOrig}">${val !== undefined && val !== null ? val : ''}</td>`;
+                    });
+                    // Linha já removida: botão desabilitado (não pode excluir de novo)
+                    html += jaRemovido
+                        ? `<td><button class="btn-icon-action delete" disabled title="Já removido" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.2);color:#ef4444;border-radius:4px;cursor:not-allowed;opacity:0.4;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`
+                        : `<td><button class="btn-icon-action delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button></td>`;
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+                // Botão para adicionar nova linha
+                html += `<button type="button" onclick="adicionarLinhaCloneAditivo('${prefix}', '${tabDef.key}')" style="font-size:0.78rem;padding:4px 12px;border:1px dashed rgba(34,197,94,0.5);border-radius:6px;background:rgba(34,197,94,0.08);color:#16a34a;cursor:pointer;margin-bottom:0.75rem;" title="Adicionar novo item"><i data-lucide="plus" class="inline-icon-sm"></i> Adicionar ${tabDef.label.replace(/^[^\s]+\s/, '')}</button>`;
+            });
+            return html;
+        }
+
+        // Adicionar nova linha em branco numa tabela clonada do modal
+        function adicionarLinhaCloneAditivo(prefix, tabelaKey) {
+            const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+            if (!tabDef) return;
+            const tabela = document.getElementById(`${prefix}_tabela_${tabelaKey}`);
+            if (!tabela) return;
+            const tbody = tabela.querySelector('tbody');
+            const tr = document.createElement('tr');
+            tr.dataset.tabela = tabelaKey;
+            tr.dataset.idx = 'new'; // marca como novo
+            tr.classList.add('linha-adicionada-aditivo');
+            tabDef.colunas.forEach(col => {
+                const td = document.createElement('td');
+                td.contentEditable = 'true';
+                td.dataset.field = col.field;
+                td.dataset.type = col.type || 'text';
+                td.dataset.orig = '';
+                td.textContent = '';
+                tr.appendChild(td);
+            });
+            // Botão remover
+            const tdBtn = document.createElement('td');
+            tdBtn.innerHTML = `<button class="btn-icon-action delete" onclick="removerLinhaCloneAditivo(this)" title="Remover" style="font-size:0.8rem;padding:2px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>`;
+            tr.appendChild(tdBtn);
+            tbody.appendChild(tr);
+            // Aplicar máscaras de formatação na nova linha
+            aplicarMascarasCelulasClone(tr);
+            // Limpar conteúdo (remover chars invisíveis) e garantir ícones do Lucide na nova linha
+            try { if (typeof limparConteudoCelulasClone === 'function') limparConteudoCelulasClone(tr); } catch(e) {}
+            try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); }, 30); } catch(e) {}
+            // Focar no primeiro campo da nova linha
+            const primeiraCelula = tr.querySelector('td[contenteditable]');
+            if (primeiraCelula) primeiraCelula.focus();
+            // Atualizar contador
+            const countSpan = document.getElementById(`${prefix}_count_${tabelaKey}`);
+            if (countSpan) {
+                const visibleRows = tbody.querySelectorAll('tr:not([data-removido="1"])');
+                countSpan.textContent = visibleRows.length;
+            }
+        }
+
+        // Remover linha de tabela clonada no modal
+        function removerLinhaCloneAditivo(btn) {
+            const tr = btn.closest('tr');
+            if (tr) {
+                // Se é uma linha nova (adicionada no modal), remover completamente
+                if (tr.dataset.idx === 'new') {
+                    const tbody = tr.closest('tbody');
+                    const tabela = tr.closest('table');
+                    tr.remove();
+                    // Atualizar contador
+                    if (tabela && tbody) {
+                        const tabelaKey = tabela.id.split('_tabela_')[1];
+                        const prefix = tabela.id.split('_tabela_')[0];
+                        const countSpan = document.getElementById(`${prefix}_count_${tabelaKey}`);
+                        if (countSpan) {
+                            countSpan.textContent = tbody.querySelectorAll('tr:not([data-removido="1"])').length;
+                        }
+                    }
+                    return;
+                }
+                // O tachado vermelho vem do CSS via data-removido="1"
+                tr.dataset.removido = '1';
+                btn.disabled = true;
+                // Atualizar contador
+                const tabela = tr.closest('table');
+                if (tabela) {
+                    const tbody = tabela.querySelector('tbody');
+                    const tabelaKey = tabela.id.split('_tabela_')[1];
+                    const prefix = tabela.id.split('_tabela_')[0];
+                    const countSpan = document.getElementById(`${prefix}_count_${tabelaKey}`);
+                    if (countSpan) {
+                        countSpan.textContent = tbody.querySelectorAll('tr:not([data-removido="1"])').length;
+                    }
+                }
+            }
+        }
+
+        // Coletar dados editados das tabelas do modal
+        function coletarDadosTabelasModal(prefix) {
+            const resultado = {};
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                const tabela = document.getElementById(`${prefix}_tabela_${tabDef.key}`);
+                if (!tabela) return;
+                const linhas = tabela.querySelectorAll('tbody tr');
+                const arr = [];
+                linhas.forEach(tr => {
+                    if (tr.dataset.removido === '1') return; // linha removida
+                    const item = {};
+                    // Declarar antes do loop de colunas para evitar Temporal Dead Zone
+                    const idx = parseInt(tr.dataset.idx);
+                    const isNewRow = isNaN(idx) || tr.dataset.idx === 'new';
+                    const arrOrig = window.tedSelecionado[tabDef.key] || [];
+                    tabDef.colunas.forEach(col => {
+                        const td = tr.querySelector(`td[data-field="${col.field}"]`);
+                        if (!td) return;
+                        let val = td.textContent.trim();
+                        // Sanitizar ND (campo 'numero') removendo caracteres não numéricos/pontos/traços
+                        if (col.field === 'numero') {
+                            val = String(val).replace(/[^0-9.\-]/g, '').trim();
+                        }
+                        if (col.type === 'currency') {
+                            val = parseNumber(val) || 0;
+                        } else if (col.type === 'number') {
+                            // Inteiros de tabela: usar somente dígitos para evitar casos como "2.000" virar 2
+                            const digitsOnly = String(val || '').replace(/\D/g, '');
+                            val = digitsOnly ? parseInt(digitsOnly, 10) : 0;
+                        } else if (col.type === 'date') {
+                            // tentar reconverter de DD/MM/YYYY para YYYY-MM-DD
+                            const parts = val.split('/');
+                            if (parts.length === 3) {
+                                val = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                            }
+                        } else {
+                            // Campo texto: restaurar valor original se o usuário não editou a célula.
+                            // Evita falso-positivo causado por sanitização na exibição
+                            // (ex.: NBSP removido no display, mas não no dado original).
+                            if (!isNewRow && arrOrig[idx] && arrOrig[idx][col.field] !== undefined) {
+                                const origRaw = arrOrig[idx][col.field];
+                                if (sanitizeString(val) === sanitizeString(String(origRaw === null || origRaw === undefined ? '' : origRaw))) {
+                                    val = origRaw;
+                                }
+                            }
+                        }
+                        item[col.field] = val;
+                    });
+                    // (idx, isNewRow, arrOrig já declarados acima)
+                    if (!isNewRow && arrOrig[idx] && arrOrig[idx].id) {
+                        item.id = arrOrig[idx].id;
+                    } else if (isNewRow) {
+                        item.id = Date.now() + Math.floor(Math.random() * 1000);
+                    }
+                    // Preservar campos extras não nas colunas
+                    if (!isNewRow && arrOrig[idx]) {
+                        Object.keys(arrOrig[idx]).forEach(k => {
+                            if (item[k] === undefined) item[k] = arrOrig[idx][k];
+                        });
+                    }
+                    // Calcular campos derivados baseados em M para itens novos ou alterados
+                    let startDateCalc;
+                    if (window.tedSelecionado.primeiraDescentralizacao) {
+                        startDateCalc = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                    } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                        startDateCalc = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+                    }
+                    // Recalcular mesDesc/anoDesc para financeiros quando M muda ou é novo
+                    if (tabDef.key === 'financeiros' && item.m !== undefined) {
+                        const origM = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].m : null;
+                        if (isNewRow || origM === null || Number(item.m) !== Number(origM)) {
+                            if (startDateCalc) {
+                                const dCalc = new Date(startDateCalc);
+                                dCalc.setMonth(dCalc.getMonth() + Number(item.m));
+                                item.mesDesc = dCalc.getMonth() + 1;
+                                item.anoDesc = dCalc.getFullYear();
+                            }
+                        }
+                    }
+                    // Recalcular mesInicio/anoInicio/mesFinal/anoFinal para metas e físico
+                    if ((tabDef.key === 'metas' || tabDef.key === 'fisicos') && startDateCalc) {
+                        if (item.mInicio !== undefined && !isNaN(Number(item.mInicio))) {
+                            const origMI = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].mInicio : null;
+                            if (isNewRow || origMI === null || Number(item.mInicio) !== Number(origMI)) {
+                                const dI = new Date(startDateCalc);
+                                dI.setMonth(dI.getMonth() + Number(item.mInicio));
+                                item.mesInicio = dI.getMonth() + 1;
+                                item.anoInicio = dI.getFullYear();
+                            }
+                        }
+                        if (item.mFinal !== undefined && !isNaN(Number(item.mFinal))) {
+                            const origMF = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].mFinal : null;
+                            if (isNewRow || origMF === null || Number(item.mFinal) !== Number(origMF)) {
+                                const dF = new Date(startDateCalc);
+                                dF.setMonth(dF.getMonth() + Number(item.mFinal));
+                                item.mesFinal = dF.getMonth() + 1;
+                                item.anoFinal = dF.getFullYear();
+                            }
+                        }
+                    }
+                    // Verificar se o item tem pelo menos um campo preenchido (não adicionar linhas totalmente vazias)
+                    const temConteudo = tabDef.colunas.some(col => {
+                        const v = item[col.field];
+                        return v !== undefined && v !== null && v !== '' && v !== 0;
+                    });
+                    if (!temConteudo && isNewRow) return; // pular linhas vazias
+                    arr.push(item);
+                });
+                resultado[tabDef.key] = arr;
+            });
+            return resultado;
+        }
+
+        // ========== MODAL UNIFICADO: ADITIVO / APOSTILAMENTO ==========
+
+        // Abrir modal unificado para adicionar, editar ou visualizar aditivo/apostilamento
+        function abrirModalAlteracao(editIndex, viewOnly) {
+            if (!window.tedSelecionado) return showToast('Selecione um TED primeiro.', 'warning');
+            if (window._readOnlyMode && !viewOnly) {
+                // Em modo leitura, permite somente visualização das alterações existentes.
+                if (typeof editIndex === 'number') viewOnly = true;
+                else { showToast('Modo leitura: você pode apenas ver alterações.', 'warning'); return; }
+            }
+            let overlay = document.getElementById('alteracaoModalOverlay');
+            if (overlay) overlay.remove();
+
+            const ted = window.tedSelecionado;
+            migrarParaAlteracoesUnificadas(ted);
+            if (!ted.alteracoes) ted.alteracoes = [];
+
+            const isEdit = typeof editIndex === 'number' && ted.alteracoes[editIndex];
+            const existente = isEdit ? ted.alteracoes[editIndex] : null;
+            const tipoInicial = existente ? existente.tipo : ''; // vazio = não selecionado ainda
+
+            overlay = document.createElement('div');
+            overlay.id = 'alteracaoModalOverlay';
+            overlay.className = 'aditivo-modal-overlay';
+
+            // Construir HTML do seletor de tipo + conteúdo dinâmico
+            overlay.innerHTML = `
+                <div class="aditivo-modal aditivo-modal-expanded">
+                    <h3 id="alteracaoModalTitulo" style="display:none;"></h3>
+
+                    <div style="display:flex; gap:1rem; align-items:center; margin-bottom:1rem;">
+                        <div style="display:flex; gap:1.5rem; padding:0.75rem; background:var(--bg-secondary,#f8fafc); border-radius:8px; border:1px solid var(--border);">
+                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
+                                <input type="radio" name="alteracaoTipo" value="aditivo" ${tipoInicial === 'aditivo' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#16a34a; width:18px; height:18px;">
+                                <span style="color:#16a34a;">Aditivo</span>
+                            </label>
+                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600; font-size:0.9rem;">
+                                <input type="radio" name="alteracaoTipo" value="apostilamento" ${tipoInicial === 'apostilamento' ? 'checked' : ''} onchange="atualizarFormularioAlteracao()" style="accent-color:#2563eb; width:18px; height:18px;">
+                                <span style="color:#2563eb;">📋 Apostilamento</span>
+                            </label>
+                        </div>
+                        <div style="margin-left:8px; display:flex; flex-direction:column; gap:4px;">
+                            <label style="font-weight:600; font-size:0.9rem;">Data</label>
+                            <input type="date" id="alteracaoDataInput" style="padding:6px 8px; border-radius:6px; border:1px solid var(--border);">
+                        </div>
+                    </div>
+
+                    <div id="alteracaoFormConteudo" style="display:none;">
+                        <!-- Será preenchido dinamicamente por atualizarFormularioAlteracao -->
+                    </div>
+
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+                        <button onclick="fecharModalAlteracao()" style="padding:8px 16px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer; color:var(--text);">Cancelar</button>
+                        <button id="alteracaoBtnConfirmar" onclick="confirmarAlteracao()" style="padding:8px 16px; border:none; border-radius:6px; background:#16a34a; color:#fff; cursor:pointer; font-weight:600;" disabled>${isEdit ? 'Salvar Alterações' : 'Salvar'}</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            // Garantir que os ícones do Lucide dentro do modal sejam renderizados e limpar células
+            try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); if (typeof limparConteudoCelulasClone === 'function') limparConteudoCelulasClone(overlay); }, 40); } catch(e) {}
+
+            // Armazenar dados no overlay
+            overlay.dataset.editIndex = isEdit ? String(editIndex) : '';
+            overlay.dataset.viewOnly = viewOnly ? '1' : '0';
+            // (d) Ao editar, usar o snapshot original do registro (estado antes deste aditivo)
+            // para que a comparação seja feita em relação ao estado correto, mesmo que outros
+            // aditivos posteriores já tenham sido aplicados ao TED
+            overlay._snapshotOriginal = (isEdit && existente && existente.snapshot)
+                ? JSON.parse(JSON.stringify(existente.snapshot))
+                : capturarSnapshotTed(ted);
+            // Garantir IDs no snapshot de financeiros: itens sem ID recebem ID do item vivo correspondente
+            // (necessário para que compararArrayTabela use o caminho por ID em vez do fallback por matchKey)
+            try {
+                const snapFin = overlay._snapshotOriginal && overlay._snapshotOriginal.financeiros;
+                const liveFin = ted.financeiros || [];
+                if (snapFin && snapFin.some(f => f && f.id == null)) {
+                    snapFin.forEach(sf => {
+                        if (!sf || sf.id != null) return;
+                        const match = liveFin.find(lf =>
+                            String(lf.numero || '') === String(sf.numero || '') &&
+                            String(lf.up || lf.ug || '') === String(sf.up || sf.ug || '') &&
+                            String(lf.m ?? '') === String(sf.m ?? '') &&
+                            Math.abs((parseNumber(lf.valor) || 0) - (parseNumber(sf.valor) || 0)) < 0.01
+                        );
+                        if (match) sf.id = match.id;
+                    });
+                }
+            } catch(e) { /* non-fatal */ }
+            overlay._existente = existente;
+
+            // Se editando, preencher automaticamente o formulário
+            if (tipoInicial) {
+                atualizarFormularioAlteracao();
+            }
+
+            overlay.classList.add('active');
+            // Re-renderizar ícones após o conteúdo dinâmico ser inserido e limpar células (segunda passagem)
+            try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); if (typeof limparConteudoCelulasClone === 'function') limparConteudoCelulasClone(overlay); }, 60); } catch(e) {}
+        }
+
+        // Atualizar o conteúdo do formulário baseado no tipo selecionado (aditivo ou apostilamento)
+        function atualizarFormularioAlteracao() {
+            const overlay = document.getElementById('alteracaoModalOverlay');
+            if (!overlay) return;
+            const tipoRadio = overlay.querySelector('input[name="alteracaoTipo"]:checked');
+            if (!tipoRadio) return;
+            const tipo = tipoRadio.value; // 'aditivo' ou 'apostilamento'
+            const ted = window.tedSelecionado;
+            if (!ted) return;
+
+            const isEdit = overlay.dataset.editIndex !== '';
+            const editIndex = isEdit ? parseInt(overlay.dataset.editIndex, 10) : null;
+            const existente = isEdit ? (ted.alteracoes || [])[editIndex] : null;
+
+            // Atualizar título e botão
+            const titulo = overlay.querySelector('#alteracaoModalTitulo');
+            const btn = overlay.querySelector('#alteracaoBtnConfirmar');
+            if (tipo === 'aditivo') {
+                titulo.textContent = `✏️ ${isEdit ? 'Editar' : 'Novo'} Aditivo de Vigência / Valor do TED`;
+                btn.style.background = '#16a34a';
+                btn.textContent = isEdit ? 'Salvar Alterações' : 'Adicionar Aditivo';
+            } else {
+                titulo.textContent = `📋 ${isEdit ? 'Editar' : 'Novo'} Apostilamento`;
+                btn.style.background = '#2563eb';
+                btn.textContent = isEdit ? 'Salvar Alterações' : 'Salvar Apostilamento';
+            }
+            btn.disabled = false;
+
+            // Gerar campos clone
+            let camposCloneHtml = '';
+            ADITIVO_CAMPOS_CLONE.forEach(c => {
+                const fw = c.fullWidth ? ' full-width' : '';
+                const val = existente && existente.snapshot && typeof existente.camposAlterados === 'object' && existente.camposAlterados[c.key]
+                    ? existente.camposAlterados[c.key].para
+                    : (ted[c.key] || '');
+                const escaped = String(val).replace(/"/g, '&quot;');
+                const roAttr = c.readonly ? ' readonly disabled' : '';
+                const roStyle = c.readonly ? ' style="opacity:0.6;cursor:not-allowed;background:var(--bg-tertiary,#f3f4f6);"' : '';
+                if (c.type === 'textarea') {
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><textarea id="alt_clone_${c.key}" data-campo="${c.key}"${roAttr}${roStyle}>${val}</textarea></div>`;
+                } else {
+                    camposCloneHtml += `<div class="form-group${fw}"><label>${c.label}${c.readonly ? ' 🔒' : ''}</label><input type="${c.type}" id="alt_clone_${c.key}" data-campo="${c.key}" value="${escaped}"${roAttr}${roStyle}></div>`;
+                }
+            });
+
+            // Gerar tabelas clonadas
+            const tabelasCloneHtml = gerarHtmlTabelasClone(ted, 'alt', existente);
+
+            // Campos específicos do aditivo (data movida para o topo do modal para ficar próxima do tipo)
+            let dadosEspecificosHtml = '';
+            if (tipo === 'aditivo') {
+                dadosEspecificosHtml = `
+                    <div class="aditivo-section-title">Dados do Aditivo</div>
+                    <div class="aditivo-clone-grid">
+                        <div class="form-group">
+                            <label>Quantidade de meses a acrescentar *</label>
+                            <input type="number" id="alteracaoMesesInput" min="0" placeholder="Ex: 12">
+                        </div>
+                        <div class="form-group">
+                            <label>Observação</label>
+                            <input type="text" id="alteracaoObsInput" placeholder="Ex: Aditivo de prazo">
+                        </div>
+                    </div>`;
+            } else {
+                dadosEspecificosHtml = `
+                    <div class="aditivo-section-title">Dados do Apostilamento</div>
+                    <div class="aditivo-clone-grid">
+                        <div class="form-group">
+                            <label>Observação</label>
+                            <input type="text" id="alteracaoObsInput" placeholder="Ex: Ajuste de texto/campo">
+                        </div>
+                    </div>`;
+            }
+
+            const conteudo = overlay.querySelector('#alteracaoFormConteudo');
+            // Se for modo somente-visualização, renderizar somente os detalhes das alterações
+            if (overlay.dataset.viewOnly === '1') {
+                const detalheHtml = gerarHtmlDetalhesAlteracoes(existente || overlay._existente || {});
+                conteudo.innerHTML = detalheHtml;
+                conteudo.style.display = 'block';
+                // ocultar botão de confirmação em modo viewOnly
+                try { if (btn) btn.style.display = 'none'; } catch(e) {}
+                // ajustar título
+                try { titulo.textContent = `🔎 Detalhes: ${isEdit ? 'Editar' : 'Visualizar'} ${tipo === 'aditivo' ? 'Aditivo' : 'Apostilamento'}`; } catch(e) {}
+            } else {
+                conteudo.innerHTML = `
+                    ${dadosEspecificosHtml}
+
+                    <div class="aditivo-section-title">Informações Gerais do TED</div>
+                    <div class="aditivo-clone-grid">
+                        ${camposCloneHtml}
+                    </div>
+
+                    ${tabelasCloneHtml}
+                `;
+                conteudo.style.display = 'block';
+            }
+
+            // Aplicar máscaras nas células contenteditable
+            aplicarMascarasCelulasClone(overlay);
+            // Garantir limpeza/normalização das células e renderizar ícones
+            try { if (typeof limparConteudoCelulasClone === 'function') limparConteudoCelulasClone(overlay); } catch(e) {}
+            try { setTimeout(()=>{ if (typeof initLucideIcons === 'function') initLucideIcons(); }, 40); } catch(e) {}
+
+            // Preencher valores
+            const dataInput = document.getElementById('alteracaoDataInput');
+            const obsInput = document.getElementById('alteracaoObsInput');
+            if (dataInput) dataInput.value = existente ? (existente.data || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+            if (obsInput) obsInput.value = existente ? (existente.obs || '') : '';
+
+            if (tipo === 'aditivo') {
+                const mesesInput = document.getElementById('alteracaoMesesInput');
+                if (mesesInput) mesesInput.value = existente ? (existente.meses || '') : '';
+            }
+
+            // (d) Atualizar snapshot apenas para novas alterações; ao editar, preservar
+            // o snapshot original do registro para comparação correta
+            if (!isEdit) {
+                overlay._snapshotOriginal = capturarSnapshotTed(ted);
+            }
+
+            // Listener para destacar campos alterados em tempo real
+            overlay.querySelectorAll('[data-campo]').forEach(el => {
+                const campo = el.dataset.campo;
+                const valorOriginal = String(ted[campo] || '');
+                const checkChange = () => {
+                    const valorAtual = el.value || el.textContent || '';
+                    if (valorAtual !== valorOriginal) {
+                        el.closest('.form-group').classList.add('campo-modificado');
+                    } else {
+                        el.closest('.form-group').classList.remove('campo-modificado');
+                    }
+                };
+                el.addEventListener('input', checkChange);
+                el.addEventListener('change', checkChange);
+                checkChange();
+            });
+        }
+
+        function fecharModalAlteracao() {
+            const overlay = document.getElementById('alteracaoModalOverlay');
+            if (overlay) overlay.classList.remove('active');
+        }
+
+        function confirmarAlteracao() {
+            const ted = window.tedSelecionado;
+            if (!ted) return;
+            const overlay = document.getElementById('alteracaoModalOverlay');
+            if (!overlay) return;
+
+            const tipoRadio = overlay.querySelector('input[name="alteracaoTipo"]:checked');
+            if (!tipoRadio) return showToast('Selecione o tipo: Aditivo ou Apostilamento.', 'warning');
+            const tipo = tipoRadio.value;
+
+            const data = (document.getElementById('alteracaoDataInput') || {}).value || '';
+            const obs = ((document.getElementById('alteracaoObsInput') || {}).value || '').trim();
+            if (!data) return showToast('Informe a data.', 'warning');
+
+            if (!ted.alteracoes) ted.alteracoes = [];
+            const editIndex = overlay.dataset.editIndex !== '' ? parseInt(overlay.dataset.editIndex, 10) : null;
+
+            // Capturar snapshot original
+            const snapshot = overlay._snapshotOriginal || capturarSnapshotTed(ted);
+
+            // Capturar novos valores dos campos clonados
+            const novosValores = {};
+            ADITIVO_CAMPOS_CLONE.forEach(c => {
+                const el = document.getElementById('alt_clone_' + c.key);
+                novosValores[c.key] = el ? el.value : (ted[c.key] || '');
+            });
+
+            // Dados específicos do aditivo
+            let meses = 0;
+
+            if (tipo === 'aditivo') {
+                meses = parseInt((document.getElementById('alteracaoMesesInput') || {}).value, 10) || 0;
+            }
+
+            // Detectar alterações de campos simples
+            const alteracoes = detectarAlteracoesAditivo(snapshot, novosValores);
+
+            // (b) Detectar alterações de vigência feitas fora do modal (edição direta dos dados
+            // cadastrais entre dois aditivos). Compara snapshot anterior com snapshot atual.
+            const _camposVig = [
+                { key: 'vigencia', label: 'Vigência (meses)' },
+                { key: 'inicioVigencia', label: 'Início de Vigência' },
+                { key: 'fimVigencia', label: 'Fim de Vigência' },
+                { key: 'primeiraDescentralizacao', label: '1ª Descentralização' }
+            ];
+            const _altsExist = ted.alteracoes || [];
+            const _idxRef = (editIndex !== null && !isNaN(editIndex)) ? editIndex : _altsExist.length;
+            let _snapAnt = null;
+            for (let _i = _idxRef - 1; _i >= 0; _i--) {
+                if (_altsExist[_i] && _altsExist[_i].snapshot) { _snapAnt = _altsExist[_i].snapshot; break; }
+            }
+            if (_snapAnt) {
+                _camposVig.forEach(c => {
+                    const origVal = String(_snapAnt[c.key] === null || _snapAnt[c.key] === undefined ? '' : _snapAnt[c.key]);
+                    const novaVal = String(snapshot[c.key] === null || snapshot[c.key] === undefined ? '' : snapshot[c.key]);
+                    if (origVal !== novaVal && !alteracoes[c.key]) {
+                        alteracoes[c.key] = { de: _snapAnt[c.key], para: snapshot[c.key], label: c.label };
+                    }
+                });
+            }
+
+            // Coletar dados das tabelas editadas no modal
+            const dadosTabelas = coletarDadosTabelasModal('alt');
+
+            // Comparar tabelas entre snapshot e estado do modal para registrar diffs
+            // Usamos uma cópia temporária com os dados do modal para gerar o diff
+            const tedParaDiff = Object.assign({}, ted);
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                if (dadosTabelas[tabDef.key]) tedParaDiff[tabDef.key] = dadosTabelas[tabDef.key];
+            });
+            const tabelasAlteradas = compararTabelasAditivo(snapshot, tedParaDiff);
+
+            // Aplicar nas tabelas reais apenas adições e modificações — NUNCA remover fisicamente
+            // Remoções ficam apenas no diff (tabelasAlteradas) para exibição tachada
+            ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                if (!dadosTabelas[tabDef.key]) return;
+                const diffs = tabelasAlteradas[tabDef.key];
+                let arr = JSON.parse(JSON.stringify(ted[tabDef.key] || []));
+                const getId = (item) => (item && item.id != null) ? String(item.id) : null;
+                const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
+
+                if (diffs) {
+                    // Aplicar adições
+                    (diffs.adicionados || []).forEach(add => {
+                        const item = add.item || add;
+                        const id = getId(item); const mk = matchKey(item);
+                        const jaExiste = id ? arr.some(a => getId(a) === id) : arr.some(a => matchKey(a) === mk);
+                        if (!jaExiste) arr.push(JSON.parse(JSON.stringify(item)));
+                    });
+                    // Aplicar modificações
+                    (diffs.modificados || []).forEach(mod => {
+                        const atual = mod.atual || {};
+                        const id = getId(atual); const mk = matchKey(atual);
+                        const idx = id ? arr.findIndex(a => getId(a) === id) : arr.findIndex(a => matchKey(a) === mk);
+                        if (idx >= 0 && mod.camposAlterados) {
+                            Object.keys(mod.camposAlterados).forEach(f => { arr[idx][f] = mod.camposAlterados[f].para; });
+                        }
+                    });
+                    // Remoções: NÃO remover — ficam no diff para exibição tachada
+                }
+                ted[tabDef.key] = arr;
+            });
+
+            // Construir objeto da alteração
+            const altObj = { tipo, data, obs };
+            if (tipo === 'aditivo') {
+                altObj.meses = meses;
+            }
+            // Valor do TED ANTES das mudanças (derivado dos objetos do snapshot: qtde × valorUnitario)
+            const valorTedAntes = Number((snapshot.objetos || []).reduce((s, o) => s + ((parseNumber(o.qtde) || 0) * (parseNumber(o.valorUnitario) || 0)), 0)) || Number(snapshot.valorTed) || 0;
+            // Valor do TED DEPOIS (mesma lógica de calcularTotalObjetosValor para consistência)
+            const objsDepois = dadosTabelas.objetos || ted.objetos || [];
+            const valorTedDepois = Number(objsDepois.reduce((s, o) => s + ((parseNumber(o.qtde) || 0) * (parseNumber(o.valorUnitario) || 0)), 0)) || 0;
+            // Só registrar valorTed no aditivo se houve mudança real no total do cadastro de objetos
+            if (Math.round(valorTedAntes * 100) !== Math.round(valorTedDepois * 100)) {
+                altObj.prevValorTed = valorTedAntes;
+                altObj.valorTed = valorTedDepois;
+            }
+            altObj.snapshot = snapshot;
+            altObj.camposAlterados = alteracoes;
+            altObj.tabelasAlteradas = tabelasAlteradas;
+
+            if (typeof editIndex === 'number' && !isNaN(editIndex)) {
+                const existing = ted.alteracoes[editIndex] || {};
+                ted.alteracoes[editIndex] = Object.assign({}, existing, altObj);
+            } else {
+                ted.alteracoes.push(altObj);
+            }
+
+            // Aplicar alterações de campos simples ao TED
+            if (Object.keys(alteracoes).length > 0) {
+                ADITIVO_CAMPOS_CLONE.forEach(c => {
+                    if (alteracoes[c.key]) {
+                        ted[c.key] = alteracoes[c.key].para;
+                    }
+                });
+            }
+            // valor TED é derivado do cadastro de objetos
+            atualizarValorTedFromObjetos(ted);
+
+            salvarDados();
+            fecharModalAlteracao();
+            exibirInformacoesTED();
+            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
+            renderGanttVigencia();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Retorna um Set de IDs/matchKeys de itens que devem aparecer tachados e fora dos cálculos:
+        // - Linhas ADICIONADAS por aditivos/apostilamentos EXCLUÍDOS
+        // - Linhas REMOVIDAS por aditivos/apostilamentos ATIVOS (ficaram no array mas foram removidas logicamente)
+        function getExcludedItemIds(tabelaKey, tedParam) {
+            const ids = new Set();
+            const ted = tedParam || window.tedSelecionado;
+            const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+            ((ted && ted.alteracoes) || []).forEach(alt => {
+                const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas[tabelaKey];
+                if (!diffs) return;
+                const addToSet = (item) => {
+                    if (item.id != null) ids.add(String(item.id));
+                    if (tabDef) {
+                        const mk = tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+                        if (mk) ids.add('mk:' + mk);
+                    }
+                };
+                if (alt.excluido) {
+                    // Apostilamento excluído: itens que ele ADICIONOU ficam tachados
+                    (diffs.adicionados || []).forEach(add => addToSet(add.item || add));
+                } else {
+                    // Apostilamento ativo: itens que ele REMOVEU ficam tachados
+                    (diffs.removidos || []).forEach(rem => addToSet(rem.item || rem));
+                }
+            });
+            return ids;
+        }
+
+        // Verifica se um item de tabela está em excludedIds (por id ou matchKey)
+        function isItemExcluded(item, excludedIds, tabelaKey) {
+            if (!excludedIds || excludedIds.size === 0) return false;
+            if (item.id != null && excludedIds.has(String(item.id))) return true;
+            const tabDef = ADITIVO_TABELAS_CLONE.find(t => t.key === tabelaKey);
+            if (tabDef) {
+                const mk = tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+                if (mk && excludedIds.has('mk:' + mk)) return true;
+            }
+            return false;
+        }
+
+        // Recalcula apenas campos simples (vigência, valor, camposAlterados) ignorando tabelas.
+        // Usado no soft-delete para não apagar linhas de tabelas financeiras/físicas.
+        function restaurarCamposSimplesSemTabelas(ted, removedIndex, removedItem) {
+            const eventos = (ted.alteracoes || []).filter(a => !a.excluido && a.snapshot);
+            const usarRemovido = typeof removedIndex === 'number' && removedIndex === 0 && removedItem && removedItem.snapshot;
+            const snapBase = usarRemovido ? removedItem.snapshot : (eventos[0] && eventos[0].snapshot);
+
+            // Restaurar campos simples do snapshot-base
+            if (snapBase) {
+                ADITIVO_CAMPOS_CLONE.forEach(c => {
+                    if (snapBase[c.key] !== undefined) ted[c.key] = snapBase[c.key];
+                });
+                if (snapBase.valorTed !== undefined) ted.valorTed = snapBase.valorTed;
+                if (snapBase.vigencia !== undefined) ted.vigencia = snapBase.vigencia;
+                if (snapBase.inicioVigencia !== undefined) ted.inicioVigencia = snapBase.inicioVigencia;
+                if (snapBase.fimVigencia !== undefined) ted.fimVigencia = snapBase.fimVigencia;
+                if (snapBase.primeiraDescentralizacao !== undefined) ted.primeiraDescentralizacao = snapBase.primeiraDescentralizacao;
+            }
+
+            // Reaplicar apenas camposAlterados (não tabelasAlteradas)
+            eventos.forEach(ev => {
+                if (ev.camposAlterados) {
+                    Object.keys(ev.camposAlterados).forEach(key => {
+                        ted[key] = ev.camposAlterados[key].para;
+                    });
+                }
+                // Vigência acumulada dos aditivos
+                if (ev.tipo === 'aditivo' && ev.meses) {
+                    const mesesAtuais = parseInt(ted.vigencia) || 0;
+                    ted.vigencia = mesesAtuais + (parseInt(ev.meses) || 0);
+                    if (ted.inicioVigencia) {
+                        const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                        const dF = new Date(dI); dF.setMonth(dF.getMonth() + parseInt(ted.vigencia));
+                        ted.fimVigencia = `${dF.getFullYear()}-${String(dF.getMonth()+1).padStart(2,'0')}-${String(dF.getDate()).padStart(2,'0')}`;
+                    }
+                }
+            });
+        }
+
+        // Função auxiliar: restaurar dados do TED a partir dos snapshots das alterações restantes
+        function restaurarDadosAposRemocao(ted, removedIndex, removedItem) {
+            // Coletar todas as alterações com snapshot, em ordem (ignorar itens excluídos)
+            const eventos = [];
+            (ted.alteracoes || []).forEach((a, i) => {
+                if (a.excluido) return; // ignorar
+                if (a.snapshot) eventos.push({ tipo: a.tipo, idx: i, data: a.data || '', obj: a });
+            });
+
+            if (eventos.length === 0) {
+                if (removedItem && removedItem.snapshot) {
+                    const snap = removedItem.snapshot;
+                    ADITIVO_CAMPOS_CLONE.forEach(c => {
+                        if (snap[c.key] !== undefined) ted[c.key] = snap[c.key];
+                    });
+                    ADITIVO_TABELAS_CLONE.forEach(t => {
+                        if (snap[t.key]) ted[t.key] = JSON.parse(JSON.stringify(snap[t.key]));
+                    });
+                    // Restaurar campos de vigência/valor que também são salvos no snapshot
+                    if (snap.valorTed !== undefined) ted.valorTed = snap.valorTed;
+                    if (snap.vigencia !== undefined) ted.vigencia = snap.vigencia;
+                    if (snap.inicioVigencia !== undefined) ted.inicioVigencia = snap.inicioVigencia;
+                    if (snap.fimVigencia !== undefined) ted.fimVigencia = snap.fimVigencia;
+                    if (snap.primeiraDescentralizacao !== undefined) ted.primeiraDescentralizacao = snap.primeiraDescentralizacao;
+                }
+                return;
+            }
+
+            // Escolher snapshot-base correto:
+            // - se removeu o primeiro item (índice 0), usar snapshot do item removido (estado original real)
+            // - caso contrário, usar snapshot do primeiro evento remanescente
+            const usarSnapshotRemovido = (typeof removedIndex === 'number' && removedIndex === 0 && removedItem && removedItem.snapshot);
+            const primeiroSnapshot = usarSnapshotRemovido ? removedItem.snapshot : eventos[0].obj.snapshot;
+            if (primeiroSnapshot) {
+                ADITIVO_CAMPOS_CLONE.forEach(c => {
+                    if (primeiroSnapshot[c.key] !== undefined) {
+                        ted[c.key] = primeiroSnapshot[c.key];
+                    }
+                });
+                ADITIVO_TABELAS_CLONE.forEach(t => {
+                    if (primeiroSnapshot[t.key]) {
+                        ted[t.key] = JSON.parse(JSON.stringify(primeiroSnapshot[t.key]));
+                    }
+                });
+                // Restaurar campos de vigência/valor do snapshot-base
+                if (primeiroSnapshot.valorTed !== undefined) ted.valorTed = primeiroSnapshot.valorTed;
+                if (primeiroSnapshot.vigencia !== undefined) ted.vigencia = primeiroSnapshot.vigencia;
+                if (primeiroSnapshot.inicioVigencia !== undefined) ted.inicioVigencia = primeiroSnapshot.inicioVigencia;
+                if (primeiroSnapshot.fimVigencia !== undefined) ted.fimVigencia = primeiroSnapshot.fimVigencia;
+                if (primeiroSnapshot.primeiraDescentralizacao !== undefined) ted.primeiraDescentralizacao = primeiroSnapshot.primeiraDescentralizacao;
+            }
+
+            // Reaplicar todas as alterações em ordem
+            eventos.forEach(ev => {
+                if (ev.obj.camposAlterados) {
+                    Object.keys(ev.obj.camposAlterados).forEach(key => {
+                        ted[key] = ev.obj.camposAlterados[key].para;
+                    });
+                }
+                if (ev.obj.tabelasAlteradas) {
+                    ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                        const diffs = ev.obj.tabelasAlteradas[tabDef.key];
+                        if (!diffs) return;
+                        const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] || '')).join('||');
+                        let arr = ted[tabDef.key] || [];
+
+                        const getId = (item) => {
+                            if (!item || item.id === undefined || item.id === null) return null;
+                            return String(item.id);
+                        };
+
+                        // Backward compat: detect add+remove with same matchKey
+                        const addMap = {};
+                        (diffs.adicionados || []).forEach(add => { const item = add.item || add; addMap[matchKey(item)] = item; });
+                        const remMap = {};
+                        (diffs.removidos || []).forEach(rem => { const item = rem.item || rem; remMap[matchKey(item)] = item; });
+                        const syntheticMods = [];
+                        const handledAddKeys = new Set();
+                        const handledRemKeys = new Set();
+                        Object.keys(addMap).forEach(k => {
+                            if (remMap[k]) {
+                                syntheticMods.push({ original: remMap[k], atual: addMap[k] });
+                                handledAddKeys.add(k);
+                                handledRemKeys.add(k);
+                            }
+                        });
+
+                        if (diffs.removidos && diffs.removidos.length) {
+                            const remItems = diffs.removidos.map(r => r.item || r);
+                            const remIds = new Set(remItems.map(getId).filter(Boolean));
+                            const remKeys = new Set(remItems.map(matchKey).filter(k => !handledRemKeys.has(k)));
+                            if (remIds.size || remKeys.size) {
+                                arr = arr.filter(item => {
+                                    const itemId = getId(item);
+                                    if (itemId && remIds.has(itemId)) return false;
+                                    return !remKeys.has(matchKey(item));
+                                });
+                            }
+                        }
+                        if (diffs.modificados && diffs.modificados.length) {
+                            diffs.modificados.forEach(mod => {
+                                const targetKey = matchKey(mod.atual || {});
+                                const origKey = matchKey(mod.original || {});
+                                const targetId = getId(mod.atual || {});
+                                const origId = getId(mod.original || {});
+                                let idx = -1;
+                                if (targetId) idx = arr.findIndex(item => getId(item) === targetId);
+                                if (idx < 0 && origId) idx = arr.findIndex(item => getId(item) === origId);
+                                if (idx < 0) idx = arr.findIndex(item => matchKey(item) === targetKey);
+                                if (idx < 0) idx = arr.findIndex(item => matchKey(item) === origKey);
+                                if (idx >= 0 && mod.camposAlterados) {
+                                    Object.keys(mod.camposAlterados).forEach(field => {
+                                        arr[idx][field] = mod.camposAlterados[field].para;
+                                    });
+                                }
+                            });
+                        }
+                        syntheticMods.forEach(mod => {
+                            const origKey = matchKey(mod.original);
+                            const origId = getId(mod.original);
+                            let idx = -1;
+                            if (origId) idx = arr.findIndex(item => getId(item) === origId);
+                            if (idx < 0) idx = arr.findIndex(item => matchKey(item) === origKey);
+                            if (idx >= 0) {
+                                (tabDef.colunas || []).forEach(col => {
+                                    if (mod.atual[col.field] !== undefined) arr[idx][col.field] = mod.atual[col.field];
+                                });
+                                Object.keys(mod.atual).forEach(k => {
+                                    if (arr[idx][k] === undefined || !tabDef.colunas.some(c => c.field === k)) arr[idx][k] = mod.atual[k];
+                                });
+                            }
+                        });
+                        if (diffs.adicionados && diffs.adicionados.length) {
+                            diffs.adicionados.forEach(add => {
+                                const item = add.item || add;
+                                const k = matchKey(item);
+                                const addId = getId(item);
+                                if (handledAddKeys.has(k)) return;
+                                if (addId) {
+                                    if (!arr.some(a => getId(a) === addId)) arr.push(JSON.parse(JSON.stringify(item)));
+                                } else {
+                                    if (!arr.some(a => matchKey(a) === k)) arr.push(JSON.parse(JSON.stringify(item)));
+                                }
+                            });
+                        }
+
+                        if (tabDef.key === 'objetos') {
+                            arr.forEach(item => {
+                                const qt = parseNumber(item.qtde) || 0;
+                                const vu = parseNumber(item.valorUnitario) || 0;
+                                item.valorTotal = qt * vu;
+                            });
+                        }
+                        ted[tabDef.key] = arr;
+                    });
+                }
+            });
+        }
+
+        function removerAlteracao(index) {
+            const ted = window.tedSelecionado;
+            if (!ted || !ted.alteracoes || !ted.alteracoes[index]) return;
+            const item = ted.alteracoes[index];
+            const isAditivo = item.tipo === 'aditivo';
+            const ordinal = obterOrdinalAlteracao(ted, index);
+            const tipoLabel = isAditivo ? `${ordinal}º Aditivo` : `${ordinal}º Apostilamento`;
+            const extra = isAditivo ? ` (+${item.meses || 0} meses)` : '';
+            confirmarAcao(`Remover ${tipoLabel}${extra}?`, function() {
+
+            // Marcar como excluído (manter registro visível, mas ignorar nos cálculos)
+            const removida = ted.alteracoes[index];
+            removida.excluido = true;
+
+            // Reverter tabelas usando diffs registrados no apostilamento/aditivo
+            const getId = (item) => (item && item.id != null) ? String(item.id) : null;
+
+            if (removida.tabelasAlteradas && Object.keys(removida.tabelasAlteradas).length > 0) {
+                // Caminho 1: tabelasAlteradas disponível — reverter diffs precisamente
+                ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                    const diffs = removida.tabelasAlteradas[tabDef.key];
+                    if (!diffs) return;
+                    let arr = JSON.parse(JSON.stringify(ted[tabDef.key] || []));
+                    const matchKey = (item) => tabDef.matchFields.map(f => String(item[f] == null ? '' : item[f])).join('||');
+
+                    // Devolver itens que foram REMOVIDOS
+                    (diffs.removidos || []).forEach(rem => {
+                        const item = rem.item || rem;
+                        const id = getId(item); const mk = matchKey(item);
+                        const jaExiste = id ? arr.some(a => getId(a) === id) : arr.some(a => matchKey(a) === mk);
+                        if (!jaExiste) arr.push(JSON.parse(JSON.stringify(item)));
+                    });
+                    // Remover itens que foram ADICIONADOS
+                    (diffs.adicionados || []).forEach(add => {
+                        const item = add.item || add;
+                        const id = getId(item); const mk = matchKey(item);
+                        arr = arr.filter(a => id ? getId(a) !== id : matchKey(a) !== mk);
+                    });
+                    // Reverter campos MODIFICADOS
+                    (diffs.modificados || []).forEach(mod => {
+                        const orig = mod.original || {};
+                        const id = getId(orig); const mk = matchKey(orig);
+                        const idx = id ? arr.findIndex(a => getId(a) === id) : arr.findIndex(a => matchKey(a) === mk);
+                        if (idx >= 0 && mod.camposAlterados) {
+                            Object.keys(mod.camposAlterados).forEach(f => { arr[idx][f] = mod.camposAlterados[f].de; });
+                        }
+                    });
+                    ted[tabDef.key] = arr;
+                });
+            } else if (removida.snapshot) {
+                // Caminho 2: sem diffs mas tem snapshot — restaurar tabelas do snapshot
+                ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                    if (removida.snapshot[tabDef.key] !== undefined) {
+                        ted[tabDef.key] = JSON.parse(JSON.stringify(removida.snapshot[tabDef.key]));
+                    }
+                });
+            } else {
+                console.warn('[EXCLUIR] sem tabelasAlteradas e sem snapshot — não é possível reverter tabelas');
+            }
+
+            // Reconstruir campos simples (vigência, valor, camposAlterados) sem tocar nas tabelas
+            restaurarCamposSimplesSemTabelas(ted, index, removida);
+
+            // Sincronizar arrays legados
+            sincronizarAlteracoesParaArraysLegado(ted);
+
+            // valor TED é derivado do cadastro de objetos
+            atualizarValorTedFromObjetos(ted);
+
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            exibirInformacoesTED();
+            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
+            renderGanttVigencia();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            }, 'Confirmar');
+            return;
+        }
+
+        // Manter funções legadas como wrappers para compatibilidade
+        function abrirModalAditivo(editIndex) { abrirModalAlteracao(editIndex); }
+        function abrirModalApostilamento(editIndex) { abrirModalAlteracao(editIndex); }
+        function fecharModalAditivo() { fecharModalAlteracao(); }
+        function fecharModalApostilamento() { fecharModalAlteracao(); }
+        function removerAditivo(index) { removerAlteracao(index); }
+        function removerApostilamento(index) { removerAlteracao(index); }
+
+        // Restaurar alteração previamente excluída
+        function restaurarAlteracao(index) {
+            const ted = window.tedSelecionado;
+            if (!ted || !ted.alteracoes || !ted.alteracoes[index]) return;
+            const item = ted.alteracoes[index];
+            if (!item.excluido) return;
+            item.excluido = false;
+
+            // Reaplicar nas tabelas o que este item havia feito (inverso da exclusão):
+            // - itens que ele havia REMOVIDO → removê-los novamente
+            // - itens que ele havia ADICIONADO → devolvê-los
+            // - itens que ele havia MODIFICADO → reaplicar o valor novo
+            if (item.tabelasAlteradas) {
+                ADITIVO_TABELAS_CLONE.forEach(tabDef => {
+                    const diffs = item.tabelasAlteradas[tabDef.key];
+                    if (!diffs) return;
+                    let arr = JSON.parse(JSON.stringify(ted[tabDef.key] || []));
+                    const getId = (i) => (i && i.id != null) ? String(i.id) : null;
+                    const matchKey = (i) => tabDef.matchFields.map(f => String(i[f] == null ? '' : i[f])).join('||');
+
+                    // Reaplicar remoções
+                    (diffs.removidos || []).forEach(rem => {
+                        const it = rem.item || rem;
+                        const id = getId(it); const mk = matchKey(it);
+                        arr = arr.filter(a => id ? getId(a) !== id : matchKey(a) !== mk);
+                    });
+                    // Reaplicar adições
+                    (diffs.adicionados || []).forEach(add => {
+                        const it = add.item || add;
+                        const id = getId(it); const mk = matchKey(it);
+                        const jaExiste = id ? arr.some(a => getId(a) === id) : arr.some(a => matchKey(a) === mk);
+                        if (!jaExiste) arr.push(JSON.parse(JSON.stringify(it)));
+                    });
+                    // Reaplicar modificações
+                    (diffs.modificados || []).forEach(mod => {
+                        const atual = mod.atual || {};
+                        const id = getId(atual); const mk = matchKey(atual);
+                        const idx = id ? arr.findIndex(a => getId(a) === id) : arr.findIndex(a => matchKey(a) === mk);
+                        if (idx >= 0 && mod.camposAlterados) {
+                            Object.keys(mod.camposAlterados).forEach(field => {
+                                arr[idx][field] = mod.camposAlterados[field].para;
+                            });
+                        }
+                    });
+                    ted[tabDef.key] = arr;
+                });
+            }
+
+            // Reaplicar campos simples
+            if (item.camposAlterados) {
+                Object.keys(item.camposAlterados).forEach(key => {
+                    ted[key] = item.camposAlterados[key].para;
+                });
+            }
+            if (item.tipo === 'aditivo' && item.meses) {
+                ted.vigencia = (parseInt(ted.vigencia) || 0) + (parseInt(item.meses) || 0);
+                if (ted.inicioVigencia) {
+                    const dI = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    const dF = new Date(dI); dF.setMonth(dF.getMonth() + parseInt(ted.vigencia));
+                    ted.fimVigencia = `${dF.getFullYear()}-${String(dF.getMonth()+1).padStart(2,'0')}-${String(dF.getDate()).padStart(2,'0')}`;
+                }
+            }
+
+            sincronizarAlteracoesParaArraysLegado(ted);
+            atualizarValorTedFromObjetos(ted);
+            try { atualizarTabelasEmCascata('ted'); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            exibirInformacoesTED();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Compatibilidade: valor TED agora é sempre derivado do cadastro de objetos
+        function recomputeValorTedFromAditivos(ted) {
+            atualizarValorTedFromObjetos(ted);
+        }
+
+        // Aplica máscara de moeda (pt-BR) em um input enquanto o usuário digita
+        function applyCurrencyMaskToInput(input) {
+            if (!input) return;
+            if (input.dataset.maskCurrency === '1') return; // já aplicado
+            const onInput = function () {
+                const raw = input.value || '';
+                // remover tudo que não for dígito
+                const digits = raw.replace(/\D/g, '');
+                if (!digits) { input.value = ''; return; }
+                // interpretar como centavos
+                const num = parseInt(digits, 10);
+                const cents = num % 100;
+                const units = Math.floor(num / 100);
+                const formattedUnits = formatarMilharesPtBR(units);
+                const formatted = formattedUnits + ',' + String(cents).padStart(2, '0');
+                input.value = formatted;
+            };
+            // usar paste também para garantir formato
+            const onPaste = function (e) {
+                setTimeout(onInput, 0);
+            };
+            input.addEventListener('input', onInput);
+            input.addEventListener('paste', onPaste);
+            input.dataset.maskCurrency = '1';
+        }
+
+        // Helper: formatar número com separador de milhares pt-BR usando ponto ASCII real (U+002E)
+        // Evita problemas com toLocaleString que pode gerar caracteres Unicode especiais no navegador
+        function formatarMilharesPtBR(num) {
+            const s = String(Math.abs(Math.floor(num)));
+            let resultado = '';
+            for (let i = s.length - 1, c = 0; i >= 0; i--, c++) {
+                if (c > 0 && c % 3 === 0) resultado = '.' + resultado;
+                resultado = s[i] + resultado;
+            }
+            return num < 0 ? '-' + resultado : resultado;
+        }
+
+        // Máscara para número inteiro em input (1000 → 1.000)
+        function applyNumberMaskToInput(input) {
+            if (!input) return;
+            if (input.dataset.maskNumber === '1') return;
+            const onInput = function () {
+                const raw = input.value || '';
+                const digits = raw.replace(/\D/g, '');
+                if (!digits) { input.value = ''; return; }
+                const num = parseInt(digits, 10);
+                input.value = formatarMilharesPtBR(num);
+            };
+            input.addEventListener('input', onInput);
+            input.addEventListener('paste', function() { setTimeout(onInput, 0); });
+            input.dataset.maskNumber = '1';
+        }
+
+        // Máscara de data DD/MM/AAAA enquanto digita
+        function applyDateMaskToInput(input) {
+            if (!input) return;
+            if (input.dataset.maskDate === '1') return;
+
+            const onInput = function () {
+                const raw = input.value || '';
+                const digits = raw.replace(/\D/g, '').slice(0, 8);
+                if (!digits) { input.value = ''; return; }
+
+                let out = '';
+                if (digits.length <= 2) {
+                    out = digits;
+                } else if (digits.length <= 4) {
+                    out = digits.slice(0, 2) + '/' + digits.slice(2);
+                } else {
+                    out = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+                }
+                input.value = out;
+            };
+
+            input.addEventListener('input', onInput);
+            input.addEventListener('paste', function() { setTimeout(onInput, 0); });
+            input.dataset.maskDate = '1';
+        }
+
+        // Formatar conteúdo de célula contenteditable como moeda pt-BR (centavos)
+        function formatarCelulaContentEditableCurrency(td) {
+            const raw = td.textContent || '';
+            const digits = raw.replace(/\D/g, '');
+            if (!digits) { td.textContent = ''; return; }
+            const num = parseInt(digits, 10);
+            const cents = num % 100;
+            const units = Math.floor(num / 100);
+            const formattedUnits = formatarMilharesPtBR(units);
+            const formatted = formattedUnits + ',' + String(cents).padStart(2, '0');
+            // Preservar cursor ao final
+            td.textContent = formatted;
+            // Mover cursor para o final
+            try {
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(td);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch(e) {}
+        }
+
+        // Formatar conteúdo de célula contenteditable como número inteiro pt-BR (1000 → 1.000)
+        function formatarCelulaContentEditableNumber(td) {
+            const raw = td.textContent || '';
+            const digits = raw.replace(/\D/g, '');
+            if (!digits) { td.textContent = ''; return; }
+            const num = parseInt(digits, 10);
+            const formatted = formatarMilharesPtBR(num);
+            td.textContent = formatted;
+            try {
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(td);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch(e) {}
+        }
+
+        // Aplicar máscaras a todas as células contenteditable de uma tabela clone do aditivo
+        function aplicarMascarasCelulasClone(container) {
+            if (!container) return;
+            container.querySelectorAll('td[contenteditable="true"]').forEach(td => {
+                if (td.dataset.maskApplied === '1') return;
+                const tipo = td.dataset.type;
+                if (tipo === 'currency') {
+                    td.addEventListener('input', function() { formatarCelulaContentEditableCurrency(td); });
+                    td.addEventListener('paste', function() { setTimeout(function() { formatarCelulaContentEditableCurrency(td); }, 0); });
+                    td.dataset.maskApplied = '1';
+                } else if (tipo === 'number') {
+                    td.addEventListener('input', function() { formatarCelulaContentEditableNumber(td); });
+                    td.addEventListener('paste', function() { setTimeout(function() { formatarCelulaContentEditableNumber(td); }, 0); });
+                    td.dataset.maskApplied = '1';
+                }
+            });
+        }
+
+        // Limpar e normalizar o conteúdo das células contenteditable do modal (remover chars estranhos)
+        function limparConteudoCelulasClone(container) {
+            if (!container) return;
+            container.querySelectorAll('td[contenteditable="true"]').forEach(td => {
+                try {
+                    let txt = td.textContent || '';
+                    // remover caracteres de controle e BOMs
+                    txt = String(txt).replace(/[\u0000-\u001F\u007F-\u009F\u00A0\u2000-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g, '').trim();
+                    if (td.dataset.field === 'numero') {
+                        const digits = txt.replace(/\D/g, '');
+                        td.textContent = digits ? formatarNDComPontos(digits) : '';
+                    } else {
+                        // para números inteiros: remover separador de milhar PT-BR antes de parsear
+                        if (td.dataset.type === 'number') {
+                            const digitsOnly = txt.replace(/\D/g, '');
+                            const n = digitsOnly ? parseInt(digitsOnly, 10) : 0;
+                            td.textContent = (n || digitsOnly) ? formatarMilharesPtBR(n) : '';
+                        } else if (td.dataset.type === 'currency') {
+                            // manter como está; aplicar máscara caso já exista
+                            td.textContent = txt;
+                        } else {
+                            td.textContent = txt;
+                        }
+                    }
+                } catch (e) {
+                    // noop
+                }
+            });
+        }
+
+        // Sanitizar string removendo caracteres invisíveis e de controle
+        function sanitizeString(s) {
+            if (s === undefined || s === null) return '';
+            try {
+                let t = String(s);
+                // Remover apenas caracteres de controle, NBSP, marcas de direção e zero-width
+                // NÃO aplicar normalize('NFKC') pois converte º (U+00BA ordinal) para 'o'
+                t = t.replace(/[\u0000-\u001F\u007F-\u009F\u00A0\u2000-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g, '');
+                return t.trim();
+            } catch (e) { return String(s); }
+        }
+
+        // Função auxiliar: calcular fim com aditivos
+        function calcularFimComAditivos(ted) {
+            if (!ted.inicioVigencia) return null;
+            const inicio = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+            if (isNaN(inicio.getTime())) return null;
+            const vigOriginal = parseInt(ted.vigencia) || 0;
+            const totalAditivo = (ted.alteracoes || ted.aditivos || []).filter(a => a.tipo === 'aditivo' || a.meses).reduce((s, a) => s + (a.meses || 0), 0);
+            const totalMeses = vigOriginal + totalAditivo;
+            const fim = new Date(inicio);
+            fim.setMonth(fim.getMonth() + totalMeses);
+            return fim;
+        }
+
+        // Calcular meses automaticamente para Físico
+        function calcularMesesFisico() { calcularMesesFisicoModal(); }
+        function calcularMesesFisicoModal() {
+            if (!window.tedSelecionado) return;
+            const mInicio = parseInt(document.getElementById('modalFisicoCadMInicio').value);
+            const mFinal = parseInt(document.getElementById('modalFisicoCadMFinal').value);
+            if (isNaN(mInicio) && isNaN(mFinal)) return;
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else { return; }
+            const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+            if (!isNaN(mInicio)) {
+                const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+                document.getElementById('modalFisicoCadMesInicio').value = `${nomesMeses[dI.getMonth()]}/${dI.getFullYear()}`;
+            }
+            if (!isNaN(mFinal)) {
+                const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+                document.getElementById('modalFisicoCadMesFinal').value = `${nomesMeses[dF.getMonth()]}/${dF.getFullYear()}`;
+            }
+        }
+
+        //"?"? Modal Cadastro de Metas"?"?
+        window._editandoMetaId = null;
+
+        function abrirModalMeta(editId) {
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalMetaBackdrop');
+            const titulo = document.getElementById('modalMetaTitulo');
+            const errEl = document.getElementById('modalMetaError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            document.getElementById('modalMetaNome').value = '';
+            document.getElementById('modalMetaDescricao').value = '';
+            document.getElementById('modalMetaMInicio').value = '';
+            document.getElementById('modalMetaMFinal').value = '';
+            document.getElementById('modalMetaMesInicio').value = '';
+            document.getElementById('modalMetaMesFinal').value = '';
+            window._editandoMetaId = null;
+
+            if (editId) {
+                const m = (window.tedSelecionado.metas || []).find(x => x.id === editId);
+                if (m) {
+                    window._editandoMetaId = editId;
+                    titulo.textContent = '🔑 Editar Meta';
+                    document.getElementById('modalMetaNome').value = m.meta;
+                    document.getElementById('modalMetaDescricao').value = m.descricao || '';
+                    document.getElementById('modalMetaMInicio').value = m.mInicio;
+                    document.getElementById('modalMetaMFinal').value = m.mFinal;
+                    calcularMesesMetaModal();
+                }
+            } else {
+                titulo.textContent = '🎯 Nova Meta';
+            }
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalMetaNome').focus(), 80);
+        }
+
+        function fecharModalMeta() {
+            const b = document.getElementById('modalMetaBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+            window._editandoMetaId = null;
+        }
+
+        function salvarModalMeta() {
+            const errEl = document.getElementById('modalMetaError');
+            const meta = document.getElementById('modalMetaNome').value.trim();
+            const descricao = document.getElementById('modalMetaDescricao').value.trim();
+            const mInicio = parseInt(document.getElementById('modalMetaMInicio').value);
+            const mFinal = parseInt(document.getElementById('modalMetaMFinal').value);
+
+            if (!meta || isNaN(mInicio) || isNaN(mFinal)) { errEl.textContent = '⚠️ Preencha todos os campos corretamente!'; errEl.classList.add('open'); return; }
+
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
+
+            const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+            const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+
+            if (!window.tedSelecionado.metas) window.tedSelecionado.metas = [];
+            if (window._editandoMetaId) window.tedSelecionado.metas = window.tedSelecionado.metas.filter(x => x.id !== window._editandoMetaId);
+
+            window.tedSelecionado.metas.push({
+                id: window._editandoMetaId || Date.now(), meta, descricao, mInicio, mFinal,
+                mesInicio: dI.getMonth() + 1, anoInicio: dI.getFullYear(),
+                mesFinal: dF.getMonth() + 1, anoFinal: dF.getFullYear()
+            });
+            salvarDados(); atualizarTabelasEmCascata('metas'); fecharModalMeta();
+        }
+
+        function adicionarMeta() { abrirModalMeta(); }
+        function editarMeta(id) { abrirModalMeta(id); }
+
+        function removerMeta(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.metas = window.tedSelecionado.metas.filter(m => m.id !== id);
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            atualizarTabelasEmCascata('metas');
+        }
+
+        function renderGanttGenerico(dados, usarMeses = false) {
+            if (!window.tedSelecionado) {
+                return '<p style="color: var(--text); font-size: 0.875rem; margin: 0;">Sem dados</p>';
+            }
+
+            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
+                startDate = new Date(dataDesc + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 15);
+            } else {
+                return '<p style="color: var(--text); font-size: 0.875rem; margin: 0;">Data de descentralização não definida</p>';
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth() + 1 });
+            }
+
+            const anos = [];
+            meses.forEach((m, idx) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            let html = '<table class="gantt-table" style="min-width: 850px;">';
+            html += '<thead>';
+            html += '<tr>';
+            anos.forEach(a => {
+                html += `<th colspan="${a.count}">${a.ano}</th>`;
+            });
+            html += '</tr>';
+            html += '<tr class="header-meses">';
+            meses.forEach(m => {
+                html += `<th>${m.label}</th>`;
+            });
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody>';
+            
+            // Se não há dados, mostrar linha vazia alinhada com a altura da tabela
+            if (!dados || dados.length === 0) {
+                html += '<tr><td colspan="60" style="padding: 1rem; text-align: center; color: var(--text);">Sem registros</td></tr>';
+            } else {
+                // Criar uma linha para cada item de dados
+                dados.forEach((item, idx) => {
+                    html += '<tr>';
+                    
+                    meses.forEach((mesInfo, mesIdx) => {
+                        let destaque = false;
+                        
+                        // Verificar se este mês está no período do item
+                        if (usarMeses && item.mesInicio && item.mesFinal) {
+                            // Usar apenas o número do mês (1-12)
+                            if (mesInfo.mes >= item.mesInicio && mesInfo.mes <= item.mesFinal) {
+                                destaque = true;
+                            }
+                        } else if (item.mInicio !== undefined && item.mFinal !== undefined) {
+                            // Usar M (índice sequencial desde início do TED)
+                            if (mesIdx >= item.mInicio && mesIdx <= item.mFinal) {
+                                destaque = true;
+                            }
+                        }
+                        
+                        const corStyle = destaque ? ' style="background: #e0f2fe;"' : '';
+                        html += `<td${corStyle}></td>`;
+                    });
+                    
+                    html += '</tr>';
+                });
+            }
+            
+            html += '</tbody></table>';
+
+            return html;
+        }
+
+        function atualizarTabelaMetas() {
+            const tbody = document.getElementById('tabelaMetas');
+            if (!tbody) return;
+            const tableElement = tbody.closest('table');
+            
+            if (!window.tedSelecionado || !window.tedSelecionado.metas || window.tedSelecionado.metas.length === 0) {
+                // Mostrar placeholder centralizado e esconder o thead
+                if (tableElement) tableElement.classList.add('tabela-vazia');
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 2rem; color: var(--color-text-secondary);"><div class="empty-metas"><p class="empty-title">Nenhuma meta cadastrada.</p><p class="empty-sub">Adicione metas para acompanhar o progresso do TED.</p></div></td></tr>';
+                try { const c = document.getElementById('count-metas'); if (c) c.textContent = '0'; } catch(e) {}
+                return;
+            } else {
+                if (tableElement) tableElement.classList.remove('tabela-vazia');
+                try { const c = document.getElementById('count-metas'); if (c) c.textContent = String(window.tedSelecionado.metas.length); } catch(e) {}
+            }
+
+            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ 
+                    label: `${mes}/${ano2}`, 
+                    ano: d.getFullYear(), 
+                    mes: d.getMonth() + 1,
+                    fullYear: d.getFullYear()
+                });
+            }
+
+            // Agrupar por ano
+            const anos = [];
+            meses.forEach((m) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            // Atualizar cabeçalho em duas linhas: colunas fixas com rowspan e cronograma por ano/mês
+            let headerRow1 = tableElement.querySelector('thead tr');
+            let headerHTML = '<th rowspan="2" class="col-meta">Meta</th>';
+            headerHTML += '<th rowspan="2" class="col-descricao col-texto">Descrição</th>';
+            headerHTML += '<th rowspan="2" class="col-m">M Início</th>';
+            headerHTML += '<th rowspan="2" class="col-m">M Final</th>';
+            headerHTML += '<th rowspan="2" class="col-mes">Mês Início</th>';
+            headerHTML += '<th rowspan="2" class="col-mes">Mês Final</th>';
+            headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
+            
+            anos.forEach(a => {
+                headerHTML += `<th style="text-align: center;" colspan="${a.count}">${a.ano}</th>`;
+            });
+            
+            headerRow1.innerHTML = headerHTML;
+
+            // Remover segunda linha de cabeçalho se existir
+            let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) {
+                headerRow2.remove();
+            }
+
+            // Criar segunda linha do cabeçalho com meses
+            headerRow2 = document.createElement('tr');
+            headerRow2.className = 'header-meses';
+            let headerRow2HTML = '';
+            meses.forEach(m => {
+                headerRow2HTML += `<th>${m.label}</th>`;
+            });
+            headerRow2.innerHTML = headerRow2HTML;
+            tableElement.querySelector('thead').appendChild(headerRow2);
+
+            // Calcular MM/AAAA dinamicamente a partir da 1ª descentralização e offsets M
+            let baseDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            }
+
+            // Obter alterações de aditivos/apostilamentos para destacar
+            const altMetas = obterAlteracoesTabelaAditivos('metas');
+            const tabDefMeta = ADITIVO_TABELAS_CLONE.find(t => t.key === 'metas');
+            const { modMap: modMapMeta, addSet: addSetMeta } = criarMapaAlteracoes(altMetas, tabDefMeta);
+            const matchKeyMeta = (item) => tabDefMeta ? tabDefMeta.matchFields.map(f => String(item[f] || '')).join('||') : '';
+            const excludedMetaIds = getExcludedItemIds('metas');
+
+            tbody.innerHTML = window.tedSelecionado.metas.map((meta, index) => {
+                let inicioStr = '';
+                let finalStr = '';
+                const mesesNomes = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+                
+                if (baseDate && !isNaN(meta.mInicio) && !isNaN(meta.mFinal)) {
+                    const dI = new Date(baseDate);
+                    dI.setMonth(dI.getMonth() + meta.mInicio);
+                    inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
+                    const dF = new Date(baseDate);
+                    dF.setMonth(dF.getMonth() + meta.mFinal);
+                    finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
+                } else if (meta.mesInicio && meta.anoInicio && meta.mesFinal && meta.anoFinal) {
+                    // Fallback para dados já armazenados com anoInicio/anoFinal
+                    inicioStr = `${mesesNomes[(meta.mesInicio || 1) - 1]}/${meta.anoInicio || ''}`;
+                    finalStr = `${mesesNomes[(meta.mesFinal || 1) - 1]}/${meta.anoFinal || ''}`;
+                } else {
+                    inicioStr = '-';
+                    finalStr = '-';
+                }
+
+                const mKey = matchKeyMeta(meta);
+                const mods = modMapMeta[mKey];
+                const isAdded = addSetMeta.has(mKey);
+                const isExcluded = isItemExcluded(meta, excludedMetaIds, 'metas');
+                const trClass = isExcluded ? ' class="linha-excluida-aditivo"' : (isAdded ? ' class="linha-adicionada-aditivo"' : '');
+                const tdDescricao = mods && mods.descricao ? formatarCelulaAlterada(meta.descricao || '', mods.descricao.de, '') : (meta.descricao || '');
+                const tdMInicio = mods && mods.mInicio ? formatarCelulaAlterada(meta.mInicio, mods.mInicio.de, 'number') : meta.mInicio;
+                const tdMFinal = mods && mods.mFinal ? formatarCelulaAlterada(meta.mFinal, mods.mFinal.de, 'number') : meta.mFinal;
+
+                let html = `<tr${trClass}>
+                    <td class="col-meta">${meta.meta}</td>
+                    <td class="col-descricao">${tdDescricao}</td>
+                    <td class="col-m">${tdMInicio}</td>
+                    <td class="col-m">${tdMFinal}</td>
+                    <td class="col-mes">${inicioStr}</td>
+                    <td class="col-mes">${finalStr}</td>
+                    <td class="col-acao">
+                        <button class="btn-icon-action edit" onclick="editarMeta(${meta.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
+                        <button class="btn-icon-action delete" onclick="removerMeta(${meta.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
+                    </td>`;
+                
+                // Adicionar células do Gantt - destacar período mInicio até mFinal
+                meses.forEach((mesInfo, mesIdx) => {
+                    const estaNoPeriodo = mesIdx >= meta.mInicio && mesIdx <= meta.mFinal;
+                    const cor = estaNoPeriodo ? '#e0f2fe' : 'transparent';
+                    html += `<td style="background: ${cor};"></td>`;
+                });
+                
+                html += '</tr>';
+                return html;
+            }).join('');
+            // Reinicializar ícones Lucide
+            initLucideIcons();
+        }
+
+        function atualizarOpcoesObjetoFisico() {
+            const select = document.getElementById('objetoFisico');
+            if (!select) return;
+
+            if (!window.tedSelecionado) {
+                select.innerHTML = '<option value="">Selecione um TED</option>';
+                select.disabled = true;
+                return;
+            }
+
+            const objs = window.tedSelecionado.objetos || [];
+            if (!objs.length) {
+                select.innerHTML = '<option value="">Cadastre um objeto primeiro</option>';
+                select.disabled = true;
+                return;
+            }
+
+            select.disabled = false;
+            let options = '<option value="">-- escolha um objeto --</option>';
+            options += objs.map(o => `<option value="${o.objeto}">${o.objeto}</option>`).join('');
+            select.innerHTML = options;
+        }
+
+        function atualizarOpcoesObjetoExecFisica() {
+            const select = document.getElementById('objetoExecFisica');
+            if (!select) return;
+
+            if (!window.tedSelecionado) {
+                select.innerHTML = '<option value="">Selecione um TED</option>';
+                select.disabled = true;
+                return;
+            }
+
+            const objs = window.tedSelecionado.objetos || [];
+            const nomes = objs.map(o => o.objeto).filter(Boolean);
+            const objetosUnicos = Array.from(new Set(nomes));
+
+            if (!objetosUnicos.length) {
+                select.innerHTML = '<option value="">Cadastre um objeto primeiro</option>';
+                select.disabled = true;
+                return;
+            }
+
+            select.disabled = false;
+            let options = '<option value="">-- escolha um objeto --</option>';
+            options += objetosUnicos.map(o => `<option value="${o}">${o}</option>`).join('');
+            select.innerHTML = options;
+        }
+
+        // CADASTRO FÍSICO
+        //"?"? Modal Cadastro Físico"?"?
+        window._editandoFisicoId = null;
+
+        function _popularSelectObjetosModal(selectId) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            const objs = (window.tedSelecionado && window.tedSelecionado.objetos) || [];
+            sel.innerHTML = '<option value="">-- Selecione --</option>' + objs.map(o => `<option value="${o.objeto}">${o.objeto}</option>`).join('');
+        }
+
+        function abrirModalFisicoCad(editId) {
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalFisicoBackdrop');
+            const titulo = document.getElementById('modalFisicoCadTitulo');
+            const errEl = document.getElementById('modalFisicoCadError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            _popularSelectObjetosModal('modalFisicoCadObjeto');
+            document.getElementById('modalFisicoCadFase').value = '';
+            document.getElementById('modalFisicoCadObjeto').value = '';
+            document.getElementById('modalFisicoCadQtde').value = '';
+            document.getElementById('modalFisicoCadMInicio').value = '';
+            document.getElementById('modalFisicoCadMFinal').value = '';
+            document.getElementById('modalFisicoCadMesInicio').value = '';
+            document.getElementById('modalFisicoCadMesFinal').value = '';
+            window._editandoFisicoId = null;
+
+            if (editId) {
+                const f = (window.tedSelecionado.fisicos || []).find(x => x.id === editId);
+                if (f) {
+                    window._editandoFisicoId = editId;
+                    titulo.textContent = '🔑 Editar Cadastro Físico';
+                    document.getElementById('modalFisicoCadFase').value = f.fase;
+                    document.getElementById('modalFisicoCadObjeto').value = f.objeto;
+                    document.getElementById('modalFisicoCadQtde').value = formatarMilharesPtBR(Number(f.qtde));
+                    document.getElementById('modalFisicoCadMInicio').value = f.mInicio;
+                    document.getElementById('modalFisicoCadMFinal').value = f.mFinal;
+                    calcularMesesFisicoModal();
+                }
+            } else {
+                titulo.textContent = 'Novo Cadastro Físico';
+            }
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalFisicoCadFase').focus(), 80);
+        }
+
+        function fecharModalFisicoCad() {
+            const b = document.getElementById('modalFisicoBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+            window._editandoFisicoId = null;
+        }
+
+        function salvarModalFisicoCad() {
+            const errEl = document.getElementById('modalFisicoCadError');
+            const fase = document.getElementById('modalFisicoCadFase').value.trim();
+            const objeto = document.getElementById('modalFisicoCadObjeto').value;
+            const qtde = parseNumber(document.getElementById('modalFisicoCadQtde').value);
+            const mInicio = parseInt(document.getElementById('modalFisicoCadMInicio').value);
+            const mFinal = parseInt(document.getElementById('modalFisicoCadMFinal').value);
+
+            if (!fase || !objeto || isNaN(qtde) || qtde < 0 || isNaN(mInicio) || isNaN(mFinal)) {
+                errEl.textContent = '⚠️ Preencha todos os campos do cadastro físico'; errEl.classList.add('open'); return;
+            }
+            if (!window.tedSelecionado.objetos || !window.tedSelecionado.objetos.length) {
+                errEl.textContent = '⚠️ Cadastre um objeto primeiro.'; errEl.classList.add('open'); return;
+            }
+
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
+
+            const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+            const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+
+            if (window._editandoFisicoId) window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(x => x.id !== window._editandoFisicoId);
+
+            window.tedSelecionado.fisicos.push({
+                id: window._editandoFisicoId || Date.now(), fase, objeto, qtde, mInicio, mFinal,
+                mesInicio: dI.getMonth() + 1, anoInicio: dI.getFullYear(),
+                mesFinal: dF.getMonth() + 1, anoFinal: dF.getFullYear()
+            });
+
+            // Verificar consistência
+            const objRef = (window.tedSelecionado.objetos || []).find(o => o.objeto === objeto);
+            if (objRef) {
+                const somaFisico = window.tedSelecionado.fisicos.filter(f => f.objeto === objeto).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+                const qtdeObjeto = parseNumber(objRef.qtde) || 0;
+                if (somaFisico > qtdeObjeto) {
+                    showToast(`⚠️ Atenção: A soma da quantidade no Cadastro Físico para o objeto "${objeto}" (${formatNumber(somaFisico)}) excede a quantidade cadastrada no Objeto (${formatNumber(qtdeObjeto)}).\n\nPor favor, ajuste as quantidades para manter a consistência.`, 'warning');
+                }
+            }
+
+            salvarDados(); atualizarTabelasEmCascata('fisicos'); fecharModalFisicoCad();
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, window._editandoFisicoId ? 'editar_fisico' : 'adicionar_fisico', null, { campo: 'cadastro físico', novo: { fase, objeto, qtde } }); } catch(e) {}
+        }
+
+        function adicionarFisico() { abrirModalFisicoCad(); }
+        function editarFisico(id) { abrirModalFisicoCad(id); }
+
+        function removerFisico(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(f => f.id !== id);
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            atualizarTabelasEmCascata('fisicos');
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_fisico', id, { campo: 'cadastro físico' }); } catch(e) {}
+        }
+
+        // ── helpers EF redesign ──────────────────────────────────────────────
+
+        function _efCalcKPIs(fisicos, baseDate) {
+            const mesesNomes = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            let total = fisicos.length;
+            let concluidas = 0, parciais = 0;
+            let qtdeTotal = 0, qtdeEntregue = 0;
+            const objetos = new Set();
+            let proxima = null;
+
+            fisicos.forEach(f => {
+                const s = entregas_getStatus(f);
+                if (s.estado === 'concluido') concluidas++;
+                else if (s.estado === 'parcial') parciais++;
+                qtdeTotal += parseNumber(f.qtde) || 0;
+                qtdeEntregue += s.totalEntregue || 0;
+                if (f.objeto) objetos.add(f.objeto);
+                if (s.estado !== 'concluido') {
+                    // usar mFinal para ordenar próxima entrega
+                    const mf = parseInt(f.mFinal);
+                    if (!isNaN(mf) && (proxima === null || mf < parseInt(proxima.mFinal))) proxima = f;
+                }
+            });
+
+            let proximaLabel = '—';
+            let proximaSub = '';
+            if (proxima && baseDate) {
+                const dF = new Date(baseDate);
+                dF.setMonth(dF.getMonth() + parseInt(proxima.mFinal));
+                const mes = mesesNomes[dF.getMonth()];
+                const ano = dF.getFullYear();
+                const hoje = new Date(); hoje.setHours(0,0,0,0);
+                const diffDias = Math.round((dF - hoje) / 86400000);
+                const qtdPend = parseNumber(proxima.qtde) || 0;
+                proximaLabel = `Fase ${proxima.fase} · ${formatNumber(qtdPend)} un`;
+                proximaSub = `${mes}/${ano} · ${diffDias >= 0 ? `daqui ~${diffDias} dias` : `há ${Math.abs(diffDias)} dias`}`;
+            }
+
+            return { total, concluidas, parciais, qtdeTotal, qtdeEntregue, objetos: objetos.size, proximaLabel, proximaSub };
+        }
+
+        function _efRenderKPIs(kpis, container) {
+            if (!container) return;
+            const pctConc = kpis.total > 0 ? ((kpis.concluidas / kpis.total) * 100).toFixed(1) : '0.0';
+            const pctQtde = kpis.qtdeTotal > 0 ? ((kpis.qtdeEntregue / kpis.qtdeTotal) * 100).toFixed(1) : '0.0';
+            container.innerHTML = `
+            <div class="ef-kpis">
+              <div class="ef-kpi lead-blue">
+                <div class="ef-kpi-label">Total de fases</div>
+                <div class="ef-kpi-val">${kpis.total}</div>
+                <div class="ef-kpi-sub">${kpis.objetos} objeto${kpis.objetos !== 1 ? 's' : ''} distinto${kpis.objetos !== 1 ? 's' : ''}</div>
+              </div>
+              <div class="ef-kpi lead-green">
+                <div class="ef-kpi-label">Concluídas</div>
+                <div class="ef-kpi-val">${kpis.concluidas}<span class="small">/ ${kpis.total}</span></div>
+                <div class="ef-kpi-sub">${pctConc.replace('.',',')}% das fases</div>
+                <div class="ef-kpi-bar"><div class="ef-kpi-bar-fill" style="width:${pctConc}%;background:#639922;"></div></div>
+              </div>
+              <div class="ef-kpi lead-amber">
+                <div class="ef-kpi-label">Qtde entregue</div>
+                <div class="ef-kpi-val">${formatNumber(kpis.qtdeEntregue)}<span class="small">/ ${formatNumber(kpis.qtdeTotal)}</span></div>
+                <div class="ef-kpi-sub">${pctQtde.replace('.',',')}% das unidades</div>
+                <div class="ef-kpi-bar"><div class="ef-kpi-bar-fill" style="width:${pctQtde}%;background:#c07a1c;"></div></div>
+              </div>
+              <div class="ef-kpi lead-gray">
+                <div class="ef-kpi-label">Próxima entrega prevista</div>
+                <div class="ef-kpi-val" style="font-size:13px;font-family:inherit;font-weight:600;">${kpis.proximaLabel}</div>
+                <div class="ef-kpi-sub">${kpis.proximaSub}</div>
+              </div>
+            </div>`;
+        }
+
+        function filtrarFasesCadFis(chip) {
+            const filtro = chip.dataset.filtro;
+            // atualizar chip ativo
+            chip.closest('.ef-filters').querySelectorAll('.ef-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            // filtrar linhas
+            const rows = document.querySelectorAll('#efTabelaFisicos tbody tr[data-ef-status]');
+            let visiveis = 0;
+            rows.forEach(tr => {
+                const st = tr.dataset.efStatus;
+                const temAdit = tr.dataset.efAditivo === '1';
+                let show = true;
+                if (filtro === 'concluidas') show = st === 'concluido';
+                else if (filtro === 'pendentes') show = st !== 'concluido';
+                else if (filtro === 'aditivo') show = temAdit;
+                tr.classList.toggle('ef-row-hidden', !show);
+                if (show) visiveis++;
+            });
+            // empty state
+            let emptyRow = document.querySelector('#efTabelaFisicos .ef-empty-filter-row');
+            if (visiveis === 0) {
+                if (!emptyRow) {
+                    const tbody = document.querySelector('#efTabelaFisicos tbody');
+                    if (tbody) {
+                        const tr = document.createElement('tr');
+                        tr.className = 'ef-empty-filter-row';
+                        tr.innerHTML = `<td colspan="7" class="ef-empty-filter">Nenhuma fase com esse filtro</td>`;
+                        tbody.appendChild(tr);
+                    }
+                }
+            } else {
+                if (emptyRow) emptyRow.remove();
+            }
+        }
+
+        function atualizarTabelaFisicos() {
+            // Localizar o container da seção de Cadastro Físico (detalhe-secao-body dentro do painel physical)
+            const tbody = document.getElementById('tabelaFisicos');
+            const tableElement = tbody ? tbody.closest('table') : null;
+
+            if (!window.tedSelecionado || !window.tedSelecionado.fisicos || !window.tedSelecionado.fisicos.length) {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--text);">Nenhum cadastro físico</td></tr>';
+                // Limpar KPIs e filtros se existirem
+                const efWrap = document.getElementById('efCadFisWrap');
+                if (efWrap) efWrap.innerHTML = '';
+                try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = '0'; } catch(e) {}
+                return;
+            }
+
+            // ── base date ───────────────────────────────────────────────────
+            let baseDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                baseDate = new Date();
+            }
+
+            const mesesNomes = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+            // ── ordenar fases ───────────────────────────────────────────────
+            const fisicosSorted = Array.from(window.tedSelecionado.fisicos || []);
+            fisicosSorted.sort((a, b) => {
+                const aVal = a && a.fase != null ? a.fase : '';
+                const bVal = b && b.fase != null ? b.fase : '';
+                const aNum = Number(aVal); const bNum = Number(bVal);
+                if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+                return String(aVal).localeCompare(String(bVal), 'pt', { numeric: true });
+            });
+
+            // ── mapa de aditivos ────────────────────────────────────────────
+            const altFisicos = obterAlteracoesTabelaAditivos('fisicos');
+            const tabDefFis = ADITIVO_TABELAS_CLONE.find(t => t.key === 'fisicos');
+            const { modMap: modMapFis, addSet: addSetFis } = criarMapaAlteracoes(altFisicos, tabDefFis);
+            const matchKeyFis = (item) => tabDefFis ? tabDefFis.matchFields.map(f => String(item[f] || '')).join('||') : '';
+            const excludedFisIds = getExcludedItemIds('fisicos');
+
+            // ── KPIs ────────────────────────────────────────────────────────
+            const efWrap = document.getElementById('efCadFisWrap');
+            if (efWrap) {
+                const kpis = _efCalcKPIs(fisicosSorted, baseDate);
+                _efRenderKPIs(kpis, efWrap);
+
+                // contagem por filtro
+                let nConc = 0, nPend = 0, nAdit = 0;
+                fisicosSorted.forEach(f => {
+                    const s = entregas_getStatus(f).estado;
+                    if (s === 'concluido') nConc++; else nPend++;
+                    const mKey = matchKeyFis(f);
+                    const mods = modMapFis[mKey];
+                    if (mods && (mods.mInicio || mods.mFinal)) nAdit++;
+                });
+
+                const efFiltersWrap = document.getElementById('efCadFisFilters');
+                if (efFiltersWrap) efFiltersWrap.innerHTML = `
+                <div class="ef-filters" id="efFilters">
+                    <span class="ef-filter-label">Filtrar:</span>
+                    <button class="ef-chip active" data-filtro="todas" onclick="filtrarFasesCadFis(this)">Todas <span class="ef-chip-pill">${fisicosSorted.length}</span></button>
+                    <button class="ef-chip" data-filtro="concluidas" onclick="filtrarFasesCadFis(this)"><i data-lucide="check" style="width:11px;height:11px;color:#3B6D11;"></i> Concluídas <span class="ef-chip-pill">${nConc}</span></button>
+                    <button class="ef-chip" data-filtro="pendentes" onclick="filtrarFasesCadFis(this)"><i data-lucide="clock" style="width:11px;height:11px;color:#854F0B;"></i> Pendentes <span class="ef-chip-pill">${nPend}</span></button>
+                    ${nAdit > 0 ? `<button class="ef-chip" style="margin-left:auto;" data-filtro="aditivo" onclick="filtrarFasesCadFis(this)"><i data-lucide="alert-triangle" style="width:11px;height:11px;color:#c07a1c;"></i> Aditivo aplicado <span class="ef-chip-pill">${nAdit}</span></button>` : ''}
+                </div>`;
+            }
+
+            // ── montar tabela redesenhada ────────────────────────────────────
+            if (!tableElement) { initLucideIcons(); return; }
+
+            // dar id à tabela para filtros
+            tableElement.id = 'efTabelaFisicos';
+
+            // cabeçalho fixo (7 colunas — sem Gantt quando recolhido)
+            const monthsExpandedCadFis = document.getElementById('toggle-months-cadFis')?.getAttribute('data-expanded') === '1';
+            const mmHideCadFis = monthsExpandedCadFis ? '' : ' display:none;';
+
+            // meses para Gantt (mantido igual ao original)
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(baseDate);
+                d.setMonth(d.getMonth() + i);
+                const mesLabel = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mesLabel}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth()+1 });
+            }
+            const anos = [];
+            meses.forEach(m => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ ano: m.ano, count: 1 });
+                else anos[anos.length-1].count++;
+            });
+
+            let headerRow1 = tableElement.querySelector('thead tr');
+            // rowspan="2" sempre presente para que as colunas fixas ocupem as 2 linhas de cabeçalho
+            let headerHTML = `<th class="center" style="width:40px;" rowspan="2"></th>`;
+            headerHTML += `<th class="center" style="width:56px;" rowspan="2">Fase</th>`;
+            headerHTML += `<th class="center" rowspan="2">Objeto</th>`;
+            headerHTML += `<th class="center" style="width:140px;" rowspan="2">Qtde / Entregue</th>`;
+            headerHTML += `<th class="center" style="width:190px;" rowspan="2">Período (meses)</th>`;
+            headerHTML += `<th class="center" style="width:150px;" rowspan="2">Datas previstas</th>`;
+            headerHTML += `<th class="center col-acao" style="width:96px;" rowspan="2">Ações</th>`;
+            anos.forEach(a => {
+                headerHTML += `<th class="month-col-cadFis" style="text-align:center;${mmHideCadFis}" colspan="${a.count}">${a.ano}</th>`;
+            });
+            headerRow1.innerHTML = headerHTML;
+            headerRow1.className = 'ef-thead-row';
+
+            let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) headerRow2.remove();
+            headerRow2 = document.createElement('tr');
+            headerRow2.className = 'header-meses';
+            headerRow2.style.display = monthsExpandedCadFis ? '' : 'none';
+            // só os meses — as 7 colunas fixas já têm rowspan="2"
+            headerRow2.innerHTML = meses.map(m => `<th class="month-col-cadFis">${m.label}</th>`).join('');
+            tableElement.querySelector('thead').appendChild(headerRow2);
+
+            // aplicar classe ef-table
+            tableElement.classList.add('ef-table');
+
+            // ── linhas ─────────────────────────────────────────────────────
+            tbody.innerHTML = fisicosSorted.map((f, i) => {
+                const mKey = matchKeyFis(f);
+                const mods = modMapFis[mKey];
+                const isAdded = addSetFis.has(mKey);
+                const isExcluded = isItemExcluded(f, excludedFisIds, 'fisicos');
+
+                // status
+                const statusEnt = entregas_getStatus(f);
+                const estado = statusEnt.estado; // 'concluido' | 'parcial' | 'vazio'
+                const isConcluido = estado === 'concluido';
+                const isParcial   = estado === 'parcial';
+                const temAditivo  = !!(mods && (mods.mInicio || mods.mFinal));
+
+                // qtde
+                const prevQtde = parseNumber(f.qtde) || 0;
+                const entregasArr = Array.isArray(f.entregas) ? f.entregas : [];
+                const entNum = entregasArr.reduce((s, e) => s + (parseNumber(e.quantidade || e.qtde || 0) || 0), 0);
+                const percEnt = prevQtde > 0 ? Math.min(100, (entNum / prevQtde) * 100) : (entNum > 0 ? 100 : 0);
+                const barClass = isConcluido ? '' : (isParcial ? ' amber' : '');
+
+                // período
+                let inicioStr = '—', finalStr = '—';
+                if (baseDate && f.mInicio != null && !isNaN(f.mInicio)) {
+                    const dI = new Date(baseDate); dI.setMonth(dI.getMonth() + parseInt(f.mInicio));
+                    inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
+                } else if (f.mesInicio && f.anoInicio) {
+                    inicioStr = `${mesesNomes[(f.mesInicio||1)-1]}/${f.anoInicio}`;
+                }
+                if (baseDate && f.mFinal != null && !isNaN(f.mFinal)) {
+                    const dF = new Date(baseDate); dF.setMonth(dF.getMonth() + parseInt(f.mFinal));
+                    finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
+                } else if (f.mesFinal && f.anoFinal) {
+                    finalStr = `${mesesNomes[(f.mesFinal||1)-1]}/${f.anoFinal}`;
+                }
+
+                const mIni = f.mInicio != null ? parseInt(f.mInicio) : null;
+                const mFin = f.mFinal != null ? parseInt(f.mFinal) : null;
+                const durMeses = (mIni != null && mFin != null && mFin >= mIni) ? (mFin - mIni + 1) : null;
+                const periodoMesesStr = (mIni != null && mFin != null)
+                    ? `M${mIni} → M${mFin}`
+                    : '—';
+
+                // período com tachado se houve alteração por aditivo
+                let periodoHtml;
+                if (mods && (mods.mInicio || mods.mFinal)) {
+                    const mIniOrig = mods.mInicio ? mods.mInicio.de : mIni;
+                    const mFinOrig = mods.mFinal  ? mods.mFinal.de  : mFin;
+                    periodoHtml = `<span class="val-antigo">M${mIniOrig} → M${mFinOrig}</span><br><span style="color:#1a1a1a;">M${mIni} → M${mFin}</span>`;
+                } else {
+                    periodoHtml = periodoMesesStr;
+                }
+
+                // objeto: sempre mostrar o nome do objeto
+                let objetoHtml = `<span style="font-weight:500;">${f.objeto || '—'}</span>`;
+                if (isAdded) objetoHtml += ` <span class="ef-obj-distinct">novo (aditivo)</span>`;
+
+                // status icon
+                let statusIcon, statusClass, rowClass;
+                if (isConcluido) {
+                    statusIcon = `<i data-lucide="check" style="width:14px;height:14px;"></i>`;
+                    statusClass = 'done'; rowClass = 'ef-row-done';
+                } else if (isParcial) {
+                    statusIcon = `<i data-lucide="loader" style="width:14px;height:14px;"></i>`;
+                    statusClass = 'partial'; rowClass = '';
+                } else {
+                    statusIcon = `<i data-lucide="clock" style="width:14px;height:14px;"></i>`;
+                    statusClass = 'pending'; rowClass = '';
+                }
+
+                // ações
+                const editBtn  = `<button onclick="editarFisico(${f.id})" title="Editar"><i data-lucide="pencil" style="width:12px;height:12px;"></i></button>`;
+                const delBtn   = `<button class="delete" onclick="removerFisico(${f.id})" title="Remover"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button>`;
+                const entBtn   = !isConcluido
+                    ? `<button class="ef-confirm" onclick="entregas_toggleExpandir(event,'${f.id}')" title="Ver/Registrar entregas"><i data-lucide="check" style="width:12px;height:12px;"></i></button>`
+                    : `<button onclick="entregas_toggleExpandir(event,'${f.id}')" title="Ver entregas" style="background:#EAF3DE;color:#3B6D11;border-color:rgba(99,153,34,0.3);"><i data-lucide="eye" style="width:12px;height:12px;"></i></button>`;
+
+                if (isExcluded) rowClass = (rowClass ? rowClass + ' ' : '') + 'linha-excluida-aditivo';
+                else if (isAdded) rowClass = (rowClass ? rowClass + ' ' : '') + 'linha-adicionada-aditivo';
+                let html = `<tr class="${rowClass}" data-fisico-id="${f.id}" data-ef-status="${estado}" data-ef-aditivo="${temAditivo ? '1' : '0'}">
+                    <td class="center"><span class="ef-row-status ${statusClass}">${statusIcon}</span></td>
+                    <td class="center"><span class="ef-fase-badge">F${f.fase}</span></td>
+                    <td>${objetoHtml}</td>
+                    <td class="right">
+                        <div class="ef-qty-wrap">
+                            <div class="ef-qty-line">
+                                <span class="num">${formatNumber(entNum)}</span>
+                                <span class="denom">/ ${formatNumber(prevQtde)}</span>
+                            </div>
+                            <div class="ef-qty-bar"><div class="ef-qty-bar-fill${barClass}" style="width:${percEnt.toFixed(1)}%;"></div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="ef-periodo">
+                            <div class="ef-periodo-meses">${periodoHtml}</div>
+                        </div>
+                    </td>
+                    <td><div class="ef-periodo">${(() => {
+                        if (mods && (mods.mInicio || mods.mFinal) && baseDate) {
+                            const mIniOrig = mods.mInicio ? Number(mods.mInicio.de) : mIni;
+                            const mFinOrig = mods.mFinal  ? Number(mods.mFinal.de)  : mFin;
+                            const dIO = new Date(baseDate); dIO.setMonth(dIO.getMonth() + mIniOrig);
+                            const dFO = new Date(baseDate); dFO.setMonth(dFO.getMonth() + mFinOrig);
+                            const inicioOrig = `${mesesNomes[dIO.getMonth()]}/${dIO.getFullYear()}`;
+                            const finalOrig  = `${mesesNomes[dFO.getMonth()]}/${dFO.getFullYear()}`;
+                            return `<div class="ef-periodo-datas"><span class="val-antigo">${inicioOrig} → ${finalOrig}</span></div><div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div>`;
+                        }
+                        return `<div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div>`;
+                    })()}</div></td>
+                    <td class="center col-acao"><span class="ef-row-actions">${editBtn}${delBtn}${entBtn}</span></td>`;
+                
+                // Adicionar células do Gantt - destacar período mInicio até mFinal e renderizar entregas por mês (empilhadas)
+                const entregaMesMap = new Map();
+                entregasArr.forEach(e => {
+                    if (!e || !e.data) return;
+                    try {
+                        const rd = new Date(e.data + 'T00:00:00');
+                        const idx = Math.floor((rd.getFullYear() - baseDate.getFullYear()) * 12 + (rd.getMonth() - baseDate.getMonth()));
+                        if (idx >= 0 && idx < meses.length) {
+                            if (!entregaMesMap.has(idx)) entregaMesMap.set(idx, []);
+                            entregaMesMap.get(idx).push(e);
+                        }
+                    } catch(e) {}
+                });
+
+                meses.forEach((mesInfo, mesIdx) => {
+                    const estaNoPeriodo = mesIdx >= f.mInicio && mesIdx <= f.mFinal;
+                    const deliveries = entregaMesMap.get(mesIdx) || [];
+                    // Manter o fundo do período (azul) mesmo quando houver entregas na célula
+                    let cor = estaNoPeriodo ? '#e0f2fe' : 'transparent';
+
+                    let tdTitle = '';
+                    let cellContent = '';
+                    if (deliveries.length) {
+                        tdTitle = deliveries.map(d => {
+                            let dFmt = '';
+                            try { dFmt = new Date(normalizarData(d.data) + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) { dFmt = d.data || ''; }
+                            return `${dFmt} → Qtd: ${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? ' → NF: ' + d.nf : ''}`;
+                        }).join('\n');
+                        cellContent = deliveries.map(d => {
+                            let dFmt = '';
+                            try { dFmt = new Date(normalizarData(d.data) + 'T00:00:00').toLocaleDateString('pt-BR'); } catch(e) { dFmt = d.data || ''; }
+                            return `<div class="entrega-mini" title="${dFmt} • Qtd: ${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? ' • NF: ' + d.nf : ''}">${formatNumber(d.quantidade || d.qtde || 0)}${d.nf ? '<br><small style="opacity:.8">' + d.nf + '</small>' : ''}</div>`;
+                        }).join('');
+                    }
+
+                    html += `<td class="month-col-cadFis" style="background: ${cor}; ${mmHideCadFis}" title="${tdTitle}">${cellContent}</td>`;
+                });
+                
+                html += '</tr>';
+                return html;
+            }).join('');
+
+            // Reinicializar ícones Lucide
+            initLucideIcons();
+
+            // Atualizar opções de Execução Física (objetos únicos do cadastro físico)
+            atualizarOpcoesObjetoExecFisica();
+            // Atualizar contador da seção (badge)
+            try { const c = document.getElementById('count-fisicos'); if (c) c.textContent = String(window.tedSelecionado.fisicos.length); } catch(e) {}
+
+            // Ajustar card conforme estado do toggle
+            try {
+                const btn = document.getElementById('toggle-months-cadFis');
+                const tbl = document.querySelector('#tabelaFisicos')?.closest('table');
+                const sec = btn?.closest('.detalhe-secao');
+                const expanded = btn?.getAttribute('data-expanded') === '1';
+                if (sec && tbl) {
+                    if (!expanded) {
+                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'fixed';
+                        sec.classList.add('cadFin-collapsed');
+                    } else {
+                        tbl.style.minWidth = '850px'; tbl.style.width = ''; tbl.style.tableLayout = '';
+                        sec.classList.remove('cadFin-collapsed');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // EXECU→fO FÍSICA
+        //"?"? Modal Execução Física"?"?
+        function abrirModalExecFisica() {
+            // Execução Física é derivada do Cadastro Físico. Direcionar o usuário ao cadastro.
+            showToast('Para registrar entregas, use o Cadastro Físico ↑', 'info');
+            return;
+        }
+
+        function fecharModalExecFisica() {
+            const b = document.getElementById('modalExecFisicaBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+        }
+
+        function salvarModalExecFisica() {
+            // Não permitir salvar execuções manualmente — Execução Física é sincronizada a partir do Cadastro Físico.
+            showToast('Salvar execução física manual não permitido. Use o Cadastro Físico.', 'info');
+            return;
+        }
+
+        function adicionarExecFisica() { abrirModalExecFisica(); }
+
+        function removerExecFisica(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.execFisicas = window.tedSelecionado.execFisicas.filter(f => f.id !== id);
+            // Atualizar progresso físico e persistir
+            atualizarProgressoFisicoFromExecFisicas(window.tedSelecionado);
+            atualizarTabelaExecFisica();
+            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_exec_fisica', id, { campo: 'execução física' }); } catch(e) {}
+        }
+
+        function atualizarTabelaExecFisica() {
+            const tbody = document.getElementById('tabelaExecFisica');
+            const tableElement = tbody.closest('table');
+
+            if (!window.tedSelecionado) {
+                tbody.innerHTML = '<tr><td colspan="67" style="padding: 1rem; text-align: center; color: var(--text);">Selecione um TED</td></tr>';
+                return;
+            }
+
+            // Base do cronograma (60 meses)
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth() + 1, fullYear: d.getFullYear() });
+            }
+
+            const anos = [];
+            meses.forEach(m => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            // Cabeçalho com rowspan nas colunas fixas
+            let headerRow1 = tableElement.querySelector('thead tr');
+            // Estado do toggle de meses (Execução Física)
+            const monthsExpandedExecFis = document.getElementById('toggle-months-execFis')?.getAttribute('data-expanded') === '1';
+            const mmHideExecFis = monthsExpandedExecFis ? '' : ' display:none;';
+
+            // Colgroup para travar larguras das colunas fixas independente da expansão dos meses
+            let colgroup = tableElement.querySelector('colgroup');
+            if (!colgroup) { colgroup = document.createElement('colgroup'); tableElement.prepend(colgroup); }
+            colgroup.innerHTML = '<col style="width:280px;min-width:280px"><col style="width:90px;min-width:90px"><col style="width:90px;min-width:90px"><col style="width:75px;min-width:75px"><col style="width:220px;min-width:220px">';
+
+            const thStyle = 'text-transform:uppercase;text-align:center;white-space:nowrap;';
+            let headerHTML = '<th rowspan="2" class="col-objeto col-texto" style="' + thStyle + 'width:280px;min-width:280px;">Objeto</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + 'width:90px;min-width:90px;">Qtd Prev.</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + 'width:90px;min-width:90px;">Qtd Entr.</th>';
+            headerHTML += '<th rowspan="2" class="col-qtde" style="' + thStyle + 'width:75px;min-width:75px;">Saldo</th>';
+            headerHTML += '<th rowspan="2" class="col-percent" style="' + thStyle + 'width:220px;min-width:220px;">Exec. (%)</th>';
+            let firstAnoExecFis = true;
+            anos.forEach(a => {
+                firstAnoExecFis = false;
+                headerHTML += `<th class="month-col-execFis" style="text-align:center;${mmHideExecFis}" colspan="${a.count}">${a.ano}</th>`;
+            });
+            headerRow1.innerHTML = headerHTML;
+
+            let headerRow2 = tableElement.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) headerRow2.remove();
+            headerRow2 = document.createElement('tr');
+            headerRow2.style.background = 'var(--color-bg-surface)';
+            headerRow2.style.color = 'var(--color-text-secondary)';
+            let headerRow2HTML = '';
+            let firstMonthExecFis = true;
+            meses.forEach(m => {
+                firstMonthExecFis = false;
+                headerRow2HTML += `<th class="month-col-execFis" style="${mmHideExecFis}">${m.label}</th>`;
+            });
+            headerRow2.innerHTML = headerRow2HTML;
+            tableElement.querySelector('thead').appendChild(headerRow2);
+
+                // Agrupar execuções por objeto e por mês
+                const execs = window.tedSelecionado.execFisicas || [];
+                const fisicos = window.tedSelecionado.fisicos || [];
+                // Garantir ordem dos objetos conforme aparecem no Cadastro Físico (ordenado por fase)
+                const fisicosOrdered = Array.from(fisicos || []);
+                fisicosOrdered.sort((a, b) => {
+                    const aVal = a && a.fase != null ? a.fase : '';
+                    const bVal = b && b.fase != null ? b.fase : '';
+                    const aNum = Number(aVal);
+                    const bNum = Number(bVal);
+                    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+                    return String(aVal).localeCompare(String(bVal), 'pt', { numeric: true });
+                });
+                const objetosUnicos = [];
+                fisicosOrdered.forEach(f => {
+                    if (!f || !f.objeto) return;
+                    if (!objetosUnicos.includes(f.objeto)) objetosUnicos.push(f.objeto);
+                });
+
+            if (!objetosUnicos.length) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Cadastre o físico para listar objetos</td></tr>';
+                return;
+            }
+
+            const linhas = objetosUnicos.map((obj, i) => {
+                const prevista = fisicos.filter(f => f.objeto === obj).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+                const entregasObj = execs.filter(e => e.objeto === obj);
+                const entregueTotal = entregasObj.reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
+                const saldo = prevista - entregueTotal; // permitir negativo
+                const execPercActual = prevista > 0 ? ((entregueTotal / prevista) * 100) : 0;
+                const fillPct = Math.max(0, Math.min(100, execPercActual));
+                const fillWidth = fillPct.toFixed(2) + '%';
+
+                // determinar status e cores
+                let statusClass = 'andamento';
+                let statusLabel = 'Em andamento';
+                if (execPercActual >= 100) {
+                    if (Math.abs(execPercActual - 100) < 0.0001) { statusClass = 'concluido'; statusLabel = 'Concluído'; }
+                    else { statusClass = 'acima'; statusLabel = 'Acima'; }
+                }
+                const fillColor = execPercActual >= 100 ? '#C0DD97' : (execPercActual > 0 ? '#FBBF24' : '#E5E7EB');
+
+                // Mapa mês -> entregas individuais (para renderizar blocos por entrega)
+                const mapaDetails = new Map();
+                entregasObj.forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    const diffMonths = (d.getFullYear() - startDate.getFullYear()) * 12 + (d.getMonth() - startDate.getMonth());
+                    if (diffMonths >= 0 && diffMonths < 60) {
+                        if (!mapaDetails.has(diffMonths)) mapaDetails.set(diffMonths, []);
+                        mapaDetails.get(diffMonths).push({ data: e.data, nf: e.nf || '', qtde: e.qtde });
+                    }
+                });
+
+                const tooltipDetails = `Execução: ${execPercActual.toFixed(2)}%\nPrevisto: ${formatNumber(prevista)}\nEntregue: ${formatNumber(entregueTotal)}\nSaldo: ${formatNumber(saldo)}`;
+                const saldoClass = saldo === 0 ? 'zero' : (saldo < 0 ? 'neg' : '');
+                const saldoDisplay = saldo < 0 ? '-' + formatNumber(Math.abs(saldo)) : formatNumber(saldo);
+
+                let html = `<tr class="exec-row" style="animation-delay:${i * 40}ms;">
+                    <td class="col-objeto">${obj}</td>
+                    <td class="col-qtde">${formatNumber(prevista)}</td>
+                    <td class="col-qtde">${formatNumber(entregueTotal)}</td>
+                    <td class="col-saldo ${saldoClass}">${saldoDisplay}</td>
+                    <td class="col-percent">
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="exec-bar" title="${tooltipDetails}"><div class="exec-bar-fill" style="width:${fillWidth};background:${fillColor}"></div></div>
+                            <div class="exec-perc">${execPercActual.toFixed(2)}%</div>
+                            <div class="status-badge ${statusClass}">${statusLabel}</div>
+                        </div>
+                    </td>`;
+
+                meses.forEach((_, idx) => {
+                    const details = mapaDetails.get(idx) || [];
+                    let cellContent = '';
+                    let title = '';
+                    if (details.length) {
+                        const parts = details.map(d => {
+                            let dateFmt = '';
+                            try { dateFmt = d.data ? new Date(normalizarData(d.data) + 'T00:00:00').toLocaleDateString('pt-BR') : ''; } catch(e) { dateFmt = d.data || ''; }
+                            const nfText = d.nf ? `NF: ${d.nf}` : 'NF: -';
+                            const qt = d.qtde != null ? `Qtd: ${formatNumber(d.qtde)}` : '';
+                            return [dateFmt, nfText, qt].filter(Boolean).join(' → ');
+                        });
+                        title = parts.join('\n');
+                        cellContent = details.map(d => {
+                            const qtd = formatNumber(d.qtde || 0);
+                            const nfLinha = d.nf ? '<br><small style="opacity:.8">' + d.nf + '</small>' : '';
+                            let dFmt = '';
+                            try { dFmt = d.data ? new Date(normalizarData(d.data) + 'T00:00:00').toLocaleDateString('pt-BR') : ''; } catch(e) { dFmt = d.data || ''; }
+                            const tt = `${dFmt} • Qtd: ${qtd}${d.nf ? ' • NF: ' + d.nf : ''}`;
+                            return `<div class="entrega-mini" title="${tt}">${qtd}${nfLinha}</div>`;
+                        }).join('');
+                    }
+                    html += `<td class="month-col-execFis col-mes" style="${mmHideExecFis}" title="${title}">${cellContent}</td>`;
+                });
+                html += '</tr>';
+                return html;
+            }).join('');
+
+            tbody.innerHTML = linhas;
+            // ativar animação por linha (adicionar classe que dispara a keyframe)
+            try {
+                const rows = Array.from(tbody.querySelectorAll('.exec-row'));
+                rows.forEach(r => {
+                    setTimeout(() => r.classList.add('animate'), 30);
+                });
+            } catch(e) {}
+
+            // Ajustar card conforme estado do toggle
+            try {
+                const btn = document.getElementById('toggle-months-execFis');
+                const tbl = document.getElementById('tabelaExecFisTable');
+                const sec = btn?.closest('.detalhe-secao');
+                const expanded = btn?.getAttribute('data-expanded') === '1';
+                if (sec && tbl) {
+                    if (!expanded) {
+                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'auto';
+                        sec.classList.add('cadFin-collapsed');
+                    } else {
+                        tbl.style.minWidth = '2000px'; tbl.style.width = ''; tbl.style.tableLayout = '';
+                        sec.classList.remove('cadFin-collapsed');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // ===== FILTROS MULTI-SELECT PARA TABELAS FINANCEIRAS =====
+        
+        // Estado global dos filtros
+        window.filtrosCadFin = { nd: [], up: [], m: [] };
+        window.filtrosExecFin = { nd: [], up: [] };
+
+        // Toggle menu de filtro
+        function toggleFilterMenu(menuId) {
+            event.stopPropagation();
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            
+            // Fechar outros menus abertos
+            document.querySelectorAll('.filter-menu.open').forEach(m => {
+                if (m.id !== menuId) m.classList.remove('open');
+            });
+            
+            menu.classList.toggle('open');
+        }
+
+        // Fechar menus ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.filter-btn')) {
+                document.querySelectorAll('.filter-menu.open').forEach(m => m.classList.remove('open'));
+            }
+        });
+
+        // Popular menus de filtro do Cadastro Financeiro
+        function popularFiltrosCadFin() {
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros) return;
+            
+            const nds = [...new Set(window.tedSelecionado.financeiros.map(f => String(f.numero || '')))].filter(Boolean).sort();
+            const ups = [...new Set(window.tedSelecionado.financeiros.map(f => String(f.up || f.ug || '')))].filter(Boolean).sort();
+            const ms = [...new Set(window.tedSelecionado.financeiros.map(f => String(f.m || '')))].filter(v => v !== '').sort((a,b) => parseInt(a) - parseInt(b));
+            
+            popularMenuFiltro('filterNdFinMenu', nds, 'cadFin', 'nd');
+            popularMenuFiltro('filterUpFinMenu', ups, 'cadFin', 'up');
+            popularMenuFiltro('filterMFinMenu', ms, 'cadFin', 'm');
+        }
+
+        // Popular menus de filtro da Execução Financeira
+        function popularFiltrosExecFin() {
+            if (!window.tedSelecionado) return;
+            
+            const cad = window.tedSelecionado.financeiros || [];
+            const execs = window.tedSelecionado.execFinanceiras || [];
+            
+            const nds = [...new Set([
+                ...cad.map(f => String(f.numero || '')),
+                ...execs.map(e => String(e.nd || e.numero || ''))
+            ])].filter(Boolean).sort();
+            
+            const ups = [...new Set([
+                ...cad.map(f => String(f.up || f.ug || '')),
+                ...execs.map(e => String(e.up || e.ug || ''))
+            ])].filter(Boolean).sort();
+            
+            popularMenuFiltro('filterNdExecMenu', nds, 'execFin', 'nd');
+            popularMenuFiltro('filterUpExecMenu', ups, 'execFin', 'up');
+        }
+
+        // Popular opções de filtros para a lista de TEDs (UP e Status)
+        function popularFiltrosTEDs() {
+            const selUp = document.getElementById('filterUP_teds');
+            const selStatus = document.getElementById('filterStatus_teds');
+            if (!selUp || !selStatus) return;
+
+            const prevUp = selUp.value;
+            const prevStatus = selStatus.value;
+
+            const ups = [...new Set((dados.teds || []).map(t => String(t.upResponsavel || t.up || '').trim()))].filter(Boolean).sort();
+            const statuses = ['Em Execução', 'TED Finalizado'];
+
+            selUp.innerHTML = '<option value="">Todas</option>' + ups.map(u => `<option value="${u}" ${u === prevUp ? 'selected' : ''}>${u}</option>`).join('');
+            selStatus.innerHTML = statuses.map(s => {
+                const selected = prevStatus ? (s === prevStatus) : (s === 'Em Execução');
+                return `<option value="${s}" ${selected ? 'selected' : ''}>${s}</option>`;
+            }).join('');
+        }
+
+        // Helper para popular um menu de filtro
+        function popularMenuFiltro(menuId, valores, tipo, campo) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            
+            const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
+            const selecionados = filtros[campo] || [];
+            
+            let html = '';
+            valores.forEach(v => {
+                const checked = selecionados.includes(v) ? 'checked' : '';
+                html += `<label onclick="event.stopPropagation()"><input type="checkbox" value="${v}" ${checked} onchange="onFiltroChange('${tipo}', '${campo}', '${v}', this.checked, event)">${v}</label>`;
+            });
+            html += `<button class="filter-clear-btn" onclick="limparFiltro('${tipo}', '${campo}')">Limpar</button>`;
+            menu.innerHTML = html;
+            
+            atualizarLabelFiltro(tipo, campo);
+        }
+
+        // Handler de mudança de filtro
+        function onFiltroChange(tipo, campo, valor, checked, event) {
+            if (event) event.stopPropagation();
+            const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
+
+            if (checked) {
+                if (!filtros[campo].includes(valor)) filtros[campo].push(valor);
+            } else {
+                filtros[campo] = filtros[campo].filter(v => v !== valor);
+            }
+
+            atualizarLabelFiltro(tipo, campo);
+
+            // Re-renderizar tabela sem fechar o menu
+            const menuAberto = tipo === 'cadFin'
+                ? document.querySelector('.filter-menu.open')
+                : document.querySelector('.filter-menu.open');
+            const menuAbertoId = menuAberto ? menuAberto.id : null;
+
+            if (tipo === 'cadFin') {
+                atualizarTabelaFinanceira();
+            } else {
+                atualizarTabelaExecFinanceira();
+            }
+
+            // Restaurar menu aberto após re-renderização
+            if (menuAbertoId) {
+                const m = document.getElementById(menuAbertoId);
+                if (m) m.classList.add('open');
+            }
+        }
+
+        // Limpar filtro
+        function limparFiltro(tipo, campo) {
+            const filtros = tipo === 'cadFin' ? window.filtrosCadFin : window.filtrosExecFin;
+            filtros[campo] = [];
+            
+            if (tipo === 'cadFin') {
+                popularFiltrosCadFin();
+                atualizarTabelaFinanceira();
+            } else {
+                popularFiltrosExecFin();
+                atualizarTabelaExecFinanceira();
+            }
+        }
+
+        // Atualizar label do botão de filtro
+        function atualizarLabelFiltro(tipo, campo) {
+            const filtros = tipo === 'cadFin' ? window.filtrosCadFin
+                          : tipo === 'recGeral' ? window.filtrosRecGeral
+                          : window.filtrosExecFin;
+            const count = (filtros && filtros[campo]) ? filtros[campo].length : 0;
+
+            let labelId, btnId;
+            if (tipo === 'cadFin') {
+                if (campo === 'nd') { labelId = 'filterNdFinLabel'; btnId = 'filterNdFinBtn'; }
+                else if (campo === 'up') { labelId = 'filterUpFinLabel'; btnId = 'filterUpFinBtn'; }
+                else if (campo === 'm') { labelId = 'filterMFinLabel'; btnId = 'filterMFinBtn'; }
+            } else if (tipo === 'recGeral') {
+                if (campo === 'nd') { labelId = 'filterNdRecGeralLabel'; btnId = 'filterNdRecGeralBtn'; }
+            } else {
+                if (campo === 'nd') { labelId = 'filterNdExecLabel'; btnId = 'filterNdExecBtn'; }
+                else if (campo === 'up') { labelId = 'filterUpExecLabel'; btnId = 'filterUpExecBtn'; }
+            }
+
+            const label = document.getElementById(labelId);
+            const btn = document.getElementById(btnId);
+
+            if (label) {
+                const nome = campo.toUpperCase();
+                label.textContent = count > 0 ? `${nome} (${count})` : nome;
+            }
+            if (btn) {
+                if (count > 0) btn.classList.add('active');
+                else btn.classList.remove('active');
+                try {
+                    const vals = (filtros && filtros[campo]) ? filtros[campo] : [];
+                    btn.title = vals.length ? `${campo.toUpperCase()} selecionado(s): ${vals.join(', ')}` : `Filtrar por ${campo.toUpperCase()}`;
+                } catch(e) {}
+            }
+            // Mostrar/ocultar botão "Limpar filtros" conforme tabela
+            if (tipo === 'cadFin') {
+                const btnLimpar = document.getElementById('btnLimparTodosFiltrosCadFin');
+                if (btnLimpar) {
+                    const f = window.filtrosCadFin;
+                    const temFiltro = (f.nd && f.nd.length) || (f.up && f.up.length) || (f.m && f.m.length);
+                    btnLimpar.style.display = temFiltro ? '' : 'none';
+                }
+            } else if (tipo === 'execFin') {
+                const btnLimpar = document.getElementById('btnLimparTodosFiltrosExecFin');
+                if (btnLimpar) {
+                    const f = window.filtrosExecFin;
+                    const temFiltro = (f.nd && f.nd.length) || (f.up && f.up.length);
+                    btnLimpar.style.display = temFiltro ? '' : 'none';
+                }
+            } else if (tipo === 'recGeral') {
+                const btnLimpar = document.getElementById('btnLimparTodosFiltrosRecGeral');
+                if (btnLimpar) {
+                    const f = window.filtrosRecGeral;
+                    const temFiltro = f.nd && f.nd.length;
+                    btnLimpar.style.display = temFiltro ? '' : 'none';
+                }
+            }
+        }
+
+        // Limpar todos os filtros do Cadastro Financeiro (ND + UP + M)
+        function limparTodosFiltrosCadFin() {
+            window.filtrosCadFin = { nd: [], up: [], m: [] };
+            popularFiltrosCadFin();
+            atualizarTabelaFinanceira();
+            const btnLimpar = document.getElementById('btnLimparTodosFiltrosCadFin');
+            if (btnLimpar) btnLimpar.style.display = 'none';
+        }
+
+        // Aplicar seleção rápida de ND a partir dos selects de criação/edição
+        function aplicarFiltroNdExecFin(valor) {
+            window.filtrosExecFin = window.filtrosExecFin || { nd: [], up: [] };
+            if (!valor) {
+                window.filtrosExecFin.nd = [];
+            } else {
+                window.filtrosExecFin.nd = [String(valor)];
+            }
+            try { atualizarLabelFiltro('execFin', 'nd'); } catch(e) {}
+            try { _syncSelectExecFinToMenu(); } catch(e) {}
+            try { atualizarTabelaExecFinanceira(); } catch(e) {}
+        }
+
+        function aplicarFiltroNdRecGeral(valor) {
+            window.filtrosRecGeral = window.filtrosRecGeral || { nd: [] };
+            const labelEl = document.getElementById('filterNdRecGeralLabel');
+            const btnEl = document.getElementById('filterNdRecGeralBtn');
+            if (!valor) {
+                window.filtrosRecGeral.nd = [];
+                if (labelEl) labelEl.textContent = 'ND';
+                if (btnEl) btnEl.classList.remove('active');
+            } else {
+                window.filtrosRecGeral.nd = [String(valor)];
+                if (labelEl) labelEl.textContent = 'ND (1)';
+                if (btnEl) btnEl.classList.add('active');
+            }
+            try { _syncSelectRecGeralToMenu(); } catch(e) {}
+            try { atualizarTabelaRecursosGerais(); } catch(e) {}
+        }
+
+        // Sincronizar select com menu de checkboxes (Execução Financeira)
+        function _syncSelectExecFinToMenu() {
+            try {
+                const menu = document.getElementById('filterNdExecMenu');
+                if (!menu) return;
+                const inputs = Array.from(menu.querySelectorAll('input[type="checkbox"]'));
+                const selected = window.filtrosExecFin && window.filtrosExecFin.nd ? window.filtrosExecFin.nd : [];
+                inputs.forEach(inp => {
+                    const v = inp.value;
+                    const should = selected.includes(v);
+                    if (inp.checked !== should) {
+                        inp.checked = should;
+                    }
+                });
+            } catch(e) { console.warn('Erro sincronizando select->menu execFin', e); }
+        }
+
+        // Sincronizar select com menu de checkboxes (Recursos Gerais)
+        function _syncSelectRecGeralToMenu() {
+            try {
+                const menu = document.getElementById('filterNdRecGeralMenu');
+                if (!menu) return;
+                const inputs = Array.from(menu.querySelectorAll('input[type="checkbox"]'));
+                const selected = window.filtrosRecGeral && window.filtrosRecGeral.nd ? window.filtrosRecGeral.nd : [];
+                inputs.forEach(inp => {
+                    const v = inp.value;
+                    const should = selected.includes(v);
+                    if (inp.checked !== should) {
+                        inp.checked = should;
+                    }
+                });
+            } catch(e) { console.warn('Erro sincronizando select->menu recGeral', e); }
+        }
+
+        // CADASTRO FINANCEIRO
+        function calcularMesFinanceiro() { calcularMesFinanceiroModal(); }
+        function calcularMesFinanceiroModal() {
+            if (!window.tedSelecionado) return;
+            const m = parseInt(document.getElementById('modalFinanceiroM').value);
+            if (isNaN(m)) return;
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else { return; }
+            const d = new Date(startDate); d.setMonth(d.getMonth() + m);
+            const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+            document.getElementById('modalFinanceiroMesDesc').value = `${nomesMeses[d.getMonth()]}/${d.getFullYear()}`;
+        }
+
+        //"?"? Modal Cadastro Financeiro"?"?
+        window._editandoFinanceiroId = null;
+
+        function abrirModalFinanceiro(editId) {
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalFinanceiroBackdrop');
+            const titulo = document.getElementById('modalFinanceiroTitulo');
+            const errEl = document.getElementById('modalFinanceiroError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            document.getElementById('modalFinanceiroND').value = '';
+            document.getElementById('modalFinanceiroUP').value = '';
+            document.getElementById('modalFinanceiroM').value = '';
+            document.getElementById('modalFinanceiroMesDesc').value = '';
+            document.getElementById('modalFinanceiroValor').value = '';
+            window._editandoFinanceiroId = null;
+
+            if (editId) {
+                const f = (window.tedSelecionado.financeiros || []).find(x => x.id === editId);
+                if (f) {
+                    window._editandoFinanceiroId = editId;
+                    titulo.textContent = '🔑 Editar Cadastro Financeiro';
+                    document.getElementById('modalFinanceiroND').value = formatarNDComPontos(f.numero || '');
+                    document.getElementById('modalFinanceiroUP').value = f.up || f.ug;
+                    document.getElementById('modalFinanceiroM').value = f.m;
+                    const valFin = Number(f.valor);
+                    const valFinCents = Math.round(valFin * 100);
+                    const valFinUnits = Math.floor(valFinCents / 100);
+                    const valFinRemainder = valFinCents % 100;
+                    document.getElementById('modalFinanceiroValor').value = formatarMilharesPtBR(valFinUnits) + ',' + String(valFinRemainder).padStart(2, '0');
+                    calcularMesFinanceiroModal();
+                }
+            } else {
+                titulo.textContent = 'Novo Cadastro Financeiro';
+            }
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalFinanceiroND').focus(), 80);
+        }
+
+        function fecharModalFinanceiro() {
+            const b = document.getElementById('modalFinanceiroBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+            window._editandoFinanceiroId = null;
+        }
+
+        function salvarModalFinanceiro() {
+            const errEl = document.getElementById('modalFinanceiroError');
+            const numero = document.getElementById('modalFinanceiroND').value.trim();
+            const m = parseInt(document.getElementById('modalFinanceiroM').value);
+            const up = document.getElementById('modalFinanceiroUP').value.trim();
+            const valor = parseNumber(document.getElementById('modalFinanceiroValor').value);
+
+            if (!numero || isNaN(m) || !up || isNaN(valor)) {
+                errEl.textContent = '⚠️ Preencha todos os campos do cadastro financeiro'; errEl.classList.add('open'); return;
+            }
+
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else { errEl.textContent = '⚠️ Defina a 1ª descentralização.'; errEl.classList.add('open'); return; }
+
+            const d = new Date(startDate); d.setMonth(d.getMonth() + m);
+            const mesDesc = d.getMonth() + 1;
+            const anoDesc = d.getFullYear();
+
+            if (window._editandoFinanceiroId) window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(x => x.id !== window._editandoFinanceiroId);
+
+            const finId = window._editandoFinanceiroId || Date.now();
+            const acaoFin = window._editandoFinanceiroId ? 'editar_financeiro' : 'adicionar_financeiro';
+            window.tedSelecionado.financeiros.push({ id: finId, numero, m, mesDesc, anoDesc, up, valor });
+            atualizarValorTedFromFinanceiros(window.tedSelecionado);
+            salvarDados();
+            atualizarTabelasEmCascata('financeiros');
+            atualizarOpcoesExecFinanceira();
+            atualizarOpcoesRecGeral();
+            atualizarGantt();
+            try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, acaoFin, finId, { campo: 'cadastro financeiro', novo: { numero, up, valor } }); } catch(e) {}
+            fecharModalFinanceiro();
+        }
+
+        function adicionarFinanceiro() { abrirModalFinanceiro(); }
+        function editarFinanceiro(id) { abrirModalFinanceiro(id); }
+
+        function removerFinanceiro(id) {
+            if (!window.tedSelecionado) return;
+            window.tedSelecionado.financeiros = window.tedSelecionado.financeiros.filter(f => f.id !== id);
+            // Atualizar valor do TED automaticamente
+            atualizarValorTedFromFinanceiros(window.tedSelecionado);
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            atualizarTabelasEmCascata('financeiros');
+            atualizarOpcoesExecFinanceira();
+            atualizarOpcoesRecGeral();
+            atualizarGantt();
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_financeiro', id, { campo: 'cadastro financeiro' }); } catch(e) {}
+        }
+
+        // ===== Helper: formatar valor com cor =====
+        function renderValorFmt(val, bold) {
+            const n = parseFloat(val) || 0;
+            const s = Math.abs(n).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            const mono = 'white-space:nowrap; display:inline-block;';
+            const bld = bold ? 'font-weight:700;' : '';
+            if (n < -0.005) return `<span style="color:#A32D2D;${mono}${bld}">\u2212${s}</span>`;
+            if (n >  0.005) return `<span style="color:#3B6D11;${mono}${bld}">${s}</span>`;
+            return `<span style="color:#9b9b9b;${mono}${bld}">${s}</span>`;
+        }
+
+        // Backward-compatible alias: nova função para valores reais (mantém renderValorFmt disponível)
+        function renderValorRealFmt(val, bold) {
+            return renderValorFmt(val, bold);
+        }
+
+        // ===== Helper: badge para coluna UP =====
+        function renderUpBadge(up) {
+            const raw = String(up || '').trim();
+            if (!raw) return '';
+            const u = raw.toUpperCase();
+            let cls = '';
+            if (u.includes('FJF')) cls = 'up-badge up-badge-fjf';
+            else if (u.includes('FPV')) cls = 'up-badge up-badge-fpv';
+            else if (/\bFE\b/.test(u)) cls = 'up-badge up-badge-fe';
+            return cls ? `<span class="${cls}">${raw}</span>` : raw;
+        }
+
+        // ===== Helper: consolidar ExecFin por ND =====
+        function toggleConsolidarExecFin(btn) {
+            const consolidado = btn.getAttribute('data-consolidado') === '1';
+            const novoEstado = !consolidado;
+            btn.setAttribute('data-consolidado', novoEstado ? '1' : '0');
+            btn.textContent = novoEstado ? 'Detalhar por UP' : 'Consolidar por ND';
+            // esconder/mostrar filtro de UP
+            const filterUpBtn = document.getElementById('filterUpExecBtn');
+            if (filterUpBtn) filterUpBtn.style.display = novoEstado ? 'none' : '';
+            try { atualizarTabelaExecFinanceira(); } catch(e) { console.error(e); }
+        }
+
+        // ===== Helper: alternar colunas de meses =====
+        function toggleMonthCols(section, btn) {
+            const expanded = btn.getAttribute('data-expanded') === '1';
+            const newExpanded = !expanded;
+
+            btn.setAttribute('data-expanded', newExpanded ? '1' : '0');
+            btn.textContent = newExpanded ? 'Ocultar detalhes mensais' : 'Ver detalhes mensais';
+
+            // execFin e recGeral reconstroem o thead do zero — ajustar maxWidth e re-renderizar
+            if (section === 'execFin') {
+                const w = document.getElementById('wrapperExecFin');
+                if (w) w.style.maxWidth = newExpanded ? 'none' : '';
+                const detalheEF = btn.closest('.detalhe-secao');
+                if (detalheEF) { detalheEF.classList.toggle('months-expanded', newExpanded); detalheEF.classList.toggle('cadFin-collapsed', !newExpanded); }
+                try { atualizarTabelaExecFinanceira(); } catch(e) { console.error(e); }
+                return;
+            }
+            if (section === 'recGeral') {
+                const w = document.getElementById('wrapperRecGeral');
+                if (w) w.style.maxWidth = newExpanded ? 'none' : '';
+                const detalheRG = btn.closest('.detalhe-secao');
+                if (detalheRG) { detalheRG.classList.toggle('months-expanded', newExpanded); detalheRG.classList.toggle('cadFin-collapsed', !newExpanded); }
+                try { atualizarTabelaRecursosGerais(); } catch(e) { console.error(e); }
+                return;
+            }
+
+            // demais seções: lógica original de display:none
+            const detalhe = btn.closest('.detalhe-secao');
+            const wrapper = detalhe ? detalhe.querySelector('.table-wrapper, .table-freeze-wrapper') : null;
+            const table = wrapper ? wrapper.querySelector('table') : null;
+
+            if (!newExpanded && table) {
+                table.classList.add('months-collapsed');
+                table.style.minWidth = '0';
+                table.style.width = 'auto';
+                table.style.tableLayout = 'auto';
+                if (wrapper) { wrapper.style.minWidth = ''; wrapper.style.width = ''; }
+                if (section === 'execFis') { const w = document.getElementById('wrapperExecFis'); if (w) w.style.maxWidth = ''; }
+                if (section === 'cadFis') { const w = document.getElementById('wrapperCadFis'); if (w) w.style.maxWidth = ''; }
+                if (section === 'cadFin') { const w = document.getElementById('wrapperCadFin'); if (w) w.style.maxWidth = ''; }
+                if (detalhe) { detalhe.classList.add('cadFin-collapsed'); detalhe.classList.remove('months-expanded'); }
+            }
+
+            document.querySelectorAll('.month-col-' + section).forEach(col => {
+                col.style.display = newExpanded ? '' : 'none';
+            });
+
+            // ocultar/mostrar a linha inteira de meses do cadFis
+            if (section === 'cadFis') {
+                const tbl = document.querySelector('#tabelaFisicos')?.closest('table');
+                const headerMeses = tbl?.querySelector('thead tr.header-meses');
+                if (headerMeses) headerMeses.style.display = newExpanded ? '' : 'none';
+            }
+
+            if (newExpanded) {
+                if (table) {
+                    table.classList.remove('months-collapsed');
+                    if (detalhe) { detalhe.classList.remove('cadFin-collapsed'); detalhe.classList.add('months-expanded'); }
+                    if (section === 'cadFin') {
+                        table.style.minWidth = '1400px';
+                        const w = document.getElementById('wrapperCadFin'); if (w) w.style.maxWidth = 'none';
+                    }
+                    else if (section === 'cadFis') {
+                        table.style.minWidth = '2000px';
+                        const w = document.getElementById('wrapperCadFis'); if (w) w.style.maxWidth = 'none';
+                    }
+                    else if (section === 'execFis') {
+                        table.style.minWidth = '2000px';
+                        const w = document.getElementById('wrapperExecFis'); if (w) w.style.maxWidth = 'none';
+                    }
+                    else table.style.minWidth = '';
+                    table.style.width = '';
+                    table.style.tableLayout = '';
+                }
+            }
+        }
+
+        // ===== Cadastro Financeiro — helpers redesign =====
+        function _cfNdCategoria(nd) {
+            const s = String(nd || '').replace(/\D/g, '');
+            if (s.startsWith('44')) return 'invest';
+            if (s.startsWith('33')) return 'custeio';
+            return 'outros';
+        }
+        function _cfUpCategoria(up) {
+            const u = String(up || '').trim().toUpperCase();
+            if (u === 'FI' || u.startsWith('FI/') || u.startsWith('FI ')) return 'fi';
+            if (u === 'UA' || u.startsWith('UA/') || u.startsWith('UA ')) return 'ua';
+            return 'outros';
+        }
+        function _cfCalcKPIs(financeiros) {
+            let total = 0;
+            let maxNd = { val: 0, nd: '' };
+            const byNd = {};
+            const byUp = {};
+            const meses = {};
+            const hoje = new Date();
+            let proxMes = null;
+            financeiros.forEach(f => {
+                const v = parseNumber(f.valor) || 0;
+                total += v;
+                const nd = String(f.numero || f.nd || '');
+                byNd[nd] = (byNd[nd] || 0) + v;
+                const up = String(f.up || f.ug || '');
+                byUp[up] = (byUp[up] || 0) + v;
+                const key = `${f.mesDesc}/${f.anoDesc}`;
+                meses[key] = (meses[key] || 0) + v;
+                if (f.anoDesc && f.mesDesc) {
+                    const d = new Date(parseInt(f.anoDesc), parseInt(f.mesDesc) - 1, 1);
+                    const isNextOrCurrent = d >= new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                    if (isNextOrCurrent && (!proxMes || d < proxMes)) { proxMes = d; }
+                }
+            });
+            // Somar todos os lançamentos do próximo período encontrado
+            const proxMesVal = proxMes
+                ? Object.entries(meses).reduce((acc, [key, v]) => {
+                    const [m, a] = key.split('/');
+                    const d = new Date(parseInt(a), parseInt(m) - 1, 1);
+                    return (d.getFullYear() === proxMes.getFullYear() && d.getMonth() === proxMes.getMonth()) ? acc + v : acc;
+                  }, 0)
+                : 0;
+            Object.entries(byNd).forEach(([nd, v]) => { if (v > maxNd.val) { maxNd = { val: v, nd }; } });
+            const upCount = Object.keys(byUp).length;
+            return { total, maxNd, upCount, proxMes, proxMesVal };
+        }
+        function _cfRenderKPIs(kpis, container) {
+            if (!container) return;
+            const fmt = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+            const proxLabel = kpis.proxMes ? `${meses[kpis.proxMes.getMonth()]}/${kpis.proxMes.getFullYear()}` : '—';
+            container.innerHTML = `
+            <div class="cf-kpis">
+              <div class="cf-kpi lead-blue">
+                <span class="cf-kpi-label">Total Cadastrado</span>
+                <span class="cf-kpi-val">R$ ${fmt(kpis.total)}</span>
+              </div>
+              <div class="cf-kpi lead-green">
+                <span class="cf-kpi-label">Maior ND</span>
+                <span class="cf-kpi-val" style="font-size:14px;">${formatarNDComPontos(kpis.maxNd.nd) || '—'}</span>
+                <span class="cf-kpi-sub">R$ ${fmt(kpis.maxNd.val)}</span>
+              </div>
+              <div class="cf-kpi lead-amber">
+                <span class="cf-kpi-label">Distribuição por UP</span>
+                <span class="cf-kpi-val">${kpis.upCount}</span>
+                <span class="cf-kpi-sub">unidades</span>
+              </div>
+              <div class="cf-kpi lead-purple">
+                <span class="cf-kpi-label">Próximo período</span>
+                <span class="cf-kpi-val" style="font-size:14px;">${proxLabel}</span>
+                <span class="cf-kpi-sub">${kpis.proxMes ? 'R$ ' + fmt(kpis.proxMesVal) : 'sem previsão'}</span>
+              </div>
+            </div>`;
+        }
+        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded, origemAlt) {
+            // Fallback: se não vier o casamento robusto, usa só o ID (comportamento antigo)
+            if (typeof isFinExcluded !== 'function') {
+                const _ids = excludedFinIds || new Set();
+                isFinExcluded = (f) => f.id != null && _ids.has(String(f.id));
+            }
+            excludedFinIds = excludedFinIds || new Set();
+            const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+            // Chip de atribuição: identifica qual aditivo/apostilamento originou a alteração/supressão
+            const chipAltHtml = (() => {
+                if (!origemAlt) return '';
+                const isAditivo = origemAlt.tipo === 'aditivo';
+                const label = isAditivo ? `${origemAlt.ordinal}º Aditivo` : `${origemAlt.ordinal}º Apostilamento`;
+                const dataStr = origemAlt.data ? _fmtData(origemAlt.data) : '';
+                const sigla = isAditivo ? 'AD' + origemAlt.ordinal : 'AP' + origemAlt.ordinal;
+                return `<span class="cf-chip-alt ${isAditivo ? 'tipo-aditivo' : 'tipo-apostilamento'}" title="${label}${dataStr ? ' · ' + dataStr : ''}">${sigla}</span>`;
+            })();
+
+            // Pré-calcular % Part. recebida por linha (ND+UP sequencial)
+            // Para cada ND+UP: soma recebimentos da ExecFin e distribui pelas linhas CadFin em ordem
+            const normND = nd => String(nd || '').replace(/\D/g, '');
+            const execFins = (window.tedSelecionado && window.tedSelecionado.execFinanceiras) || [];
+            // total recebido por ND+UP
+            const recebidoPorNdUp = {};
+            execFins.forEach(e => {
+                const chaveNdUp = normND(e.nd || e.numero) + '|' + String(e.up || e.ug || '');
+                recebidoPorNdUp[chaveNdUp] = (recebidoPorNdUp[chaveNdUp] || 0) + (parseNumber(e.valor) || 0);
+            });
+            // linhas CadFin ordenadas por ND+UP (mesma ordem de dadosFiltrados).
+            // Linhas revertidas por aditivo/apostilamento (tachadas) NÃO entram no rateio:
+            // se entrassem, absorveriam o recebimento antes das linhas vigentes e a coluna
+            // "A Receber" das vigentes continuaria mostrando o valor cheio.
+            const linhasPorNdUp = {};
+            dadosFiltrados.forEach(f => {
+                if (isFinExcluded(f)) return;
+                const chaveNdUp = normND(f.numero || f.nd) + '|' + String(f.up || f.ug || '');
+                if (!linhasPorNdUp[chaveNdUp]) linhasPorNdUp[chaveNdUp] = [];
+                linhasPorNdUp[chaveNdUp].push(f);
+            });
+            // para cada linha, calcular pctRecebido (0-100)
+            const pctRecebidoMap = new Map();
+            Object.keys(linhasPorNdUp).forEach(chaveNdUp => {
+                const linhas = linhasPorNdUp[chaveNdUp];
+                let saldoRecebido = recebidoPorNdUp[chaveNdUp] || 0;
+                linhas.forEach(f => {
+                    const valorLinha = parseNumber(f.valor) || 0;
+                    if (valorLinha <= 0) { pctRecebidoMap.set(f, 0); return; }
+                    const absorvido = Math.max(0, Math.min(saldoRecebido, valorLinha));
+                    pctRecebidoMap.set(f, absorvido / valorLinha * 100);
+                    saldoRecebido -= absorvido;
+                });
+            });
+
+            // group by mesDesc/anoDesc label
+            const grupos = {};
+            const grupoOrdem = [];
+            dadosFiltrados.forEach(f => {
+                const mesDescIdx = (parseInt(f.mesDesc) || 1) - 1;
+                const label = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx]}/${f.anoDesc}` : '—';
+                const chave = `${String(f.anoDesc || '0').padStart(4,'0')}_${String(f.mesDesc || '0').padStart(2,'0')}`;
+                if (!grupos[chave]) { grupos[chave] = { label, items: [] }; grupoOrdem.push(chave); }
+                grupos[chave].items.push(f);
+            });
+            let rowsHtml = '';
+            grupoOrdem.forEach(chave => {
+                const grp = grupos[chave];
+                const activeItems = grp.items.filter(f => !isFinExcluded(f));
+                const subTotal = activeItems.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
+                const subFmt = subTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                const subRecebido = activeItems.reduce((s, f) => {
+                    const valorLinha = parseNumber(f.valor) || 0;
+                    const pct = pctRecebidoMap.get(f) ?? 0;
+                    return s + (valorLinha * pct / 100);
+                }, 0);
+                const subRecebidoFmt = subRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                const grpId = 'cfgrp_' + chave;
+                // group header row (fixed cols + Gantt spacers)
+                const nGantt = meses.length;
+                rowsHtml += `<tr class="cf-grp-tr-head" data-grp="${grpId}" onclick="toggleGrupoCadFin('${grpId}', this)">
+                    <td colspan="${7 + nGantt}" style="padding:0; border:none;">
+                        <div class="cf-grp-head">
+                            <div class="cf-grp-head-left">
+                                <span class="cf-grp-toggle open" id="${grpId}_arrow">▶</span>
+                                <span class="mes-pill">${grp.label}</span>
+                                <span class="cf-grp-count">${activeItems.length} lançamento${activeItems.length !== 1 ? 's' : ''}</span>
+                            </div>
+                            <span class="cf-grp-subtotal">
+                                <span class="cf-grp-subtotal-recebido">R$ ${subRecebidoFmt}</span>
+                                <span class="cf-grp-subtotal-sep">/</span>
+                                <span class="cf-grp-subtotal-total">R$ ${subFmt}</span>
+                            </span>
+                        </div>
+                    </td>
+                </tr>`;
+                // data rows inside group
+                // Renderiza uma linha de dado (vigente ou suprimida) — extraído para permitir
+                // recolher as linhas suprimidas num bloco único em vez de espalhá-las na tabela.
+                const renderLinhaCf = (f, supGroupId) => {
+                    const valorNum = parseNumber(f.valor) || 0;
+                    const mesDescIdx2 = (parseInt(f.mesDesc) || 1) - 1;
+                    let mesDescStr = f.mesDesc && f.anoDesc ? `${mesesNome[mesDescIdx2]}/${f.anoDesc}` : '-';
+                    const numeroDisplay = f.numero || f.nd || '-';
+                    const mKey = matchKeyFin(f);
+                    const mods = modMapFin[mKey];
+                    const isAdded = addSetFin.has(mKey);
+                    const isExcluded = isFinExcluded(f);
+                    const isAlterada = !isExcluded && !isAdded && mods && (mods.valor || mods.m);
+                    const trClass = (isExcluded ? ' linha-excluida-aditivo' : (isAdded ? ' linha-adicionada-aditivo' : (isAlterada ? ' linha-alterada-aditivo' : ''))) + (supGroupId ? ' cf-sup-item' : '');
+                    const supAttr = supGroupId ? ` data-supgroup="${supGroupId}"` : '';
+                    const ndCat = _cfNdCategoria(numeroDisplay);
+                    const upCat = _cfUpCategoria(f.up || f.ug || '');
+                    const upRaw = String(f.up || f.ug || '');
+                    const pct = pctRecebidoMap.get(f) ?? 0;
+                    const valorFaltante = Math.max(0, valorNum * (1 - pct / 100));
+                    const faltanteFmt = valorFaltante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    // Linha suprimida: valor sempre tachado em bloco simples (não há "de -> para" —
+                    // ela deixou de existir), sem a formatação de célula alterada.
+                    const tdValor = isExcluded
+                        ? `<span class="col-valor-sup">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>`
+                        : (mods && mods.valor
+                            ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '')
+                            : renderValorRealFmt(valorNum));
+                    const chip = (isExcluded || isAdded || isAlterada) ? chipAltHtml : '';
+                    const tdM = (!isExcluded && mods && mods.m) ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
+                    if (!isExcluded && mods && mods.m && window._cfStartDate) {
+                        const dOldMes = new Date(window._cfStartDate);
+                        dOldMes.setMonth(dOldMes.getMonth() + (Number(mods.m.de) || 0));
+                        const oldMesDescStr = `${mesesNome[dOldMes.getMonth()]}/${dOldMes.getFullYear()}`;
+                        mesDescStr = `<span class="celula-alterada-aditivo"><span class="val-antigo">${oldMesDescStr}</span><span class="val-novo">${mesDescStr}</span></span>`;
+                    }
+                    let html = `<tr class="cf-grp-data-row${trClass}" data-grprow="${grpId}"${supAttr}>
+                        <td class="col-nd"><span class="nd-tag ${ndCat}">${formatarNDComPontos(numeroDisplay)}</span>${chip}</td>
+                        <td class="col-up"><span class="up-pill ${upCat}">${upRaw || '—'}</span></td>
+                        <td class="col-m">${tdM}</td>
+                        <td class="col-mes">${mesDescStr}</td>
+                        <td class="col-valor" style="text-align:center;">${tdValor}</td>
+                        <td class="col-percent">
+                            ${isExcluded
+                                ? '<span class="pill" style="color:#94a3b8;">—</span>'
+                                : (valorFaltante <= 0
+                                    ? '<span class="saldo-receber saldo-receber--zero">Recebido</span>'
+                                    : `<span class="saldo-receber">R$ ${faltanteFmt}</span>`)}
+                        </td>
+                        <td class="col-acao">
+                            <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
+                            <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
+                        </td>`;
+                    // Gantt cells
+                    let oldMesDesc2 = null, oldAnoDesc2 = null;
+                    if (!isExcluded && mods && mods.m && window._cfStartDate) {
+                        const dOld = new Date(window._cfStartDate);
+                        dOld.setMonth(dOld.getMonth() + (Number(mods.m.de) || 0));
+                        oldMesDesc2 = dOld.getMonth() + 1;
+                        oldAnoDesc2 = dOld.getFullYear();
+                    }
+                    meses.forEach((mesInfo) => {
+                        const estaNoMes = parseInt(f.mesDesc) === mesInfo.mes && parseInt(f.anoDesc) === mesInfo.fullYear;
+                        const estaNoMesAntigo = oldMesDesc2 !== null && oldMesDesc2 === mesInfo.mes && oldAnoDesc2 === mesInfo.fullYear;
+                        if (estaNoMes && estaNoMesAntigo) {
+                            html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                        } else if (estaNoMes) {
+                            if (oldMesDesc2 !== null) {
+                                html += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            } else {
+                                html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            }
+                        } else if (estaNoMesAntigo) {
+                            const oldValor = mods && mods.valor ? Number(mods.valor.de || 0) : valorNum;
+                            html += `<td class="month-col-cadFin" style="background:#fee2e2; text-align:right; padding-right:0.25rem; font-size:0.7rem; opacity:0.6;${mmHideCadFin}" title="M anterior: ${mods.m.de}"><s>${oldValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</s></td>`;
+                        } else {
+                            html += `<td class="month-col-cadFin" style="${mmHideCadFin}"></td>`;
+                        }
+                    });
+                    html += '</tr>';
+                    return html;
+                };
+
+                const itensVigentesGrp = grp.items.filter(f => !isFinExcluded(f));
+                const itensSuprimidosGrp = grp.items.filter(f => isFinExcluded(f));
+
+                itensVigentesGrp.forEach(f => { rowsHtml += renderLinhaCf(f); });
+
+                // Bloco recolhido para as linhas suprimidas — em vez de espalhar cada uma
+                // tachada por inteiro na tabela, mostra um resumo com o total removido e
+                // permite expandir para conferir cada lançamento individualmente.
+                if (itensSuprimidosGrp.length) {
+                    const totalSup = itensSuprimidosGrp.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
+                    const totalSupFmt = totalSup.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    const supToggleId = grpId + '_sup';
+                    const nGantt2 = meses.length;
+                    rowsHtml += `<tr class="cf-grp-sup-toggle" data-grprow="${grpId}" onclick="toggleSuprimidosCadFin('${supToggleId}', this)">
+                        <td colspan="${7 + nGantt2}">
+                            <span class="car" id="${supToggleId}_car">▸</span>
+                            ${itensSuprimidosGrp.length} lançamento${itensSuprimidosGrp.length !== 1 ? 's' : ''} suprimido${itensSuprimidosGrp.length !== 1 ? 's' : ''}${chipAltHtml}
+                            &nbsp;·&nbsp; <b>−R$ ${totalSupFmt}</b> <span style="opacity:.75">(fora das somas)</span>
+                        </td>
+                    </tr>`;
+                    itensSuprimidosGrp.forEach(f => { rowsHtml += renderLinhaCf(f, supToggleId); });
+                }
+            });
+            return rowsHtml;
+        }
+        function toggleGrupoCadFin(grpId, headTr) {
+            const table = headTr.closest('table');
+            if (!table) return;
+            const rows = table.querySelectorAll(`tr[data-grprow="${grpId}"]`);
+            const arrow = document.getElementById(grpId + '_arrow');
+            const isOpen = arrow && arrow.classList.contains('open');
+            rows.forEach(r => r.style.display = isOpen ? 'none' : '');
+            if (arrow) arrow.classList.toggle('open', !isOpen);
+        }
+
+        // Expande/recolhe o bloco de lançamentos suprimidos (tachados) dentro de um grupo
+        // de mês do Cadastro Financeiro — mantém a tabela limpa por padrão e permite conferir
+        // cada linha suprimida individualmente quando necessário.
+        function toggleSuprimidosCadFin(supGroupId, headTr) {
+            const table = headTr.closest('table');
+            if (!table) return;
+            const rows = table.querySelectorAll(`tr[data-supgroup="${supGroupId}"]`);
+            const car = document.getElementById(supGroupId + '_car');
+            const isOpen = car && car.textContent === '▾';
+            rows.forEach(r => r.style.display = isOpen ? 'none' : '');
+            if (car) car.textContent = isOpen ? '▸' : '▾';
+        }
+
+        function atualizarTabelaFinanceira() {
+            const tbody = document.getElementById('tabelaFinanceira');
+            const headerGantt = document.getElementById('ganttHeaderFinanceira');
+            const tableCompleta = document.getElementById('tabelaFinanceiraCompleta');
+            const previstoAnualSpan = document.getElementById('previstoAnualValor');
+            let totalValor = 0;
+
+            // Popular menus de filtro
+            try { popularFiltrosCadFin(); } catch(e) {}
+
+            if (!window.tedSelecionado || !window.tedSelecionado.financeiros.length) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align: center; padding: 1rem; color: var(--text);">Nenhum cadastro financeiro</td></tr>';
+                if (headerGantt) {
+                    headerGantt.innerHTML = 'CRONOGRAMA';
+                    headerGantt.setAttribute('colspan', '60');
+                }
+                if (previstoAnualSpan) previstoAnualSpan.textContent = '0,00';
+                return;
+            }
+            
+            // Aplicar filtros
+            const filtros = window.filtrosCadFin || { nd: [], up: [], m: [] };
+            let dadosFiltrados = window.tedSelecionado.financeiros.filter(f => {
+                if (filtros.nd.length && !filtros.nd.includes(String(f.numero || ''))) return false;
+                if (filtros.up.length && !filtros.up.includes(String(f.up || f.ug || ''))) return false;
+                if (filtros.m.length && !filtros.m.includes(String(f.m || ''))) return false;
+                return true;
+            });
+
+            // Ordenar por coluna M (campo 'm') e depois por ND (campo 'numero' ou 'nd')
+            try {
+                dadosFiltrados.sort((a, b) => {
+                    const am = parseInt(a.m, 10) || 0;
+                    const bm = parseInt(b.m, 10) || 0;
+                    if (am !== bm) return am - bm;
+                    const anRaw = String(a.numero || a.nd || '').trim();
+                    const bnRaw = String(b.numero || b.nd || '').trim();
+                    const anNum = Number(anRaw);
+                    const bnNum = Number(bnRaw);
+                    const anIsNum = anRaw !== '' && isFinite(anNum);
+                    const bnIsNum = bnRaw !== '' && isFinite(bnNum);
+                    if (anIsNum && bnIsNum) return anNum - bnNum;
+                    return anRaw.localeCompare(bnRaw, undefined, { numeric: true, sensitivity: 'base' });
+                });
+            } catch (e) {
+                console.warn('Erro ao ordenar cadastro financeiro:', e);
+            }
+
+            // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
+                startDate = new Date(dataDesc + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                // Fallback para primeira descentralização dos registros financeiros
+                const primeiros = [...window.tedSelecionado.financeiros].sort((a,b)=>{
+                    if (a.anoDesc !== b.anoDesc) return a.anoDesc - b.anoDesc;
+                    return a.mesDesc - b.mesDesc;
+                });
+                const start = primeiros[0];
+                startDate = new Date(start.anoDesc, start.mesDesc - 1, 1);
+            }
+
+            const meses = [];
+            for (let i = 0; i < 60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({ 
+                    label: `${mes}/${ano2}`, 
+                    ano: d.getFullYear(), 
+                    mes: d.getMonth() + 1,
+                    fullYear: d.getFullYear()
+                });
+            }
+
+            // Agrupar por ano
+            const anos = [];
+            meses.forEach((m) => {
+                if (!anos.length || anos[anos.length-1].ano !== m.ano) {
+                    anos.push({ ano: m.ano, count: 1 });
+                } else {
+                    anos[anos.length-1].count += 1;
+                }
+            });
+
+            // Remover segundo cabeçalho se existir
+            let headerRow2 = tableCompleta.querySelector('thead tr:nth-child(2)');
+            if (headerRow2) {
+                headerRow2.remove();
+            }
+
+            // Atualizar primeiro cabeçalho com anos e rowspan nas colunas fixas
+            let headerRow1 = tableCompleta.querySelector('thead tr:nth-child(1)');
+            // Estado atual do toggle de meses
+            const monthsExpandedCadFin = document.getElementById('toggle-months-cadFin')?.getAttribute('data-expanded') === '1';
+            const mmHideCadFin = monthsExpandedCadFin ? '' : ' display:none;';
+
+            let headerHTML = '<th rowspan="2" class="col-nd">ND</th>';
+            headerHTML += '<th rowspan="2" class="col-up">UP</th>';
+            headerHTML += '<th rowspan="2" class="col-m">M</th>';
+            headerHTML += '<th rowspan="2" class="col-mes">Mês Desc.</th>';
+            headerHTML += '<th rowspan="2" class="col-valor">Valor</th>';
+            headerHTML += '<th rowspan="2" class="col-percent">A Receber</th>';
+            headerHTML += '<th rowspan="2" class="col-acao">Ação</th>';
+
+            const today = new Date();
+            anos.forEach(a => {
+                headerHTML += `<th class="month-col-cadFin year-group-cadfin" style="${mmHideCadFin}" colspan="${a.count}">${a.ano}</th>`;
+            });
+
+            headerRow1.innerHTML = headerHTML;
+
+            // Criar segunda linha do cabeçalho com meses
+            headerRow2 = document.createElement('tr');
+            headerRow2.className = 'header-meses';
+            let headerRow2HTML = '';
+            let lastAno = null;
+            meses.forEach(m => {
+                const isFirst   = m.ano !== lastAno;
+                const isCurrent = m.ano === today.getFullYear() && m.mes === today.getMonth() + 1;
+                lastAno = m.ano;
+                let cls = 'month-col-cadFin';
+                if (isFirst)   cls += ' mes-first';
+                if (isCurrent) cls += ' mes-current';
+                headerRow2HTML += `<th class="${cls}" style="${mmHideCadFin}">${m.label}</th>`;
+            });
+            headerRow2.innerHTML = headerRow2HTML;
+            tableCompleta.querySelector('thead').appendChild(headerRow2);
+
+            // Obter alterações de aditivos/apostilamentos para destacar
+            const altFinanc = obterAlteracoesTabelaAditivos('financeiros');
+            const origemAltFin = obterOrigemAlteracaoTabela('financeiros');
+            const tabDefFin = ADITIVO_TABELAS_CLONE.find(t => t.key === 'financeiros');
+            const { modMap: modMapFin, addSet: addSetFin } = criarMapaAlteracoes(altFinanc, tabDefFin);
+            const matchKeyFin = (item) => tabDefFin ? tabDefFin.matchFields.map(f => String(item[f] || '')).join('||') : '';
+
+            // Construir conjunto de linhas que devem aparecer tachadas e fora dos cálculos:
+            // 1. Linhas ADICIONADAS por aditivos/apostilamentos que foram excluídos (soft-delete)
+            // 2. Linhas REMOVIDAS no modal de aditivos/apostilamentos ativos (ficaram no array mas foram "removidas" logicamente)
+            // Casamento robusto (id + chave natural com contagem) via resolverExclusaoPorChaveNatural,
+            // para não tachar múltiplas linhas idênticas (mesma ND+UP+M+valor) quando só uma foi removida.
+            const _finRemovedEntries = [];
+            (window.tedSelecionado.alteracoes || []).forEach(alt => {
+                const diffs = alt.tabelasAlteradas && alt.tabelasAlteradas['financeiros'];
+                if (!diffs) return;
+                // Apostilamento excluído → itens que ADICIONOU ficam tachados.
+                // Apostilamento ativo → itens que REMOVEU ficam tachados.
+                const lista = alt.excluido ? (diffs.adicionados || []) : (diffs.removidos || []);
+                lista.forEach(entry => _finRemovedEntries.push(entry));
+            });
+            const _finExclusionMap = resolverExclusaoPorChaveNatural(dadosFiltrados, _finRemovedEntries);
+            const isFinExcluded = (f) => _finExclusionMap.get(f) === true;
+
+            // Calcular totais por mês ignorando linhas de aditivos excluídos
+            totalValor = 0;
+            const totaisPorMes = new Array(meses.length).fill(0);
+            dadosFiltrados.forEach(f => {
+                if (isFinExcluded(f)) return; // excluído: não soma
+                const valorNum = parseNumber(f.valor) || 0;
+                totalValor += valorNum;
+                const mesIdx = meses.findIndex(m => m.mes === (parseInt(f.mesDesc) || 0) && m.fullYear === (parseInt(f.anoDesc) || 0));
+                if (mesIdx >= 0) totaisPorMes[mesIdx] += valorNum;
+            });
+
+            // Renderizar KPIs (excluindo linhas de aditivos excluídos)
+            window._cfStartDate = startDate;
+            try {
+                const cfKpiWrap = document.getElementById('cfKpiWrap');
+                const kpis = _cfCalcKPIs(dadosFiltrados.filter(f => !isFinExcluded(f)));
+                _cfRenderKPIs(kpis, cfKpiWrap);
+            } catch(e) { console.warn('cf kpis error', e); }
+
+            // Renderizar linhas agrupadas por Mês Desc.
+            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, undefined, isFinExcluded, origemAltFin);
+
+            // Se não houver linhas visíveis, mostrar placeholder
+            tbody.innerHTML = rowsHtml || '<tr><td colspan="67" class="auto-style-014">Nenhum cadastro financeiro</td></tr>';
+
+            // Linha total com somatório por coluna - mostrar valor com fundo azul claro (totais globais)
+            const totalCells = totaisPorMes.map((total) => {
+                if (total > 0) {
+                    return `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                }
+                return `<td class="month-col-cadFin" style="${mmHideCadFin}"></td>`;
+            }).join('');
+
+            // Linha "Previsto Anual" (mesclada por ano) com somatório dos meses de cada ano
+            let idxMesAno = 0;
+            const previstoAnualPorAnoCells = anos.map((a) => {
+                let somaAno = 0;
+                for (let j = 0; j < a.count; j++) {
+                    somaAno += totaisPorMes[idxMesAno + j] || 0;
+                }
+                idxMesAno += a.count;
+                const valorAno = somaAno.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                return `<td colspan="${a.count}" class="month-col-cadFin" style="background:#dbeafe; text-align:center; font-weight:700;${mmHideCadFin}">${valorAno}</td>`;
+            }).join('');
+
+            // Remover controles de paginação se existirem (legado)
+            try {
+                const wrapper = document.getElementById('wrapperCadFin') || tableCompleta.closest('.table-wrapper') || tableCompleta.parentElement;
+                if (wrapper) { const pag = wrapper.querySelector('.table-pagination'); if (pag) pag.remove(); }
+            } catch(e) { /* non-fatal */ }
+
+            tbody.innerHTML += `
+                <tr class="linha-total">
+                    <td class="col-nd">TOTAL</td>
+                    <td class="col-up"></td>
+                    <td class="col-m"></td>
+                    <td class="col-mes"></td>
+                    <td class="col-valor">${renderValorRealFmt(totalValor, true)}</td>
+                    <td class="col-percent"></td>
+                    <td class="col-acao"></td>
+                    ${totalCells}
+                </tr>
+                <tr class="linha-total">
+                    <td colspan="7" style="text-align:left; font-weight:700;">Previsto Anual</td>
+                    ${previstoAnualPorAnoCells}
+                </tr>
+            `;
+
+            // Valor do TED deve refletir o total do cadastro de objetos.
+            // persistir:false — isto aqui é RENDERIZAÇÃO: só abrir a aba não pode gravar.
+            if (window.tedSelecionado) {
+                atualizarValorTedFromObjetos(window.tedSelecionado, { persistir: false });
+            }
+
+            if (previstoAnualSpan) {
+                previstoAnualSpan.textContent = `${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            }
+
+            // Mostrar alerta se a soma do Cadastro Financeiro exceder o total previsto nos Objetos
+            try {
+                const totalFinanceiro = totalValor || 0;
+                let totalObjetos = 0;
+                if (window.tedSelecionado && window.tedSelecionado.objetos && window.tedSelecionado.objetos.length) {
+                    totalObjetos = window.tedSelecionado.objetos.reduce((s, o) => s + (parseNumber(o.valorTotal) || 0), 0);
+                }
+
+                let alertDiv = document.getElementById('alertFinanceiro');
+                if (!alertDiv) {
+                    alertDiv = document.createElement('div');
+                    alertDiv.id = 'alertFinanceiro';
+                    alertDiv.style.marginTop = '0.5rem';
+                    alertDiv.style.padding = '0.6rem';
+                    alertDiv.style.borderRadius = '0.25rem';
+                    alertDiv.style.fontWeight = '600';
+                    // Insert after the full table
+                    if (tableCompleta && tableCompleta.parentNode) tableCompleta.parentNode.insertBefore(alertDiv, tableCompleta.nextSibling);
+                }
+
+                if (totalFinanceiro > totalObjetos) {
+                    alertDiv.style.display = 'block';
+                    alertDiv.style.background = '#fffbeb'; // light warning
+                    alertDiv.style.border = '1px solid #fef3c7';
+                    alertDiv.style.color = '#92400e';
+                    alertDiv.innerHTML = `⚠️ A soma dos valores lançados no Cadastro Financeiro (<strong>R$ ${totalFinanceiro.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>) é maior que o total previsto no Cadastro de Objetos (<strong>R$ ${totalObjetos.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>).`;
+                } else {
+                    alertDiv.style.display = 'none';
+                    alertDiv.innerHTML = '';
+                }
+            } catch (e) {
+                // não bloquear função se erro ao calcular alerta
+                console.error('Erro ao calcular alerta financeiro:', e);
+            }
+
+            // Ajustar min-width da tabela conforme estado do toggle (meses expandidos ou ocultos)
+            if (tableCompleta) {
+                const monthsExpanded = document.getElementById('toggle-months-cadFin')?.getAttribute('data-expanded') === '1';
+                const secaoCadFin = document.getElementById('wrapperCadFin')?.closest('.detalhe-secao');
+                const wrapperCadFin = document.getElementById('wrapperCadFin');
+                if (!monthsExpanded) {
+                    tableCompleta.classList.add('months-collapsed');
+                    tableCompleta.style.minWidth = '0';
+                    tableCompleta.style.width = 'auto';
+                    tableCompleta.style.tableLayout = 'auto';
+                    if (wrapperCadFin) { wrapperCadFin.style.minWidth = ''; wrapperCadFin.style.width = ''; }
+                    if (secaoCadFin) { secaoCadFin.classList.add('cadFin-collapsed'); secaoCadFin.classList.remove('months-expanded'); }
+                } else {
+                    tableCompleta.classList.remove('months-collapsed');
+                    tableCompleta.style.minWidth = '1400px';
+                    tableCompleta.style.width = '';
+                    tableCompleta.style.tableLayout = '';
+                    if (wrapperCadFin) { wrapperCadFin.style.minWidth = ''; wrapperCadFin.style.width = '100%'; }
+                    if (secaoCadFin) { secaoCadFin.classList.remove('cadFin-collapsed'); secaoCadFin.classList.add('months-expanded'); }
+                }
+            }
+
+            // Reinicializar ícones Lucide
+            initLucideIcons();
+        }
+
+        // EXECU→fO FINANCEIRA
+        function atualizarOpcoesExecFinanceira() {
+            // Popula selects do modal de execução financeira
+            const selectND = document.getElementById('modalExecFinND');
+            const selectUP = document.getElementById('modalExecFinUP');
+            if (!selectND || !selectUP) return;
+            if (!window.tedSelecionado) {
+                selectND.innerHTML = '<option value="">-- Selecione um TED --</option>';
+                selectUP.innerHTML = '<option value="">-- Selecione um TED --</option>';
+                return;
+            }
+            const cad = window.tedSelecionado.financeiros || [];
+            if (!cad.length) {
+                selectND.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
+                selectUP.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
+                return;
+            }
+            const ndsUnicos = Array.from(new Set(cad.map(f => f.numero)));
+            selectND.innerHTML = '<option value="">-- Selecione ND --</option>' + ndsUnicos.map(nd => `<option value="${nd}">${nd}</option>`).join('');
+            const upsUnicos = Array.from(new Set(cad.map(f => f.up || f.ug)));
+            selectUP.innerHTML = '<option value="">-- Selecione UP --</option>' + upsUnicos.map(up => `<option value="${up}">${up}</option>`).join('');
+        }
+        
+        //"?"? Modal Execução Financeira"?"?
+        function abrirModalExecFin() {
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalExecFinBackdrop');
+            const errEl = document.getElementById('modalExecFinError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            atualizarOpcoesExecFinanceira();
+            document.getElementById('modalExecFinND').value = '';
+            document.getElementById('modalExecFinUP').value = '';
+            document.getElementById('modalExecFinValor').value = '';
+            document.getElementById('modalExecFinData').value = '';
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalExecFinND').focus(), 80);
+        }
+
+        function fecharModalExecFin() {
+            const b = document.getElementById('modalExecFinBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+        }
+
+        function salvarModalExecFin() {
+            const errEl = document.getElementById('modalExecFinError');
+            const ndRaw = document.getElementById('modalExecFinND').value.trim();
+            const nd = String(ndRaw).replace(/[^0-9.\-]/g, '').trim();
+            const up = document.getElementById('modalExecFinUP').value.trim();
+            const valor = parseNumber(document.getElementById('modalExecFinValor').value);
+            const data = document.getElementById('modalExecFinData').value;
+
+            if (!nd || !up || isNaN(valor) || !data) {
+                errEl.textContent = '⚠️ Preencha todos os campos da execução financeira'; errEl.classList.add('open'); return;
+            }
+            const cad = window.tedSelecionado.financeiros || [];
+            const existe = cad.some(f => normalizarND(f.numero) === normalizarND(nd) && String(f.up || f.ug) === up);
+            if (!existe) { errEl.textContent = '⚠️ A combinação ND+UP informada não existe no cadastro financeiro!'; errEl.classList.add('open'); return; }
+
+            window.tedSelecionado.execFinanceiras.push({ id: Date.now(), nd, up, valor, data });
+            atualizarGastoFromExecFinanceiras(window.tedSelecionado);
+            atualizarTabelaExecFinanceira();
+            atualizarGantt();
+            try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
+            try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'adicionar_exec_financeira', null, { campo: 'execução financeira', novo: { nd, up, valor, data } }); } catch(e) {}
+            try { salvarDados(); } catch(e) {}
+            fecharModalExecFin();
+        }
+
+        function adicionarExecFinanceira() { abrirModalExecFin(); }
+
+        function removerExecFinanceira(nd, up, data) {
+            if (!window.tedSelecionado) return;
+            // Remove apenas a execução específica (mesma ND+UP+data)
+            window.tedSelecionado.execFinanceiras = window.tedSelecionado.execFinanceiras.filter(f =>
+                !(String(f.nd || f.numero) === nd && String(f.up || f.ug) === up && f.data === data)
+            );
+            // Atualizar gasto (valor realizado) automaticamente
+            atualizarGastoFromExecFinanceiras(window.tedSelecionado);
+            atualizarTabelaExecFinanceira();
+            atualizarGantt();
+            try { renderResumoFinanceiro(window.tedSelecionado.id); } catch(e) {}
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            try { adicionarRegistroAuditoria(window.tedSelecionado.id, 'remover_exec_financeira', null, { campo: 'execução financeira', anterior: { nd, up, data } }); } catch(e) {}
+        }
+
+        // GANTT 60 MESES - resumo anual agora baseado em Recursos Gerais (IMBEL)
+        function atualizarGantt() {
+            const resumoContainer = document.getElementById('resumoAnualPorAno');
+            if (!resumoContainer) return;
+
+            const cad = window.tedSelecionado ? financeirosVigentes(window.tedSelecionado) : [];
+            const recs = (window.tedSelecionado && window.tedSelecionado.recursosGerais) ? window.tedSelecionado.recursosGerais : [];
+
+            if (!window.tedSelecionado || (cad.length === 0 && recs.length === 0)) {
+                resumoContainer.innerHTML = '<p style="color: var(--text); text-align: center; padding: 1rem;">Cadastre valores previstos (Cadastro Financeiro) ou Recursos Gerais para gerar o resumo.</p>';
+                return;
+            }
+
+            // Obter todos os anos únicos (do cadastro e de recursos gerais)
+            const anosSet = new Set();
+            cad.forEach(f => { if (f.anoDesc) anosSet.add(Number(f.anoDesc)); });
+            recs.forEach(r => {
+                if (r.data) {
+                    const ano = new Date(r.data + 'T00:00:00').getFullYear();
+                    if (!isNaN(ano)) anosSet.add(ano);
+                }
+            });
+
+            // Regra: sempre exibir até o ano seguinte ao ano atual,
+            // mesmo sem recebimentos/devoluções no período.
+            const anoAtual = new Date().getFullYear();
+            const anoSeguinte = anoAtual + 1;
+            anosSet.add(anoSeguinte);
+
+            // Garantir ponto inicial coerente (início de vigência/1ª descentralização quando disponível)
+            let anoInicial = null;
+            const anoInicioVig = window.tedSelecionado && window.tedSelecionado.inicioVigencia
+                ? new Date(normalizarData(window.tedSelecionado.inicioVigencia) + 'T00:00:00').getFullYear()
+                : null;
+            const anoPrimeiraDesc = window.tedSelecionado && window.tedSelecionado.primeiraDescentralizacao
+                ? new Date(normalizarData(window.tedSelecionado.primeiraDescentralizacao) + 'T00:00:00').getFullYear()
+                : null;
+            if (!isNaN(anoInicioVig)) anoInicial = anoInicioVig;
+            if (!isNaN(anoPrimeiraDesc)) anoInicial = (anoInicial === null) ? anoPrimeiraDesc : Math.min(anoInicial, anoPrimeiraDesc);
+
+            let anosOrdenados = Array.from(anosSet).map(Number).filter(n => !isNaN(n)).sort((a,b)=>a-b);
+            if (!anosOrdenados.length) {
+                anosOrdenados = [anoAtual, anoSeguinte];
+            } else {
+                const minAno = (anoInicial !== null && !isNaN(anoInicial)) ? Math.min(anoInicial, anosOrdenados[0]) : anosOrdenados[0];
+                const maxAno = Math.max(anoSeguinte, anosOrdenados[anosOrdenados.length - 1]);
+                const completos = [];
+                for (let y = minAno; y <= maxAno; y++) completos.push(y);
+                anosOrdenados = completos;
+            }
+            if (anosOrdenados.length === 0) { resumoContainer.innerHTML = ''; return; }
+
+            // Construir mapas por ano (previsto, recebido, devolvido) e calcular saldos acumulados
+            const previstoByAno = {};
+            const recebidoByAno = {};
+            const devolvidoByAno = {};
+            const saldoAtualByAno = {};
+            const aReceberAnteriorByAno = {};
+
+            // Preencher previsto por ano (do cadastro financeiro)
+            (anosOrdenados || []).forEach(ano => {
+                previstoByAno[ano] = (cad || [])
+                    .filter(f => Number(f.anoDesc) === Number(ano))
+                    .reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
+            });
+
+            // Preencher recebido/devolvido por ano (dos recursos gerais)
+            (anosOrdenados || []).forEach(ano => {
+                const recsNoAno = (recs || []).filter(r => r.data && new Date(r.data + 'T00:00:00').getFullYear() === Number(ano));
+                recebidoByAno[ano] = recsNoAno.filter(r => (parseNumber(r.valor) || 0) > 0).reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
+                devolvidoByAno[ano] = Math.abs(recsNoAno.filter(r => (parseNumber(r.valor) || 0) < 0).reduce((s, r) => s + (parseNumber(r.valor) || 0), 0));
+            });
+
+            // Fórmulas da tabela:
+            // Saldo Anual = Recebido Anual - Devolvido (devolvido é apresentado como valor absoluto)
+            // A Receber (ano anterior) do ano N = Previsto + A Receber - Saldo Anual do ano N-1
+            // Para o primeiro ano, A Receber (ano anterior) = 0,00
+            anosOrdenados.forEach((ano, idx) => {
+                const recebido = recebidoByAno[ano] || 0;
+                const devolvidoAbs = devolvidoByAno[ano] || 0;
+                saldoAtualByAno[ano] = recebido - devolvidoAbs;
+
+                if (idx === 0) {
+                    aReceberAnteriorByAno[ano] = 0;
+                    return;
+                }
+
+                const anoAnterior = anosOrdenados[idx - 1];
+                const previstoAnoAnterior = previstoByAno[anoAnterior] || 0;
+                const aReceberAnoAnterior = aReceberAnteriorByAno[anoAnterior] || 0;
+                const saldoAtualAnoAnterior = saldoAtualByAno[anoAnterior] || 0;
+                aReceberAnteriorByAno[ano] = Math.max(0, previstoAnoAnterior + aReceberAnoAnterior - saldoAtualAnoAnterior);
+            });
+
+            const fmt = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            // Calcular Total a Receber por ano (Previsto + A Receber ano anterior)
+            const totalAReceberByAno = {};
+            anosOrdenados.forEach(ano => {
+                totalAReceberByAno[ano] = (previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0);
+            });
+
+            // Calcular Resultado por ano: (Total a Receber - Saldo Anual) * -1
+            const resultadoByAno = {};
+            anosOrdenados.forEach(ano => {
+                resultadoByAno[ano] = ((totalAReceberByAno[ano] || 0) - (saldoAtualByAno[ano] || 0)) * -1;
+            });
+
+            // --- KPIs ---
+            const totalPrevisto = anosOrdenados.reduce((s,a)=>s+(previstoByAno[a]||0),0);
+            const totalRecebido = anosOrdenados.reduce((s,a)=>s+(recebidoByAno[a]||0),0);
+            const totalDevolvido = anosOrdenados.reduce((s,a)=>s+(devolvidoByAno[a]||0),0);
+            const totalResultado = anosOrdenados.reduce((s,a)=>s+(resultadoByAno[a]||0),0);
+            const recPerc = totalPrevisto > 0 ? Math.min(100,(totalRecebido/totalPrevisto)*100) : 0;
+
+            const kpiHtml = `<div class="ra-kpis">
+              <div class="ra-kpi blue">
+                <div class="ra-kpi-label">Previsto Total</div>
+                <div class="ra-kpi-value">R$ ${fmt(totalPrevisto)}</div>
+              </div>
+              <div class="ra-kpi green">
+                <div class="ra-kpi-label">Recebido Total</div>
+                <div class="ra-kpi-value">R$ ${fmt(totalRecebido)}</div>
+                <div class="ra-kpi-bar"><div class="ra-kpi-fill" style="width:${recPerc.toFixed(1)}%"></div></div>
+                <div class="ra-kpi-sub">${recPerc.toFixed(1)}% do previsto</div>
+              </div>
+              <div class="ra-kpi amber">
+                <div class="ra-kpi-label">Total Devolvido</div>
+                <div class="ra-kpi-value">R$ ${fmt(totalDevolvido)}</div>
+              </div>
+              <div class="ra-kpi ${totalResultado < -0.01 ? 'red' : 'ok'}">
+                <div class="ra-kpi-label">Resultado Total</div>
+                <div class="ra-kpi-value">R$ ${fmt(Math.abs(totalResultado))}</div>
+                <div class="ra-kpi-sub">${totalResultado < -0.01 ? 'Saldo positivo' : totalResultado > 0.01 ? 'Pendente' : 'Equilibrado'}</div>
+              </div>
+            </div>`;
+
+            // --- Tabela ---
+            const iconHtml = (name) => `<i data-lucide="${name}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`;
+            const fml = (s) => `<span class="ra-formula">${s}</span>`;
+
+            const rows = [
+                { label: 'Previsto Anual',         icon: 'calendar',      formula: '',                                   map: previstoByAno,      cls: '' },
+                { label: 'A Receber (ano ant.)',    icon: 'arrow-left',    formula: fml('carry-over'),                    map: aReceberAnteriorByAno, cls: '' },
+                { label: 'Total a Receber',         icon: 'sigma',         formula: fml('Prev + A Receber'),              map: totalAReceberByAno, cls: 'ra-row-total' },
+                { label: 'Recebido Anual',          icon: 'arrow-down-circle', formula: '',                              map: recebidoByAno,      cls: '' },
+                { label: 'Devolvido / Recolhido',   icon: 'arrow-up-circle',   formula: '',                             map: devolvidoByAno,     cls: '', negative: true },
+                { label: 'Saldo Anual',             icon: 'minus-circle',  formula: fml('Recebido − Devolvido'),          map: saldoAtualByAno,    cls: '' },
+                { label: 'Resultado',               icon: 'trending-up',   formula: fml('Total a Receber − Saldo'),       map: resultadoByAno,     cls: 'ra-row-resultado', isResultado: true },
+            ];
+
+            // Detect future years (no previsto and no recebido/devolvido)
+            const futurosSet = new Set(anosOrdenados.filter(ano =>
+                !(previstoByAno[ano] || 0) && !(recebidoByAno[ano] || 0) && !(devolvidoByAno[ano] || 0)
+            ));
+
+            let thead = `<thead><tr>
+              <th class="ra-th-label"></th>`;
+            anosOrdenados.forEach(ano => {
+                const isCurr = ano === anoAtual;
+                const isFut = futurosSet.has(ano);
+                let cls = 'ra-th-ano';
+                if (isCurr) cls += ' current';
+                if (isFut) cls += ' future';
+                thead += `<th class="${cls}">${ano}${isCurr ? '<span class="ra-atual-badge">ATUAL</span>' : ''}</th>`;
+            });
+            thead += `</tr></thead>`;
+
+            let tbody = '<tbody>';
+            rows.forEach(row => {
+                tbody += `<tr class="ra-row ${row.cls}">`;
+                tbody += `<td class="ra-td-label">${iconHtml(row.icon)}<span>${row.label}</span>${row.formula}</td>`;
+                anosOrdenados.forEach(ano => {
+                    const isCurr = ano === anoAtual;
+                    const isFut = futurosSet.has(ano);
+                    const raw = row.map[ano] || 0;
+                    const v = row.negative ? -raw : raw;
+                    const disp = row.negative && raw > 0 ? `−R$ ${fmt(raw)}` : `R$ ${fmt(raw)}`;
+                    let cls = 'ra-td-val';
+                    if (isCurr) cls += ' current';
+                    if (isFut) cls += ' future';
+                    if (row.isResultado) {
+                        if (v < -0.01) cls += ' pos';
+                        else if (v > 0.01) cls += ' neg';
+                        else cls += ' zero';
+                    }
+                    const isEmpty = Math.abs(raw) < 0.01;
+                    tbody += `<td class="${cls}">${isEmpty && isFut ? '—' : disp}</td>`;
+                });
+                tbody += '</tr>';
+            });
+            tbody += '</tbody>';
+
+            const tableHtml = `<div class="ra-table-wrap">
+              <table class="ra-table">
+                ${thead}
+                ${tbody}
+              </table>
+            </div>`;
+
+            resumoContainer.innerHTML = kpiHtml + tableHtml;
+            if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+        }
+
+        // --- Entregas chart (por objeto) ---
+        // ===== Multi-select dropdown helpers =====
+
+        // Estado das seleções dos filtros de Gráficos
+        window._grafFiltros = { teds: new Set(), anos: new Set(), ups: new Set() };
+
+        function toggleMsDropdown(id) {
+            const panel = document.getElementById(id + '-panel');
+            if (!panel) return;
+            // Fechar outros abertos
+            document.querySelectorAll('.ms-panel.open').forEach(p => { if (p.id !== id + '-panel') p.classList.remove('open'); });
+            panel.classList.toggle('open');
+        }
+
+        // Fechar dropdowns ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.ms-dropdown')) {
+                document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+            }
+        });
+
+        function filterMsOptions(dropId, query) {
+            const list = document.getElementById(dropId + '-list');
+            if (!list) return;
+            const q = query.toLowerCase();
+            list.querySelectorAll('.ms-item').forEach(item => {
+                item.style.display = item.querySelector('label').textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        function _buildMsList(dropId, items, stateSet, labelFn) {
+            const list = document.getElementById(dropId + '-list');
+            if (!list) return;
+            list.innerHTML = '';
+            items.forEach(val => {
+                const id = dropId + '-cb-' + String(val).replace(/\s/g,'_');
+                const item = document.createElement('div');
+                item.className = 'ms-item';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.id = id;
+                cb.value = String(val);
+                cb.checked = stateSet.has(String(val));
+                cb.addEventListener('change', function() {
+                    if (this.checked) stateSet.add(this.value);
+                    else stateSet.delete(this.value);
+                    _updateMsLabel(dropId, stateSet);
+                    renderEntregasFromFilter();
+                    renderResumoFinanceiroFromFilter();
+                });
+                const lbl = document.createElement('label');
+                lbl.htmlFor = id;
+                lbl.textContent = labelFn ? labelFn(val) : String(val);
+                item.appendChild(cb);
+                item.appendChild(lbl);
+                list.appendChild(item);
+            });
+        }
+
+        function _updateMsLabel(dropId, stateSet) {
+            const labelEl = document.getElementById(dropId + '-label');
+            if (!labelEl) return;
+            const defaults = { msdTed: '-- Todos --', msdAno: '-- Todos --', msdUp: '-- Todas --' };
+            if (stateSet.size === 0) {
+                labelEl.textContent = defaults[dropId] || '-- Todos --';
+            } else if (stateSet.size === 1) {
+                const val = Array.from(stateSet)[0];
+                // Para TED mostrar nome curto
+                if (dropId === 'msdTed') {
+                    const t = dados.teds.find(x => String(x.id) === val);
+                    labelEl.textContent = t ? `TED ${t.numTed}` : val;
+                } else {
+                    labelEl.textContent = val;
+                }
+            } else {
+                labelEl.innerHTML = `<span class="ms-tag-count">${stateSet.size}</span>&nbsp;selecionados`;
+            }
+        }
+
+        function atualizarFiltroTedEntregas() {
+            const f = window._grafFiltros;
+            const list = document.getElementById('msdTed-list');
+            if (list) {
+                list.innerHTML = '';
+                dados.teds.forEach(t => {
+                    const val = String(t.id);
+                    const cbId = 'msdTed-cb-' + val;
+                    const item = document.createElement('div');
+                    item.className = 'ms-item';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.id = cbId;
+                    cb.value = val;
+                    cb.checked = f.teds.has(val);
+                    cb.addEventListener('change', function() {
+                        if (this.checked) f.teds.add(this.value);
+                        else f.teds.delete(this.value);
+                        _updateMsLabel('msdTed', f.teds);
+                        renderEntregasFromFilter();
+                        renderResumoFinanceiroFromFilter();
+                    });
+                    const lbl = document.createElement('label');
+                    lbl.htmlFor = cbId;
+                    const enc = isTedFinalizado(t);
+                    lbl.textContent = `TED ${t.numTed} - ${t.objetivo}${enc ? ' (Encerrado)' : ''}`;
+                    if (enc) lbl.style.color = '#ef4444';
+                    item.appendChild(cb);
+                    item.appendChild(lbl);
+                    list.appendChild(item);
+                });
+            }
+            _updateMsLabel('msdTed', f.teds);
+
+            try { atualizarFiltrosGrafico(); } catch(e) {}
+            try { renderEntregasFromFilter(); } catch(e) {}
+            try { renderResumoFinanceiroFromFilter(); } catch(e) {}
+            try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) {}
+        }
+
+        function atualizarFiltrosGrafico() {
+            const f = window._grafFiltros;
+            const anosSet = new Set();
+            const upsSet = new Set();
+            (dados.teds || []).forEach(t => {
+                // UP direto do TED
+                if (t.upResponsavel) upsSet.add(t.upResponsavel);
+                if (t.up) upsSet.add(t.up);
+                if (t.ug) upsSet.add(t.ug);
+                (t.financeiros || []).forEach(fi => {
+                    if (fi.anoDesc) anosSet.add(Number(fi.anoDesc));
+                    if (fi.up) upsSet.add(fi.up);
+                    if (fi.ug) upsSet.add(fi.ug);
+                });
+                (t.execFinanceiras || []).forEach(e => {
+                    if (e.data) { const y = new Date(e.data + 'T00:00:00').getFullYear(); if (!isNaN(y)) anosSet.add(y); }
+                    if (e.up) upsSet.add(e.up);
+                    if (e.ug) upsSet.add(e.ug);
+                });
+                // Ano a partir das execuções físicas
+                (t.execFisicas || []).forEach(e => {
+                    if (e.data) { const y = new Date(e.data + 'T00:00:00').getFullYear(); if (!isNaN(y)) anosSet.add(y); }
+                });
+            });
+
+            const anos = Array.from(anosSet).sort((a,b)=>a-b);
+            const ups = Array.from(upsSet).sort();
+
+            _buildMsList('msdAno', anos, f.anos, null);
+            _buildMsList('msdUp', ups, f.ups, null);
+            _updateMsLabel('msdAno', f.anos);
+            _updateMsLabel('msdUp', f.ups);
+        }
+
+        function limparFiltrosGrafico() {
+            const f = window._grafFiltros;
+            f.teds.clear(); f.anos.clear(); f.ups.clear();
+            // Desmarcar checkboxes visíveis
+            ['msdTed', 'msdAno', 'msdUp'].forEach(id => {
+                const list = document.getElementById(id + '-list');
+                if (list) list.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            });
+            _updateMsLabel('msdTed', f.teds);
+            _updateMsLabel('msdAno', f.anos);
+            _updateMsLabel('msdUp', f.ups);
+            renderEntregasFromFilter();
+            renderResumoFinanceiroFromFilter();
+        }
+
+        // Popular filtros da aba Relatórios (TED, UP, Ano)
+        function popularFiltrosRelatorios() {
+            const selTed = document.getElementById('relatorioTed');
+            const selUp = document.getElementById('relatorioUp');
+            const selAno = document.getElementById('relatorioAno');
+            if (!selTed && !selUp && !selAno) return;
+
+            const teds = dados.teds || [];
+
+            if (selTed) {
+                selTed.innerHTML = '<option value="">-- Todos --</option>';
+                teds.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = `TED ${t.numTed || ''} - ${t.objetivo || t.objeto || 'Sem título'}`.trim();
+                    if (isTedFinalizado(t)) opt.style.color = '#ef4444';
+                    selTed.appendChild(opt);
+                });
+            }
+
+            const upsSet = new Set();
+            const anosSet = new Set();
+
+            teds.forEach(t => {
+                if (t.up) upsSet.add(t.up);
+                if (t.ug) upsSet.add(t.ug);
+
+                (t.financeiros || []).forEach(f => {
+                    if (f.up) upsSet.add(f.up);
+                    if (f.ug) upsSet.add(f.ug);
+                    if (f.anoDesc) anosSet.add(Number(f.anoDesc));
+                });
+
+                (t.execFinanceiras || []).forEach(e => {
+                    if (e.up) upsSet.add(e.up);
+                    if (e.ug) upsSet.add(e.ug);
+                    if (e.data) {
+                        const dt = new Date(e.data + 'T00:00:00');
+                        if (!isNaN(dt)) anosSet.add(dt.getFullYear());
+                    }
+                });
+
+                if (t.inicioVigencia) {
+                    const dv = new Date(t.inicioVigencia + 'T00:00:00');
+                    if (!isNaN(dv)) anosSet.add(dv.getFullYear());
+                }
+                if (t.fimVigencia) {
+                    const dv = new Date(t.fimVigencia + 'T00:00:00');
+                    if (!isNaN(dv)) anosSet.add(dv.getFullYear());
+                }
+            });
+
+            const ups = Array.from(upsSet).sort();
+            const anos = Array.from(anosSet).sort((a,b)=>b-a);
+
+            if (selUp) {
+                selUp.innerHTML = '<option value="">-- Todas --</option>' + ups.map(u => `<option value="${u}">${u}</option>`).join('');
+            }
+            if (selAno) {
+                selAno.innerHTML = '<option value="">-- Todos --</option>' + anos.map(a => `<option value="${a}">${a}</option>`).join('');
+            }
+        }
+
+        // Renderizar relatórios (tabelas completas, sem gantt) com filtros TED/UP/Ano
+        function renderRelatorios() {
+            const containerCadastro = document.getElementById('relatorioCadastroTed');
+            const containerObjs = document.getElementById('relatorioObjetos');
+            const containerMetas = document.getElementById('relatorioMetas');
+            const containerCadFis = document.getElementById('relatorioCadastroFisico');
+            const containerExecFis = document.getElementById('relatorioExecFisica');
+            const containerCadFin = document.getElementById('relatorioCadastroFinanceiro');
+            const containerExecFin = document.getElementById('relatorioExecFinanceira');
+
+            // Ler seleções múltiplas dos filtros
+            const selTedEl = document.getElementById('relatorioTed');
+            const selectedTedIds = selTedEl ? Array.from(selTedEl.selectedOptions).map(o => o.value).filter(v => v) : [];
+            const selUpEl = document.getElementById('relatorioUp');
+            const selectedUps = selUpEl ? Array.from(selUpEl.selectedOptions).map(o => ((o.value || '').toString().toLowerCase())).filter(v => v) : [];
+            const selAnoEl = document.getElementById('relatorioAno');
+            const selectedAnos = selAnoEl ? Array.from(selAnoEl.selectedOptions).map(o => o.value).filter(v => v).map(v => Number(v)) : [];
+
+            const tedsAll = dados.teds || [];
+
+            const matchUp = (t) => {
+                if (!selectedUps || selectedUps.length === 0) return true;
+                const toStr = (v) => {
+                    if (v == null) return '';
+                    if (Array.isArray(v)) return v.join(' ').toLowerCase();
+                    return String(v).toLowerCase();
+                };
+                const campos = [t.upResponsavel, t.unidadeDesc, t.ugDesc, t.ugExecutora, t.egExecutora, t.up, t.ug];
+                for (const up of selectedUps) {
+                    if (campos.some(v => toStr(v) === up)) return true;
+                    if ((t.financeiros || []).some(f => toStr(f.up || f.ug) === up)) return true;
+                    if ((t.execFinanceiras || []).some(e => toStr(e.up || e.ug) === up)) return true;
+                }
+                return false;
+            };
+
+            const matchAno = (t) => {
+                if (!selectedAnos || selectedAnos.length === 0) return true;
+                const anos = [];
+                if (t.inicioVigencia) anos.push(new Date(t.inicioVigencia + 'T00:00:00').getFullYear());
+                if (t.fimVigencia) anos.push(new Date(t.fimVigencia + 'T00:00:00').getFullYear());
+                if (t.primeiraDescentralizacao) anos.push(new Date(t.primeiraDescentralizacao + 'T00:00:00').getFullYear());
+                (t.financeiros || []).forEach(f => { if (f.anoDesc) anos.push(Number(f.anoDesc)); });
+                (t.execFinanceiras || []).forEach(e => { if (e.data) { const y = new Date(e.data + 'T00:00:00').getFullYear(); if (!isNaN(y)) anos.push(y); }});
+                return anos.some(a => selectedAnos.includes(a));
+            };
+
+            const teds = tedsAll.filter(t => {
+                if (selectedTedIds && selectedTedIds.length > 0 && !selectedTedIds.includes(String(t.id))) return false;
+                if (!matchUp(t)) return false;
+                if (!matchAno(t)) return false;
+                return true;
+            });
+
+            const formatDate = (d) => {
+                if (!d) return '';
+                const dt = new Date(d + 'T00:00:00');
+                if (isNaN(dt)) return d;
+                return dt.toLocaleDateString('pt-BR');
+            };
+
+            // Helper: parse cell value for sorting (tries date, numeric, then text)
+            function parseCellValue(text) {
+                if (text == null) return '';
+                const s = ('' + text).trim();
+                // date dd/mm/yyyy
+                const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                if (m) {
+                    const d = new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00`);
+                    return d.getTime() || 0;
+                }
+                // numeric with pt-BR formatting like 1.234,56
+                const num = s.replace(/\./g, '').replace(/,/g, '.');
+                if (!isNaN(num) && num !== '') return parseFloat(num);
+                return s.toLowerCase();
+            }
+
+            // Helper: format numeric quantities with thousands separator (pt-BR)
+            // use global formatNumber for quantities
+
+            // Helper: sort table by column index toggling asc/desc
+            function sortTable(table, colIdx) {
+                const tbody = table.querySelector('tbody');
+                if (!tbody) return;
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const key = row => parseCellValue((row.children[colIdx] && row.children[colIdx].textContent) || '');
+                const curCol = table.dataset.sortCol ? Number(table.dataset.sortCol) : null;
+                let dir = 1;
+                if (curCol === colIdx) {
+                    dir = table.dataset.sortDir === 'asc' ? -1 : 1;
+                }
+                rows.sort((a,b)=>{
+                    const A = key(a), B = key(b);
+                    if (A < B) return -1 * dir;
+                    if (A > B) return 1 * dir;
+                    return 0;
+                });
+                // reattach
+                rows.forEach(r=>tbody.appendChild(r));
+                table.dataset.sortCol = colIdx;
+                table.dataset.sortDir = dir === 1 ? 'asc' : 'desc';
+                // update header indicators
+                const ths = table.querySelectorAll('thead th');
+                ths.forEach((th,i)=>{
+                    th.classList.remove('sort-asc','sort-desc');
+                    if (i === colIdx) th.classList.add(dir===1? 'sort-asc':'sort-desc');
+                });
+            }
+
+            const renderTable = (container, headers, rows) => {
+                if (!container) return;
+                if (!rows.length) {
+                    container.innerHTML = '<p style="margin:0; color:var(--text);">Nenhum registro encontrado com os filtros.</p>';
+                    return;
+                }
+                const thead = `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
+                const tbody = `<tbody>${rows.join('')}</tbody>`;
+                // Fazer a tabela preencher a largura do card (width:100%) e manter overflow-x para rolagem horizontal quando necessário
+                // Aplicar estilos locais para evitar quebra de dados nas células (white-space: nowrap) e centralizar dados
+                container.innerHTML = `<div class="table-wrapper" style="width:100%; overflow-x:auto;">
+                        <link rel="stylesheet" href="styles.css">
+                    <table class="tabela-padrao" style="width:100%; max-width:100%; margin:0; box-sizing:border-box;">${thead}${tbody}</table>
+                </div>`;
+                // attach sorting handlers
+                const table = container.querySelector('table.tabela-padrao');
+                if (table) {
+                    const ths = table.querySelectorAll('thead th');
+                    ths.forEach((th, idx) => {
+                        th.addEventListener('click', () => sortTable(table, idx));
+                    });
+                }
+            };
+
+            // Cadastro do TED
+            const rowsCad = teds.map(t => {
+                // somar valores previstos a partir dos objetos (valorTotal)
+                const valorPrevistoTotal = (t.objetos || []).reduce((s, o) => s + (parseFloat(o.valorTotal) || 0), 0);
+                return `<tr>
+                    <td>${t.planoTrabalho || ''}</td>
+                    <td>${t.numTed || ''}</td>
+                    <td>${t.objetivo || t.objeto || ''}</td>
+                    <td>${t.codigoPlano || ''}</td>
+                    <td>${t.upResponsavel || ''}</td>
+                    <td>${t.ugExecutora || t.egExecutora || ''}</td>
+                    <td>${t.numTedSiafi || ''}</td>
+                    <td>${t.notaSistema || ''}</td>
+                    <td>${t.unidadeDesc || ''}</td>
+                    <td>${t.ugDesc || ''}</td>
+                    <td>${(t.valorTed || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                    <td>${t.vigencia || t.vigilancia || ''}</td>
+                    <td>${formatDate(t.inicioVigencia)}</td>
+                    <td>${formatDate(t.fimVigencia)}</td>
+                    <td>${formatDate(t.primeiraDescentralizacao)}</td>
+                    <td>${(valorPrevistoTotal || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                    <td>${(t.gasto || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                    <td>${t.progressoFisico != null ? (t.progressoFisico + '%') : ''}</td>
+                    <td>${t.situacaoTED || ''}</td>
+                    <td>${formatDate(t.dataEntregaDenuncia)}</td>
+                    <td>${formatDate(t.prazoRelatorio)}</td>
+                    <td>${formatDate(t.dataEntregaRelatorio)}</td>
+                    <td>${(getDisplayStatus(t) || {}).text || ''}</td>
+                </tr>`;
+            });
+            renderTable(containerCadastro, ['Plano Trabalho','TED','Objetivo','Código Plano','UP Resp.','UG Executora','TED SIAFI','Nota Sistema','Unidade Desc.','UG Desc.','Valor TED','Vigência','Início Vigência','Fim Vigência','1ª Desc.','Valor Previsto','Gasto','Prog. Físico','Situação','Data Entrega/Denúncia','Prazo Relatório','Entrega Relatório','Status'], rowsCad);
+
+            // Objetos
+            const rowsObjs = [];
+            teds.forEach(t => {
+                (t.objetos || []).forEach(o => {
+                    rowsObjs.push(`<tr>
+                        <td>${t.numTed || ''}</td>
+                        <td>${o.objeto || ''}</td>
+                        <td>${formatNumber(o.qtde)}</td>
+                        <td>${(o.valorUnitario || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                        <td>${(o.valorTotal || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                    </tr>`);
+                });
+            });
+            renderTable(containerObjs, ['TED','Objeto','Qtde','Valor Unit.','Valor Total'], rowsObjs);
+
+            // Metas (sem gantt) → mostrar M Início/M Final como valores brutos e Mês Início/Mês Final como MMM/AAAA
+            const mesesNomes = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            const rowsMetas = [];
+            teds.forEach(t => {
+                (t.metas || []).forEach(m => {
+                    // tentar formar a string MMM/AAAA a partir de mesInicio/anoInicio ou calculando a partir da primeira descentralizacao
+                    let inicioStr = '';
+                    let finalStr = '';
+                    const baseDate = t.primeiraDescentralizacao || t.inicioVigencia || null;
+                    if (baseDate && !isNaN(parseInt(m.mInicio)) && !isNaN(parseInt(m.mFinal))) {
+                        try {
+                            const dI = new Date(baseDate + 'T00:00:00');
+                            const dF = new Date(baseDate + 'T00:00:00');
+                            dI.setMonth(dI.getMonth() + parseInt(m.mInicio));
+                            dF.setMonth(dF.getMonth() + parseInt(m.mFinal));
+                            inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
+                            finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
+                        } catch(e) { inicioStr = ''; finalStr = ''; }
+                    } else if (m.mesInicio && m.anoInicio && m.mesFinal && m.anoFinal) {
+                        inicioStr = `${mesesNomes[(parseInt(m.mesInicio) || 1) - 1]}/${m.anoInicio}`;
+                        finalStr = `${mesesNomes[(parseInt(m.mesFinal) || 1) - 1]}/${m.anoFinal}`;
+                    } else {
+                        if (m.mesInicio && m.anoInicio) inicioStr = `${mesesNomes[(parseInt(m.mesInicio)||1)-1]}/${m.anoInicio}`;
+                        if (m.mesFinal && m.anoFinal) finalStr = `${mesesNomes[(parseInt(m.mesFinal)||1)-1]}/${m.anoFinal}`;
+                    }
+
+                    rowsMetas.push(`<tr>
+                        <td>${t.numTed || ''}</td>
+                        <td>${m.meta || ''}</td>
+                        <td>${m.descricao || ''}</td>
+                        <td>${m.mInicio !== undefined ? m.mInicio : ''}</td>
+                        <td>${m.mFinal !== undefined ? m.mFinal : ''}</td>
+                        <td>${inicioStr || (m.mesInicio || '')}</td>
+                        <td>${finalStr || (m.mesFinal || '')}</td>
+                    </tr>`);
+                });
+            });
+            renderTable(containerMetas, ['TED','Meta','Descrição','M Início','M Final','Mês Início','Mês Final'], rowsMetas);
+
+            // Cadastro Físico (sem gantt) → mostrar mInicio/mFinal brutos e Mês Início/Mês Final como MMM/AAAA
+            const rowsFis = [];
+            teds.forEach(t => {
+                (t.fisicos || []).forEach(f => {
+                    let inicioStr = '';
+                    let finalStr = '';
+                    const baseDate = t.primeiraDescentralizacao || t.inicioVigencia || null;
+                    if (baseDate && !isNaN(parseInt(f.mInicio)) && !isNaN(parseInt(f.mFinal))) {
+                        try {
+                            const dI = new Date(baseDate + 'T00:00:00');
+                            const dF = new Date(baseDate + 'T00:00:00');
+                            dI.setMonth(dI.getMonth() + parseInt(f.mInicio));
+                            dF.setMonth(dF.getMonth() + parseInt(f.mFinal));
+                            inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
+                            finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
+                        } catch(e) { inicioStr = ''; finalStr = ''; }
+                    } else if (f.mesInicio && f.anoInicio && f.mesFinal && f.anoFinal) {
+                        inicioStr = `${mesesNomes[(parseInt(f.mesInicio) || 1) - 1]}/${f.anoInicio}`;
+                        finalStr = `${mesesNomes[(parseInt(f.mesFinal) || 1) - 1]}/${f.anoFinal}`;
+                    } else {
+                        if (f.mesInicio && f.anoInicio) inicioStr = `${mesesNomes[(parseInt(f.mesInicio)||1)-1]}/${f.anoInicio}`;
+                        if (f.mesFinal && f.anoFinal) finalStr = `${mesesNomes[(parseInt(f.mesFinal)||1)-1]}/${f.anoFinal}`;
+                    }
+
+                    rowsFis.push(`<tr>
+                        <td>${t.numTed || ''}</td>
+                        <td>${f.fase || ''}</td>
+                        <td>${f.objeto || ''}</td>
+                        <td>${formatNumber(f.qtde)}</td>
+                        <td>${f.mInicio !== undefined ? f.mInicio : ''}</td>
+                        <td>${f.mFinal !== undefined ? f.mFinal : ''}</td>
+                        <td>${inicioStr || (f.mesInicio || '')}</td>
+                        <td>${finalStr || (f.mesFinal || '')}</td>
+                    </tr>`);
+                });
+            });
+            renderTable(containerCadFis, ['TED','Fase','Objeto','Qtde','M Início','M Final','Mês Início','Mês Final'], rowsFis);
+
+            // Execução Física (registros crus)
+            const rowsExecFis = [];
+            teds.forEach(t => {
+                (t.execFisicas || []).forEach(e => {
+                    const anoReg = e.data ? new Date(e.data + 'T00:00:00').getFullYear() : null;
+                    if (selectedAnos && selectedAnos.length > 0) {
+                        if (!anoReg || !selectedAnos.includes(anoReg)) return;
+                    }
+                    rowsExecFis.push(`<tr>
+                        <td>${t.numTed || ''}</td>
+                        <td>${e.objeto || ''}</td>
+                        <td>${formatNumber(e.qtde)}</td>
+                        <td>${formatDate(e.data)}</td>
+                    </tr>`);
+                });
+            });
+            renderTable(containerExecFis, ['TED','Objeto','Qtde','Data'], rowsExecFis);
+
+            // Cadastro Financeiro → formatar Mês Desc como MMM/AAAA quando possível
+            const rowsCadFin = [];
+            const mesesNomesRel = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            teds.forEach(t => {
+                (t.financeiros || []).forEach(f => {
+                    const upRow = (f.up || f.ug || '').toLowerCase();
+                    if (selectedUps && selectedUps.length > 0 && !selectedUps.includes(upRow)) return;
+                    const anoDescNum = f.anoDesc ? Number(f.anoDesc) : null;
+                    if (selectedAnos && selectedAnos.length > 0) {
+                        if (anoDescNum === null || !selectedAnos.includes(anoDescNum)) return;
+                    }
+                    const mesDescStr = (f.mesDesc && f.anoDesc) ? `${mesesNomesRel[(parseInt(f.mesDesc)||1)-1]}/${f.anoDesc}` : (f.mesDesc || '');
+                    rowsCadFin.push(`<tr>
+                        <td>${t.numTed || ''}</td>
+                        <td>${formatarNDComPontos(f.numero || '')}</td>
+                        <td>${f.up || f.ug || ''}</td>
+                        <td>${f.m || ''}</td>
+                        <td>${mesDescStr}</td>
+                        <td>${(f.valor || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                    </tr>`);
+                });
+            });
+            renderTable(containerCadFin, ['TED','ND','UP','M','Mês Desc.','Valor'], rowsCadFin);
+
+            // Execução Financeira
+            const rowsExecFin = [];
+            teds.forEach(t => {
+                (t.execFinanceiras || []).forEach(e => {
+                    const upRow = (e.up || e.ug || '').toLowerCase();
+                    if (selectedUps && selectedUps.length > 0 && !selectedUps.includes(upRow)) return;
+                    const anoReg = e.data ? new Date(e.data + 'T00:00:00').getFullYear() : null;
+                    if (selectedAnos && selectedAnos.length > 0) {
+                        if (!anoReg || !selectedAnos.includes(anoReg)) return;
+                    }
+                    rowsExecFin.push(`<tr>
+                        <td>${t.numTed || ''}</td>
+                        <td>${formatarNDComPontos(e.nd || '')}</td>
+                        <td>${e.up || e.ug || ''}</td>
+                        <td>${(e.valor || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                        <td>${formatDate(e.data)}</td>
+                    </tr>`);
+                });
+            });
+            renderTable(containerExecFin, ['TED','ND','UP','Valor','Data'], rowsExecFin);
+        }
+
+        // Exportar os relatórios visíveis para PDF (abre janela de impressão)
+        function exportarRelatoriosPDF() {
+            const ids = ['relatorioCadastroTed','relatorioObjetos','relatorioMetas','relatorioCadastroFisico','relatorioExecFisica','relatorioCadastroFinanceiro','relatorioExecFinanceira'];
+            const parts = [];
+
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const content = (el.innerHTML || '').trim();
+                if (!content) return;
+                // Preferir imprimir o card inteiro quando possível (título + conteúdo)
+                const parentCard = el.closest && el.closest('.card');
+                const html = parentCard ? parentCard.innerHTML : content;
+                parts.push(`<section class="report-section">${html}</section>`);
+            });
+
+            if (!parts.length) {
+                showToast('Nenhum relatório disponível para exportar. Ajuste os filtros e tente novamente.', 'info');
+                return;
+            }
+
+            const selTed = document.getElementById('relatorioTed');
+            const selUp = document.getElementById('relatorioUp');
+            const selAno = document.getElementById('relatorioAno');
+            const tedText = (selTed && selTed.selectedOptions && selTed.selectedOptions.length)
+                ? Array.from(selTed.selectedOptions).map(o => o.text).join(', ') : '-- Todos --';
+            const upText = (selUp && selUp.selectedOptions && selUp.selectedOptions.length)
+                ? Array.from(selUp.selectedOptions).map(o => o.value).join(', ') : '-- Todas --';
+            const anoText = (selAno && selAno.selectedOptions && selAno.selectedOptions.length)
+                ? Array.from(selAno.selectedOptions).map(o => o.value).join(', ') : '-- Todos --';
+
+            const headerHtml = `<div style="margin-bottom:12px;"><h1 style="margin:0 0 6px 0;">Relatórios TED</h1><div style="font-size:13px;color:#333">Filtros → TED: ${tedText} | UP: ${upText} | Ano: ${anoText}</div><hr/></div>`;
+
+            const styles = `
+                @page { size: A4 landscape; margin: 10mm; }
+                body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:8px; -webkit-print-color-adjust: exact;}
+                .card{border:1px solid #d0d0d0;padding:8px;margin-bottom:10px}
+                .card h3, .card .card-title{margin:0 0 6px 0}
+                table{border-collapse:collapse;width:100%;max-width:100%;margin:0 auto;font-size:11px;table-layout:auto;}
+                table th, table td{border:1px solid #cfcfcf;padding:5px 6px;text-align:left;vertical-align:top;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+                table th{background:#f4f4f4}
+                .report-section{page-break-inside:avoid}
+                /* reduzir margens para caber mais conteúdo em A4 landscape */
+                .tabela-padrao{font-size:11px}
+                @media print {
+                    body { padding: 4mm; }
+                    .no-print { display: none !important; }
+                }
+            `;
+
+            const win = window.open('', '_blank');
+            if (!win) {
+                showToast('Não foi possível abrir a janela de impressão. Verifique se o navegador bloqueou pop-ups.', 'danger');
+                return;
+            }
+
+            win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatórios TED</title>');
+            win.document.write('<style>' + styles + '</style>');
+            win.document.write('</head><body>');
+            win.document.write(headerHtml);
+            parts.forEach(p => win.document.write(p));
+            win.document.write('</body></html>');
+            win.document.close();
+            win.focus();
+
+            // Pequeno delay para garantir renderização antes do print
+            setTimeout(() => {
+                try {
+                    win.print();
+                    // tentar fechar a janela automaticamente após a interação de impressão
+                    setTimeout(() => {
+                        try { win.close(); } catch(e) { /* ignore */ }
+                    }, 800);
+                } catch(e) {
+                    console.error(e);
+                }
+            }, 700);
+        }
+
+        function _getGrafFiltros() {
+            const f = window._grafFiltros || { teds: new Set(), anos: new Set(), ups: new Set() };
+            const teds = f.teds.size > 0 ? Array.from(f.teds) : null;
+            const anos = f.anos.size > 0 ? Array.from(f.anos).map(Number) : null;
+            const ups  = f.ups.size  > 0 ? Array.from(f.ups)  : null;
+            return { teds, anos, ups };
+        }
+
+        function renderEntregasFromFilter() {
+            const { teds, anos, ups } = _getGrafFiltros();
+            // Sem seleção de TED → consolidar todos os TEDs
+            const tedIds = teds || dados.teds.map(t => String(t.id));
+            renderEntregasChart(tedIds, 'entregasChartContainer', anos, ups);
+            try { renderResumoFinanceiro(teds, 'resumoFinanceiroChart', anos, ups); } catch(e) {}
+        }
+
+        function renderEntregasChart(tedId, containerId = 'entregasChartContainer', anoFilter = null, upFilter = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            // Normalizar tedId para array (aceita string, número ou array)
+            const tedIds = Array.isArray(tedId) ? tedId.map(String) : (tedId ? [String(tedId)] : null);
+            if (!tedIds || !tedIds.length) {
+                container.innerHTML = '<p style="color:var(--text);">Nenhum TED disponível.</p>';
+                return;
+            }
+            let tedsSelected = dados.teds.filter(t => tedIds.includes(String(t.id)));
+            if (!tedsSelected.length) {
+                container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>';
+                return;
+            }
+
+            // Filtro UP: aplicado nos TEDs (UP é atributo do TED, não dos itens físicos)
+            if (upFilter) {
+                const ups = Array.isArray(upFilter) ? upFilter : [upFilter];
+                tedsSelected = tedsSelected.filter(t => ups.includes(t.upResponsavel || t.up || ''));
+                if (!tedsSelected.length) {
+                    container.innerHTML = '<p style="color:var(--text);">Nenhum TED encontrado para a UP selecionada.</p>';
+                    return;
+                }
+            }
+
+            // Consolidar fisicos/objetos/execs de todos os TEDs selecionados
+            let fisicos = [], objetos = [], execsAll = [];
+            tedsSelected.forEach(ted => {
+                fisicos = fisicos.concat(ted.fisicos || []);
+                objetos = objetos.concat(ted.objetos || []);
+                execsAll = execsAll.concat(ted.execFisicas || []);
+            });
+
+            if (!fisicos.length && !objetos.length) {
+                container.innerHTML = '<p style="color:var(--text);">Nenhum cadastro físico/objeto para este TED.</p>';
+                return;
+            }
+
+            // Filtro Ano: aplicado nas execuções físicas (execFisicas tem campo data)
+            const execsFiltrados = execsAll.filter(e => {
+                if (anoFilter) {
+                    const anos = Array.isArray(anoFilter) ? anoFilter.map(Number) : [Number(anoFilter)];
+                    if (!e.data) return false;
+                    const anoExec = new Date(e.data + 'T00:00:00').getFullYear();
+                    if (!anos.includes(anoExec)) return false;
+                }
+                return true;
+            });
+
+            // Base planejada deve ser idêntica à tabela de Execução Física: soma da qtde do Cadastro Físico por objeto.
+            let objetosBase = [];
+            let fisicosOrdered = [];
+            if (fisicos.length) {
+                fisicosOrdered = Array.from(fisicos);
+                fisicosOrdered.sort((a, b) => {
+                    const aVal = a && a.fase != null ? a.fase : '';
+                    const bVal = b && b.fase != null ? b.fase : '';
+                    const aNum = Number(aVal);
+                    const bNum = Number(bVal);
+                    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+                    return String(aVal).localeCompare(String(bVal), 'pt', { numeric: true });
+                });
+                fisicosOrdered.forEach(f => {
+                    if (!f || !f.objeto) return;
+                    if (!objetosBase.includes(f.objeto)) objetosBase.push(f.objeto);
+                });
+            } else {
+                objetosBase = [...new Set(objetos.map(o => o.objeto).filter(Boolean))];
+            }
+
+            const items = objetosBase.map(nomeObj => {
+                const entregues = execsFiltrados
+                    .filter(e => e.objeto === nomeObj)
+                    .reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
+                const planejado = fisicos.length
+                    ? fisicosOrdered.filter(f => f.objeto === nomeObj).reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0)
+                    : objetos.filter(o => o.objeto === nomeObj).reduce((s, o) => s + (parseNumber(o.qtde) || 0), 0);
+                const perc = planejado > 0 ? (entregues / planejado) * 100 : 0;
+                const objDef = objetos.find(o => o.objeto === nomeObj);
+                const valorUnit = objDef ? (parseNumber(objDef.valorUnitario) || 0) : 0;
+                const execsObj = execsFiltrados.filter(e => e.objeto === nomeObj).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+                const ultimaData = execsObj.length ? execsObj[execsObj.length-1].data : null;
+                return { nome: nomeObj, entregues, planejado, perc, valorUnit, ultimaData };
+            });
+
+            // Totais para o header
+            const totalFases = fisicos.length;
+            const totalObjetos = items.length;
+            const hoje = new Date();
+            const nomesMeses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            const fmtMesAno = (dataStr) => {
+                if (!dataStr) return null;
+                const d = new Date(dataStr + 'T00:00:00');
+                return `${nomesMeses[d.getMonth()]}/${d.getFullYear()}`;
+            };
+            const fmtN = (n) => Number(n||0).toLocaleString('pt-BR');
+
+            // Calcular data prevista de uma fase
+            const dataPrevistaFase = (f, ted) => {
+                if (f.anoFinal && f.mesFinal) return new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
+                if (f.mFinal != null) {
+                    const base = ted && ted.primeiraDescentralizacao
+                        ? new Date(ted.primeiraDescentralizacao + 'T00:00:00')
+                        : (ted && ted.primeiroAnoDesc && ted.primeiroMesDesc ? new Date(ted.primeiroAnoDesc, ted.primeiroMesDesc - 1, 1) : null);
+                    if (base) { const d = new Date(base); d.setMonth(d.getMonth() + parseInt(f.mFinal)); return d; }
+                }
+                return null;
+            };
+            const tedRef = tedsSelected[0];
+
+            // Enriquecer items com dados de próxima fase e estado de cada fase
+            items.forEach(it => {
+                const fasesDoObj = fisicosOrdered.filter(f => f.objeto === it.nome);
+                // Calcular % do TED
+                const totalObjetosValor = objetos.reduce((s,o) => s + (parseNumber(o.qtde)||0)*(parseNumber(o.valorUnitario)||0), 0);
+                const objDef = objetos.find(o => o.objeto === it.nome);
+                const valorObjTotal = (objDef ? (parseNumber(objDef.qtde)||0) : 0) * it.valorUnit;
+                it.percTed = totalObjetosValor > 0 ? (valorObjTotal / totalObjetosValor) * 100 : 0;
+                // Última qtde
+                const execsObj = execsFiltrados.filter(e => e.objeto === it.nome).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+                const ultimaExec = execsObj.length ? execsObj[execsObj.length - 1] : null;
+                it.ultimaQtde = ultimaExec ? (parseNumber(ultimaExec.qtde) || 0) : 0;
+                // Próxima fase
+                let qtdeAcum = 0;
+                it.proximaData = null;
+                it.proximaQtde = 0;
+                for (const f of fasesDoObj) {
+                    const qtdeFase = parseNumber(f.qtde) || 0;
+                    if (qtdeAcum + qtdeFase > it.entregues) {
+                        it.proximaQtde = qtdeFase - Math.max(0, it.entregues - qtdeAcum);
+                        const dprev = dataPrevistaFase(f, tedRef);
+                        if (dprev) it.proximaData = `${nomesMeses[dprev.getMonth()]}/${dprev.getFullYear()}`;
+                        break;
+                    }
+                    qtdeAcum += qtdeFase;
+                }
+                // Estado de cada fase
+                it.fasesStatus = fasesDoObj.map((f, idxF) => {
+                    const qtdeFase = parseNumber(f.qtde) || 0;
+                    const qtdeAcumAte = fasesDoObj.slice(0, idxF).reduce((s, ff) => s + (parseNumber(ff.qtde)||0), 0);
+                    const qtdeFaseEntregue = Math.max(0, Math.min(qtdeFase, it.entregues - qtdeAcumAte));
+                    const dprev = dataPrevistaFase(f, tedRef);
+                    let estado = 'futuro';
+                    if (qtdeFaseEntregue >= qtdeFase && qtdeFase > 0) estado = 'concluido';
+                    else if (qtdeFaseEntregue > 0 || (dprev && dprev <= hoje)) estado = 'atual';
+                    return { fase: f.fase, estado, dprev };
+                });
+            });
+
+            // Header
+            const headerHtml = `<div class="ent2-header">
+              <div class="ent2-header-title">
+                <i data-lucide="package" style="width:16px;height:16px;color:#185FA5;"></i>
+                <span>Entregas por Objeto</span>
+              </div>
+              <div class="ent2-header-meta">${totalObjetos} objeto${totalObjetos!==1?'s':''} · ${totalFases} fase${totalFases!==1?'s':''}</div>
+            </div>`;
+
+            // Cards
+            let cardsHtml = '<div class="ent2-grid">';
+            items.forEach(it => {
+                const perc = Number(it.perc) || 0;
+                const fillPct = Math.min(100, Math.max(0, perc));
+                const percStr = perc % 1 < 0.005 ? perc.toFixed(0) + ',00' : perc.toFixed(2).replace('.', ',');
+                let statusCls, statusLabel;
+                if (perc >= 100) { statusCls = 'concluido'; statusLabel = 'Concluído'; }
+                else if (perc === 0) { statusCls = 'pendente'; statusLabel = 'Aguardando início'; }
+                else { statusCls = 'andamento'; statusLabel = 'Em andamento'; }
+
+                const percTedStr = it.percTed > 0 ? it.percTed.toFixed(1).replace('.', ',') + '% do TED' : '';
+                const valorHtml = it.valorUnit > 0
+                    ? `<span class="ent2-meta-valor">R$ ${it.valorUnit.toLocaleString('pt-BR',{minimumFractionDigits:2})} / un</span>`
+                    : '';
+                const ultimaHtml = it.ultimaData
+                    ? `<div class="ent2-data-val">${fmtMesAno(it.ultimaData)} · <strong>${fmtN(it.ultimaQtde)} un</strong></div>`
+                    : `<div class="ent2-data-val ent2-nenhuma">— Nenhuma</div>`;
+                const proximaHtml = it.proximaData
+                    ? `<div class="ent2-data-val">${it.proximaData} · <strong>${fmtN(it.proximaQtde)} un</strong></div>`
+                    : `<div class="ent2-data-val ent2-nenhuma">—</div>`;
+
+                const totalFasesObj = (it.fasesStatus || []).length;
+                const tituloFases = totalFasesObj === 1
+                    ? 'CRONOGRAMA DA ÚNICA FASE'
+                    : `CRONOGRAMA DAS ${totalFasesObj} FASES · ✓ = ENTREGUE · ▣ = ATUAL`;
+                const fasesBolinhas = (it.fasesStatus || []).map((fs, idx) => {
+                    const cls = `ent2-fase-dot ${fs.estado}`;
+                    const label = `F${fs.fase}`;
+                    const title = fs.dprev ? `Fase ${fs.fase} — previsto: ${nomesMeses[fs.dprev.getMonth()]}/${fs.dprev.getFullYear()}` : `Fase ${fs.fase}`;
+                    if (totalFasesObj === 1) {
+                        return `<span class="${cls}" title="${title}">${label}</span><span class="ent2-fase-unica-label">Entrega única no cronograma</span>`;
+                    }
+                    return `<span class="${cls}" title="${title}">${label}</span>`;
+                }).join('');
+
+                const restamQtde = Math.max(0, it.planejado - it.entregues);
+                const fasesPend = (it.fasesStatus || []).filter(f => f.estado !== 'concluido').length;
+                const restamHtml = restamQtde > 0
+                    ? `<span class="ent2-restam">Restam <strong>${fmtN(restamQtde)} un</strong> · ${fasesPend} fase${fasesPend!==1?'s':''} pendente${fasesPend!==1?'s':''}</span>`
+                    : '';
+
+                cardsHtml += `<div class="ent2-card ${statusCls}">
+                  <div class="ent2-card-top">
+                    <div class="ent2-card-nome-row">
+                      <span class="ent2-card-nome">${it.nome}</span>
+                      ${percTedStr ? `<span class="ent2-perc-ted">${percTedStr}</span>` : ''}
+                    </div>
+                    ${valorHtml ? `<div class="ent2-card-sub">${valorHtml} · ${totalFasesObj} fase${totalFasesObj!==1?'s':''} no cronograma</div>` : ''}
+                    <div class="ent2-perc-big ${statusCls}">${percStr}%</div>
+                    <div class="ent2-fracao">${fmtN(it.entregues)} <span class="ent2-frac-sep">/</span> ${fmtN(it.planejado)} <span class="ent2-frac-un">un</span></div>
+                    <div class="ent2-progress-bar"><div class="ent2-progress-fill ${statusCls}" style="width:${fillPct}%"></div></div>
+                  </div>
+                  <div class="ent2-card-datas">
+                    <div class="ent2-data-col">
+                      <div class="ent2-data-label">ÚLTIMA ENTREGA</div>
+                      ${ultimaHtml}
+                    </div>
+                    <div class="ent2-data-col">
+                      <div class="ent2-data-label">PRÓXIMA PREVISTA</div>
+                      ${proximaHtml}
+                    </div>
+                  </div>
+                  <div class="ent2-card-status-row">
+                    <span class="ent2-status-pill ${statusCls}">● ${statusLabel}</span>
+                    ${restamHtml}
+                  </div>
+                  <div class="ent2-card-cronograma">
+                    <div class="ent2-cronograma-label">${tituloFases}</div>
+                    <div class="ent2-fases-row">${fasesBolinhas}</div>
+                  </div>
+                </div>`;
+            });
+            cardsHtml += '</div>';
+
+            // Insight bar
+            const ultimaGlobal = items.map(it => it.ultimaData).filter(Boolean).sort().reverse()[0];
+            let insightPartes = [];
+            items.forEach(it => {
+                const restam = Math.max(0, it.planejado - it.entregues);
+                const fasesPend = (it.fasesStatus||[]).filter(f => f.estado !== 'concluido').length;
+                const nomeObj = it.nome.split(' ').slice(0,2).join(' ');
+                if (it.perc >= 100) {
+                    insightPartes.push(`${nomeObj} está <strong>concluído</strong>.`);
+                } else if (it.perc === 0) {
+                    const prox = it.proximaData ? ` O início previsto é <strong>${it.proximaData}</strong>.` : '';
+                    insightPartes.push(`O ${nomeObj} ainda não iniciou.${prox}`);
+                } else {
+                    insightPartes.push(`<strong>${fmtN(restam)} ${nomeObj.toLowerCase()}${restam!==1?'s':''}</strong> ainda em fabricação, divididos em ${fasesPend} fase${fasesPend!==1?'s':''} após a prorrogação do aditivo.`);
+                }
+            });
+            if (ultimaGlobal) {
+                const mesesAtras = Math.round((hoje - new Date(ultimaGlobal + 'T00:00:00')) / (1000*60*60*24*30));
+                insightPartes.push(`A última entrega registrada foi <strong>${fmtMesAno(ultimaGlobal)}</strong> — há ~${mesesAtras} mese${mesesAtras!==1?'s':''} sem novas remessas.`);
+            }
+            const insightHtml = insightPartes.length
+                ? `<div class="ent2-insight"><i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;margin-top:1px;"></i><span>${insightPartes.join(' ')}</span></div>`
+                : '';
+
+            container.innerHTML = headerHtml + cardsHtml + insightHtml;
+            if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+        }
+
+        // --- Resumo Financeiro (lado do dashboard) ---
+        function renderResumoFinanceiroFromFilter() {
+            const { teds, anos, ups } = _getGrafFiltros();
+            renderResumoFinanceiro(teds, 'resumoFinanceiroChart', anos, ups);
+        }
+
+        function renderResumoFinanceiro(tedId = null, containerId = 'resumoFinanceiroChart', anoFilter = null, upFilter = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // Normalizar tedId para array
+            const tedIds = Array.isArray(tedId) ? tedId.map(String) : (tedId ? [String(tedId)] : null);
+
+            // Gather cadastro (financeiros) e recursos gerais para os TEDs selecionados (ou todos)
+            let cad = [];
+            let recs = [];
+            if (tedIds && tedIds.length) {
+                const tedsSelected = dados.teds.filter(t => tedIds.includes(String(t.id)));
+                if (!tedsSelected.length) { container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>'; return; }
+                tedsSelected.forEach(ted => { cad = cad.concat(financeirosVigentes(ted)); recs = recs.concat(ted.recursosGerais || []); });
+            } else {
+                (dados.teds || []).forEach(t => { cad = cad.concat(financeirosVigentes(t)); recs = recs.concat(t.recursosGerais || []); });
+            }
+
+            // Aplicar filtros opcionais (ano e UP) — aceitam array ou valor único
+            if (anoFilter) {
+                const anos = Array.isArray(anoFilter) ? anoFilter.map(Number) : [Number(anoFilter)];
+                cad = cad.filter(f => anos.includes(Number(f.anoDesc)));
+                recs = recs.filter(r => r.data && anos.includes(new Date(r.data + 'T00:00:00').getFullYear()));
+            }
+            if (upFilter) {
+                const ups = Array.isArray(upFilter) ? upFilter : [upFilter];
+                cad = cad.filter(f => ups.includes(f.up || f.ug || ''));
+                const ndsForUp = new Set((cad || []).map(f => String(f.numero)));
+                if (ndsForUp.size) recs = recs.filter(r => ndsForUp.has(String(r.nd)));
+            }
+
+            const anosSet = new Set();
+            cad.forEach(f => { if (f.anoDesc) anosSet.add(Number(f.anoDesc)); });
+            recs.forEach(r => { if (r.data) anosSet.add(new Date(r.data + 'T00:00:00').getFullYear()); });
+            const anosOrdenados = Array.from(anosSet).map(Number).sort((a,b)=>a-b);
+
+            if (anosOrdenados.length === 0) { container.innerHTML = '<p style="color:var(--text);">Sem dados para o resumo financeiro.</p>'; return; }
+
+            // Construir mapas por ano (previsto, recebido, devolvido) e calcular saldos acumulados
+            const previstoByAno = {};
+            const recebidoByAno = {};
+            const devolvidoByAno = {};
+            const saldoByAno = {};
+            const aReceberAnteriorByAno = {};
+
+            // Preencher previsto por ano (do cadastro financeiro)
+            (anosOrdenados || []).forEach(ano => {
+                previstoByAno[ano] = (cad || [])
+                    .filter(f => Number(f.anoDesc) === Number(ano))
+                    .reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
+            });
+
+            // Preencher recebido/devolvido por ano (dos recursos gerais)
+            (anosOrdenados || []).forEach(ano => {
+                const recsNoAno = (recs || []).filter(r => r.data && new Date(r.data + 'T00:00:00').getFullYear() === Number(ano));
+                recebidoByAno[ano] = recsNoAno.filter(r => (parseNumber(r.valor) || 0) > 0).reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
+                devolvidoByAno[ano] = Math.abs(recsNoAno.filter(r => (parseNumber(r.valor) || 0) < 0).reduce((s, r) => s + (parseNumber(r.valor) || 0), 0));
+            });
+
+            // Fórmulas: Saldo Anual = Recebido - Devolvido; A Receber (ano anterior) encadeado
+            anosOrdenados.forEach((ano, idx) => {
+                const recebido = recebidoByAno[ano] || 0;
+                const devolvidoAbs = devolvidoByAno[ano] || 0;
+                saldoByAno[ano] = recebido - devolvidoAbs;
+
+                if (idx === 0) {
+                    aReceberAnteriorByAno[ano] = 0;
+                    return;
+                }
+
+                const anoAnterior = anosOrdenados[idx - 1];
+                const previstoAnoAnterior = previstoByAno[anoAnterior] || 0;
+                const aReceberAnoAnterior = aReceberAnteriorByAno[anoAnterior] || 0;
+                const saldoAnoAnterior = saldoByAno[anoAnterior] || 0;
+                aReceberAnteriorByAno[ano] = Math.max(0, previstoAnoAnterior + aReceberAnoAnterior - saldoAnoAnterior);
+            });
+
+            // Helper de formatação
+            const fmt = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            // Renderizar em grid transposto (mesmo formato do Resumo Anual por Ano)
+            const cols = ['260px'].concat(anosOrdenados.map(()=>'1fr')).join(' ');
+            let html = `<div class="resumo-fin-scroll"><div class="resumo-anual-card"><div class="resumo-anual-grid" style="grid-template-columns: ${cols};">`;
+            html += `<div class="resumo-header"></div>`;
+            anosOrdenados.forEach(ano => { html += `<div class="resumo-header">${ano}</div>`; });
+
+            const renderRow = (label, values = {}, options = {}) => {
+                const isSaldo = options.saldo === true;
+                html += `<div class="resumo-label${isSaldo? ' saldo':''}">${label}</div>`;
+                anosOrdenados.forEach(ano => {
+                    const v = values[ano] || 0;
+                    const cls = (options.negative && v > 0) ? 'resumo-value negative' : (isSaldo? 'resumo-value saldo' : 'resumo-value');
+                    const disp = (options.negative && v > 0) ? ('-' + fmt(v)) : fmt(v);
+                    html += `<div class="${cls}">${disp}</div>`;
+                });
+            };
+
+            // Calcular Total a Receber por ano (Previsto + A Receber ano anterior)
+            const totalAReceberByAno = {};
+            anosOrdenados.forEach(ano => {
+                totalAReceberByAno[ano] = (previstoByAno[ano] || 0) + (aReceberAnteriorByAno[ano] || 0);
+            });
+
+            // Calcular Resultado por ano: (Total a Receber - Saldo Anual) * -1
+            const resultadoByAno = {};
+            anosOrdenados.forEach(ano => {
+                resultadoByAno[ano] = ((totalAReceberByAno[ano] || 0) - (saldoByAno[ano] || 0)) * -1;
+            });
+
+            renderRow('Previsto Anual', previstoByAno);
+            renderRow('A Receber (ano anterior)', aReceberAnteriorByAno);
+            renderRow('Total a Receber (Previsto + A Receber ano anterior)', totalAReceberByAno);
+            renderRow('Recebido Anual', recebidoByAno);
+            renderRow('Devolvido / Recolhido', devolvidoByAno, { negative: true });
+            renderRow('Saldo Anual (Recebido - Devolvido)', saldoByAno, { saldo: true });
+            renderRow('Resultado (Total a Receber - Devolvido / Recolhido)', resultadoByAno, { saldo: true });
+
+            html += `</div></div></div>`;
+            container.innerHTML = html;
+        }
+
+        // Render a compact SVG grouped bar chart for the resumo financeiro
+        function renderResumoFinanceiroChart(tedId = null, containerId = 'resumoFinanceiroChart') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // reuse same data gathering as the table function
+            let cad = [];
+            let execs = [];
+            if (tedId) {
+                const ted = dados.teds.find(t => String(t.id) === String(tedId));
+                if (!ted) { container.innerHTML = '<p style="color:var(--text);">TED não encontrado.</p>'; return; }
+                cad = financeirosVigentes(ted);
+                execs = ted.execFinanceiras || [];
+            } else {
+                (dados.teds || []).forEach(t => { cad = cad.concat(financeirosVigentes(t)); execs = execs.concat(t.execFinanceiras || []); });
+            }
+
+            const anosSet = new Set();
+            cad.forEach(f => anosSet.add(f.anoDesc));
+            execs.forEach(e => { if (e.data) anosSet.add(new Date(e.data + 'T00:00:00').getFullYear()); });
+            const anos = Array.from(anosSet).sort();
+            if (anos.length === 0) { container.innerHTML = '<p style="color:var(--text);">Sem dados para gráfico.</p>'; return; }
+
+            // compute series arrays
+            let saldoAcumulado = 0;
+            const series = anos.map(ano => {
+                const previsto = cad.filter(f => f.anoDesc === ano).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                const recebido = execs.filter(e=>{ if(!e.data) return false; const a=new Date(e.data+'T00:00:00').getFullYear(); const v=parseFloat(e.valor||e.valorRealizado)||0; return a===ano && v>0; }).reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0);
+                const devolvido = Math.abs(execs.filter(e=>{ if(!e.data) return false; const a=new Date(e.data+'T00:00:00').getFullYear(); const v=parseFloat(e.valor||e.valorRealizado)||0; return a===ano && v<0; }).reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0));
+                const aReceberAnterior = saldoAcumulado;
+                const saldoAReceber = previsto + aReceberAnterior;
+                const empenhado = recebido - devolvido;
+                const aReceber = saldoAReceber - empenhado;
+                const saldo = previsto + aReceberAnterior - recebido - devolvido;
+                saldoAcumulado = saldo;
+                return { ano, previsto, saldoAReceber, recebido, empenhado, aReceber };
+            });
+
+            // chart dimensions
+            const padding = {top:20, right:10, bottom:36, left:40};
+            const width = 360;
+            const height = 160;
+            const chartW = width - padding.left - padding.right;
+            const chartH = height - padding.top - padding.bottom;
+
+            // flatten values to find max
+            const allVals = [];
+            series.forEach(s => { allVals.push(s.previsto, s.saldoAReceber, s.recebido, s.empenhado, s.aReceber); });
+            const maxVal = Math.max(1, ...allVals.map(v=>Math.abs(v)));
+
+            // colors
+            const colors = { previsto:'#2b6cb0', recebido:'#16a34a', empenhado:'#ea580c', aReceber:'#64748b' };
+
+            // build SVG
+            let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+            svg += `<style> .label{font-family:system-ui; font-size:10px; fill:#223; } .axis{stroke:#ddd; stroke-width:1} .legend{text-anchor:start; font-size:11px; font-family:system-ui;} </style>`;
+
+            // scales
+            const n = series.length;
+            const groupW = chartW / n;
+            const barWidth = Math.min(18, Math.max(8, groupW/5));
+
+            // y scale function
+            const y = v => padding.top + chartH - (v / maxVal) * chartH;
+
+            // draw y axis ticks
+            for (let i=0;i<=3;i++){
+                const val = Math.round(maxVal * (i/3));
+                const yy = y(val);
+                svg += `<line x1="${padding.left}" x2="${width-padding.right}" y1="${yy}" y2="${yy}" class="axis" />`;
+                svg += `<text x="${padding.left-6}" y="${yy+4}" class="label" text-anchor="end">${val.toLocaleString('pt-BR')}</text>`;
+            }
+
+            // draw groups
+            series.forEach((s, idx) => {
+                const gx = padding.left + idx * groupW + (groupW - (barWidth*4 + 6)) / 2;
+                const vals = [s.previsto, s.recebido, s.empenhado, s.aReceber];
+                const keys = ['previsto','recebido','empenhado','aReceber'];
+                vals.forEach((v,i) => {
+                    const bx = gx + i*(barWidth+2);
+                    const by = y(Math.max(0,v));
+                    const h = Math.max(2, chartH - (by - padding.top));
+                    const color = colors[keys[i]] || '#888';
+                    svg += `<rect x="${bx}" y="${by}" width="${barWidth}" height="${h}" fill="${color}">`;
+                    svg += `<title>${s.ano} - ${keys[i]}: ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}</title>`;
+                    svg += `</rect>`;
+                });
+                // ano label
+                const lx = gx + (barWidth*4 + 6)/2;
+                svg += `<text x="${lx}" y="${padding.top + chartH + 14}" class="label" text-anchor="middle">${s.ano}</text>`;
+            });
+
+            // legend
+            const legendX = padding.left + 0;
+            let ly = 6;
+            Object.entries({ 'Previsto':colors.previsto, 'Recebido':colors.recebido, 'Empenhado':colors.empenhado, 'A Receber':colors.aReceber }).forEach(([k,c])=>{
+                svg += `<rect x="${legendX}" y="${ly}" width="10" height="10" fill="${c}" />`;
+                svg += `<text x="${legendX+14}" y="${ly+9}" class="legend">${k}</text>`;
+                ly += 14;
+            });
+
+            svg += `</svg>`;
+            container.innerHTML = svg;
+        }
+
+        // Popular filtros do Gantt de Vigência
+        function popularFiltrosGantt() {
+            const selUp = document.getElementById('filterUP_gantt');
+            const selStatus = document.getElementById('filterStatus_gantt');
+            if (!selUp || !selStatus) return;
+
+            const prevUp = Array.from(selUp.selectedOptions || []).map(o => o.value);
+            const prevStatus = Array.from(selStatus.selectedOptions || []).map(o => o.value);
+
+            const ups = [...new Set((dados.teds || []).map(t => String(t.upResponsavel || t.up || '').trim()))].filter(Boolean).sort();
+            const statuses = ['Em Execução', 'TED Finalizado'];
+
+            selUp.innerHTML = ups.map(u => `<option value="${u}" ${prevUp.indexOf(u) !== -1 ? 'selected' : ''}>${u}</option>`).join('');
+            selStatus.innerHTML = statuses.map(s => {
+                const selected = prevStatus.length ? (prevStatus.indexOf(s) !== -1) : (s === 'Em Execução');
+                return `<option value="${s}" ${selected ? 'selected' : ''}>${s}</option>`;
+            }).join('');
+        }
+
+        // Situação simplificada para o filtro da Vigência:
+        // Em Execução | TED Finalizado (inclui denunciados com data de encerramento)
+        function getSituacaoGantt(t) {
+            return isTedFinalizado(t) ? 'TED Finalizado' : 'Em Execução';
+        }
+
+        function limparFiltrosGantt() {
+            const selUp = document.getElementById('filterUP_gantt');
+            const selStatus = document.getElementById('filterStatus_gantt');
+            if (selUp) Array.from(selUp.options).forEach(o => o.selected = false);
+            if (selStatus) {
+                Array.from(selStatus.options).forEach(o => {
+                    o.selected = (o.value === 'Em Execução');
+                });
+            }
+            renderGanttVigencia();
+        }
+
+        // Render Gantt de Vigência dos TEDs (todas as entradas em dados.teds)
+        function renderGanttVigencia() {
+            const container = document.getElementById('ganttVigencia');
+            if (!container) return;
+
+            // Popular filtros (preservando seleções)
+            try { popularFiltrosGantt(); } catch(e) {}
+
+            // Filtrar TEDs
+            let teds = (dados.teds || []).filter(t => t.inicioVigencia && t.fimVigencia);
+
+            // Aplicar filtro UP
+            const selUp = document.getElementById('filterUP_gantt');
+            if (selUp) {
+                const selUpList = Array.from(selUp.selectedOptions).map(o => o.value).filter(Boolean);
+                if (selUpList.length > 0) {
+                    teds = teds.filter(t => selUpList.includes(String(t.upResponsavel || t.up || '').trim()));
+                }
+            }
+
+            // Aplicar filtro Situação
+            const selStatus = document.getElementById('filterStatus_gantt');
+            if (selStatus) {
+                const selStatusList = Array.from(selStatus.selectedOptions).map(o => o.value).filter(Boolean);
+                if (selStatusList.length > 0) {
+                    teds = teds.filter(t => {
+                        const s = getSituacaoGantt(t);
+                        return selStatusList.includes(String(s).trim());
+                    });
+                }
+            }
+
+            if (!teds.length) {
+                container.innerHTML = '<p style="color:var(--text); padding:0.75rem;">Nenhum TED com vigência cadastrada (ou todos filtrados).</p>';
+                return;
+            }
+
+            // Paleta de cores para os aditivos (azuis fornecidos pelo usuário)
+            const aditivoCores = ['#2563EB', '#1D4ED8', '#38BDF8', '#0891B2', '#93C5FD'];
+            const corOriginal = '#1E3A8A';
+
+            // Normalizar datas e construir segmentos por aditivo
+            const rows = teds.map(t => {
+                const inicio = new Date(normalizarData(t.inicioVigencia) + 'T00:00:00');
+                const vigOriginal = parseInt(t.vigencia) || 0;
+                let fimOriginal;
+                if (vigOriginal > 0) {
+                    fimOriginal = new Date(inicio);
+                    fimOriginal.setMonth(fimOriginal.getMonth() + vigOriginal);
+                } else {
+                    // Se não tem vigência em meses, usar fimVigencia salvo
+                    fimOriginal = new Date(normalizarData(t.fimVigencia) + 'T00:00:00');
+                }
+
+                // Construir lista de segmentos: [{ de, ate, label, cor }]
+                const segmentos = [];
+                segmentos.push({ de: new Date(inicio), ate: new Date(fimOriginal), label: 'Vigência Original', cor: corOriginal, cssClass: 'gantt-bar-seg' });
+
+                // Base de meses acumulados para posicionar aditivos
+                let acumulado = vigOriginal > 0 ? vigOriginal
+                    : ((fimOriginal.getFullYear()-inicio.getFullYear())*12 + (fimOriginal.getMonth()-inicio.getMonth()));
+                const aditivos = (t.alteracoes || t.aditivos || []).filter(a => (a.tipo || 'aditivo') === 'aditivo');
+                aditivos.forEach((a, ai) => {
+                    const mesesAdit = parseInt(a.meses) || 0;
+                    if (mesesAdit <= 0) return;
+                    const segInicio = new Date(inicio);
+                    segInicio.setMonth(segInicio.getMonth() + acumulado);
+                    acumulado += mesesAdit;
+                    const segFim = new Date(inicio);
+                    segFim.setMonth(segFim.getMonth() + acumulado);
+                    const corIdx = ai % aditivoCores.length;
+                    const dataAditStr = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                    const lbl = `Aditivo ${ai+1}: +${mesesAdit}m` + (dataAditStr ? ` (${dataAditStr})` : '') + (a.obs ? ` - ${a.obs}` : '');
+                    segmentos.push({ de: segInicio, ate: segFim, label: lbl, cor: aditivoCores[corIdx], cssClass: `gantt-bar-seg bar-aditivo-${corIdx+1}` });
+                });
+
+                const fimTotal = segmentos[segmentos.length - 1].ate;
+                return { ted: t, up: (t.upResponsavel || t.up || '').toString(), inicio, fimOriginal, fim: fimTotal, segmentos, temAditivo: aditivos.length > 0 };
+            }).filter(r => !isNaN(r.inicio.getTime()) && !isNaN(r.fim.getTime()));
+
+            // Agrupar por UP e ordenar por UP e início
+            const groupsMap = new Map();
+            rows.forEach(r => {
+                const key = r.up || '(sem UP)';
+                if (!groupsMap.has(key)) groupsMap.set(key, []);
+                groupsMap.get(key).push(r);
+            });
+            const groups = Array.from(groupsMap.entries()).map(([up, arr]) => {
+                arr.sort((a,b) => a.inicio - b.inicio);
+                return { up, teds: arr };
+            }).sort((a,b) => a.up.localeCompare(b.up));
+
+            // Calcular período total
+            let minDate = rows[0].inicio, maxDate = rows[0].fim;
+            rows.forEach(r => { if (r.inicio < minDate) minDate = r.inicio; if (r.fim > maxDate) maxDate = r.fim; });
+
+            // Limitar colunas (máx 60 meses)
+            const maxMonths = 60;
+            const monthDiff = (d1, d2) => (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
+            let totalMonths = monthDiff(minDate, maxDate) + 1;
+            if (totalMonths > maxMonths) {
+                const hoje = new Date();
+                const windowStart = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                const half = Math.floor(maxMonths/2);
+                windowStart.setMonth(windowStart.getMonth() - half);
+                minDate = new Date(windowStart.getFullYear(), windowStart.getMonth(), 1);
+                maxDate = new Date(minDate);
+                maxDate.setMonth(maxDate.getMonth() + maxMonths - 1);
+                totalMonths = maxMonths;
+            }
+
+            // Construir meses e anos
+            const months = [];
+            const years = [];
+            for (let i=0;i<totalMonths;i++) {
+                const d = new Date(minDate.getFullYear(), minDate.getMonth() + i, 1);
+                months.push({d, label: d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase(), year: d.getFullYear()});
+                const y = d.getFullYear();
+                const last = years[years.length-1];
+                if (!last || last.year !== y) years.push({year: y, count: 1, startIdx: i}); else last.count++;
+            }
+
+            // Configurações de largura fixa para cálculo de overlay
+            const upColWidth = 140; // px
+            const tedColWidth = 260; // px
+            const monthWidth = 40; // px
+
+            // Construir tabela (colgroup para larguras fixas das colunas)
+            let table = '<div class="gantt-wrap" style="overflow:auto;">';
+            table += '<table class="gantt-table" style="margin-top:0.5rem; width:auto; table-layout:fixed;">';
+            table += '<colgroup>';
+            table += `<col style="width:${upColWidth}px">`;
+            table += `<col style="width:${tedColWidth}px">`;
+            for (let i=0;i<months.length;i++) table += `<col style="width:${monthWidth}px">`;
+            table += '</colgroup>';
+
+            // Pré-calcular conjunto de índices que são início de ano e índice do mês atual
+            const yearStartSet = new Set(years.map(y => y.startIdx));
+            const hoje = new Date();
+            const todayIdx = monthDiff(minDate, new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+
+            // Função auxiliar: retorna HTML de marcador vertical para o índice i
+            function ganttVLine(i) {
+                if (i === todayIdx) return '<div class="gantt-vline gantt-vline-today"></div>';
+                if (yearStartSet.has(i)) return '<div class="gantt-vline gantt-vline-year"></div>';
+                return '';
+            }
+
+            // Cabeçalhos
+            table += '<thead>';
+            table += '<tr>';
+            table += '<th class="sticky-up" rowspan="2" style="width:'+upColWidth+'px;">UP</th>';
+            table += '<th class="sticky-ted" rowspan="2" style="width:'+tedColWidth+'px;">TED</th>';
+            years.forEach(y => {
+                const vl = ganttVLine(y.startIdx);
+                table += `<th colspan="${y.count}" style="text-align:center; font-size:0.85rem; position:relative;">${vl}${y.year}</th>`;
+            });
+            table += '</tr>';
+            table += '<tr class="header-meses">';
+            months.forEach((m, idx) => {
+                const vl = ganttVLine(idx);
+                table += `<th style="text-align:center; font-size:0.75rem; position:relative;">${vl}${m.label}/${String(m.year).slice(-2)}</th>`;
+            });
+            table += '</tr>';
+            table += '</thead>';
+
+            // Pré-calcular mapa mês→segmento para cada row (para saber a cor de cada célula)
+            function buildSegmentMap(r) {
+                // Para cada mês-idx, armazena { cssClass, cor, tooltip }
+                const map = {};
+                r.segmentos.forEach(seg => {
+                    const sIdx = Math.max(0, monthDiff(minDate, new Date(seg.de.getFullYear(), seg.de.getMonth(), 1)));
+                    const eIdx = Math.min(totalMonths-1, monthDiff(minDate, new Date(seg.ate.getFullYear(), seg.ate.getMonth(), 1)));
+                    for (let m = sIdx; m <= eIdx; m++) {
+                        //sltimo segmento que cobre este mês vence (aditivo sobrescreve original)
+                        map[m] = { cssClass: seg.cssClass, cor: seg.cor, tooltip: seg.label };
+                    }
+                });
+                return map;
+            }
+
+            // Corpo: cada mês é uma <td> individual (sem colspan)
+            table += '<tbody>';
+            // Rastrear se algum aditivo aparece (para legenda)
+            let maxAditivoIdx = 0;
+            const aditivosUsados = new Set();
+
+            groups.forEach(group => {
+                const up = group.up;
+                group.teds.forEach((r, idx) => {
+                    const segMap = buildSegmentMap(r);
+                    const startIdx = Math.max(0, monthDiff(minDate, new Date(r.inicio.getFullYear(), r.inicio.getMonth(), 1)));
+                    const endIdx = Math.min(totalMonths-1, monthDiff(minDate, new Date(r.fim.getFullYear(), r.fim.getMonth(), 1)));
+
+                    // Rastrear aditivos usados para legenda
+                    if (r.temAditivo) {
+                        const aditivosArr = (r.ted.alteracoes || r.ted.aditivos || []).filter(a => a.tipo === 'aditivo' || a.meses);
+                        aditivosArr.forEach((a, ai) => {
+                            if ((parseInt(a.meses) || 0) > 0) aditivosUsados.add(ai);
+                            if (ai + 1 > maxAditivoIdx) maxAditivoIdx = ai + 1;
+                        });
+                    }
+
+                    const titleParts = [`${r.ted.numTed}: ${r.inicio.toLocaleDateString('pt-BR')} → ${r.fim.toLocaleDateString('pt-BR')}`];
+                    if (r.temAditivo) {
+                        r.segmentos.slice(1).forEach(s => titleParts.push(s.label));
+                    }
+                    const title = titleParts.join('\n');
+
+                    table += '<tr>';
+                    if (idx === 0) {
+                        table += `<td class="gantt-row-up sticky-up" rowspan="${group.teds.length}" style="vertical-align:middle; font-weight:700;">${up}</td>`;
+                    }
+                    const label = `${r.ted.numTed || ''} - ${r.ted.objeto || r.ted.objetivo || ''}`;
+                    // Tornar o label clicável: abre o detalhe do TED correspondente
+                    table += `<td class="gantt-row-label sticky-ted" title="UP: ${r.up}" style="cursor:pointer;">
+                        <a href="#" onclick="carregarDetalhes(${r.ted.id}); switchTab('detalhes'); return false;" style="color:inherit; text-decoration:none; display:block; width:100%;">
+                            ${label}
+                        </a>
+                    </td>`;
+
+                    // Render cada mês como <td> individual
+                    let prevCor = null;
+                    for (let i=0;i<months.length;i++) {
+                        const vl = ganttVLine(i);
+                        const seg = segMap[i];
+                        if (seg && i >= startIdx && i <= endIdx) {
+                            // Célula dentro da vigência
+                            let cls = 'gantt-m';
+                            if (i === startIdx) cls += ' bar-start';
+                            if (i === endIdx) cls += ' bar-end';
+                            // Detectar transição de cor entre segmentos (remover arredondamento interno)
+                            const nextSeg = segMap[i+1];
+                            const isTransitionEnd = nextSeg && nextSeg.cor !== seg.cor && i !== endIdx;
+                            const isTransitionStart = prevCor && prevCor !== seg.cor && i !== startIdx;
+                            // Aplicar inline style para cor do segmento
+                            let style = `background:${seg.cor};`;
+                            let barCls = 'gantt-bar-seg';
+                            if (isTransitionStart) style += 'border-radius: 0 !important; margin-left: 0 !important;';
+                            if (isTransitionEnd) style += 'border-radius: 0 !important; margin-right: 0 !important;';
+                            table += `<td class="${cls}" title="${seg.tooltip}">${vl}<div class="${barCls}" style="${style}"></div></td>`;
+                            prevCor = seg.cor;
+                        } else {
+                            // Célula fora da vigência
+                            prevCor = null;
+                            if (vl) {
+                                table += `<td class="gantt-m">${vl}</td>`;
+                            } else {
+                                table += `<td></td>`;
+                            }
+                        }
+                    }
+
+                    table += '</tr>';
+                });
+
+                // Separador visual após grupo (linha escura)
+                table += `<tr><td class="sticky-up" style="padding:0; border-top:3px solid #1f2937; height:4px; background:#fff;"></td><td class="sticky-ted" style="padding:0; border-top:3px solid #1f2937; height:4px; background:#fff;"></td><td colspan="${months.length}" style="padding:0; border-top:3px solid #1f2937; height:4px;"></td></tr>`;
+            });
+            table += '</tbody>';
+            table += '</table>';
+
+            // Legenda com Vigência Original + Aditivos
+            let legenda = '<div class="gantt-legenda">';
+            legenda += `<div class="gantt-legenda-item"><span class="gantt-legenda-cor" style="background:${corOriginal}"></span> Vigência Original</div>`;
+            for (let ai = 0; ai < maxAditivoIdx; ai++) {
+                const cor = aditivoCores[ai % aditivoCores.length];
+                legenda += `<div class="gantt-legenda-item"><span class="gantt-legenda-cor" style="background:${cor}"></span> Aditivo ${ai+1}</div>`;
+            }
+            legenda += '<div class="gantt-legenda-item"><span class="gantt-legenda-cor" style="background:#f97316"></span> Mês Atual</div>';
+            legenda += '</div>';
+
+            table += legenda;
+            table += '</div>';
+
+            container.innerHTML = table;
+
+            const wrap = container.querySelector('.gantt-wrap');
+
+            // Medir a largura real da coluna UP e ajustar o left das sticky-ted cells
+            const firstUpCell = wrap.querySelector('.sticky-up');
+            if (firstUpCell) {
+                const realUpWidth = firstUpCell.getBoundingClientRect().width;
+                wrap.querySelectorAll('.sticky-ted').forEach(cell => {
+                    cell.style.left = realUpWidth + 'px';
+                });
+            }
+
+            // Centralizar visualização no mês atual
+            if (todayIdx >= 0 && todayIdx < months.length) {
+                const scrollTarget = upColWidth + tedColWidth + (todayIdx * monthWidth) - (wrap.clientWidth / 2);
+                const maxScroll = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+                const clamped = Math.max(0, Math.min(scrollTarget, maxScroll));
+                requestAnimationFrame(() => { wrap.scrollLeft = clamped; });
+            } else {
+                const middle = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
+                requestAnimationFrame(() => { wrap.scrollLeft = middle; });
+            }
+        }
+
+        function atualizarTabelaExecFinanceira() {
+            // ── helpers locais ──────────────────────────────────────────────
+            const fmtBR = (v) => (parseFloat(v) || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+            const ndCat = (nd) => {
+                const s = String(nd || '').replace(/\D/g, '');
+                if (s.startsWith('44')) return 'invest';
+                if (s.startsWith('33')) return 'custeio';
+                return 'outros';
+            };
+            const upCls = (up) => {
+                const u = String(up || '').trim().toUpperCase();
+                if (u === 'FI') return 'fi';
+                if (u === 'UA') return 'ua';
+                return 'outros';
+            };
+
+            try {
+                const tbody = document.getElementById('tabelaExecFinanceira');
+                if (!tbody) { console.warn('tabelaExecFinanceira not found'); return; }
+                const tableEl = tbody.closest('table');
+                if (!tableEl) { console.warn('tabelaExecFinanceira table parent not found'); return; }
+
+                const resumoPrev       = document.getElementById('resExecPrevisto');
+                const resumoReceberAnt = document.getElementById('resExecReceberAnterior');
+                const resumoRecebido   = document.getElementById('resExecRecebido');
+                const resumoDevolvido  = document.getElementById('resExecDevolvido');
+                const resumoSaldo      = document.getElementById('resExecSaldo');
+                const resumoLiquidacao = document.getElementById('resExecLiquidacao');
+
+                const setResumoZeros = () => {
+                    if (resumoPrev)       resumoPrev.textContent = '0,00';
+                    if (resumoReceberAnt) resumoReceberAnt.textContent = '0,00';
+                    if (resumoRecebido)   resumoRecebido.textContent = '0,00';
+                    if (resumoDevolvido)  resumoDevolvido.innerHTML = '0,00';
+                    if (resumoSaldo)      resumoSaldo.innerHTML = '<span style="font-weight:700">0,00</span>';
+                    if (resumoLiquidacao) resumoLiquidacao.textContent = '0%';
+                };
+
+                // Popular menus de filtro
+                try { popularFiltrosExecFin(); } catch(e) {}
+
+                if (!window.tedSelecionado) {
+                    tbody.innerHTML = '<tr><td colspan="67" style="text-align:center;padding:1rem;color:var(--text);">Selecione um TED</td></tr>';
+                    setResumoZeros();
+                    _execfinRenderKpis(null);
+                    return;
+                }
+
+                // ── datas base ──────────────────────────────────────────────
+                let startDate;
+                if (window.tedSelecionado.primeiraDescentralizacao) {
+                    startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                    startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+                } else {
+                    startDate = new Date();
+                }
+
+                const today = new Date();
+                const meses = [];
+                for (let i = 0; i < 60; i++) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + i);
+                    const mesLabel = d.toLocaleString('pt-BR', {month:'short'}).replace('.','').toUpperCase();
+                    const ano2 = String(d.getFullYear()).slice(-2);
+                    const isCurrent = d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+                    meses.push({
+                        label: `${mesLabel}/${ano2}`,
+                        ano: d.getFullYear(),
+                        mes: d.getMonth() + 1,
+                        isCurrent,
+                    });
+                }
+
+                // Marcar o primeiro mês de cada ano
+                const seenAnos = new Set();
+                meses.forEach(m => {
+                    m.isFirstOfYear = !seenAnos.has(m.ano);
+                    seenAnos.add(m.ano);
+                });
+
+                const anos = [];
+                meses.forEach(m => {
+                    if (!anos.length || anos[anos.length-1].ano !== m.ano) anos.push({ano:m.ano, count:1});
+                    else anos[anos.length-1].count++;
+                });
+
+                // ── dados ───────────────────────────────────────────────────
+                // `cad` (usado nas SOMAS) considera só lançamentos vigentes — uma linha
+                // suprimida por aditivo/apostilamento não pode inflar o Previsto Total.
+                // `cadTodos` (usado só para levantar as CHAVES ND+UP) inclui as suprimidas:
+                // se uma ND suprimida já teve recebimento lançado em execFinanceiras, a
+                // linha precisa continuar aparecendo (previsto 0, saldo negativo) — senão
+                // o valor já recebido some do total em vez de aparecer como excedente.
+                const cadTodos = window.tedSelecionado.financeiros || [];
+                const cad   = financeirosVigentes(window.tedSelecionado);
+                const execs = window.tedSelecionado.execFinanceiras || [];
+
+                const chaves = new Set([
+                    ...cadTodos.map(f => `${f.numero}||${f.up || f.ug}`),
+                    ...execs.map(e => `${e.nd || e.numero}||${e.up || e.ug}`)
+                ].filter(Boolean));
+
+                if (chaves.size === 0) {
+                    tbody.innerHTML = '<tr><td colspan="67" style="text-align:center;padding:1rem;color:var(--text);">Nenhum dado financeiro</td></tr>';
+                    setResumoZeros();
+                    _execfinRenderKpis(null);
+                    return;
+                }
+
+                const filtros = window.filtrosExecFin || { nd: [], up: [] };
+                const chavesFiltradas = Array.from(chaves).filter(chave => {
+                    const [nd, up] = chave.split('||');
+                    if (filtros.nd.length && !filtros.nd.includes(nd)) return false;
+                    if (filtros.up.length && !filtros.up.includes(up)) return false;
+                    return true;
+                });
+
+                if (chavesFiltradas.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="67" style="text-align:center;padding:1rem;color:var(--text);">Nenhum dado com os filtros aplicados</td></tr>';
+                    setResumoZeros();
+                    _execfinRenderKpis(null);
+                    return;
+                }
+
+                // ── sort ────────────────────────────────────────────────────
+                const sortedChaves = chavesFiltradas.sort((a, b) => {
+                    const [ndA, upA] = String(a).split('||');
+                    const [ndB, upB] = String(b).split('||');
+                    const nA = parseFloat((ndA||'').replace(/[^0-9.-]/g,''));
+                    const nB = parseFloat((ndB||'').replace(/[^0-9.-]/g,''));
+                    if (!isNaN(nA) && !isNaN(nB) && nA !== nB) return nA - nB;
+                    const cmpNd = String(ndA).localeCompare(String(ndB), undefined, {numeric:true});
+                    if (cmpNd !== 0) return cmpNd;
+                    return String(upA||'').localeCompare(String(upB||''));
+                });
+
+                // ── calcular totais globais ─────────────────────────────────
+                let totalPrevisto = 0, totalRealizado = 0;
+                const totalMeses = new Map();
+                let nAbaixo = 0, nRegular = 0;
+                let exemploRegular = '';
+
+                sortedChaves.forEach(chave => {
+                    const [nd, up] = chave.split('||');
+                    const previsto  = cad.filter(f => String(f.numero)===nd && String(f.up||f.ug)===up).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                    const execList  = execs.filter(e => String(e.nd||e.numero)===nd && String(e.up||e.ug)===up);
+                    const realizado = execList.reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0);
+                    totalPrevisto  += previsto;
+                    totalRealizado += realizado;
+                    const _diff = realizado - previsto;
+                    const _pct  = previsto > 0 ? Math.abs(_diff) / previsto : 0;
+                    if (Math.abs(_diff) < 1) { nRegular++; exemploRegular = `${formatarNDComPontos(nd)}-${up}`; }
+                    else if (_diff < 0)       nAbaixo++;
+
+                    const mapaMes = new Map();
+                    execList.forEach(e => {
+                        if (!e.data) return;
+                        const d = new Date(e.data + 'T00:00:00');
+                        const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
+                        if (diff>=0 && diff<60) mapaMes.set(diff, (mapaMes.get(diff)||0)+(parseFloat(e.valor||e.valorRealizado)||0));
+                    });
+                    mapaMes.forEach((val, idx) => totalMeses.set(idx, (totalMeses.get(idx)||0)+val));
+                });
+
+                const totalSaldo = totalPrevisto - totalRealizado;
+                const pctRealizado = totalPrevisto > 0 ? (totalRealizado / totalPrevisto * 100) : 0;
+                const pctSaldo     = totalPrevisto > 0 ? (totalSaldo     / totalPrevisto * 100) : 0;
+
+                // ── KPIs ────────────────────────────────────────────────────
+                _execfinRenderKpis({
+                    totalPrevisto, totalRealizado, totalSaldo, pctRealizado,
+                    nItens: sortedChaves.length, nAbaixo, nRegular, exemploRegular,
+                });
+
+                // ── thead ───────────────────────────────────────────────────
+                const monthsExpanded = document.getElementById('toggle-months-execFin')?.getAttribute('data-expanded') === '1';
+                const consolidado = document.getElementById('toggle-consolidar-execFin')?.getAttribute('data-consolidado') === '1';
+
+                // apagar e recriar thead do zero
+                const thead = tableEl.querySelector('thead');
+                while (thead.rows.length > 0) thead.deleteRow(0);
+
+                // definição das colunas fixas (sem UP quando consolidado)
+                const fixedCols = consolidado
+                    ? [ {label:'ND', cls:'col-nd col-sticky'}, {label:'Valor Previsto', cls:'col-valor'},
+                        {label:'Valor Realizado', cls:'col-valor'}, {label:'Saldo', cls:'col-saldo'} ]
+                    : [ {label:'ND', cls:'col-nd col-sticky'}, {label:'UP', cls:'col-up'},
+                        {label:'Valor Previsto', cls:'col-valor'}, {label:'Valor Realizado', cls:'col-valor'},
+                        {label:'Saldo', cls:'col-saldo'} ];
+                const colFixas = fixedCols.length; // usado pelo consRow para colspan do label
+
+                // Linha 1: fixas com rowspan=2 sempre + agrupadores de ano
+                const tr1 = thead.insertRow();
+                fixedCols.forEach(c => {
+                    const th = document.createElement('th');
+                    th.className = c.cls;
+                    th.textContent = c.label;
+                    th.rowSpan = 2;
+                    tr1.appendChild(th);
+                });
+                anos.forEach(a => {
+                    const th = document.createElement('th');
+                    th.colSpan = a.count;
+                    th.className = 'month-col-execFin year-group';
+                    th.textContent = String(a.ano);
+                    if (!monthsExpanded) th.style.display = 'none';
+                    tr1.appendChild(th);
+                });
+
+                // Linha 2: apenas meses (fixas já têm rowspan=2) — sempre presente
+                const tr2 = thead.insertRow();
+                tr2.className = 'header-meses';
+                if (!monthsExpanded) tr2.style.display = 'none';
+                meses.forEach(m => {
+                    const th = document.createElement('th');
+                    th.className = 'month-col-execFin month-col' +
+                        (m.isFirstOfYear ? ' first' : '') +
+                        (m.isCurrent ? ' current' : '');
+                    th.textContent = m.label;
+                    tr2.appendChild(th);
+                });
+
+                // ── reconstruir colgroup para refletir colunas atuais ───────
+                {
+                    let cg = tableEl.querySelector('colgroup');
+                    if (!cg) { cg = document.createElement('colgroup'); tableEl.prepend(cg); }
+                    cg.innerHTML = '';
+                    const colClasses = consolidado
+                        ? ['col-nd','col-vprev','col-vreal','col-saldo']
+                        : ['col-nd','col-up','col-vprev','col-vreal','col-saldo'];
+                    colClasses.forEach(cls => {
+                        const col = document.createElement('col');
+                        col.className = cls;
+                        cg.appendChild(col);
+                    });
+                    if (monthsExpanded) {
+                        meses.forEach(() => {
+                            const col = document.createElement('col');
+                            col.className = 'month-col-execFin';
+                            col.style.minWidth = '110px';
+                            cg.appendChild(col);
+                        });
+                    }
+                    tableEl.style.tableLayout = monthsExpanded ? 'auto' : 'fixed';
+                }
+
+                // ── linhas de itens ─────────────────────────────────────────
+                let linhas;
+
+                if (consolidado) {
+                    // Agrupar chaves por ND, somando previsto/realizado/meses
+                    const ndOrdem = [];
+                    const ndAgrup = new Map();
+                    sortedChaves.forEach(chave => {
+                        const [nd, up] = chave.split('||');
+                        if (!ndAgrup.has(nd)) { ndOrdem.push(nd); ndAgrup.set(nd, { previsto:0, realizado:0, meses: new Map() }); }
+                        const g = ndAgrup.get(nd);
+                        g.previsto += cad.filter(f => String(f.numero)===nd && String(f.up||f.ug)===up).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                        const execListND = execs.filter(e => String(e.nd||e.numero)===nd && String(e.up||e.ug)===up);
+                        g.realizado += execListND.reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0);
+                        execListND.forEach(e => {
+                            if (!e.data) return;
+                            const d = new Date(e.data + 'T00:00:00');
+                            const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
+                            if (diff>=0 && diff<60) g.meses.set(diff, (g.meses.get(diff)||0)+(parseFloat(e.valor||e.valorRealizado)||0));
+                        });
+                    });
+
+                    linhas = ndOrdem.map(nd => {
+                        const g = ndAgrup.get(nd);
+                        const { previsto, realizado } = g;
+                        const saldo = previsto - realizado;
+                        const saldoCls = saldo > 0.01 ? 'alert' : (Math.abs(saldo) < 0.01 ? 'ok' : 'neg');
+                        const ndFmt = formatarNDComPontos(nd);
+                        const cat   = ndCat(nd);
+                        const ndTag = `<span class="execfin-nd-tag ${cat}">${ndFmt}</span>`;
+                        const prevFmt = `<span class="execfin-val previsto">${fmtBR(previsto)}</span>`;
+                        const realFmt = `<span class="execfin-val realizado">${fmtBR(realizado)}</span>`;
+                        const saldFmt = `<span class="execfin-val saldo ${saldoCls}">${fmtBR(saldo)}</span>`;
+
+                        let html = `<tr>` +
+                            `<td class="col-nd col-sticky">${ndTag}</td>` +
+                            `<td class="col-valor">${prevFmt}</td>` +
+                            `<td class="col-valor">${realFmt}</td>` +
+                            `<td class="col-saldo">${saldFmt}</td>`;
+
+                        if (monthsExpanded) {
+                            meses.forEach((m, i) => {
+                                const val = g.meses.get(i);
+                                let cls = 'month-cell month-col-execFin';
+                                if (m.isFirstOfYear) cls += ' first';
+                                if (m.isCurrent)     cls += ' current';
+                                if (val)             cls += ' has-value';
+                                if (val < 0)         cls += ' has-neg';
+                                html += `<td class="${cls}">${val ? fmtBR(val) : ''}</td>`;
+                            });
+                        }
+                        html += '</tr>';
+                        return html;
+                    }).join('');
+                } else {
+                    linhas = sortedChaves.map(chave => {
+                        const [nd, up] = chave.split('||');
+                        const previsto  = cad.filter(f => String(f.numero)===nd && String(f.up||f.ug)===up).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                        const execList  = execs.filter(e => String(e.nd||e.numero)===nd && String(e.up||e.ug)===up);
+                        const realizado = execList.reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0);
+                        const saldo     = previsto - realizado;
+
+                        const _diff = realizado - previsto;
+                        const _pct  = previsto > 0 ? Math.abs(_diff) / previsto : 0;
+                        let statusCls, statusLabel;
+                        if (Math.abs(_diff) < 1)            { statusCls = 'regular'; statusLabel = 'Regular'; }
+                        else if (_diff > 0 && _pct < 0.10)  { statusCls = 'acima';   statusLabel = 'Acima'; }
+                        else if (_diff > 0 && _pct >= 0.10) { statusCls = 'critico'; statusLabel = 'Crítico'; }
+                        else                                 { statusCls = 'abaixo';  statusLabel = 'Abaixo'; }
+
+                        const saldoCls = saldo > 0.01 ? 'alert' : (Math.abs(saldo) < 0.01 ? 'ok' : 'neg');
+                        const ndFmt    = formatarNDComPontos(nd);
+                        const cat      = ndCat(nd);
+                        const uc       = upCls(up);
+
+                        const ndTag    = `<span class="execfin-nd-tag ${cat}">${ndFmt}</span>`;
+                        const upPill   = `<span class="execfin-up-pill ${uc}">${up}</span>`;
+                        const prevFmt  = `<span class="execfin-val previsto">${fmtBR(previsto)}</span>`;
+                        const realFmt  = `<span class="execfin-val realizado">${fmtBR(realizado)}</span>`;
+                        const saldFmt  = `<span class="execfin-val saldo ${saldoCls}">${fmtBR(saldo)}</span>`;
+                        const statusBadge = `<span class="execfin-status ${statusCls}"><span class="dot"></span>${statusLabel}</span>`;
+
+                        const mapaMes = new Map();
+                        execList.forEach(e => {
+                            if (!e.data) return;
+                            const d = new Date(e.data + 'T00:00:00');
+                            const diff = (d.getFullYear()-startDate.getFullYear())*12 + (d.getMonth()-startDate.getMonth());
+                            if (diff>=0 && diff<60) mapaMes.set(diff, (mapaMes.get(diff)||0)+(parseFloat(e.valor||e.valorRealizado)||0));
+                        });
+
+                        let html = `<tr>` +
+                            `<td class="col-nd col-sticky">${ndTag}</td>` +
+                            `<td class="col-up">${upPill}</td>` +
+                            `<td class="col-valor right">${prevFmt}</td>` +
+                            `<td class="col-valor right">${realFmt}</td>` +
+                            `<td class="col-saldo right">${saldFmt}</td>`;
+
+                        if (monthsExpanded) {
+                            meses.forEach((m, i) => {
+                                const val = mapaMes.get(i);
+                                let cls = 'month-cell month-col-execFin';
+                                if (m.isFirstOfYear) cls += ' first';
+                                if (m.isCurrent)     cls += ' current';
+                                if (val)             cls += ' has-value';
+                                if (val < 0)         cls += ' has-neg';
+                                const display = val ? fmtBR(val) : '';
+                                html += `<td class="${cls}" onclick="editarValorExecFinanceira('${nd}','${up}',${i})" title="Clique para ver lançamentos">${display}</td>`;
+                            });
+                        }
+                        html += '</tr>';
+                        return html;
+                    }).join('');
+                }
+
+                // ── linha TOTAL ─────────────────────────────────────────────
+                const saldoCls = totalSaldo > 0.01 ? 'alert' : (Math.abs(totalSaldo) < 0.01 ? 'ok' : 'neg');
+                let totalRow = `<tr class="execfin-total-row">` +
+                    `<td class="col-nd col-sticky">TOTAL</td>` +
+                    (!consolidado ? `<td class="col-up"></td>` : '') +
+                    `<td class="col-valor"><span class="execfin-val previsto">${fmtBR(totalPrevisto)}</span></td>` +
+                    `<td class="col-valor"><span class="execfin-val realizado">${fmtBR(totalRealizado)}</span></td>` +
+                    `<td class="col-saldo"><span class="execfin-val saldo ${saldoCls}">${fmtBR(totalSaldo)}</span></td>`;
+
+                if (monthsExpanded) {
+                    meses.forEach((m, idx) => {
+                        const val = totalMeses.get(idx);
+                        let cls = 'month-cell month-col-execFin';
+                        if (m.isFirstOfYear) cls += ' first';
+                        if (m.isCurrent)     cls += ' current';
+                        if (val)             cls += ' has-value';
+                        if (val < 0)         cls += ' has-neg';
+                        totalRow += `<td class="${cls}">${val ? fmtBR(val) : ''}</td>`;
+                    });
+                }
+                totalRow += '</tr>';
+
+                // ── cálculos anuais para linhas consolidadas ────────────────
+                const previstoByAno  = {};
+                const recebidoByAno  = {};
+                const devolvidoByAno = {};
+
+                (cad || []).forEach(f => {
+                    const chave = `${f.numero}||${f.up || f.ug}`;
+                    if (!chavesFiltradas.includes(chave)) return;
+                    const ano = parseInt(f.anoDesc, 10);
+                    if (!isNaN(ano)) previstoByAno[ano] = (previstoByAno[ano]||0) + (parseFloat(f.valor)||0);
+                });
+
+                (execs || []).forEach(e => {
+                    const chave = `${e.nd||e.numero||''}||${e.up||e.ug||''}`;
+                    if (!chavesFiltradas.includes(chave)) return;
+                    if (!e.data) return;
+                    const ano   = new Date(e.data + 'T00:00:00').getFullYear();
+                    if (isNaN(ano)) return;
+                    const valor = parseFloat(e.valor || e.valorRealizado) || 0;
+                    if (valor > 0) recebidoByAno[ano]  = (recebidoByAno[ano]||0)  + valor;
+                    if (valor < 0) devolvidoByAno[ano] = (devolvidoByAno[ano]||0) + valor;
+                });
+
+                const anosOrdem = anos.map(a => a.ano);
+                const saldoAtualByAno      = {};
+                const aReceberAnteriorByAno = {};
+                anosOrdem.forEach((ano, idx) => {
+                    saldoAtualByAno[ano] = (recebidoByAno[ano]||0) + (devolvidoByAno[ano]||0);
+                    if (idx === 0) {
+                        aReceberAnteriorByAno[ano] = 0;
+                    } else {
+                        const anoPrev = anosOrdem[idx-1];
+                        aReceberAnteriorByAno[ano] = (previstoByAno[anoPrev]||0) + (aReceberAnteriorByAno[anoPrev]||0) - (saldoAtualByAno[anoPrev]||0);
+                    }
+                });
+
+                // helper para montar célula de ano nas linhas consolidadas
+                const anoAtual = today.getFullYear();
+                const consHl = consHlEstilo;
+
+                const consYearCells = (calcFn, colorFn, cellStyle) => anos.map(a => {
+                    if (!monthsExpanded) return '';
+                    const val    = calcFn(a.ano);
+                    const isCurr = a.ano === anoAtual;
+                    let cls = 'year-total month-col-execFin';
+                    if (isCurr) cls += ' year-current';
+                    const colorCls = colorFn ? colorFn(val) : (val < -0.01 ? 'neg' : val === 0 ? 'zero' : '');
+                    if (colorCls) cls += ` ${colorCls}`;
+                    return `<td colspan="${a.count}" class="${cls}"${cellStyle ? ` style="${cellStyle}"` : ''}>R$ ${fmtBR(val)}</td>`;
+                }).join('');
+
+                const fml = (s) => `<span class="ra-formula">${s}</span>`;
+                const consRow = (tipo, icon, label, formula, calcFn, colorFn, negative) => {
+                    const totalVal = anosOrdem.reduce((s, ano) => s + (calcFn(ano) || 0), 0);
+                    const v = negative ? -totalVal : totalVal;
+                    const colorCls = colorFn ? colorFn(v) : '';
+                    const disp = negative && totalVal > 0 ? `−R$ ${fmtBR(totalVal)}` : `R$ ${fmtBR(totalVal)}`;
+                    const hl = consHl(tipo);
+                    const hlAttr = hl ? ` style="${hl}"` : '';
+                    const monthCells = monthsExpanded ? consYearCells(calcFn, colorFn, hl) : '';
+                    return `<tr class="cons ${tipo}">` +
+                        `<td class="label-cell ra-td-label" colspan="${colFixas}"${hlAttr}>` +
+                            `<i data-lucide="${icon}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>` +
+                            `<span>${label}</span>` +
+                            (formula ? fml(formula) : '') +
+                        `</td>` +
+                        (monthsExpanded ? monthCells : '') +
+                        `</tr>`;
+                };
+
+                const rowPrevistoAnual    = consRow('previsto',  'calendar',          'Previsto Anual',       '',                              (a)=>previstoByAno[a]||0);
+                const rowReceberAnterior  = consRow('areceber',  'arrow-left',        'A Receber (ano ant.)', 'carry-over',                    (a)=>aReceberAnteriorByAno[a]||0,  (v)=>v<-0.01?'neg':v===0?'zero':'');
+                const rowTotalAReceber    = consRow('total',     'sigma',             'Total a Receber',      'Prev + A Receber',              (a)=>(previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0));
+                const rowRecebidoAnual    = consRow('recebido',  'arrow-down-circle', 'Recebido Anual',       '',                              (a)=>recebidoByAno[a]||0,          (v)=>v>0.01?'green':v===0?'zero':'');
+                const rowDevolvido        = consRow('devolvido', 'arrow-up-circle',   'Devolvido / Recolhido','',                              (a)=>devolvidoByAno[a]||0,         (v)=>v<-0.01?'neg':'zero', true);
+                const rowSaldoAnual       = consRow('saldo-row', 'minus-circle',      'Saldo Anual',          'Recebido − Devolvido',          (a)=>saldoAtualByAno[a]||0);
+                const rowResultado        = consRow('resultado', 'trending-up',       'Resultado',            'Total a Receber − Saldo',       (a)=>((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1, (v)=>v<-0.01?'neg':v===0?'zero':'');
+
+                // Resumo consolidado integrado na tabela (valores de cada ano sob a coluna do ano).
+                tbody.innerHTML = linhas + totalRow + rowPrevistoAnual + rowReceberAnterior + rowTotalAReceber + rowRecebidoAnual + rowDevolvido + rowSaldoAnual + rowResultado;
+
+                // re-inicializar ícones Lucide
+                try { if (window.lucide) lucide.createIcons(); } catch(e) {}
+
+                // ── resumo do lado esquerdo (resExec*) ──────────────────────
+                const previstoAnual = (cad||[])
+                    .filter(f => { const c=`${f.numero}||${f.up||f.ug}`; return chavesFiltradas.includes(c) && f.anoDesc===anoAtual; })
+                    .reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+
+                const recebidoAnual = (execs||[])
+                    .filter(e => {
+                        const c=`${e.nd||e.numero||''}||${e.up||e.ug||''}`;
+                        if (!chavesFiltradas.includes(c)||!e.data) return false;
+                        const ano=new Date(e.data+'T00:00:00').getFullYear();
+                        return ano===anoAtual && (parseFloat(e.valor||e.valorRealizado)||0)>0;
+                    })
+                    .reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0);
+
+                const devolvido = Math.abs((execs||[])
+                    .filter(e => {
+                        const c=`${e.nd||e.numero||''}||${e.up||e.ug||''}`;
+                        if (!chavesFiltradas.includes(c)||!e.data) return false;
+                        const ano=new Date(e.data+'T00:00:00').getFullYear();
+                        return ano===anoAtual && (parseFloat(e.valor||e.valorRealizado)||0)<0;
+                    })
+                    .reduce((s,e)=>s+(parseFloat(e.valor||e.valorRealizado)||0),0));
+
+                const idxAnoAtual  = anosOrdem.indexOf(anoAtual);
+                const aReceberAnt  = idxAnoAtual>=0 ? (aReceberAnteriorByAno[anoAtual]||0) : 0;
+                const saldoAnual   = recebidoAnual - devolvido;
+                const liquidPerc   = previstoAnual>0 ? (recebidoAnual/previstoAnual*100) : 0;
+
+                if (resumoPrev)       resumoPrev.textContent       = fmtBR(previstoAnual);
+                if (resumoReceberAnt) resumoReceberAnt.textContent = fmtBR(aReceberAnt);
+                if (resumoRecebido)   resumoRecebido.textContent   = fmtBR(recebidoAnual);
+                if (resumoDevolvido)  resumoDevolvido.innerHTML    = `<span style="color:#ef4444">-${fmtBR(devolvido)}</span>`;
+                if (resumoSaldo)      resumoSaldo.innerHTML        = `<span style="font-weight:700;color:${saldoAnual<0?'#ef4444':'inherit'}">${fmtBR(saldoAnual)}</span>`;
+                if (resumoLiquidacao) resumoLiquidacao.textContent = `${liquidPerc.toFixed(2)}%`;
+
+            } catch (err) {
+                console.error('Erro em atualizarTabelaExecFinanceira:', err);
+            }
+
+            // ── ajustar card conforme toggle ────────────────────────────────
+            try {
+                const btn = document.getElementById('toggle-months-execFin');
+                const tbl = document.getElementById('tabelaExecFinanceiraTable');
+                const wrapper = document.getElementById('wrapperExecFin');
+                const sec = btn?.closest('.detalhe-secao');
+                const expanded = btn?.getAttribute('data-expanded') === '1';
+                if (sec && tbl) {
+                    if (!expanded) {
+                        tbl.style.minWidth = '0'; tbl.style.width = 'auto'; tbl.style.tableLayout = 'auto';
+                        if (wrapper) { wrapper.style.minWidth = ''; wrapper.style.width = ''; }
+                        sec.classList.add('cadFin-collapsed'); sec.classList.remove('months-expanded');
+                    } else {
+                        const nMeses = tbl.querySelectorAll('thead th.month-col').length || 60;
+                        tbl.style.minWidth = (700 + nMeses * 82) + 'px';
+                        tbl.style.width = ''; tbl.style.tableLayout = 'fixed';
+                        if (wrapper) { wrapper.style.minWidth = ''; wrapper.style.width = '100%'; }
+                        sec.classList.remove('cadFin-collapsed'); sec.classList.add('months-expanded');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Renderiza (ou limpa) o bloco de 4 KPIs acima da tabela de Execução Financeira
+        function _execfinRenderKpis(data) {
+            const container = document.getElementById('execfin-kpis-container');
+            if (!container) return;
+
+            if (!data) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const { totalPrevisto, totalRealizado, totalSaldo, pctRealizado,
+                    nItens, nAbaixo, nRegular, exemploRegular } = data;
+
+            const nNDs = nAbaixo + nRegular;
+            const barW = Math.min(100, Math.max(0, pctRealizado)).toFixed(1);
+
+            const statusColor = nAbaixo > 0 ? '#c07a1c' : '#3B6D11';
+            const statusText  = `${nAbaixo} Abaixo · ${nRegular} Regular`;
+            const statusSub   = nRegular > 0 && exemploRegular
+                ? `somente ${exemploRegular} executou 100%`
+                : (nAbaixo === 0 ? 'todos executados' : `${nAbaixo} NDs com pendência`);
+
+            container.innerHTML = `
+<div class="execfin-kpis">
+  <div class="execfin-kpi lead-blue">
+    <div class="execfin-kpi-label">Previsto Total</div>
+    <div class="execfin-kpi-val"><span class="cur">R$</span>${(totalPrevisto).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    <div class="execfin-kpi-sub">${nItens} item(ns) · ${nNDs} ND(s)</div>
+  </div>
+  <div class="execfin-kpi lead-green">
+    <div class="execfin-kpi-label">Realizado Total</div>
+    <div class="execfin-kpi-val green"><span class="cur">R$</span>${(totalRealizado).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    <div class="execfin-kpi-sub">${pctRealizado.toFixed(1)}% do previsto</div>
+    <div class="execfin-kpi-bar"><div class="execfin-kpi-bar-fill" style="width:${barW}%;background:#639922;"></div></div>
+  </div>
+  <div class="execfin-kpi lead-red">
+    <div class="execfin-kpi-label">Saldo a Receber</div>
+    <div class="execfin-kpi-val red"><span class="cur">R$</span>${(totalSaldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    <div class="execfin-kpi-sub">${(100-pctRealizado).toFixed(1)}% pendente · ${nAbaixo} ND(s) abaixo</div>
+  </div>
+  <div class="execfin-kpi lead-amber">
+    <div class="execfin-kpi-label">Status Geral</div>
+    <div class="execfin-kpi-val" style="font-size:14px;font-family:inherit;color:${statusColor};">${statusText}</div>
+    <div class="execfin-kpi-sub">${statusSub}</div>
+  </div>
+</div>`;
+        }
+
+        // Função para visualizar detalhes mensais (drill-down) da Execução Financeira
+        function verDetalhesMensaisExecFinanceira(nd, up) {
+            if (!window.tedSelecionado) return;
+            const execs = (window.tedSelecionado.execFinanceiras || []).filter(e => String(e.nd || e.numero) === String(nd) && String(e.up || e.ug) === String(up));
+            if (!execs.length) { showToast(`Nenhum lançamento mensal encontrado para ND: ${nd} / UP: ${up}`, 'info'); return; }
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            else startDate = new Date();
+            const mesesPt = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            const mapa = new Map();
+            execs.forEach(e => {
+                if (!e.data) return;
+                try {
+                    const d = new Date(e.data + 'T00:00:00');
+                    const idx = (d.getFullYear() - startDate.getFullYear()) * 12 + (d.getMonth() - startDate.getMonth());
+                    const label = `${mesesPt[d.getMonth()]}/${d.getFullYear()}`;
+                    mapa.set(label, (mapa.get(label) || 0) + (parseFloat(e.valor || e.valorRealizado) || 0));
+                } catch(ex) {}
+            });
+            let msg = `Detalhes mensais para ND: ${nd} / UP: ${up}\n\n`;
+            Array.from(mapa.entries()).forEach(([m,v]) => { msg += `${m}: ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}\n`; });
+            msg += `\nTotal: ${(Array.from(mapa.values()).reduce((s,x)=>s+(x||0),0)).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+            showToast(msg, 'info');
+        }
+
+        // Verificar divergência entre soma do Cadastro Financeiro e soma do Cadastro de Objetos
+        function verificarDivergenciaFinanceiroObjetos() {
+            const el = document.getElementById('divergenciaFinanceiroAlert');
+            if (!el || !window.tedSelecionado) return;
+            const financeTotal = financeirosVigentes(window.tedSelecionado).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+            const objetosTotal = (window.tedSelecionado.objetos || []).reduce((s,o)=>s+(parseFloat(o.valorTotal)||0),0);
+            const diff = financeTotal - objetosTotal;
+            if (Math.abs(diff) < 0.01) { el.style.display = 'none'; el.innerHTML = ''; return; }
+            el.style.display = 'block';
+            el.innerHTML = `⚠️ <strong>Divergência detectada:</strong> Cadastro Financeiro ${financeTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} → Cadastro de Objetos ${objetosTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} → Diferença ${diff.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+        }
+
+        // Editar valor da Execução Física
+        function editarValorExecFisica(objeto, indiceMes) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            if (!window.tedSelecionado) return;
+            
+            // Calcular a data correspondente ao índice do mês
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                showToast('⚠️ Data de descentralização não definida', 'warning');
+                return;
+            }
+            
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + indiceMes);
+            const dataFormatada = d.toISOString().split('T')[0];
+            
+            // Buscar execuções existentes neste mês para este objeto
+            const execs = window.tedSelecionado.execFisicas || [];
+            const execsDoMes = execs.filter(e => {
+                if (!e.data || e.objeto !== objeto) return false;
+                const ed = new Date(e.data + 'T00:00:00');
+                const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
+                return diff === indiceMes;
+            });
+
+            const valorAtual = execsDoMes.reduce((s, e) => s + (parseFloat(e.qtde) || 0), 0);
+            const novoValor = prompt(`Editar quantidade entregue de "${objeto}" em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:\n\nValor atual: ${valorAtual}\nDigite o novo valor:`, valorAtual);
+            if (novoValor === null) return;
+            const qtde = parseFloat(novoValor);
+            if (isNaN(qtde) || qtde < 0) {
+                showToast('⚠️ Valor inválido', 'warning');
+                return;
+            }
+
+            // coletar NF(s) existentes para este mês
+            const existingNFs = Array.from(new Set(execsDoMes.map(e => (e.nf || '').toString()).filter(Boolean))).join(', ');
+            const novoNf = prompt(`Número da NF (opcional) para ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}:`, existingNFs || '');
+
+            // Remover execuções antigas deste mês/objeto
+            window.tedSelecionado.execFisicas = execs.filter(e => {
+                if (!e.data || e.objeto !== objeto) return true;
+                const ed = new Date(e.data + 'T00:00:00');
+                const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
+                return diff !== indiceMes;
+            });
+
+            // Adicionar nova execução se valor > 0
+            if (qtde > 0) {
+                window.tedSelecionado.execFisicas.push({
+                    id: Date.now(),
+                    objeto: objeto,
+                    qtde: qtde,
+                    data: dataFormatada,
+                    nf: (novoNf || '').toString()
+                });
+            }
+            
+            salvarDados();
+            atualizarTabelaExecFisica();
+        }
+
+        // Editar valor da Execução Financeira
+        function editarValorExecFinanceira(nd, up, indiceMes) {
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            if (!window.tedSelecionado) return;
+            
+            // Calcular a data correspondente ao índice do mês
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                showToast('⚠️ Data de descentralização não definida', 'warning');
+                return;
+            }
+            
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + indiceMes);
+
+            // Buscar execuções existentes neste mês para este ND/UP
+            const execs = window.tedSelecionado.execFinanceiras || [];
+            const execsDoMes = execs.filter(e => {
+                if (!e.data) return false;
+                if (String(e.nd || e.numero) !== nd || String(e.up || e.ug) !== up) return false;
+                const ed = new Date(e.data + 'T00:00:00');
+                const diff = (ed.getFullYear() - startDate.getFullYear()) * 12 + (ed.getMonth() - startDate.getMonth());
+                return diff === indiceMes;
+            });
+            
+            const valorAtual = execsDoMes.reduce((s, e) => s + (parseFloat(e.valor || e.valorRealizado) || 0), 0);
+            // Exibir detalhes dos lançamentos (NC, valor e data) para este ND/UP no mês
+            if (!execsDoMes || execsDoMes.length === 0) {
+                showToast(`Nenhum lançamento encontrado para ND: ${nd} / UP: ${up} em ${d.toLocaleDateString('pt-BR', {month: 'short', year: 'numeric'})}.`, 'info');
+                return;
+            }
+            // Formatter DD-MMM-AAAA (meses em PT-BR abreviados maiúsculos)
+            const mesesPt = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            function formatDateDDMMM(dStr) {
+                if (!dStr) return '';
+                try {
+                    const dt = new Date(dStr + 'T00:00:00');
+                    if (isNaN(dt.getTime())) return dStr;
+                    const dd = String(dt.getDate()).padStart(2,'0');
+                    const m = mesesPt[dt.getMonth()] || (dt.toLocaleString('pt-BR',{month:'short'}).toUpperCase());
+                    const yyyy = dt.getFullYear();
+                    return `${dd}-${m}-${yyyy}`;
+                } catch(e) { return dStr; }
+            }
+
+            const linhas = [];
+            execsDoMes.forEach(e => {
+                const val = parseFloat(e.valor || e.valorRealizado) || 0;
+                if (e.origens && Array.isArray(e.origens) && e.origens.length) {
+                    e.origens.forEach(o => {
+                        linhas.push({
+                            nc: o.nc || (e.numero || e.nd || nd) || '-',
+                            valor: parseFloat(o.valor) || 0,
+                            data: formatDateDDMMM(o.data || e.data || '')
+                        });
+                    });
+                } else {
+                    linhas.push({
+                        nc: e.numero || e.nd || nd || '-',
+                        valor: val,
+                        data: formatDateDDMMM(e.data || '')
+                    });
+                }
+            });
+            abrirModalLancamentos(
+                `Lançamentos — ND: ${nd} / UP: ${up}`,
+                `Mês: ${d.toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}`,
+                linhas
+            );
+        }
+
+        // Modal de Lançamentos (Execução Financeira / Recursos Gerais)
+        // opcoes.onExcluir(indice) — quando informado, cada linha ganha um botão de exclusão.
+        // Sem ele o modal fica idêntico ao de antes (Execução Financeira agrega origens[],
+        // que não são deletáveis individualmente).
+        function abrirModalLancamentos(titulo, subtitulo, linhas, opcoes) {
+            opcoes = opcoes || {};
+            // Mesma regra de gravação do salvarDados(): o gate por [onclick*=...] não alcança
+            // estas linhas, que são injetadas depois da varredura do DOM.
+            const _role = window.currentUserProfile && window.currentUserProfile.role;
+            const podeExcluir = typeof opcoes.onExcluir === 'function' && (_role === 'admin' || _role === 'editor');
+            document.getElementById('modalLancamentosTitulo').textContent = titulo;
+
+            // Linhas iguais em NC+valor+data são o mesmo lançamento contado duas vezes
+            const contagem = {};
+            linhas.forEach(l => {
+                const k = l.nc + '|' + l.valor + '|' + l.data;
+                contagem[k] = (contagem[k] || 0) + 1;
+            });
+            const repetidas = linhas.filter(l => contagem[l.nc + '|' + l.valor + '|' + l.data] > 1).length;
+
+            const sub = document.getElementById('modalLancamentosSubtitulo');
+            sub.textContent = subtitulo;
+            if (repetidas > 0) {
+                const aviso = document.createElement('div');
+                aviso.style.cssText = 'margin-top:6px;color:#E24B4A;font-weight:500;';
+                aviso.textContent = '⚠️ ' + repetidas + ' linha(s) com NC, valor e data repetidos — o total abaixo está inflado.';
+                sub.appendChild(aviso);
+            }
+
+            const thAcoes = document.getElementById('modalLancamentosThAcoes');
+            const tfAcoes = document.getElementById('modalLancamentosTfAcoes');
+            if (thAcoes) thAcoes.style.display = podeExcluir ? '' : 'none';
+            if (tfAcoes) tfAcoes.style.display = podeExcluir ? '' : 'none';
+
+            const tbody = document.getElementById('modalLancamentosBody');
+            const total = linhas.reduce((s, l) => s + l.valor, 0);
+            tbody.innerHTML = linhas.map((l, i) => {
+                const dup = contagem[l.nc + '|' + l.valor + '|' + l.data] > 1;
+                const acao = podeExcluir
+                    ? `<td style="text-align:center;"><button type="button" data-lanc-idx="${i}" title="Excluir este lançamento" style="border:none;background:transparent;color:#E24B4A;cursor:pointer;font-size:14px;">✕</button></td>`
+                    : '';
+                return `
+                <tr${dup ? ' style="background:rgba(226,75,74,0.07);"' : ''}>
+                    <td style="text-align:center;">${l.nc}</td>
+                    <td style="text-align:right;">${l.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="text-align:center;">${l.data}</td>
+                    ${acao}
+                </tr>`;
+            }).join('');
+
+            if (podeExcluir) {
+                tbody.querySelectorAll('[data-lanc-idx]').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        opcoes.onExcluir(parseInt(btn.getAttribute('data-lanc-idx'), 10));
+                    });
+                });
+            }
+
+            document.getElementById('modalLancamentosTotal').textContent = total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            const backdrop = document.getElementById('modalLancamentosBackdrop');
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+        }
+
+        function fecharModalLancamentos() {
+            const backdrop = document.getElementById('modalLancamentosBackdrop');
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
+        }
+
+        // Fechar Modal
+        function fecharModal(event) {
+            if (event && event.target !== document.getElementById('modalDetalhes')) return;
+            document.getElementById('modalDetalhes').classList.remove('active');
+        }
+
+        // Logout
+        // Função logout substituída por doLogout() no bloco de login helpers
+
+        // =============================================
+        // FUN→.ES DE ATUALIZA→fO EM CASCATA
+        // =============================================
+
+        // Recalcular meses de metas, físicos e financeiros com base na 1ª descentralização
+        function recalcularMesesBaseadosEmDescentralizacao() {
+            if (!window.tedSelecionado) return;
+            const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
+            if (!dataDesc) return;
+            const startDate = new Date(dataDesc + 'T00:00:00');
+            if (isNaN(startDate.getTime())) return;
+
+            // Recalcular metas
+            (window.tedSelecionado.metas || []).forEach(m => {
+                const mI = parseInt(m.mInicio);
+                const mF = parseInt(m.mFinal);
+                if (!isNaN(mI)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mI);
+                    m.mesInicio = d.getMonth() + 1;
+                    m.anoInicio = d.getFullYear();
+                }
+                if (!isNaN(mF)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mF);
+                    m.mesFinal = d.getMonth() + 1;
+                    m.anoFinal = d.getFullYear();
+                }
+            });
+
+            // Recalcular físicos
+            (window.tedSelecionado.fisicos || []).forEach(f => {
+                const mI = parseInt(f.mInicio);
+                const mF = parseInt(f.mFinal);
+                if (!isNaN(mI)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mI);
+                    f.mesInicio = d.getMonth() + 1;
+                    f.anoInicio = d.getFullYear();
+                }
+                if (!isNaN(mF)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mF);
+                    f.mesFinal = d.getMonth() + 1;
+                    f.anoFinal = d.getFullYear();
+                }
+            });
+
+            // Recalcular financeiros (mesDesc/anoDesc a partir de M)
+            (window.tedSelecionado.financeiros || []).forEach(fin => {
+                const m = parseInt(fin.m);
+                if (!isNaN(m)) {
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + m);
+                    fin.mesDesc = d.getMonth() + 1;
+                    fin.anoDesc = d.getFullYear();
+                }
+            });
+        }
+
+        // =============================================
+        // RECURSOS GERAIS IMBEL (Tesouro Gerencial)
+        // =============================================
+        // Mesma lógica da Execução Financeira, porém agrupado somente por ND (sem UP)
+
+        window.filtrosRecGeral = { nd: [] };
+
+        function atualizarOpcoesRecGeral() {
+            const selectND = document.getElementById('modalRecGeralND');
+            if (!selectND) return;
+            if (!window.tedSelecionado) {
+                selectND.innerHTML = '<option value="">-- Selecione um TED --</option>';
+                return;
+            }
+            const cad = window.tedSelecionado.financeiros || [];
+            if (!cad.length) {
+                selectND.innerHTML = '<option value="">-- Sem cadastro financeiro --</option>';
+                return;
+            }
+            const ndsUnicos = Array.from(new Set(cad.map(f => f.numero))).sort((a,b) => {
+                const nA = parseFloat(String(a).replace(/[^0-9.-]/g,''));
+                const nB = parseFloat(String(b).replace(/[^0-9.-]/g,''));
+                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                return String(a).localeCompare(String(b), undefined, {numeric:true});
+            });
+            selectND.innerHTML = '<option value="">-- Selecione ND --</option>' +
+                ndsUnicos.map(nd => `<option value="${nd}">${nd}</option>`).join('');
+        }
+
+        //"?"? Modal Recursos Gerais IMBEL"?"?
+        function abrirModalRecGeral() {
+            if (!window.tedSelecionado) { showToast('⚠️ Selecione um TED primeiro!', 'warning'); return; }
+            if (window._readOnlyMode) { showToast('Modo leitura: faça login como admin para editar.', 'warning'); return; }
+            const backdrop = document.getElementById('modalRecGeralBackdrop');
+            const errEl = document.getElementById('modalRecGeralError');
+            errEl.textContent = ''; errEl.classList.remove('open');
+            atualizarOpcoesRecGeral();
+            document.getElementById('modalRecGeralND').value = '';
+            document.getElementById('modalRecGeralNC').value = '';
+            document.getElementById('modalRecGeralValor').value = '';
+            document.getElementById('modalRecGeralData').value = '';
+            backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden', 'false');
+            setTimeout(() => document.getElementById('modalRecGeralND').focus(), 80);
+        }
+
+        function fecharModalRecGeral() {
+            const b = document.getElementById('modalRecGeralBackdrop');
+            b.classList.remove('open'); b.setAttribute('aria-hidden', 'true');
+        }
+
+        function salvarModalRecGeral() {
+            const errEl = document.getElementById('modalRecGeralError');
+            const ndRaw = document.getElementById('modalRecGeralND').value.trim();
+            const nd = String(ndRaw).replace(/[^0-9.\-]/g, '').trim();
+            const nc = (document.getElementById('modalRecGeralNC')?.value || '').trim();
+            const valor = parseNumber(document.getElementById('modalRecGeralValor').value);
+            const data = document.getElementById('modalRecGeralData').value;
+
+            if (!nd || isNaN(valor) || !data) {
+                errEl.textContent = '⚠️ Preencha todos os campos (ND, Valor e Data)'; errEl.classList.add('open'); return;
+            }
+
+            window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
+            window.tedSelecionado.recursosGerais.push({ id: Date.now(), nd, nc, valor, data });
+            salvarDados();
+            atualizarTabelaRecursosGerais();
+            showToast('Recurso Geral adicionado com sucesso!', 'success');
+            fecharModalRecGeral();
+        }
+
+        function adicionarRecursoGeral() { abrirModalRecGeral(); }
+
+        // Exclui UM lançamento pelo índice no array. A versão anterior filtrava por ND+data e
+        // apagava todos os lançamentos daquela ND naquele dia de uma vez, o que impedia
+        // remover uma única NC duplicada sem levar junto as demais NCs da mesma data.
+        function removerRecursoGeralPorIndice(indice) {
+            if (!window.tedSelecionado) return;
+            const recs = window.tedSelecionado.recursosGerais || [];
+            if (indice < 0 || indice >= recs.length) return;
+            recs.splice(indice, 1);
+            try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
+            atualizarTabelaRecursosGerais();
+        }
+
+        function editarValorRecursoGeral(nd, indiceMes) {
+            if (!window.tedSelecionado) return;
+
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
+            } else {
+                showToast('⚠️ Data de descentralização não definida', 'warning');
+                return;
+            }
+
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + indiceMes);
+
+            const recs = window.tedSelecionado.recursosGerais || [];
+            const ndNorm = normalizarND(nd);
+            // Carrega o índice no array de origem para permitir excluir o registro exato
+            const recsDoMes = recs.map((r, i) => ({ r, i })).filter(({ r }) => {
+                if (!r.data || normalizarND(r.nd) !== ndNorm) return false;
+                const rd = new Date(r.data + 'T00:00:00');
+                const diff = (rd.getFullYear() - startDate.getFullYear()) * 12 + (rd.getMonth() - startDate.getMonth());
+                return diff === indiceMes;
+            });
+
+            if (!recsDoMes.length) {
+                showToast(`Nenhum lançamento encontrado para ND: ${nd} em ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}.`, 'info');
+                return;
+            }
+
+            const mesesPt = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            function formatDateDDMMM(dataStr) {
+                if (!dataStr) return '';
+                const dt = new Date(dataStr + 'T00:00:00');
+                if (isNaN(dt.getTime())) return dataStr;
+                const dd = String(dt.getDate()).padStart(2, '0');
+                const mmm = mesesPt[dt.getMonth()] || '---';
+                const yyyy = dt.getFullYear();
+                return `${dd}-${mmm}-${yyyy}`;
+            }
+
+            const linhas = recsDoMes.map(({ r }) => ({
+                nc: (r.nc || r.NC || '').toString().trim() || '-',
+                valor: parseFloat(r.valor) || 0,
+                data: formatDateDDMMM(r.data)
+            }));
+            abrirModalLancamentos(
+                `Recursos Gerais — ND: ${nd}`,
+                `Mês: ${d.toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'})}`,
+                linhas,
+                {
+                    onExcluir: (posicaoNoModal) => {
+                        const alvo = recsDoMes[posicaoNoModal];
+                        if (!alvo) return;
+                        confirmarAcao(
+                            'Excluir o lançamento da NC ' + (linhas[posicaoNoModal].nc) + ' no valor de ' +
+                            linhas[posicaoNoModal].valor.toLocaleString('pt-BR', {minimumFractionDigits: 2}) + '?',
+                            function() {
+                                removerRecursoGeralPorIndice(alvo.i);
+                                fecharModalLancamentos();
+                                editarValorRecursoGeral(nd, indiceMes);
+                            },
+                            'Excluir lançamento'
+                        );
+                    }
+                }
+            );
+        }
+
+        function popularFiltrosRecGeral() {
+            if (!window.tedSelecionado) return;
+            const recs = window.tedSelecionado.recursosGerais || [];
+            const cad = window.tedSelecionado.financeiros || [];
+            // Agrupar por ND normalizada, preferindo formato com pontos do cadastro
+            const ndMap = {};
+            cad.forEach(f => {
+                const norm = normalizarND(f.numero);
+                if (norm && !ndMap[norm]) ndMap[norm] = String(f.numero || '');
+            });
+            recs.forEach(r => {
+                const norm = normalizarND(r.nd);
+                if (norm && !ndMap[norm]) ndMap[norm] = String(r.nd || '');
+            });
+            const nds = Object.values(ndMap).filter(Boolean).sort((a, b) => {
+                const nA = parseFloat(String(a).replace(/[^0-9]/g, ''));
+                const nB = parseFloat(String(b).replace(/[^0-9]/g, ''));
+                if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                return String(a).localeCompare(String(b), undefined, {numeric: true});
+            });
+            popularMenuFiltroRecGeral('filterNdRecGeralMenu', nds);
+        }
+
+        function popularMenuFiltroRecGeral(menuId, valores) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            const selecionados = window.filtrosRecGeral.nd || [];
+            let html = '';
+            valores.forEach(v => {
+                const checked = selecionados.includes(v) ? 'checked' : '';
+                html += `<label onclick="event.stopPropagation()"><input type="checkbox" value="${v}" ${checked} onchange="onFiltroRecGeralChange('${v}', this.checked, event)">${v}</label>`;
+            });
+            html += `<button class="filter-clear-btn" onclick="limparFiltroRecGeral()">Limpar</button>`;
+            menu.innerHTML = html;
+        }
+
+        function onFiltroRecGeralChange(valor, checked, event) {
+            if (event) event.stopPropagation();
+            if (checked) {
+                if (!window.filtrosRecGeral.nd.includes(valor)) window.filtrosRecGeral.nd.push(valor);
+            } else {
+                window.filtrosRecGeral.nd = window.filtrosRecGeral.nd.filter(v => v !== valor);
+            }
+            const menuAberto = document.querySelector('.filter-menu.open');
+            const menuAbertoId = menuAberto ? menuAberto.id : null;
+            atualizarLabelFiltro('recGeral', 'nd');
+            atualizarTabelaRecursosGerais();
+            if (menuAbertoId) {
+                const m = document.getElementById(menuAbertoId);
+                if (m) m.classList.add('open');
+            }
+        }
+
+        function limparFiltroRecGeral() {
+            window.filtrosRecGeral.nd = [];
+            atualizarTabelaRecursosGerais();
+            popularFiltrosRecGeral();
+        }
+
+        // Limpar todos os filtros da Execução Financeira (ND + UP)
+        function limparTodosFiltrosExecFin() {
+            window.filtrosExecFin = { nd: [], up: [] };
+            // Limpar checkboxes do menu
+            try { _syncSelectExecFinToMenu(); } catch(e) {}
+            // Atualizar labels e tabela
+            try { atualizarLabelFiltro('execFin', 'nd'); } catch(e) {}
+            try { atualizarLabelFiltro('execFin', 'up'); } catch(e) {}
+            try { atualizarOpcoesExecFinanceira(); } catch(e) {}
+            try { atualizarTabelaExecFinanceira(); } catch(e) {}
+        }
+
+        // Limpar todos os filtros da Recursos Gerais (ND)
+        function limparTodosFiltrosRecGeral() {
+            window.filtrosRecGeral = { nd: [] };
+            try { _syncSelectRecGeralToMenu(); } catch(e) {}
+            try { atualizarLabelFiltro('recGeral', 'nd'); } catch(e) {}
+            try { popularFiltrosRecGeral(); } catch(e) {}
+            try { atualizarTabelaRecursosGerais(); } catch(e) {}
+        }
+
+        function atualizarTabelaRecursosGerais() {
+            const tbody   = document.getElementById('tabelaRecursosGerais');
+            const tableEl = document.getElementById('tabelaRecursosGeraisTable');
+            if (!tbody || !tableEl) return;
+
+            try { popularFiltrosRecGeral(); } catch(e) {}
+
+            if (!window.tedSelecionado) {
+                tbody.innerHTML = '<tr><td colspan="67" style="text-align:center;padding:1rem;">Selecione um TED</td></tr>';
+                return;
+            }
+
+            const fmtBR = (v) => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+            // ND category (extend para invest2 = 44.91.xx)
+            const ndCat = (nd) => {
+                const s = String(nd||'').replace(/\D/g,'');
+                if (s.startsWith('4491')) return 'invest2';
+                if (s.startsWith('44'))   return 'invest';
+                if (s.startsWith('33'))   return 'custeio';
+                return 'outros';
+            };
+
+            // Timeline 60 meses
+            let startDate;
+            if (window.tedSelecionado.primeiraDescentralizacao) {
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao+'T00:00:00');
+            } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
+                startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc-1, 1);
+            } else {
+                startDate = new Date();
+            }
+
+            const today = new Date();
+            // `cad` (SOMAS) considera só lançamentos vigentes — ver nota em
+            // atualizarTabelaExecFinanceira. `cadTodos` (chaves/anos/ND) inclui as
+            // suprimidas para não sumir NDs que ainda têm Recursos Gerais lançados.
+            const cadTodos = window.tedSelecionado.financeiros    || [];
+            const cad      = financeirosVigentes(window.tedSelecionado);
+            const recs     = window.tedSelecionado.recursosGerais || [];
+
+            // Anos com dados (para detectar anos futuros)
+            const anosComDados = new Set();
+            cadTodos.forEach(f  => { const a=parseInt(f.anoDesc,10); if(!isNaN(a)) anosComDados.add(a); });
+            recs.forEach(r => { if(!r.data) return; anosComDados.add(new Date(r.data+'T00:00:00').getFullYear()); });
+
+            const meses = [];
+            for (let i=0; i<60; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth()+i);
+                const mesLabel = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
+                const ano2 = String(d.getFullYear()).slice(-2);
+                meses.push({
+                    label: `${mesLabel}/${ano2}`,
+                    ano: d.getFullYear(), mes: d.getMonth()+1,
+                    isCurrent: d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth(),
+                    isFuture: !anosComDados.has(d.getFullYear()),
+                });
+            }
+            const seenAnos = new Set();
+            meses.forEach(m => { m.isFirstOfYear = !seenAnos.has(m.ano); seenAnos.add(m.ano); });
+
+            const anos = [];
+            meses.forEach(m => {
+                if (!anos.length || anos[anos.length-1].ano!==m.ano) anos.push({ano:m.ano,count:1});
+                else anos[anos.length-1].count++;
+            });
+
+            const monthsExpanded = document.getElementById('toggle-months-recGeral')?.getAttribute('data-expanded')==='1';
+
+            // ── Reconstruir thead ────────────────────────────────────────────
+            const thead = tableEl.querySelector('thead');
+            while (thead.rows.length>0) thead.deleteRow(0);
+
+            const colFixas = 4; // ND VP VR Saldo
+
+            const fixedCols = [
+                {label:'ND',              cls:'rg-col-nd col-sticky'},
+                {label:'Valor Previsto',  cls:'rg-col-vprev'},
+                {label:'Valor Realizado', cls:'rg-col-vreal'},
+                {label:'Saldo',           cls:'rg-col-saldo'},
+            ];
+
+            const tr1 = thead.insertRow();
+            fixedCols.forEach(c => {
+                const th = document.createElement('th');
+                th.className = c.cls;
+                th.textContent = c.label;
+                th.rowSpan = 2;
+                tr1.appendChild(th);
+            });
+            anos.forEach(a => {
+                const th = document.createElement('th');
+                th.colSpan = a.count;
+                th.className = 'month-col-recGeral year-group' + (a.isFuture || !anosComDados.has(a.ano) ? ' future' : '');
+                th.textContent = String(a.ano);
+                if (!monthsExpanded) th.style.display = 'none';
+                tr1.appendChild(th);
+            });
+            const tr2 = thead.insertRow();
+            tr2.className = 'header-meses';
+            if (!monthsExpanded) tr2.style.display = 'none';
+            meses.forEach(m => {
+                const th = document.createElement('th');
+                let cls = 'month-col-recGeral month-col';
+                if (m.isFirstOfYear) cls += ' first';
+                if (m.isCurrent)     cls += ' current';
+                if (m.isFuture)      cls += ' future';
+                th.className = cls;
+                th.textContent = m.label;
+                tr2.appendChild(th);
+            });
+
+            // ── Reconstruir colgroup ─────────────────────────────────────────
+            {
+                let cg = tableEl.querySelector('colgroup');
+                if (!cg) { cg=document.createElement('colgroup'); tableEl.prepend(cg); }
+                cg.innerHTML='';
+                ['rg-col-nd','rg-col-vprev','rg-col-vreal','rg-col-saldo']
+                    .forEach(cls=>{ const col=document.createElement('col'); col.className=cls; cg.appendChild(col); });
+                if (monthsExpanded) meses.forEach(()=>{ const col=document.createElement('col'); col.className='month-col-recGeral'; col.style.minWidth='110px'; cg.appendChild(col); });
+                tableEl.style.tableLayout = monthsExpanded ? 'auto' : 'fixed';
+            }
+
+            // ── Dados ────────────────────────────────────────────────────────
+            const ndDisplayMap = {};
+            cadTodos.forEach(f  => { const n=normalizarND(f.numero); if(n&&!ndDisplayMap[n]) ndDisplayMap[n]=formatarNDComPontos(n); });
+            recs.forEach(r => { const n=normalizarND(r.nd);     if(n&&!ndDisplayMap[n]) ndDisplayMap[n]=formatarNDComPontos(n); });
+
+            const ndsNormSet = new Set(Object.keys(ndDisplayMap));
+
+            if (ndsNormSet.size===0) {
+                tbody.innerHTML='<tr><td colspan="67" style="text-align:center;padding:1rem;">Nenhum dado financeiro</td></tr>';
+                _recgeralRenderKpis(null); return;
+            }
+
+            const filtros = window.filtrosRecGeral||{nd:[]};
+            const ndsFiltrados = Array.from(ndsNormSet).filter(ndNorm => {
+                if (filtros.nd.length) { const fn=filtros.nd.map(f=>normalizarND(f)); if(!fn.includes(ndNorm)) return false; }
+                return true;
+            });
+
+            if (ndsFiltrados.length===0) {
+                tbody.innerHTML='<tr><td colspan="67" style="text-align:center;padding:1rem;">Nenhum dado com os filtros aplicados</td></tr>';
+                _recgeralRenderKpis(null); return;
+            }
+
+            const sortedNDs = [...ndsFiltrados].sort((a,b)=>{
+                const nA=parseFloat(String(a).replace(/[^0-9]/g,'')), nB=parseFloat(String(b).replace(/[^0-9]/g,''));
+                return (!isNaN(nA)&&!isNaN(nB)) ? nA-nB : String(a).localeCompare(String(b),undefined,{numeric:true});
+            });
+
+            let totalPrevisto=0, totalRealizado=0;
+            const totalMeses=new Map();
+            const previstoByAno={}, recebidoByAno={}, devolvidoByAno={};
+
+            // Agrupar previsto por ano
+            cad.forEach(f => {
+                const ndNorm=normalizarND(f.numero);
+                if(ndsFiltrados.length&&!ndsFiltrados.includes(ndNorm)) return;
+                const ano=parseInt(f.anoDesc,10);
+                if(!isNaN(ano)) previstoByAno[ano]=(previstoByAno[ano]||0)+(parseFloat(f.valor)||0);
+            });
+            // Agrupar recebido/devolvido por ano
+            recs.forEach(r => {
+                const ndNorm=normalizarND(r.nd);
+                if(ndsFiltrados.length&&!ndsFiltrados.includes(ndNorm)) return;
+                if(!r.data) return;
+                const ano=new Date(r.data+'T00:00:00').getFullYear(); if(isNaN(ano)) return;
+                const valor=parseFloat(r.valor)||0;
+                if(valor>0) recebidoByAno[ano]=(recebidoByAno[ano]||0)+valor;
+                if(valor<0) devolvidoByAno[ano]=(devolvidoByAno[ano]||0)+valor;
+            });
+
+            const linhas = sortedNDs.map(ndNorm => {
+                const ndDisplay = ndDisplayMap[ndNorm]||ndNorm;
+                const previsto  = cad.filter(f=>normalizarND(f.numero)===ndNorm).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                const recsList  = recs.filter(r=>normalizarND(r.nd)===ndNorm);
+                const realizado = recsList.reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+                const saldo     = previsto-realizado;
+
+                totalPrevisto+=previsto; totalRealizado+=realizado;
+
+                const mapaMes=new Map();
+                recsList.forEach(r => {
+                    if(!r.data) return;
+                    const rd=new Date(r.data+'T00:00:00');
+                    const diff=(rd.getFullYear()-startDate.getFullYear())*12+(rd.getMonth()-startDate.getMonth());
+                    if(diff>=0&&diff<60) mapaMes.set(diff,(mapaMes.get(diff)||0)+(parseFloat(r.valor)||0));
+                });
+                mapaMes.forEach((v,i)=>totalMeses.set(i,(totalMeses.get(i)||0)+v));
+
+                const saldoCls = saldo>0.01?'alert':(Math.abs(saldo)<0.01?'ok':'neg');
+                const ndTag    = `<span class="rg-nd-tag ${ndCat(ndNorm)}">${ndDisplay}</span>`;
+
+                let html = `<tr>`+
+                    `<td class="rg-col-nd col-sticky">${ndTag}</td>`+
+                    `<td class="rg-col-vprev"><span class="rg-val previsto">${fmtBR(previsto)}</span></td>`+
+                    `<td class="rg-col-vreal"><span class="rg-val realizado">${fmtBR(realizado)}</span></td>`+
+                    `<td class="rg-col-saldo"><span class="rg-val saldo ${saldoCls}">${fmtBR(saldo)}</span></td>`;
+
+                if (monthsExpanded) {
+                    meses.forEach((m,i) => {
+                        const val=mapaMes.get(i);
+                        let cls='month-cell month-col-recGeral';
+                        if(m.isFirstOfYear) cls+=' first';
+                        if(m.isCurrent)     cls+=' current';
+                        if(m.isFuture)      cls+=' future';
+                        if(val>0.005)        cls+=' has-value';
+                        if(val<-0.005)       cls+=' has-value neg';
+                        const display=val?fmtBR(val):'';
+                        html+=`<td class="${cls}" onclick="editarValorRecursoGeral('${ndDisplay}',${i})" title="Clique para ver detalhes">${display}</td>`;
+                    });
+                }
+                html+='</tr>';
+                return html;
+            }).join('');
+
+            // ── Linha TOTAL ──────────────────────────────────────────────────
+            const totalSaldo=totalPrevisto-totalRealizado;
+            const tSaldoCls=totalSaldo>0.01?'alert':(Math.abs(totalSaldo)<0.01?'ok':'neg');
+            let totalRow=`<tr class="rg-total-row">`+
+                `<td class="rg-col-nd col-sticky">TOTAL</td>`+
+                `<td class="rg-col-vprev"><span class="rg-val previsto">${fmtBR(totalPrevisto)}</span></td>`+
+                `<td class="rg-col-vreal"><span class="rg-val realizado">${fmtBR(totalRealizado)}</span></td>`+
+                `<td class="rg-col-saldo"><span class="rg-val saldo ${tSaldoCls}">${fmtBR(totalSaldo)}</span></td>`;
+            if (monthsExpanded) {
+                meses.forEach((m,idx) => {
+                    const val=totalMeses.get(idx);
+                    let cls='month-cell month-col-recGeral';
+                    if(m.isFirstOfYear) cls+=' first';
+                    if(m.isCurrent)     cls+=' current';
+                    if(m.isFuture)      cls+=' future';
+                    if(val>0.005)        cls+=' has-value';
+                    if(val<-0.005)       cls+=' has-value neg';
+                    totalRow+=`<td class="${cls}">${val?fmtBR(val):''}</td>`;
+                });
+            }
+            totalRow+='</tr>';
+
+            // ── Linhas consolidadas ──────────────────────────────────────────
+            const anosOrdem=anos.map(a=>a.ano);
+            const saldoAtualByAno={}, aReceberAnteriorByAno={};
+            anosOrdem.forEach((ano,idx) => {
+                saldoAtualByAno[ano]=(recebidoByAno[ano]||0)+(devolvidoByAno[ano]||0);
+                if(idx===0) { aReceberAnteriorByAno[ano]=0; }
+                else {
+                    const anoPrev=anosOrdem[idx-1];
+                    aReceberAnteriorByAno[ano]=(previstoByAno[anoPrev]||0)+(aReceberAnteriorByAno[anoPrev]||0)-(saldoAtualByAno[anoPrev]||0);
+                }
+            });
+
+            const anoAtual=today.getFullYear();
+            const consHl = consHlEstilo;
+            const consYearCells=(calcFn,colorFn,cellStyle)=>anos.map(a=>{
+                if(!monthsExpanded) return '';
+                const val=calcFn(a.ano);
+                const isFut=!anosComDados.has(a.ano);
+                const isCurr=a.ano===anoAtual;
+                let cls='year-total month-col-recGeral';
+                if(isCurr)  cls+=' year-current';
+                if(isFut)   cls+=' future';
+                const colorCls=colorFn?colorFn(val):(val<-0.01?'neg':val===0?'zero':'');
+                if(colorCls) cls+=` ${colorCls}`;
+                return `<td colspan="${a.count}" class="${cls}"${cellStyle?` style="${cellStyle}"`:''}>R$ ${fmtBR(val)}</td>`;
+            }).join('');
+
+            const fmlRg=(s)=>`<span class="ra-formula">${s}</span>`;
+            const consRowRg=(tipo,icon,label,formula,calcFn,colorFn,negative)=>{
+                const totalVal=anosOrdem.reduce((s,ano)=>s+(calcFn(ano)||0),0);
+                const v=negative?-totalVal:totalVal;
+                const colorCls=colorFn?colorFn(v):'';
+                const disp=negative&&totalVal>0?`−R$ ${fmtBR(totalVal)}`:`R$ ${fmtBR(totalVal)}`;
+                const hl=consHl(tipo);
+                const hlAttr=hl?` style="${hl}"`:'';
+                const monthCells=monthsExpanded?consYearCells(calcFn,colorFn,hl):'';
+                return `<tr class="cons ${tipo}">`+
+                    `<td class="label-cell ra-td-label" colspan="${colFixas}"${hlAttr}>`+
+                        `<i data-lucide="${icon}" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>`+
+                        `<span>${label}</span>`+
+                        (formula?fmlRg(formula):'')+
+                    `</td>`+
+                    (monthsExpanded?monthCells:'')+
+                    `</tr>`;
+            };
+
+            const rowPrevistoAnualRg   = consRowRg('previsto',  'calendar',          'Previsto Anual',       '',                     (a)=>previstoByAno[a]||0);
+            const rowReceberAnteriorRg = consRowRg('areceber',  'arrow-left',        'A Receber (ano ant.)', 'carry-over',           (a)=>aReceberAnteriorByAno[a]||0, (v)=>v<-0.01?'neg':v===0?'zero':'');
+            const rowTotalAReceberRg   = consRowRg('total',     'sigma',             'Total a Receber',      'Prev + A Receber',     (a)=>(previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0));
+            const rowRecebidoAnualRg   = consRowRg('recebido',  'arrow-down-circle', 'Recebido Anual',       '',                     (a)=>recebidoByAno[a]||0, (v)=>v>0.01?'green':v===0?'zero':'');
+            const rowDevolvidoRg       = consRowRg('devolvido', 'arrow-up-circle',   'Devolvido / Recolhido','',                     (a)=>devolvidoByAno[a]||0, (v)=>v<-0.01?'neg':'zero', true);
+            const rowSaldoAnualRg      = consRowRg('saldo-row', 'minus-circle',      'Saldo Anual',          'Recebido − Devolvido', (a)=>saldoAtualByAno[a]||0);
+            const rowResultadoRg       = consRowRg('resultado', 'trending-up',       'Resultado',            'Total a Receber − Saldo',(a)=>((previstoByAno[a]||0)+(aReceberAnteriorByAno[a]||0)-(saldoAtualByAno[a]||0))*-1, (v)=>v<-0.01?'neg':v===0?'zero':'');
+
+            // Resumo consolidado integrado na tabela (valores de cada ano sob a coluna do ano).
+            tbody.innerHTML=linhas+totalRow+rowPrevistoAnualRg+rowReceberAnteriorRg+rowTotalAReceberRg+rowRecebidoAnualRg+rowDevolvidoRg+rowSaldoAnualRg+rowResultadoRg;
+
+            // ── KPIs ────────────────────────────────────────────────────────
+            try {
+                // Maior ND por previsto
+                let maiorNd='', maiorVal=0;
+                sortedNDs.forEach(ndNorm=>{
+                    const v=cad.filter(f=>normalizarND(f.numero)===ndNorm).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                    if(v>maiorVal){maiorVal=v;maiorNd=ndDisplayMap[ndNorm]||ndNorm;}
+                });
+                const pct=totalPrevisto>0?totalRealizado/totalPrevisto:0;
+                _recgeralRenderKpis({totalPrevisto,totalRealizado,totalSaldo,pct,maiorNd,maiorVal,nItens:recs.length,nNds:sortedNDs.length});
+            } catch(e){}
+
+            // Banner de insight removido
+
+            // ── Ajustar wrapper e table-layout ──────────────────────────────
+            try {
+                const btn=document.getElementById('toggle-months-recGeral');
+                const tbl=document.getElementById('tabelaRecursosGeraisTable');
+                const wrapper=document.getElementById('wrapperRecGeral');
+                const sec=btn?.closest('.detalhe-secao');
+                if(sec&&tbl){
+                    if(!monthsExpanded){
+                        tbl.style.minWidth='0'; tbl.style.width='auto'; tbl.style.tableLayout='auto';
+                        if(wrapper){wrapper.style.minWidth='';wrapper.style.width='';}
+                        sec.classList.add('cadFin-collapsed'); sec.classList.remove('months-expanded');
+                    } else {
+                        const nMeses=tbl.querySelectorAll('thead th.month-col').length||60;
+                        tbl.style.minWidth=(550+nMeses*82)+'px';
+                        tbl.style.width=''; tbl.style.tableLayout='fixed';
+                        if(wrapper){wrapper.style.minWidth='';wrapper.style.width='100%';}
+                        sec.classList.remove('cadFin-collapsed'); sec.classList.add('months-expanded');
+                    }
+                }
+            } catch(e){}
+
+            try { initLucideIcons(); } catch(e){}
+        }
+
+        function _recgeralRenderKpis(data) {
+            const container=document.getElementById('recgeral-kpis-container');
+            if(!container) return;
+            if(!data){ container.innerHTML=''; return; }
+            const {totalPrevisto,totalRealizado,totalSaldo,pct,maiorNd,maiorVal,nItens,nNds}=data;
+            const fmtBR=(v)=>(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+            const barW=Math.min(100,Math.max(0,(pct||0)*100)).toFixed(1);
+            container.innerHTML=`<div class="execfin-kpis" style="margin-bottom:14px;">
+              <div class="execfin-kpi lead-blue">
+                <div class="execfin-kpi-label">Previsto Total</div>
+                <div class="execfin-kpi-val"><span class="cur">R$</span>${fmtBR(totalPrevisto)}</div>
+                <div class="execfin-kpi-sub">${nItens} lançamento(s) · ${nNds} ND(s)</div>
+              </div>
+              <div class="execfin-kpi lead-green">
+                <div class="execfin-kpi-label">Realizado Total</div>
+                <div class="execfin-kpi-val green"><span class="cur">R$</span>${fmtBR(totalRealizado)}</div>
+                <div class="execfin-kpi-sub">${barW}% do previsto</div>
+                <div class="execfin-kpi-bar"><div class="execfin-kpi-bar-fill" style="width:${barW}%;background:#639922;"></div></div>
+              </div>
+              <div class="execfin-kpi lead-red">
+                <div class="execfin-kpi-label">Saldo a Receber</div>
+                <div class="execfin-kpi-val red"><span class="cur">R$</span>${fmtBR(totalSaldo)}</div>
+                <div class="execfin-kpi-sub">${(100-parseFloat(barW)).toFixed(1)}% pendente</div>
+              </div>
+              <div class="execfin-kpi lead-amber">
+                <div class="execfin-kpi-label">Maior ND</div>
+                <div class="execfin-kpi-val" style="font-size:14px;font-family:inherit;">${maiorNd}</div>
+                <div class="execfin-kpi-sub">R$ ${fmtBR(maiorVal)} previsto</div>
+              </div>
+            </div>`;
+        }
+
+        // Atualizar tabelas em cascata após alteração de dados
+        function atualizarTabelasEmCascata(origem) {
+            // origem pode ser: 'objetos', 'fisicos', 'metas', 'financeiros', 'execFisica', 'execFinanceira', 'recursosGerais', 'ted'
+            try {
+                if (origem === 'objetos' || origem === 'ted') {
+                    atualizarTabelaObjetos();
+                    atualizarOpcoesObjetoFisico();
+                    atualizarOpcoesObjetoExecFisica();
+                    atualizarTabelaFisicos();
+                    atualizarTabelaExecFisica();
+                    atualizarTabelaFinanceira();
+                }
+                if (origem === 'fisicos' || origem === 'ted') {
+                    atualizarTabelaFisicos();
+                    atualizarTabelaExecFisica();
+                }
+                if (origem === 'metas' || origem === 'ted') {
+                    atualizarTabelaMetas();
+                }
+                if (origem === 'financeiros' || origem === 'ted') {
+                    atualizarTabelaFinanceira();
+                }
+                if (origem === 'execFisica' || origem === 'ted') {
+                    atualizarTabelaExecFisica();
+                }
+                if (origem === 'execFinanceira' || origem === 'ted') {
+                    atualizarTabelaExecFinanceira();
+                }
+                if (origem === 'recursosGerais' || origem === 'ted') {
+                    atualizarTabelaRecursosGerais();
+                }
+                // Atualizar gráficos e dashboard
+                try { renderEntregasChart(window.tedSelecionado.id, 'entregasChartFull'); } catch(e) {}
+                try { atualizarDashboard(); } catch(e) {}
+            } catch (e) {
+                console.error('Erro em atualizarTabelasEmCascata:', e);
+            }
+        }
+
+        // Salvar Dados: persist all TEDs as individual documents in `teds` collection
+        // Flag para evitar salvamentos simultâneos
+        let _salvandoEmAndamento = false;
+        let _salvarDebounceTimer = null;
+        // Se um salvamento for solicitado enquanto outro está em andamento, não pode ser
+        // descartado silenciosamente — fica pendente e roda de novo ao final do atual.
+        let _salvarPendente = false;
+
+        // ── Escrita incremental (só os TEDs que mudaram) ────────────────────────────
+        // Antes, cada save reescrevia a coleção 'teds' INTEIRA (todos os docs) toda vez.
+        // Com vários usuários + autosave de 30s isso: (a) estourava a quota de escrita do
+        // Firestore e deixava os saves lentos → timeout "Erro ao salvar"; (b) fazia um
+        // cliente defasado sobrescrever TEDs que outro acabou de salvar. Agora comparamos
+        // cada TED com sua assinatura do último save bem-sucedido e só gravamos os que de
+        // fato mudaram (ou são novos). Exclusão de TED continua no caminho próprio
+        // (firestoreDeleteDoc em removerTedDaBase), não aqui.
+        // Metadados de controle de concorrência são gerenciados pelo servidor
+        // (firestoreBatchSetTedsGuarded). Precisam ficar FORA da assinatura: como o `_rev`
+        // muda a cada gravação, incluí-lo faria o TED parecer sempre "alterado" e o app
+        // entraria em laço de gravação contínua.
+        const _CAMPOS_META_REV = ['_rev', '_updatedAt', '_updatedBy'];
+        function _tedDocSignature(t) {
+            try {
+                if (!t || typeof t !== 'object') return JSON.stringify(t);
+                const copia = Object.assign({}, t);
+                _CAMPOS_META_REV.forEach(k => { delete copia[k]; });
+                return JSON.stringify(copia);
+            } catch (e) { return String(Math.random()); }
+        }
+        // Retorna { docs, sigs }: os TEDs a gravar E as assinaturas capturadas NO MESMO
+        // instante. Capturar as assinaturas aqui (antes do await do commit) é essencial:
+        // marcar como "salvo" o estado lido DEPOIS do await incluiria edições feitas pelo
+        // usuário DURANTE a gravação, que nunca foram enviadas — elas ficariam marcadas
+        // como persistidas e sumiriam no próximo reload (era a causa de "salvei e ao
+        // recarregar não estava lá").
+        function _computeTedsToWrite() {
+            const map = window._tedDocHashes || {};
+            const docs = [];
+            const sigs = {};
+            (dados.teds || []).forEach(t => {
+                if (t == null) return;
+                const sig = _tedDocSignature(t);
+                if (t.id == null) { docs.push(t); return; } // sem id: sempre grava (não dá pra rastrear)
+                const id = String(t.id);
+                if (map[id] !== sig) { docs.push(t); sigs[id] = sig; }
+            });
+            return { docs, sigs };
+        }
+        // Marca como salvo APENAS os docs efetivamente gravados (merge, não substituição).
+        function _commitTedHashesParciais(sigs) {
+            const map = window._tedDocHashes || (window._tedDocHashes = {});
+            Object.keys(sigs || {}).forEach(id => { map[id] = sigs[id]; });
+        }
+        // Reconstrói a linha-base inteira a partir do estado atual. Só é correto quando o
+        // estado local ACABOU de vir do servidor (carregarDoCloud) — nunca após um save.
+        function _rebuildTedHashes() {
+            const map = {};
+            (dados.teds || []).forEach(t => { if (t && t.id != null) map[String(t.id)] = _tedDocSignature(t); });
+            window._tedDocHashes = map;
+        }
+        // Exposto pra app.js resetar a linha-base logo após carregarDoCloud (dados
+        // recém-lidos do servidor não são "alteração pendente").
+        window._rebuildTedDocHashes = _rebuildTedHashes;
+        // Fonte única de verdade sobre "existe algo não gravado?". app.js usa isto no laço
+        // de autosave e na decisão de recarregar — comparar o array inteiro por JSON dava
+        // falso-positivo com campos derivados normalizados na renderização.
+        window._haAlteracoesPendentes = function() {
+            try {
+                if (_computeTedsToWrite().docs.length > 0) return true;
+                return JSON.stringify(dados.planosTrabalho || []) !== window._lastSavedPlanosSnapshot;
+            } catch (e) { return false; }
+        };
+
+        // Uma build ANTIGA rodando em qualquer máquina é perigosa num sistema multiusuário:
+        // o código velho lê do cache local (não vê alterações dos outros) e, ao salvar,
+        // regrava a coleção inteira com esse estado defasado — apagando do servidor o que
+        // outro usuário acabou de salvar. Bloquear a gravação nesse estado transforma uma
+        // perda silenciosa de dados numa mensagem clara. Só bloqueia com mismatch CONFIRMADO
+        // de versão (ver checkAppVersion em pwa.js); se a checagem não conseguiu rodar
+        // (offline/CORS), a flag não é setada e a gravação segue normal.
+        function _bloqueadoPorVersaoDesatualizada() {
+            if (!window._appDesatualizado) return false;
+            showToast('⚠️ Esta instalação está DESATUALIZADA e não pode salvar: gravar agora apagaria alterações de outros usuários. Atualize o aplicativo e tente de novo.', 'danger');
+            return true;
+        }
+
+        async function salvarDados() {
+            if (_bloqueadoPorVersaoDesatualizada()) return;
+            // Marca que houve pedido REAL de gravação (edição do usuário). O laço de
+            // segurança de 30s em app.js só grava quando isso é verdade — sem esse gate,
+            // qualquer mutação feita durante a RENDERIZAÇÃO deixava o dado "sujo" e o laço
+            // publicava a cópia desta máquina por cima da de outro usuário.
+            try { window._userHasEdited = true; } catch(e) {}
+            // Bloquear gravação em modo leitura (somente admin e editor podem gravar)
+            const _role = window.currentUserProfile && window.currentUserProfile.role;
+            if (_role !== 'admin' && _role !== 'editor') {
+                // Perfil ainda não carregou (janela de segundos após abrir o app): a edição
+                // fica em memória e o loop de 30s regrava quando o perfil chegar — mas o
+                // usuário PRECISA saber que ainda não foi, senão fecha o app e perde tudo.
+                if (!window.currentUserProfile) {
+                    showToast('⏳ Autenticando... a alteração será salva em instantes. Não feche o app ainda.', 'warning');
+                } else {
+                    console.warn('[Modo Leitura] Gravação bloqueada. Faça login como admin ou editor.');
+                }
+                return;
+            }
+            // Agendar salvamento debounced (1.5s) para não sobrecarregar
+            // Se já houver um timer pendente, cancelar e reagendar
+            if (_salvarDebounceTimer) clearTimeout(_salvarDebounceTimer);
+            _salvarDebounceTimer = setTimeout(async () => {
+                _salvarDebounceTimer = null;
+                await _executarSalvamento();
+            }, 1500);
+        }
+
+        // Salvamento imediato (sem debounce) → para usar em importações etc.
+        // Retorna true/false indicando se o commit no servidor foi confirmado (usado pelo
+        // botão "Salvar" pra dar feedback de sucesso/erro sem loader bloqueante).
+        async function salvarDadosImediato() {
+            if (_bloqueadoPorVersaoDesatualizada()) return false;
+            try { window._userHasEdited = true; } catch(e) {}
+            const _role = window.currentUserProfile && window.currentUserProfile.role;
+            if (_role !== 'admin' && _role !== 'editor') {
+                // Mesmo aviso do salvarDados(): retorno silencioso aqui já perdeu edição de
+                // usuário que editou antes do perfil terminar de carregar e fechou o app.
+                if (!window.currentUserProfile) {
+                    showToast('⏳ Autenticando... a alteração será salva em instantes. Não feche o app ainda.', 'warning');
+                }
+                return false;
+            }
+            if (_salvarDebounceTimer) { clearTimeout(_salvarDebounceTimer); _salvarDebounceTimer = null; }
+            return await _executarSalvamento();
+        }
+
+        async function _executarSalvamento() {
+            if (_salvandoEmAndamento) {
+                // Já existe um commit em voo: marcar pendência para re-executar ao final,
+                // senão as mudanças feitas durante o commit só seriam salvas pelo loop de 30s.
+                _salvarPendente = true;
+                return false;
+            }
+            _salvandoEmAndamento = true;
+            // sinalizar também em window para que listeners possam checar
+            try { window._salvandoEmAndamento = true; } catch(e) {}
+            // Feedback visual: indicador de salvando
+            const syncEl = document.getElementById('cloudLastSync');
+            if (syncEl) syncEl.textContent = '💾 Salvando...';
+            let ok = false;
+            try {
+                if (window && window.firestoreBatchSet) {
+                    // UM único timeout cobrindo a sequência INTEIRA (teds + planos). Com
+                    // enableIndexedDbPersistence, batch.commit() fica pendente pra sempre
+                    // quando offline/rede ruim (não rejeita) — sem esse teto o save trava e
+                    // segura _salvandoEmAndamento, bloqueando todos os saves seguintes.
+                    const _timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000));
+                    let wroteTeds = 0, wrotePlanos = false;
+                    // Capturados ANTES do await, para marcar como salvo exatamente o que foi
+                    // enviado — nunca o estado da tela ao terminar (ver _computeTedsToWrite).
+                    let sigsGravadas = {};
+                    let planosSnapshotEnviado = null;
+                    let _conflitosDetectados = [];
+                    let _puladosDetectados = [];
+                    const seq = (async () => {
+                        // Só grava os TEDs que mudaram desde o último save (ver _computeTedsToWrite)
+                        const { docs: tedsToWrite, sigs } = _computeTedsToWrite();
+                        if (tedsToWrite.length > 0) {
+                            if (window.firestoreBatchSetTedsGuarded) {
+                                // Caminho com verificação de conflito: não grava por cima de
+                                // um TED que outro usuário alterou depois que carregamos.
+                                const autor = (window.currentUser && window.currentUser.email) || null;
+                                const r = await window.firestoreBatchSetTedsGuarded(tedsToWrite, window._tedRevBase || {}, autor);
+                                if (!r.ok) return false;
+                                // Só marcar como salvo o que passou pela verificação.
+                                const escritosSet = new Set(r.escritos);
+                                Object.keys(sigs).forEach(id => { if (escritosSet.has(id)) sigsGravadas[id] = sigs[id]; });
+                                // Atualizar a base de revisão dos que gravamos.
+                                window._tedRevBase = window._tedRevBase || {};
+                                Object.keys(r.revs).forEach(id => {
+                                    window._tedRevBase[id] = r.revs[id];
+                                    const alvo = (dados.teds || []).find(t => t && String(t.id) === id);
+                                    if (alvo) { alvo._rev = r.revs[id]; alvo._updatedAt = Date.now(); if (autor) alvo._updatedBy = autor; }
+                                });
+                                wroteTeds = r.escritos.length;
+                                if (r.conflitos.length > 0) _conflitosDetectados = r.conflitos.slice();
+                                if (r.pulados && r.pulados.length > 0) _puladosDetectados = r.pulados.slice();
+                            } else {
+                                const okTeds = await window.firestoreBatchSet('teds', tedsToWrite);
+                                if (!okTeds) return false;
+                                sigsGravadas = sigs;
+                                wroteTeds = tedsToWrite.length;
+                            }
+                        }
+                        // planosTrabalho: grava só quando o conjunto mudou (é pequeno, mantém
+                        // escrita da coleção inteira, mas evita reescrever quando nada mudou).
+                        const planosNow = JSON.stringify(dados.planosTrabalho || []);
+                        if (planosNow !== window._lastSavedPlanosSnapshot) {
+                            const okPlanos = await window.firestoreBatchSet('planosTrabalho', dados.planosTrabalho || []);
+                            if (!okPlanos) return false;
+                            planosSnapshotEnviado = planosNow; // o que foi enviado, não o atual
+                            wrotePlanos = true;
+                        }
+                        return true;
+                    })();
+                    ok = await Promise.race([seq, _timeout]);
+
+                    if (ok) {
+                        // Marcar como salvo SOMENTE o que foi realmente gravado. Edições que o
+                        // usuário fez durante o commit continuam pendentes e são gravadas pela
+                        // re-execução agendada em _salvarPendente (bloco finally).
+                        _commitTedHashesParciais(sigsGravadas);
+                        if (planosSnapshotEnviado !== null) window._lastSavedPlanosSnapshot = planosSnapshotEnviado;
+                        window._lastSavedTedsSnapshot = JSON.stringify(dados.teds || []);
+                        // Marcador de sincronização (padrão do Controle-Estoque): avisa os
+                        // outros aparelhos, via onSnapshot em app.js, que há dados novos no
+                        // servidor — eles recarregam sozinhos em vez de ficarem com estado
+                        // velho em memória. Só dispara se algo foi realmente gravado (não
+                        // acorda os outros clientes à toa). Best-effort: falha não invalida
+                        // o save já confirmado.
+                        if (wroteTeds > 0 || wrotePlanos) {
+                            try {
+                                if (window.firestoreSetDoc) {
+                                    window.firestoreSetDoc('sync/state', {
+                                        at: Date.now(),
+                                        writer: window._syncClientId || null,
+                                        by: (window.currentUser && window.currentUser.email) || null
+                                    }).catch(() => {});
+                                }
+                            } catch (e) { /* best-effort */ }
+                        }
+                        // Conflito: outro usuário alterou o MESMO TED depois que carregamos.
+                        // Nada foi gravado por cima. Avisar de forma inequívoca e trazer a
+                        // versão do servidor, para o usuário refazer sobre o dado atual —
+                        // antes disso, o último a salvar apagava o outro em silêncio.
+                        if (_conflitosDetectados.length > 0) {
+                            const nums = _conflitosDetectados.map(id => {
+                                const t = (dados.teds || []).find(x => x && String(x.id) === id);
+                                return t ? (t.numTed || id) : id;
+                            });
+                            showToast('⚠️ CONFLITO: o(s) TED(s) ' + nums.join(', ') + ' foram alterados por outro usuário enquanto você editava.\n\nSuas alterações NESSE(S) TED(S) não foram gravadas para não apagar o trabalho dele. Os dados foram atualizados — refaça a alteração.', 'danger');
+                            // Recarregar para o usuário ver o estado real do servidor.
+                            try {
+                                if (typeof window.carregarDoCloud === 'function') {
+                                    setTimeout(() => { window.carregarDoCloud({ silent: true }); }, 400);
+                                }
+                            } catch (e) {}
+                        }
+                        // Um ou mais TEDs foram pulados do lote (documento ficaria vazio, ou
+                        // rejeitado individualmente mesmo fora do lote — ver console para o
+                        // erro exato e o objeto original). Os demais TEDs do save foram
+                        // gravados normalmente; só o(s) pulado(s) precisa(m) de atenção.
+                        if (_puladosDetectados.length > 0) {
+                            const nums = _puladosDetectados.map(id => {
+                                const t = (dados.teds || []).find(x => x && String(x.id) === id);
+                                return t ? (t.numTed || id) : id;
+                            });
+                            showToast('❌ Falha ao salvar o(s) TED(s) ' + nums.join(', ') + ' — os demais foram salvos normalmente. Abra o console (F12) para o detalhe técnico e avise o suporte.', 'danger');
+                        }
+                        // Feedback visual de sucesso
+                        if (syncEl) syncEl.textContent = 'Salvo: ' + new Date().toLocaleTimeString('pt-BR');
+                        const iconEl = document.getElementById('cloudStatusIcon');
+                        if (iconEl) { iconEl.style.color = 'var(--success)'; iconEl.title = 'Conectado ao Firestore'; }
+                    } else {
+                        console.warn('firestoreBatchSet retornou falha; dados podem não ter sido persistidos.');
+                        if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
+                        const iconEl = document.getElementById('cloudStatusIcon');
+                        if (iconEl) { iconEl.style.color = 'var(--danger)'; iconEl.title = 'Falha ao salvar no Firestore'; }
+                        showToast('Erro ao salvar dados (possível bloqueador de anúncios/firewall). Tentando novamente em breve...', 'danger');
+                    }
+                } else {
+                    console.warn('Firestore batch helper not available; dados not persisted.');
+                    if (syncEl) syncEl.textContent = '⚠️ Sem conexão';
+                    showToast('Erro: conexão com banco de dados indisponível. Dados não salvos.', 'danger');
+                }
+            } catch (e) {
+                // Inclui o caso do timeout de 20s: a escrita segue enfileirada offline e
+                // sincroniza sozinha quando a rede voltar — não é perda de dado, mas o
+                // usuário precisa saber que ainda não confirmou no servidor.
+                console.warn('Erro salvando no Firestore', e);
+                if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
+                showToast('Erro ao salvar dados. Tentando novamente em breve...', 'danger');
+            } finally {
+                _salvandoEmAndamento = false;
+                try { window._salvandoEmAndamento = false; } catch(e) {}
+                // Houve pedido de salvamento durante o commit? Re-executar para não perder
+                // as mudanças feitas nesse intervalo. Também re-executa quando o mapa de
+                // assinaturas ainda acusa pendência (edição feita durante o await sem passar
+                // por salvarDados) — rede de segurança para não depender só do laço de 30s.
+                const aindaPendente = _salvarPendente || (ok && typeof window._haAlteracoesPendentes === 'function' && window._haAlteracoesPendentes());
+                if (aindaPendente) {
+                    _salvarPendente = false;
+                    setTimeout(() => { _executarSalvamento(); }, 250);
+                }
+            }
+            return ok;
+        }
+
+        // Proteção contra perda silenciosa: o salvamento é debounced (1,5s) e o loop de
+        // segurança roda a cada 30s — fechar a aba nesse intervalo perderia a edição.
+        window.addEventListener('beforeunload', function (e) {
+            try {
+                const _role = window.currentUserProfile && window.currentUserProfile.role;
+                // Só pular o aviso quando o papel é COMPROVADAMENTE somente-leitura. Se o
+                // perfil ainda não carregou (undefined), uma edição pendente é exatamente o
+                // caso mais perigoso — o save foi bloqueado pelo gate de role e fechar
+                // agora perde a alteração; o aviso precisa aparecer.
+                if (window.currentUserProfile && _role !== 'admin' && _role !== 'editor') return; // modo leitura não grava
+                let dirty = !!_salvarDebounceTimer || _salvandoEmAndamento || _salvarPendente;
+                if (!dirty && typeof window._lastSavedTedsSnapshot === 'string') {
+                    dirty = JSON.stringify(dados.teds || []) !== window._lastSavedTedsSnapshot;
+                }
+                if (dirty) {
+                    e.preventDefault();
+                    e.returnValue = 'Há alterações ainda não salvas na nuvem.';
+                    return e.returnValue;
+                }
+            } catch (err) { /* nunca bloquear o unload por erro do próprio guard */ }
+        });
+
+        // Ao ocultar a aba (troca de aba/minimizar), antecipar o debounce pendente:
+        // dispara o salvamento imediatamente em vez de esperar os 1,5s.
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden' && _salvarDebounceTimer) {
+                try { salvarDadosImediato(); } catch (e) { /* melhor esforço */ }
+            }
+        });
+
+        // =============================================
+        // FUN→.ES DE EXPORTA→fO E IMPORTA→fO (CSV/JSON)
+        // =============================================
+
+        // Função auxiliar para converter array para CSV
+        function arrayToCSV(data, headers) {
+            if (!data || data.length === 0) return headers.join(';') + '\n';
+            const csvRows = [headers.join(';')];
+            data.forEach(row => {
+                const values = headers.map(h => {
+                    let val = row[h] !== undefined ? row[h] : '';
+                    // Escapar separador, aspas e quebras de linha. A quebra importa: o Tesouro
+                    // Gerencial emite '\n' dentro do campo TED, e sem aspas o registro sairia
+                    // partido em duas linhas e não voltaria a ser importado.
+                    if (typeof val === 'string' && (val.includes(';') || val.includes('"') || val.includes('\n') || val.includes('\r'))) {
+                        val = '"' + val.replace(/"/g, '""') + '"';
+                    }
+                    return val;
+                });
+                csvRows.push(values.join(';'));
+            });
+            return csvRows.join('\n');
+        }
+
+        // Função auxiliar para download de arquivo
+        function downloadFile(content, filename, type = 'text/csv;charset=utf-8;') {
+            const blob = new Blob(['\uFEFF' + content], { type }); // BOM para Excel
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        // Acha o nome de uma coluna por palavras-chave, ignorando acentos e caixa.
+        // Todas as palavras precisam aparecer no cabeçalho.
+        function acharColuna(headers, keywords) {
+            for (const h of headers) {
+                const hLow = String(h).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (keywords.length > 0 && keywords.every(kw => hLow.indexOf(kw) > -1)) return h;
+            }
+            return null;
+        }
+
+        // Tokeniza o CSV inteiro em registros, respeitando aspas — inclusive quebras de linha
+        // DENTRO de um campo. O Tesouro Gerencial emite isso na coluna TED (ex.: "20-EME-027\nINOVA")
+        // e em "Doc - Observação"; dividir o texto por '\n' antes de olhar as aspas parte esses
+        // registros ao meio e faz a importação descartá-los em silêncio.
+        // Retorna: [ [campo, campo, ...], ... ]
+        function parseCSVRegistros(texto, sep) {
+            if (texto.charCodeAt(0) === 0xFEFF) texto = texto.substring(1);
+            const registros = [];
+            let registro = [];
+            let campo = '';
+            let entreAspas = false;
+            for (let i = 0; i < texto.length; i++) {
+                const ch = texto[i];
+                if (entreAspas) {
+                    if (ch === '"') {
+                        if (texto[i + 1] === '"') { campo += '"'; i++; }  // aspa escapada
+                        else entreAspas = false;
+                    } else {
+                        campo += ch;   // preserva '\n' dentro do campo
+                    }
+                } else if (ch === '"' && campo.trim() === '') {
+                    // Aspa só abre campo citado se vier no INÍCIO. Uma aspa solta no meio de
+                    // texto livre é conteúdo — tratá-la como abertura faria o parser engolir
+                    // o resto do arquivo.
+                    entreAspas = true;
+                    campo = '';
+                } else if (ch === sep) {
+                    registro.push(campo.trim()); campo = '';
+                } else if (ch === '\n') {
+                    registro.push(campo.trim()); registros.push(registro);
+                    registro = []; campo = '';
+                } else if (ch !== '\r') {
+                    campo += ch;
+                }
+            }
+            if (campo !== '' || registro.length) { registro.push(campo.trim()); registros.push(registro); }
+            // Descartar linhas totalmente vazias
+            return registros.filter(r => r.some(c => c !== ''));
+        }
+
+        // Função auxiliar para parsear CSV.
+        // Usa parseCSVRegistros: o split(';') cru de antes ignorava aspas, então um campo de
+        // texto livre contendo ';' (descrição de objeto, observação) era partido em pedaços e
+        // desalinhava as colunas seguintes. Como arrayToCSV JÁ exporta esses campos entre
+        // aspas, o ciclo exportar→reimportar corrompia os dados.
+        function parseCSV(text) {
+            const registros = parseCSVRegistros(text, ';');
+            if (registros.length < 2) return [];
+            const headers = registros[0];
+            const data = [];
+            for (let i = 1; i < registros.length; i++) {
+                const values = registros[i];
+                const obj = {};
+                headers.forEach((h, idx) => {
+                    let val = values[idx] || '';
+                    const low = String(h).trim().toLowerCase();
+                    // Não converter para número campos conhecidos que representam ND/numero/transferência (preservar formato exatamente como na planilha)
+                    const keepAsString = ['nd', 'numero', 'número', 'nc - natureza despesa', 'nc - natureza despes', 'nc - transferência', 'nc - transferencia'];
+                    // Tentar converter números (suporta formatos pt-BR com vírgula e separador de milhares com ponto)
+                    if (keepAsString.indexOf(low) === -1 && /^-?[\d.,]+$/.test(val)) {
+                        const cleaned = String(val).replace(/\s+/g, '');
+                        try {
+                            if (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1) {
+                                // Ex: 1.234,56 -> remover pontos e substituir vírgula por ponto
+                                val = parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
+                            } else if (cleaned.indexOf(',') > -1) {
+                                // Ex: 1234,56 -> substituir vírgula por ponto
+                                val = parseFloat(cleaned.replace(',', '.'));
+                            } else {
+                                // Ex: 1234.56 ou 1234 -> parseFloat direto
+                                val = parseFloat(cleaned);
+                            }
+                            if (isNaN(val)) val = values[idx] || '';
+                        } catch (e) {
+                            val = values[idx] || '';
+                        }
+                    }
+                    obj[h] = val;
+                    // Criar alias lowercase para permitir cabeçalhos como 'ND' ou 'Numero' serem acessados via row.nd
+                    try {
+                        if (low && obj[low] === undefined) obj[low] = val;
+                    } catch (e) {
+                        // ignore
+                    }
+                });
+                data.push(obj);
+            }
+            return data;
+        }
+
+        // EXPORTAR TEDs
+        function exportarTEDs() {
+            const headers = ['id', 'numTed', 'planoTrabalho', 'objetivo', 'valorTed', 'codigoPlano', 'numTedSiafi', 'notaSistema', 'upResponsavel', 'ugExecutora', 'unidadeDesc', 'ugDesc', 'inicioVigencia', 'vigencia', 'fimVigencia', 'primeiraDescentralizacao', 'dataCriacao'];
+            const csv = arrayToCSV(dados.teds, headers);
+            downloadFile(csv, 'teds_export.csv');
+            showToast('TEDs exportados com sucesso!', 'success');
+        }
+
+        // EXPORTAR OBJETOS
+        function exportarObjetos() {
+            const rows = [];
+            dados.teds.forEach(ted => {
+                (ted.objetos || []).forEach(obj => {
+                    rows.push({
+                        numTed: ted.numTed,
+                        id: obj.id,
+                        objeto: obj.objeto,
+                        qtde: obj.qtde,
+                        valorUnitario: obj.valorUnitario,
+                        valorTotal: obj.valorTotal
+                    });
+                });
+            });
+            const headers = ['numTed', 'id', 'objeto', 'qtde', 'valorUnitario', 'valorTotal'];
+            const csv = arrayToCSV(rows, headers);
+            downloadFile(csv, 'objetos_export.csv');
+            showToast('Objetos exportados com sucesso!', 'success');
+        }
+
+        // EXPORTAR METAS
+        function exportarMetas() {
+            const rows = [];
+            dados.teds.forEach(ted => {
+                (ted.metas || []).forEach(m => {
+                    rows.push({
+                        numTed: ted.numTed,
+                        id: m.id,
+                        meta: m.meta,
+                        descricao: m.descricao || '',
+                        mInicio: m.mInicio,
+                        mFinal: m.mFinal,
+                        mesInicio: m.mesInicio,
+                        anoInicio: m.anoInicio,
+                        mesFinal: m.mesFinal,
+                        anoFinal: m.anoFinal
+                    });
+                });
+            });
+            const headers = ['numTed', 'id', 'meta', 'descricao', 'mInicio', 'mFinal', 'mesInicio', 'anoInicio', 'mesFinal', 'anoFinal'];
+            const csv = arrayToCSV(rows, headers);
+            downloadFile(csv, 'metas_export.csv');
+            showToast('Metas exportadas com sucesso!', 'success');
+        }
+
+        // EXPORTAR FÍSICO
+        function exportarFisicos() {
+            const rows = [];
+            dados.teds.forEach(ted => {
+                (ted.fisicos || []).forEach(f => {
+                    rows.push({
+                        numTed: ted.numTed,
+                        id: f.id,
+                        fase: f.fase,
+                        objeto: f.objeto,
+                        qtde: f.qtde,
+                        mInicio: f.mInicio,
+                        mFinal: f.mFinal,
+                        mesInicio: f.mesInicio,
+                        anoInicio: f.anoInicio,
+                        mesFinal: f.mesFinal,
+                        anoFinal: f.anoFinal
+                    });
+                });
+            });
+            const headers = ['numTed', 'id', 'fase', 'objeto', 'qtde', 'mInicio', 'mFinal', 'mesInicio', 'anoInicio', 'mesFinal', 'anoFinal'];
+            const csv = arrayToCSV(rows, headers);
+            downloadFile(csv, 'fisicos_export.csv');
+            showToast('Cadastro Físico exportado com sucesso!', 'success');
+        }
+
+        // EXPORTAR EXECU→fO FÍSICA
+        function exportarExecFisica() {
+            const rows = [];
+            dados.teds.forEach(ted => {
+                (ted.execFisicas || []).forEach(e => {
+                    rows.push({
+                        numTed: ted.numTed,
+                        id: e.id,
+                        objeto: e.objeto,
+                        qtde: e.qtde,
+                        data: e.data,
+                        nf: e.nf || ''
+                    });
+                });
+            });
+            const headers = ['numTed', 'id', 'objeto', 'qtde', 'data', 'nf'];
+            const csv = arrayToCSV(rows, headers);
+            downloadFile(csv, 'exec_fisica_export.csv');
+            showToast('Execução Física exportada com sucesso!', 'success');
+        }
+
+        // BUSCAR POR NF
+        window._nfSearchDebounceTimer = null;
+        function executarBuscaNF() {
+            const input = document.getElementById('searchNFInput');
+            const nfQuery = (input ? input.value || '' : '').trim().toUpperCase();
+            
+            if (!nfQuery) {
+                showToast('Digite um nº NF para buscar.', 'info');
+                return;
+            }
+
+            const resultados = [];
+            dados.teds.forEach(ted => {
+                // Buscar em execFisicas
+                (ted.execFisicas || []).forEach(e => {
+                    if ((e.nf || '').toUpperCase().includes(nfQuery)) {
+                        resultados.push({
+                            tipo: 'execFisica',
+                            tedId: ted.id,
+                            numTed: ted.numTed,
+                            tedTitulo: ted.objetivo || ted.planoTrabalho || 'Sem título',
+                            objeto: e.objeto,
+                            data: e.data,
+                            qtde: e.qtde,
+                            nf: e.nf,
+                            fisicoId: null
+                        });
+                    }
+                });
+                // Buscar NFs nas entregas do Cadastro Físico
+                (ted.fisicos || []).forEach(f => {
+                    (f.entregas || []).forEach(ent => {
+                        if ((ent.nf || '').toUpperCase().includes(nfQuery)) {
+                            resultados.push({
+                                tipo: 'entrega',
+                                tedId: ted.id,
+                                numTed: ted.numTed,
+                                tedTitulo: ted.objetivo || ted.planoTrabalho || 'Sem título',
+                                objeto: f.objeto,
+                                data: ent.data,
+                                qtde: ent.quantidade || ent.qtde,
+                                nf: ent.nf || '',
+                                fisicoId: f.id
+                            });
+                        }
+                    });
+                });
+            });
+
+            renderizarResultadosBuscaNF(resultados);
+        }
+
+        function renderizarResultadosBuscaNF(resultados) {
+            const container = document.getElementById('searchNFResults');
+            if (!container) return;
+
+            if (resultados.length === 0) {
+                container.innerHTML = '<div style="padding:1rem; color:var(--text-secondary); text-align:center;">Nenhum resultado encontrado.</div>';
+                container.style.display = 'block';
+                return;
+            }
+
+            let html = `<div style="padding:0.5rem;">
+                <div style="font-size:0.9rem; color:var(--text-secondary); padding:0.5rem; border-bottom:1px solid var(--border);">
+                    ${resultados.length} resultado(s) encontrado(s)
+                </div>`;
+
+            resultados.forEach(r => {
+                const dataFormat = r.data ? new Date(r.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+                html += `<div style="padding:0.75rem; border-bottom:1px solid var(--border); display:flex; gap:0.5rem; align-items:flex-start;">
+                    <div style="flex:1;">
+                        <div style="font-weight:600; color:var(--primary);">TED ${r.numTed} | NF: <strong>${r.nf}</strong></div>
+                        <div style="font-size:0.9rem; color:var(--text-secondary); margin-top:0.25rem;">Objeto: ${r.objeto}</div>
+                        <div style="font-size:0.85rem; color:var(--text-secondary);">Data: ${dataFormat} | Qtd: ${r.qtde}</div>
+                    </div>
+                    <button class="btn btn-sm" onclick="irParaDetalheTED(${r.tedId})" style="white-space:nowrap; padding:0.25rem 0.5rem; font-size:0.8rem;">Ver TED</button>
+                    ${r.fisicoId ? `<button class="btn btn-sm" onclick="abrirModalMarcarRealizada(${r.fisicoId})" style="white-space:nowrap; padding:0.25rem 0.5rem; font-size:0.8rem;">Editar</button>` : ''}
+                </div>`;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function limparBuscaNF() {
+            const input = document.getElementById('searchNFInput');
+            if (input) input.value = '';
+            const container = document.getElementById('searchNFResults');
+            if (container) container.style.display = 'none';
+        }
+
+        function irParaDetalheTED(tedId) {
+            const select = document.getElementById('seletorTED');
+            if (select) {
+                select.value = tedId;
+                carregarDetalhes(tedId);
+                // scroll para o seletor
+                select.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // EXPORTAR FINANCEIRO
+        function exportarFinanceiros() {
+            const rows = [];
+            dados.teds.forEach(ted => {
+                (ted.financeiros || []).forEach(f => {
+                    rows.push({
+                        numTed: ted.numTed,
+                        id: f.id,
+                        numero: f.numero || f.nd, // Usar 'numero' (compatível com sistema) mas aceitar 'nd' antigo
+                        up: f.up || f.ug,
+                        m: f.m,
+                        mesDesc: f.mesDesc,
+                        anoDesc: f.anoDesc,
+                        valor: f.valor
+                    });
+                });
+            });
+            const headers = ['numTed', 'id', 'numero', 'up', 'm', 'mesDesc', 'anoDesc', 'valor'];
+            const csv = arrayToCSV(rows, headers);
+            downloadFile(csv, 'financeiros_export.csv');
+            showToast('Cadastro Financeiro exportado com sucesso!', 'success');
+        }
+
+        // EXPORTAR EXECU→fO FINANCEIRA
+        // Reproduz o extrato do Tesouro Gerencial: cada lançamento agregado (por ND+UP+Data)
+        // guarda em `origens[].origem` a linha original de cada registro que foi somado, então
+        // a exportação desfaz a agregação e devolve uma linha por lançamento original, com as
+        // mesmas colunas que entraram — inclusive as que o sistema não usa. Sem nenhum item
+        // importado do extrato, cai no formato simplificado de 6 colunas.
+        function exportarExecFinanceira() {
+            const registros = [];
+            dados.teds.forEach(ted => {
+                (ted.execFinanceiras || []).forEach(e => {
+                    if (Array.isArray(e.origens) && e.origens.length) {
+                        e.origens.forEach(o => registros.push({ ted, e, origem: o.origem || null, nc: o.nc, valor: o.valor, data: o.data }));
+                    } else {
+                        registros.push({ ted, e, origem: null, nc: '', valor: e.valor || e.valorRealizado, data: e.data });
+                    }
+                });
+            });
+
+            const comOrigem = registros.find(r => r.origem && Object.keys(r.origem).length);
+            const headers = comOrigem ? Object.keys(comOrigem.origem) : null;
+
+            if (!headers) {
+                const rows = registros.map(({ ted, e, valor, data }) => ({
+                    numTed: ted.numTed, id: e.id, nd: e.nd, up: e.up, valor, data
+                }));
+                downloadFile(arrayToCSV(rows, ['numTed', 'id', 'nd', 'up', 'valor', 'data']), 'exec_financeira_export.csv');
+                showToast(registros.length + ' registro(s) exportado(s) (formato simplificado).', 'success');
+                return;
+            }
+
+            const colND    = acharColuna(headers, ['natureza', 'despes']) || acharColuna(headers, ['natureza']);
+            const colValor = acharColuna(headers, ['valor', 'linha']) || acharColuna(headers, ['valor']);
+            const colData  = acharColuna(headers, ['emissao', 'dia']) || acharColuna(headers, ['dia']);
+            const colSiafi = acharColuna(headers, ['transferencia']) || acharColuna(headers, ['transfer']);
+            const colNC    = headers.find(h => String(h).trim().toLowerCase() === 'nc');
+
+            let semOrigem = 0;
+            const rows = registros.map(({ ted, e, origem, nc, valor, data }) => {
+                if (origem) return origem;
+                semOrigem++;
+                const linha = {};
+                headers.forEach(h => { linha[h] = ''; });
+                if (colND) linha[colND] = e.nd || '';
+                if (colNC) linha[colNC] = nc || '';
+                if (colValor) linha[colValor] = valor;
+                if (colSiafi) linha[colSiafi] = ted.numTedSiafi || '';
+                if (colData && data) {
+                    const p = String(data).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                    linha[colData] = p ? (p[3] + '/' + p[2] + '/' + p[1]) : data;
+                }
+                return linha;
+            });
+
+            downloadFile(arrayToCSV(rows, headers), 'exec_financeira_export.csv');
+            let msg = registros.length + ' registro(s) exportado(s) no formato do extrato (' + headers.length + ' colunas).';
+            if (semOrigem > 0) msg += '\n' + semOrigem + ' lançamento(s) incluído(s) à mão saíram só com as colunas conhecidas.';
+            showToast(msg, semOrigem > 0 ? 'warning' : 'success');
+        }
+
+        // Exporta reproduzindo o extrato do Tesouro Gerencial: cada registro importado guarda
+        // a linha original completa em `origem`, então a exportação devolve as mesmas colunas
+        // que entraram — inclusive as que o sistema não usa (Evento, PTRES, Plano Interno,
+        // Fonte, Observação). Sem nenhum registro importado de um extrato, cai no formato
+        // simplificado de 5 colunas.
+        function exportarRecursosGerais() {
+            const registros = [];
+            dados.teds.forEach(ted => {
+                (ted.recursosGerais || []).forEach(r => registros.push({ ted, r }));
+            });
+
+            const comOrigem = registros.find(({ r }) => r.origem && Object.keys(r.origem).length);
+            const headers = comOrigem ? Object.keys(comOrigem.r.origem) : null;
+
+            if (!headers) {
+                const rows = registros.map(({ ted, r }) => ({
+                    numTed: ted.numTed, nd: r.nd, nc: r.nc || '', valor: r.valor, data: r.data
+                }));
+                downloadFile(arrayToCSV(rows, ['numTed', 'nd', 'nc', 'valor', 'data']), 'recursos_gerais_export.csv');
+                showToast(registros.length + ' registro(s) exportado(s) (formato simplificado).', 'success');
+                return;
+            }
+
+            // Colunas do extrato usadas para descrever lançamentos incluídos à mão, que não
+            // vieram de um arquivo e portanto não têm linha original
+            const colND    = acharColuna(headers, ['natureza', 'despes']) || acharColuna(headers, ['natureza']);
+            const colValor = acharColuna(headers, ['valor', 'linha']) || acharColuna(headers, ['valor']);
+            const colData  = acharColuna(headers, ['emissao', 'dia']) || acharColuna(headers, ['dia']);
+            const colSiafi = acharColuna(headers, ['transferencia']) || acharColuna(headers, ['transfer']);
+            const colNC    = headers.find(h => String(h).trim().toLowerCase() === 'nc');
+
+            let semOrigem = 0;
+            const rows = registros.map(({ ted, r }) => {
+                if (r.origem) return r.origem;
+                semOrigem++;
+                const linha = {};
+                headers.forEach(h => { linha[h] = ''; });
+                if (colND) linha[colND] = r.nd || '';
+                if (colNC) linha[colNC] = r.nc || '';
+                if (colValor) linha[colValor] = r.valor;
+                if (colSiafi) linha[colSiafi] = ted.numTedSiafi || '';
+                if (colData && r.data) {
+                    const p = String(r.data).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                    linha[colData] = p ? (p[3] + '/' + p[2] + '/' + p[1]) : r.data;
+                }
+                return linha;
+            });
+
+            downloadFile(arrayToCSV(rows, headers), 'recursos_gerais_export.csv');
+            let msg = registros.length + ' registro(s) exportado(s) no formato do extrato (' + headers.length + ' colunas).';
+            if (semOrigem > 0) msg += '\n' + semOrigem + ' lançamento(s) incluído(s) à mão saíram só com as colunas conhecidas.';
+            showToast(msg, semOrigem > 0 ? 'warning' : 'success');
+        }
+
+        // EXPORTAR TUDO (múltiplos arquivos)
+        function exportarTudo() {
+            exportarTEDs();
+            setTimeout(() => exportarObjetos(), 200);
+            setTimeout(() => exportarMetas(), 400);
+            setTimeout(() => exportarFisicos(), 600);
+            setTimeout(() => exportarExecFisica(), 800);
+            setTimeout(() => exportarFinanceiros(), 1000);
+            setTimeout(() => exportarExecFinanceira(), 1200);
+            setTimeout(() => exportarRecursosGerais(), 1400);
+        }
+
+        // EXPORTAR BACKUP JSON COMPLETO
+        function exportarBackupJSON() {
+            const json = JSON.stringify(dados, null, 2);
+            downloadFile(json, 'backup_controle_ted.json', 'application/json;charset=utf-8;');
+            showToast('Backup JSON exportado com sucesso!', 'success');
+        }
+
+        // IMPORTAR BACKUP JSON
+        function importarBackupJSON(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    confirmarAcao('⚠️ Isso substituirá TODOS os dados atuais. Deseja continuar?', function() {
+                        dados = imported;
+                        salvarDadosImediato();
+                        atualizarDashboard();
+                        atualizarListaTEDs();
+                        atualizarSeletorTED();
+                        showToast('Backup importado com sucesso!', 'success');
+                        // Navegar para o Dashboard para exibir os dados restaurados
+                        const dashBtn = document.querySelector('.tab-btn[onclick*="dashboard"]');
+                        switchTab('dashboard', dashBtn);
+                    }, 'Confirmar');
+                    return;
+                } catch (err) {
+                    showToast('❌ Erro ao importar: arquivo inválido.', 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Função auxiliar para calcular fim de vigência (início + meses)
+        function calcularFimVigenciaData(inicioVigencia, vigenciaMeses) {
+            if (!inicioVigencia || !vigenciaMeses) return '';
+            const dataNorm = normalizarData(inicioVigencia);
+            const d = new Date(dataNorm + 'T00:00:00');
+            if (isNaN(d.getTime())) return '';
+            const fim = new Date(d);
+            fim.setMonth(fim.getMonth() + parseInt(vigenciaMeses));
+            const yyyy = fim.getFullYear();
+            const mm = String(fim.getMonth() + 1).padStart(2, '0');
+            const dd = String(fim.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        // IMPORTAR TEDs
+        function importarTEDs(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rows = parseCSV(e.target.result);
+                    let countNovos = 0;
+                    let countAtualizados = 0;
+                    rows.forEach(row => {
+                        if (!row.numTed) return;
+                        // Verificar se já existe (por numTed) - normalizar para string para comparação
+                        const numTedImport = String(row.numTed).trim();
+                        const existe = dados.teds.find(t => String(t.numTed).trim() === numTedImport);
+                        
+                        // Normalizar datas do CSV
+                        const inicioVigNorm = normalizarData(row.inicioVigencia);
+                        const primeiraDescNorm = normalizarData(row.primeiraDescentralizacao);
+                        const vigenciaMeses = parseInt(row.vigencia) || 0;
+                        
+                        if (existe) {
+                            // ATUALIZAR TED existente (preservar sub-arrays)
+                            existe.planoTrabalho = row.planoTrabalho || existe.planoTrabalho;
+                            existe.objetivo = row.objetivo || existe.objetivo;
+                            existe.valorTed = parseNumber(row.valorTed) || existe.valorTed;
+                            existe.codigoPlano = row.codigoPlano || existe.codigoPlano;
+                            existe.numTedSiafi = row.numTedSiafi || existe.numTedSiafi;
+                            existe.notaSistema = row.notaSistema || existe.notaSistema;
+                            existe.upResponsavel = row.upResponsavel || existe.upResponsavel;
+                            existe.ugExecutora = row.ugExecutora || existe.ugExecutora;
+                            existe.unidadeDesc = row.unidadeDesc || existe.unidadeDesc;
+                            existe.ugDesc = row.ugDesc || existe.ugDesc;
+                            existe.inicioVigencia = inicioVigNorm || existe.inicioVigencia;
+                            existe.vigencia = vigenciaMeses || existe.vigencia;
+                            existe.primeiraDescentralizacao = primeiraDescNorm || existe.primeiraDescentralizacao;
+                            // Calcular fimVigencia automaticamente
+                            existe.fimVigencia = calcularFimVigenciaData(existe.inicioVigencia, existe.vigencia);
+                            countAtualizados++;
+                        } else {
+                            // CRIAR novo TED
+                            dados.teds.push({
+                                id: dados.proxiId++,
+                                numTed: row.numTed,
+                                planoTrabalho: row.planoTrabalho || '',
+                                objetivo: row.objetivo || '',
+                                valorTed: parseNumber(row.valorTed) || 0,
+                                codigoPlano: row.codigoPlano || '',
+                                numTedSiafi: row.numTedSiafi || '',
+                                notaSistema: row.notaSistema || '',
+                                upResponsavel: row.upResponsavel || '',
+                                ugExecutora: row.ugExecutora || '',
+                                unidadeDesc: row.unidadeDesc || '',
+                                ugDesc: row.ugDesc || '',
+                                inicioVigencia: inicioVigNorm,
+                                vigencia: vigenciaMeses,
+                                fimVigencia: calcularFimVigenciaData(inicioVigNorm, vigenciaMeses),
+                                primeiraDescentralizacao: primeiraDescNorm,
+                                dataCriacao: row.dataCriacao || new Date().toLocaleDateString('pt-BR'),
+                                gasto: 0,
+                                progressoFisico: 0,
+                                objetos: [],
+                                metas: [],
+                                fisicos: [],
+                                execFisicas: [],
+                                financeiros: [],
+                                execFinanceiras: []
+                            });
+                            countNovos++;
+                        }
+                    });
+                    salvarDadosImediato();
+                    atualizarDashboard();
+                    atualizarListaTEDs();
+                    atualizarSeletorTED();
+                    showToast(`o. ${countNovos} TED(s) criado(s), ${countAtualizados} TED(s) atualizado(s)!`, 'success');
+                } catch (err) {
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // IMPORTAR OBJETOS
+        function importarObjetos(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rows = parseCSV(e.target.result);
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
+                    rows.forEach(row => {
+                        if (!row.numTed || !row.objeto) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(row);
+                    });
+                    // Substituir objetos para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            ted.objetos = grouped[numTed].map((row, idx) => {
+                                const qt = parseNumber(row.qtde);
+                                const valorUnitario = parseNumber(row.valorUnitario);
+                                const valorTotalCsv = (row.valorTotal !== undefined && row.valorTotal !== '') ? parseNumber(row.valorTotal) : NaN;
+                                const valorTotal = !isNaN(valorTotalCsv) ? valorTotalCsv : (qt * valorUnitario);
+                                return {
+                                    id: Date.now() + idx,
+                                    objeto: row.objeto,
+                                    qtde: qt,
+                                    valorUnitario: valorUnitario,
+                                    valorTotal: valorTotal
+                                };
+                            });
+                            countTeds++;
+                            countItens += grouped[numTed].length;
+                        }
+                    });
+                    salvarDadosImediato();
+                    atualizarTabelasEmCascata('objetos');
+                    showToast(`o. ${countItens} objeto(s) importado(s) para ${countTeds} TED(s)!`, 'success');
+                } catch (err) {
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // IMPORTAR METAS
+        function importarMetas(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rows = parseCSV(e.target.result);
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
+                    rows.forEach(row => {
+                        if (!row.numTed || !row.meta) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(row);
+                    });
+                    // Substituir metas para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            // Obter data base para cálculo de mês/ano
+                            let baseDate = null;
+                            if (ted.primeiraDescentralizacao) {
+                                const dataNorm = normalizarData(ted.primeiraDescentralizacao);
+                                baseDate = new Date(dataNorm + 'T00:00:00');
+                                if (isNaN(baseDate.getTime())) baseDate = null;
+                            }
+                            
+                            ted.metas = grouped[numTed].map((row, idx) => {
+                                const mInicio = parseInt(row.mInicio) || 0;
+                                const mFinal = parseInt(row.mFinal) || 0;
+                                let mesInicio = parseInt(row.mesInicio) || 0;
+                                let anoInicio = parseInt(row.anoInicio) || 0;
+                                let mesFinal = parseInt(row.mesFinal) || 0;
+                                let anoFinal = parseInt(row.anoFinal) || 0;
+                                
+                                // Calcular mês/ano a partir de mInicio/mFinal se não vieram no CSV
+                                if (baseDate) {
+                                    if (!mesInicio || !anoInicio) {
+                                        const dI = new Date(baseDate);
+                                        dI.setMonth(dI.getMonth() + mInicio);
+                                        mesInicio = dI.getMonth() + 1;
+                                        anoInicio = dI.getFullYear();
+                                    }
+                                    if (!mesFinal || !anoFinal) {
+                                        const dF = new Date(baseDate);
+                                        dF.setMonth(dF.getMonth() + mFinal);
+                                        mesFinal = dF.getMonth() + 1;
+                                        anoFinal = dF.getFullYear();
+                                    }
+                                }
+                                
+                                return {
+                                    id: Date.now() + idx,
+                                    meta: row.meta,
+                                    descricao: row.descricao || '',
+                                    mInicio: mInicio,
+                                    mFinal: mFinal,
+                                    mesInicio: mesInicio,
+                                    anoInicio: anoInicio,
+                                    mesFinal: mesFinal,
+                                    anoFinal: anoFinal
+                                };
+                            });
+                            countTeds++;
+                            countItens += grouped[numTed].length;
+                        }
+                    });
+                    salvarDadosImediato();
+                    atualizarTabelasEmCascata('metas');
+                    showToast(`o. ${countItens} meta(s) importada(s) para ${countTeds} TED(s)!`, 'success');
+                } catch (err) {
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // IMPORTAR FÍSICO
+        function importarFisicos(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rows = parseCSV(e.target.result);
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
+                    rows.forEach(row => {
+                        if (!row.numTed || !row.fase) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(row);
+                    });
+                    // Substituir físicos para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            // Obter data base para cálculo de mês/ano
+                            let baseDate = null;
+                            if (ted.primeiraDescentralizacao) {
+                                const dataNorm = normalizarData(ted.primeiraDescentralizacao);
+                                baseDate = new Date(dataNorm + 'T00:00:00');
+                                if (isNaN(baseDate.getTime())) baseDate = null;
+                            }
+                            
+                            ted.fisicos = grouped[numTed].map((row, idx) => {
+                                const mInicio = parseInt(row.mInicio) || 0;
+                                const mFinal = parseInt(row.mFinal) || 0;
+                                let mesInicio = parseInt(row.mesInicio) || 0;
+                                let anoInicio = parseInt(row.anoInicio) || 0;
+                                let mesFinal = parseInt(row.mesFinal) || 0;
+                                let anoFinal = parseInt(row.anoFinal) || 0;
+                                
+                                // Calcular mês/ano a partir de mInicio/mFinal se não vieram no CSV
+                                if (baseDate) {
+                                    if (!mesInicio || !anoInicio) {
+                                        const dI = new Date(baseDate);
+                                        dI.setMonth(dI.getMonth() + mInicio);
+                                        mesInicio = dI.getMonth() + 1;
+                                        anoInicio = dI.getFullYear();
+                                    }
+                                    if (!mesFinal || !anoFinal) {
+                                        const dF = new Date(baseDate);
+                                        dF.setMonth(dF.getMonth() + mFinal);
+                                        mesFinal = dF.getMonth() + 1;
+                                        anoFinal = dF.getFullYear();
+                                    }
+                                }
+                                
+                                return {
+                                    id: Date.now() + idx,
+                                    fase: row.fase,
+                                    objeto: row.objeto || '',
+                                    qtde: parseInt(row.qtde) || 0,
+                                    mInicio: mInicio,
+                                    mFinal: mFinal,
+                                    mesInicio: mesInicio,
+                                    anoInicio: anoInicio,
+                                    mesFinal: mesFinal,
+                                    anoFinal: anoFinal
+                                };
+                            });
+                            countTeds++;
+                            countItens += grouped[numTed].length;
+                        }
+                    });
+                    salvarDadosImediato();
+                    atualizarTabelasEmCascata('fisicos');
+                    showToast(`o. ${countItens} registro(s) físico(s) importado(s) para ${countTeds} TED(s)!`, 'success');
+                } catch (err) {
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // IMPORTAR EXECU→fO FÍSICA
+        function importarExecFisica(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rows = parseCSV(e.target.result);
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
+                    rows.forEach(row => {
+                        if (!row.numTed || !row.objeto) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(row);
+                    });
+                    // Substituir execuções físicas para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            ted.execFisicas = grouped[numTed].map((row, idx) => ({
+                                id: Date.now() + idx,
+                                objeto: row.objeto,
+                                qtde: parseFloat(row.qtde) || 0,
+                                data: row.data || '',
+                                nf: row.nf || row.NF || ''
+                            }));
+                            // Atualizar progresso físico a partir das execFisicas importadas
+                            try { ted.progressoFisico = calcularProgressoFisico(ted); } catch(e) { ted.progressoFisico = ted.progressoFisico || 0; }
+                            countTeds++;
+                            countItens += grouped[numTed].length;
+                        }
+                    });
+                    try { salvarDadosImediato(); } catch(e) {}
+                    showToast(`o. ${countItens} execução(ões) física(s) importada(s) para ${countTeds} TED(s)!`, 'success');
+                } catch (err) {
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // IMPORTAR FINANCEIRO
+        function importarFinanceiros(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rows = parseCSV(e.target.result);
+                    // Agrupar por numTed (normalizado como string)
+                    const grouped = {};
+                    rows.forEach(row => {
+                        // Aceitar tanto 'nd' quanto 'numero' como nome da coluna
+                        const ndValue = row.nd || row.numero || '';
+                        if (!row.numTed || !ndValue) return;
+                        const key = String(row.numTed).trim();
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push({...row, ndValue});
+                    });
+                    // Substituir financeiros para cada TED
+                    let countTeds = 0;
+                    let countItens = 0;
+                    Object.keys(grouped).forEach(numTed => {
+                        const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        if (ted) {
+                            // Obter data base para cálculo de mesDesc/anoDesc
+                            let baseDate = null;
+                            if (ted.primeiraDescentralizacao) {
+                                const dataNorm = normalizarData(ted.primeiraDescentralizacao);
+                                baseDate = new Date(dataNorm + 'T00:00:00');
+                                if (isNaN(baseDate.getTime())) baseDate = null;
+                            }
+                            
+                            ted.financeiros = grouped[numTed].map((row, idx) => {
+                                const m = parseInt(row.m) || 0;
+                                let mesDesc = parseInt(row.mesDesc) || 0;
+                                let anoDesc = parseInt(row.anoDesc) || 0;
+                                
+                                // Se não tem mesDesc/anoDesc mas tem baseDate e m, calcular
+                                if ((!mesDesc || !anoDesc) && baseDate && m >= 0) {
+                                    const d = new Date(baseDate);
+                                    d.setMonth(d.getMonth() + m);
+                                    mesDesc = d.getMonth() + 1;
+                                    anoDesc = d.getFullYear();
+                                }
+                                
+                                    return {
+                                    id: Date.now() + idx,
+                                    numero: row.ndValue, // Usar 'numero' como o sistema espera
+                                    up: row.up || row.ug || '',
+                                    m: m,
+                                    mesDesc: mesDesc,
+                                    anoDesc: anoDesc,
+                                    valor: parseNumber(row.valor) || 0
+                                };
+                            });
+                            countTeds++;
+                            countItens += grouped[numTed].length;
+                        }
+                    });
+                    salvarDadosImediato();
+                    atualizarTabelasEmCascata('financeiros');
+                    showToast(`o. ${countItens} registro(s) financeiro(s) importado(s) para ${countTeds} TED(s)!`, 'success');
+                } catch (err) {
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // IMPORTAR EXECU→fO FINANCEIRA (suporta CSV simplificado e Tesouro Gerencial)
+        function importarExecFinanceira(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let texto = e.target.result;
+                    if (texto.charCodeAt(0) === 0xFEFF) texto = texto.substring(1);
+
+                    // Mapa de códigos UG → sigla UP
+                    const mapaUP = {
+                        '168003': 'UA', '168005': 'FI', '168008': 'FE',
+                        '168006': 'FJF', '168007': 'FMCE', '168004': 'FPV'
+                    };
+
+                    // Detectar separador
+                    const primeiraLinha = texto.split('\n')[0] || '';
+                    let sep = ';';
+                    if (primeiraLinha.indexOf('\t') > -1) sep = '\t';
+                    else if (primeiraLinha.indexOf(';') === -1 && primeiraLinha.indexOf(',') > -1) sep = ',';
+
+                    const registros = parseCSVRegistros(texto, sep);
+                    if (registros.length < 2) { showToast('⚠️ Arquivo vazio.', 'warning'); return; }
+
+                    const headers = registros[0];
+
+                    // Detectar formato: Tesouro Gerencial ou simplificado (exportação do sistema)
+                    function findCol(keywords) {
+                        for (const h of headers) {
+                            const hLow = h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                            if (keywords.length > 0 && keywords.every(kw => hLow.indexOf(kw) > -1)) return h;
+                        }
+                        return null;
+                    }
+
+                    const colSiafi = findCol(['transferencia']) || findCol(['transfer']);
+                    const isTesouroGerencial = !!colSiafi;
+
+                    if (isTesouroGerencial) {
+                        // === FORMATO TESOURO GERENCIAL ===
+                        const colUP    = findCol(['favorecido', 'doc']) || findCol(['favorecido']);
+                        const colND    = findCol(['natureza', 'despes']) || findCol(['natureza']);
+                        const colValor = findCol(['valor', 'linha']) || findCol(['valor']);
+                        const colData  = findCol(['emissao', 'dia']) || findCol(['emiss', 'dia']) || findCol(['dia']);
+
+                        if (!colND) { showToast('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger'); return; }
+
+                        // Parsear dados
+                        const rows = [];
+                        for (let i = 1; i < registros.length; i++) {
+                            const values = registros[i];
+                            const obj = {};
+                            headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
+                            rows.push(obj);
+                        }
+
+                        // Agrupar por SIAFI
+                        const grouped = {};
+                        // Detectar coluna NC exata (quando houver) → preferir header igual a 'NC'
+                        const headerLowerMap = headers.reduce((acc,h)=>{ acc[h.toLowerCase().trim()]=h; return acc; }, {});
+                        const colNC = (function(){
+                            // procurar header com nome exatamente 'nc' (ignorando case/espacos)
+                            for (const h of headers) {
+                                if (h && String(h).trim().toLowerCase() === 'nc') return h;
+                            }
+                            // fallback: procurar header que contenha 'nc' mas não 'natureza' (evitar confusão)
+                            for (const h of headers) {
+                                const low = String(h).toLowerCase();
+                                if (low.indexOf('nc') > -1 && low.indexOf('natureza') === -1) return h;
+                            }
+                            return null;
+                        })();
+
+                        rows.forEach(row => {
+                            const siafi = String(row[colSiafi] || '').trim();
+                            if (!siafi) return;
+
+                            const ndRaw = String(row[colND] || '').trim();
+                            if (!isNDValida(ndRaw)) return;
+
+                            // Converter código UG para sigla UP
+                            let upRaw = colUP ? String(row[colUP] || '').trim() : '';
+                            const upSigla = mapaUP[upRaw] || upRaw;
+
+                            const valor = parseNumber(row[colValor] || 0);
+
+                            let data = '';
+                            const dataRaw = colData ? String(row[colData] || '').trim() : '';
+                            if (dataRaw) {
+                                const p = dataRaw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+                                if (p) data = p[3] + '-' + p[2].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+                                else if (/^\d{4}-\d{2}-\d{2}$/.test(dataRaw)) data = dataRaw;
+                            }
+
+                            // Capturar NC original (quando presente)
+                            const ncRaw = colNC ? String(row[colNC] || '').trim() : '';
+
+                            if (!grouped[siafi]) grouped[siafi] = { itens: [] };
+                            // Guardar a linha original completa (`origem`) para permitir reexportar
+                            // depois todas as colunas do extrato, inclusive as que o sistema não usa.
+                            grouped[siafi].itens.push({ nd: ndRaw, nc: ncRaw, up: upSigla, valor, data, origem: row });
+                        });
+
+                        const siafiKeys = Object.keys(grouped);
+                        const totalItens = siafiKeys.reduce((s, k) => s + grouped[k].itens.length, 0);
+
+                        if (siafiKeys.length === 0) { showToast('❌ Nenhum dado válido encontrado.', 'danger'); return; }
+
+                        confirmarAcao('O arquivo contém ' + totalItens + ' registro(s) de ' + siafiKeys.length + ' TED(s) SIAFI.\n\n⚠️ Os dados de Execução Financeira existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?', function() {
+
+                        const normSiafi = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
+
+                        let countTeds = 0, countItens = 0;
+                        let tedsNaoEncontrados = [];
+
+                        siafiKeys.forEach(siafi => {
+                            const grupo = grouped[siafi];
+                            const normS = normSiafi(siafi);
+
+                            const ted = dados.teds.find(t => {
+                                const tSiafi = normSiafi(t.numTedSiafi);
+                                return normS && tSiafi && normS === tSiafi;
+                            });
+
+                            if (!ted) { tedsNaoEncontrados.push(siafi); return; }
+
+                            ted.execFinanceiras = ted.execFinanceiras || [];
+                            // Limpar dados antigos deste TED
+                            ted.execFinanceiras = [];
+
+                            // Mapa NDs do cadastro financeiro
+                            const cadNDs = {};
+                            (ted.financeiros || []).forEach(f => {
+                                const ndNorm = normalizarND(f.numero);
+                                if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
+                            });
+
+                            // Inserir apenas itens cujas ND existam no cadastro financeiro do TED
+                            // Antes de inserir, agregar por ND+UP+DATA somando os valores
+                            const agregados = {}; // chave = ndFinal||up||data => { nd, up, data, valor }
+                            let itensInvalidos = 0;
+                            grupo.itens.forEach((item) => {
+                                const ndImportNorm = normalizarND(item.nd);
+                                const ndFinal = cadNDs[ndImportNorm];
+                                if (!ndFinal) { itensInvalidos++; return; }
+                                const upVal = item.up || '';
+                                const dataVal = item.data || '';
+                                const chave = ndFinal + '||' + upVal + '||' + dataVal;
+                                const valorNum = parseFloat(item.valor) || 0;
+                                if (!agregados[chave]) agregados[chave] = { nd: ndFinal, up: upVal, data: dataVal, valor: 0, origens: [] };
+                                agregados[chave].valor += valorNum;
+                                agregados[chave].origens.push({ nc: item.nc || '', valor: valorNum, data: dataVal, origem: item.origem || null });
+                            });
+
+                            // Substituir execFinanceiras com os lançamentos agregados
+                            const keys = Object.keys(agregados);
+                            if (keys.length > 0) {
+                                ted.execFinanceiras = [];
+                                keys.forEach((k, idx) => {
+                                    const it = agregados[k];
+                                    ted.execFinanceiras.push({
+                                            id: Date.now() + idx + Math.floor(Math.random() * 1000),
+                                            nd: it.nd,
+                                            numero: it.nd,
+                                            up: it.up,
+                                            ug: it.up,
+                                            valor: it.valor,
+                                            valorRealizado: it.valor,
+                                            data: it.data,
+                                            origens: it.origens || []
+                                        });
+                                });
+                            } else {
+                                // não há itens válidos: limpar execFinanceiras
+                                ted.execFinanceiras = [];
+                            }
+
+                            try { atualizarGastoFromExecFinanceiras(ted); } catch(ex) {
+                                try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}
+                            }
+                            if (keys.length > 0) countTeds++;
+                            countItens += keys.length;
+                        });
+
+                        try { salvarDadosImediato(); } catch(ex) {}
+                        try { atualizarTabelaExecFinanceira(); } catch(ex) {}
+
+                        let msg = countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!';
+                        const skipped = totalItens - countItens;
+                        if (tedsNaoEncontrados.length > 0) {
+                            msg += '\n⚠️ SIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ');
+                        }
+                        if (skipped > 0) {
+                            msg += '\n⚠️ ' + skipped + ' item(ns) ignorado(s) porque a(s) ND(s) não existe(m) no cadastro financeiro.';
+                        }
+                        if (countItens === 0) {
+                            // Nenhum dado importado, mostrar alerta detalhado
+                            showToast('❌ Nenhum dado importado!\n\nSIAFIs no arquivo: ' + siafiKeys.join(', ') + (tedsNaoEncontrados.length ? ('\n\nSIAFIs não encontrados: ' + tedsNaoEncontrados.join(', ')) : '') + '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'), 'danger');
+                        } else {
+                            // Se houve itens importados, exibir toast (warning quando houver problemas)
+                            const level = (tedsNaoEncontrados.length || skipped) ? 'warning' : 'success';
+                            showToast(msg, level);
+                        }
+                    }, 'Confirmar');
+                    return;
+
+                    } else {
+                        // === FORMATO SIMPLIFICADO (exportação do próprio sistema) ===
+                        const rows = parseCSV(texto);
+                        const grouped = {};
+                        rows.forEach(row => {
+                            if (!row.numTed || !row.nd) return;
+                            const key = String(row.numTed).trim();
+                            if (!grouped[key]) grouped[key] = [];
+                            grouped[key].push(row);
+                        });
+                        let countTeds = 0, countItens = 0;
+                        Object.keys(grouped).forEach(numTed => {
+                            const ted = dados.teds.find(t => String(t.numTed).trim() === numTed);
+                            if (ted) {
+                                // Mapa NDs do cadastro financeiro (para permitir somente importação das NDs já cadastradas)
+                                const cadNDs = {};
+                                (ted.financeiros || []).forEach(f => {
+                                    const ndNorm = normalizarND(f.numero);
+                                    if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
+                                });
+
+                                // Agregar linhas por ND+UP+DATA somando valores, e só importar NDs presentes no cadastro
+                                const agreg = {}; // chave = ndFinal||up||data
+                                let ignorados = 0;
+                                grouped[numTed].forEach((row) => {
+                                    const ndImportNorm = normalizarND(row.nd);
+                                    const ndFinal = cadNDs[ndImportNorm];
+                                    if (!ndFinal) { ignorados++; return; }
+                                    const upVal = row.up || '';
+                                    const dataVal = row.data || '';
+                                    const chave = ndFinal + '||' + upVal + '||' + dataVal;
+                                    const valorNum = parseNumber(row.valor) || 0;
+                                    if (!agreg[chave]) agreg[chave] = { nd: ndFinal, up: upVal, data: dataVal, valor: 0, origens: [] };
+                                    agreg[chave].valor += valorNum;
+                                    agreg[chave].origens.push({ nc: row.nc || row.NC || '', valor: valorNum, data: dataVal });
+                                });
+
+                                const chavesAgreg = Object.keys(agreg);
+                                ted.execFinanceiras = [];
+                                chavesAgreg.forEach((k, idx) => {
+                                    const it = agreg[k];
+                                    ted.execFinanceiras.push({
+                                        id: Date.now() + idx,
+                                        nd: it.nd,
+                                        numero: it.nd,
+                                        up: it.up || '',
+                                        ug: it.up || '',
+                                        valor: it.valor,
+                                        valorRealizado: it.valor,
+                                        data: it.data || '',
+                                        origens: it.origens || []
+                                    });
+                                });
+
+                                try { atualizarGastoFromExecFinanceiras(ted); } catch(ex) {
+                                    try { ted.gasto = calcularTotalExecFinanceira(ted) || 0; } catch(_) {}
+                                }
+                                const importados = chavesAgreg.length;
+                                if (importados > 0) countTeds++;
+                                countItens += importados;
+                                // ignorados serão refletidos no total de itens importados vs presentes no arquivo
+                            }
+                        });
+                        try { salvarDadosImediato(); } catch(ex) {}
+                        try { atualizarTabelaExecFinanceira(); } catch(ex) {}
+                        const totalInFile = Object.keys(grouped).reduce((s,k)=>s+grouped[k].length,0);
+                        const skipped = totalInFile - countItens;
+                        let msg = countItens + ' execução(ões) financeira(s) importada(s) para ' + countTeds + ' TED(s)!';
+                        if (skipped > 0) msg += '\n⚠️ ' + skipped + ' item(ns) ignorado(s) porque a(s) ND(s) não existe(m) no cadastro financeiro.';
+                        const level = skipped ? 'warning' : 'success';
+                        showToast(msg, level);
+                    }
+                } catch (err) {
+                    console.error('Erro na importação:', err);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // IMPORTAR RECURSOS GERAIS (CSV do Tesouro Gerencial)
+        // Normalizar ND removendo tudo que não for dígito (mais robusto)
+        function normalizarND(nd) {
+            return String(nd || '').replace(/[^0-9]/g, '').trim();
+        }
+
+        // Formatar ND com pontos: 339030 → 33.90.30, 449052 → 44.90.52
+        function formatarNDComPontos(nd) {
+            const digits = String(nd || '').replace(/[^0-9]/g, '');
+            if (digits.length === 6) {
+                return digits.substring(0, 2) + '.' + digits.substring(2, 4) + '.' + digits.substring(4, 6);
+            }
+            if (digits.length === 8) {
+                return digits.substring(0, 2) + '.' + digits.substring(2, 4) + '.' + digits.substring(4, 6) + '.' + digits.substring(6, 8);
+            }
+            // Se já tem pontos ou formato diferente, retornar como está
+            return String(nd || '').trim();
+        }
+
+        // Validar se um string parece ser uma ND (somente dígitos, opcionalmente com pontos/traços)
+        function isNDValida(nd) {
+            const s = String(nd || '').trim();
+            if (!s) return false;
+            // ND deve conter apenas dígitos, pontos e traços, e ter entre 4 e 10 caracteres
+            if (!/^[\d\.\-]+$/.test(s)) return false;
+            // Deve ter pelo menos 4 dígitos
+            const digits = s.replace(/[^0-9]/g, '');
+            return digits.length >= 4 && digits.length <= 10;
+        }
+
+        // Reconstrói o valor mascarado NN.NN.NN a partir dos dígitos puros
+        function mascaraNDFormatar(digits) {
+            if (digits.length <= 2) return digits;
+            if (digits.length <= 4) return digits.slice(0,2) + '.' + digits.slice(2);
+            return digits.slice(0,2) + '.' + digits.slice(2,4) + '.' + digits.slice(4,6);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const ndInput = document.getElementById('modalFinanceiroND');
+            if (!ndInput) return;
+
+            ndInput.addEventListener('keydown', function(e) {
+                const isDigit = e.key >= '0' && e.key <= '9';
+                const isBackspace = e.key === 'Backspace';
+                const isDelete = e.key === 'Delete';
+                const isNav = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','Tab','Enter','Escape'].includes(e.key);
+                const isCopy = (e.ctrlKey || e.metaKey) && ['a','c','v','x'].includes(e.key.toLowerCase());
+
+                if (isNav || isCopy) return;
+
+                e.preventDefault();
+
+                const val = this.value;
+                let start = this.selectionStart;
+                let end = this.selectionEnd;
+                let digits = val.replace(/[^0-9]/g, '');
+
+                if (isDigit) {
+                    // Calcular quantos dígitos existem antes do cursor
+                    const digitsBeforeCursor = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                    if (digits.length >= 6 && start === end) return; // já cheio
+                    // Remover dígitos selecionados
+                    const digitsBeforeSel = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                    const digitsAfterSel  = val.slice(end).replace(/[^0-9]/g, '').length;
+                    const digitsSelected  = digits.length - digitsBeforeSel - digitsAfterSel;
+                    const newDigits = digits.slice(0, digitsBeforeSel) + e.key + digits.slice(digitsBeforeSel + digitsSelected);
+                    const trimmed = newDigits.slice(0, 6);
+                    const masked = mascaraNDFormatar(trimmed);
+                    this.value = masked;
+                    // Cursor logo após o dígito inserido
+                    const newPos = mascaraNDFormatar(trimmed.slice(0, digitsBeforeSel + 1)).length;
+                    this.setSelectionRange(newPos, newPos);
+
+                } else if (isBackspace) {
+                    if (start !== end) {
+                        // Apagar seleção
+                        const digitsBeforeSel = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                        const digitsAfterSel  = val.slice(end).replace(/[^0-9]/g, '').length;
+                        const digitsSelected  = digits.length - digitsBeforeSel - digitsAfterSel;
+                        const newDigits = digits.slice(0, digitsBeforeSel) + digits.slice(digitsBeforeSel + digitsSelected);
+                        const masked = mascaraNDFormatar(newDigits);
+                        this.value = masked;
+                        const newPos = mascaraNDFormatar(newDigits.slice(0, digitsBeforeSel)).length;
+                        this.setSelectionRange(newPos, newPos);
+                    } else if (start > 0) {
+                        // Apagar um caractere: se cursor está em cima de ponto, pula para o dígito antes
+                        const charBefore = val[start - 1];
+                        const digitsBeforeCursor = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                        const removeIdx = charBefore === '.' ? digitsBeforeCursor - 1 : digitsBeforeCursor - 1;
+                        if (removeIdx < 0) return;
+                        const newDigits = digits.slice(0, removeIdx) + digits.slice(removeIdx + 1);
+                        const masked = mascaraNDFormatar(newDigits);
+                        this.value = masked;
+                        const newPos = mascaraNDFormatar(newDigits.slice(0, removeIdx)).length;
+                        this.setSelectionRange(newPos, newPos);
+                    }
+
+                } else if (isDelete) {
+                    if (start !== end) {
+                        const digitsBeforeSel = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                        const digitsAfterSel  = val.slice(end).replace(/[^0-9]/g, '').length;
+                        const digitsSelected  = digits.length - digitsBeforeSel - digitsAfterSel;
+                        const newDigits = digits.slice(0, digitsBeforeSel) + digits.slice(digitsBeforeSel + digitsSelected);
+                        const masked = mascaraNDFormatar(newDigits);
+                        this.value = masked;
+                        const newPos = mascaraNDFormatar(newDigits.slice(0, digitsBeforeSel)).length;
+                        this.setSelectionRange(newPos, newPos);
+                    } else if (start < val.length) {
+                        const charAt = val[start];
+                        const digitsBeforeCursor = val.slice(0, start).replace(/[^0-9]/g, '').length;
+                        const removeIdx = charAt === '.' ? digitsBeforeCursor : digitsBeforeCursor;
+                        const newDigits = digits.slice(0, removeIdx) + digits.slice(removeIdx + 1);
+                        const masked = mascaraNDFormatar(newDigits);
+                        this.value = masked;
+                        const newPos = mascaraNDFormatar(newDigits.slice(0, removeIdx)).length;
+                        this.setSelectionRange(newPos, newPos);
+                    }
+                }
+            });
+
+            // Ao colar (Ctrl+V): limpar e reformatar
+            ndInput.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pasted = (e.clipboardData || window.clipboardData).getData('text');
+                const digits = pasted.replace(/[^0-9]/g, '').slice(0, 6);
+                this.value = mascaraNDFormatar(digits);
+                const pos = this.value.length;
+                this.setSelectionRange(pos, pos);
+            });
+        });
+
+        // Grava os Recursos Gerais agrupados, detectando linhas repetidas antes de confirmar.
+        // Compartilhado pelos dois formatos aceitos (Tesouro Gerencial e exportação do sistema),
+        // que diferem apenas em como cada chave de grupo vira um TED.
+        //   grupos      : { chave: [{nd, nc, valor, data, raw}] }
+        //   resolverTed : (chave) => ted | undefined
+        //   rotuloChave : como chamar a chave nas mensagens ('SIAFI' ou 'nº TED')
+        function aplicarRecursosGerais(grupos, resolverTed, rotuloChave) {
+            // Resolver os TEDs ANTES de detectar duplicatas: só faz sentido avisar sobre
+            // repetições em dados que de fato serão importados.
+            const naoEncontrados = [];
+            const chaves = [];
+            const tedPorChave = {};
+            Object.keys(grupos).forEach(chave => {
+                const ted = resolverTed(chave);
+                if (!ted) { naoEncontrados.push(chave); return; }
+                tedPorChave[chave] = ted;
+                chaves.push(chave);
+            });
+            const totalItens = chaves.reduce((s, k) => s + grupos[k].length, 0);
+
+            // Linhas idênticas em TODAS as colunas são o mesmo lançamento repetido no extrato —
+            // não há dimensão que as distinga, então somá-las infla o realizado. A chave é a
+            // linha bruta inteira: linhas que diferem em qualquer coluna (subitem, plano
+            // interno, fonte) são fatos distintos e continuam somando.
+            const duplicatas = [];
+            chaves.forEach(chave => {
+                const contagem = {};
+                grupos[chave].forEach(it => { contagem[it.raw] = (contagem[it.raw] || 0) + 1; });
+                Object.keys(contagem).forEach(raw => {
+                    if (contagem[raw] < 2) return;
+                    const it = grupos[chave].find(x => x.raw === raw);
+                    duplicatas.push({
+                        siafi: chave, nc: it.nc, nd: it.nd,
+                        valor: it.valor, data: it.data, vezes: contagem[raw]
+                    });
+                });
+            });
+
+            const dedupPorRaw = (itens) => {
+                const vistos = {};
+                return itens.filter(it => {
+                    if (vistos[it.raw]) return false;
+                    vistos[it.raw] = true;
+                    return true;
+                });
+            };
+
+            function gravar(consolidar) {
+                let countTeds = 0, countItens = 0, countConsolidados = 0;
+
+                chaves.forEach(chave => {
+                    const ted = tedPorChave[chave];
+                    const itens = consolidar ? dedupPorRaw(grupos[chave]) : grupos[chave];
+                    countConsolidados += grupos[chave].length - itens.length;
+
+                    // Limpar dados antigos deste TED
+                    ted.recursosGerais = [];
+
+                    // Mapa de NDs do cadastro financeiro (normalizada → formato com pontos)
+                    const cadNDs = {};
+                    (ted.financeiros || []).forEach(f => {
+                        const ndNorm = normalizarND(f.numero);
+                        if (ndNorm && !cadNDs[ndNorm]) cadNDs[ndNorm] = String(f.numero);
+                    });
+
+                    itens.forEach((item, idx) => {
+                        const ndImportNorm = normalizarND(item.nd);
+                        // Usar ND do cadastro (com pontos) se existir, senão formatar automaticamente
+                        const ndFinal = cadNDs[ndImportNorm] || formatarNDComPontos(item.nd);
+                        ted.recursosGerais.push({
+                            id: Date.now() + idx + Math.random() * 1000,
+                            nd: ndFinal,
+                            nc: item.nc || '',
+                            valor: item.valor,
+                            data: item.data,
+                            // Linha original completa do extrato, para a exportação devolver
+                            // as mesmas colunas que entraram
+                            origem: item.origem || null
+                        });
+                    });
+
+                    countTeds++;
+                    countItens += itens.length;
+                });
+
+                try { salvarDadosImediato(); } catch(e) {}
+                try { atualizarTabelaRecursosGerais(); } catch(e) {}
+
+                let msg = countItens + ' recurso(s) importado(s) para ' + countTeds + ' TED(s)!';
+                if (countConsolidados > 0) {
+                    msg += '\n' + countConsolidados + ' linha(s) repetida(s) consolidada(s).';
+                } else if (duplicatas.length > 0) {
+                    // Importou sabendo das repetições: não anunciar como sucesso limpo
+                    msg += '\n⚠️ ' + duplicatas.length + ' linha(s) repetida(s) foram mantidas — o realizado está inflado.';
+                }
+                if (naoEncontrados.length > 0) {
+                    msg += '\n⚠️ ' + rotuloChave + ' sem TED cadastrado (não importado(s)): ' + naoEncontrados.join(', ');
+                }
+                showToast(msg, (countConsolidados > 0 || duplicatas.length > 0 || naoEncontrados.length > 0) ? 'warning' : 'success');
+            }
+
+            if (chaves.length === 0) {
+                showToast('❌ Nenhum recurso importado!\n\nNenhum ' + rotuloChave + ' do arquivo corresponde a um TED cadastrado.\n\n' +
+                    rotuloChave + ' no arquivo: ' + naoEncontrados.join(', ') +
+                    '\n\nTEDs no sistema:\n' + dados.teds.map(t => t.numTed + ' (SIAFI: ' + (t.numTedSiafi || 'não preenchido') + ')').join('\n'), 'danger');
+                return;
+            }
+
+            confirmarAcao('O arquivo contém ' + totalItens + ' registro(s) de ' + chaves.length + ' TED(s) reconhecido(s).' +
+                (naoEncontrados.length ? ('\n' + naoEncontrados.length + ' ' + rotuloChave + ' do arquivo não têm TED cadastrado e serão ignorados.') : '') +
+                '\n\n⚠️ Os dados de Recursos Gerais existentes serão SUBSTITUÍDOS.\n\nDeseja continuar?', function() {
+                if (duplicatas.length > 0) {
+                    confirmarDuplicatas(duplicatas, function(escolha) { gravar(escolha === 'consolidar'); });
+                } else {
+                    gravar(false);
+                }
+            }, 'Confirmar');
+        }
+
+        function importarRecursosGerais(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let texto = e.target.result;
+                    if (texto.charCodeAt(0) === 0xFEFF) texto = texto.substring(1);
+
+                    // Detectar separador (tab, ;, ou ,)
+                    const primeiraLinha = texto.split('\n')[0] || '';
+                    let sep = ';';
+                    if (primeiraLinha.indexOf('\t') > -1) sep = '\t';
+                    else if (primeiraLinha.indexOf(';') === -1 && primeiraLinha.indexOf(',') > -1) sep = ',';
+
+                    const registros = parseCSVRegistros(texto, sep);
+                    if (registros.length < 2) {
+                        showToast('⚠️ Arquivo vazio ou sem dados.', 'warning');
+                        return;
+                    }
+
+                    const headers = registros[0];
+
+                    // Localizar as 4 colunas necessárias por busca flexível
+                    function findCol(keywords) {
+                        for (const h of headers) {
+                            const hLow = h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                            if (keywords.length > 0 && keywords.every(kw => hLow.indexOf(kw) > -1)) return h;
+                        }
+                        return null;
+                    }
+
+                    const colSiafi = findCol(['transferencia']) || findCol(['transfer']);
+                    const colND    = findCol(['natureza', 'despes']) || findCol(['natureza']);
+                    const colValor = findCol(['valor', 'linha']) || findCol(['valor']);
+                    const colData  = findCol(['emissao', 'dia']) || findCol(['emiss', 'dia']) || findCol(['dia']);
+                    const colNC = (function(){
+                        for (const h of headers) {
+                            if (h && String(h).trim().toLowerCase() === 'nc') return h;
+                        }
+                        for (const h of headers) {
+                            const low = String(h || '').toLowerCase();
+                            if (low.indexOf('nc') > -1 && low.indexOf('natureza') === -1 && low.indexOf('transfer') === -1) return h;
+                        }
+                        return null;
+                    })();
+
+                    if (!colSiafi) {
+                        // === FORMATO SIMPLIFICADO (exportação do próprio sistema) ===
+                        const simples = parseCSV(texto);
+                        if (!simples.length || simples[0].numTed === undefined || simples[0].nd === undefined) {
+                            showToast('❌ Coluna "NC - Transferência" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger');
+                            return;
+                        }
+                        const porTed = {}; // chave = numTed
+                        simples.forEach(row => {
+                            const numTed = String(row.numTed || '').trim();
+                            const ndRaw = String(row.nd || '').trim();
+                            if (!numTed || !isNDValida(ndRaw)) return;
+                            let data = String(row.data || '').trim();
+                            const p = data.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+                            if (p) data = p[3] + '-' + p[2].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+                            else if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) data = '';
+                            const nc = String(row.nc || row.NC || '').trim();
+                            if (!porTed[numTed]) porTed[numTed] = [];
+                            porTed[numTed].push({
+                                nd: ndRaw, nc, valor: parseNumber(row.valor) || 0, data,
+                                raw: JSON.stringify([numTed, ndRaw, nc, row.valor, data]),
+                                // Formato simplificado não carrega as colunas do extrato
+                                origem: null
+                            });
+                        });
+                        if (Object.keys(porTed).length === 0) {
+                            showToast('❌ Nenhum dado válido encontrado no arquivo.', 'danger');
+                            return;
+                        }
+                        aplicarRecursosGerais(porTed, function(numTed) {
+                            return dados.teds.find(t => String(t.numTed).trim() === numTed);
+                        }, 'nº TED');
+                        return;
+                    }
+                    if (!colND) {
+                        showToast('❌ Coluna "NC - Natureza Despesa" não encontrada.\n\nCabeçalhos: ' + headers.join(', '), 'danger');
+                        return;
+                    }
+
+                    // Parsear dados. `campos` guarda a linha original inteira (as 15 colunas do
+                    // extrato, não só as 5 que o sistema usa) para que a exportação consiga
+                    // devolver o mesmo arquivo que entrou.
+                    const rows = [];
+                    for (let i = 1; i < registros.length; i++) {
+                        const values = registros[i];
+                        const campos = {};
+                        headers.forEach((h, idx) => { campos[h] = values[idx] || ''; });
+                        rows.push({ campos, raw: JSON.stringify(values) });
+                    }
+
+                    // Agrupar por NC - Transferência (nº SIAFI do TED)
+                    const grouped = {}; // chave = siafi, valor = [{nd, nc, valor, data, raw, origem}]
+                    let linhasIgnoradas = 0;
+
+                    rows.forEach(({ campos: row, raw }) => {
+                        const siafi = String(row[colSiafi] || '').trim();
+                        if (!siafi) { linhasIgnoradas++; return; }
+
+                        const ndRaw = String(row[colND] || '').trim();
+                        // Validar ND (somente dígitos/pontos, mínimo 4 dígitos)
+                        if (!isNDValida(ndRaw)) return;
+
+                        // Valor
+                        const valor = parseNumber(row[colValor] || 0);
+
+                        // Data (dd/mm/aaaa → yyyy-mm-dd)
+                        let data = '';
+                        const dataRaw = String(row[colData] || '').trim();
+                        if (dataRaw) {
+                            const p = dataRaw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+                            if (p) {
+                                data = p[3] + '-' + p[2].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+                            } else if (/^\d{4}-\d{2}-\d{2}$/.test(dataRaw)) {
+                                data = dataRaw;
+                            }
+                        }
+
+                        const nc = colNC ? String(row[colNC] || '').trim() : '';
+
+                        if (!grouped[siafi]) grouped[siafi] = [];
+                        grouped[siafi].push({ nd: ndRaw, nc, valor, data, raw, origem: row });
+                    });
+
+                    if (Object.keys(grouped).length === 0) {
+                        showToast('❌ Nenhum dado válido encontrado no arquivo.', 'danger');
+                        return;
+                    }
+
+                    // Resolver o TED pelo nº SIAFI (coluna "NC - Transferência")
+                    const normSiafi = (s) => String(s || '').replace(/[\.\-\s\/]/g, '').replace(/^0+/, '').trim().toUpperCase();
+                    aplicarRecursosGerais(grouped, function(siafi) {
+                        const normS = normSiafi(siafi);
+                        return dados.teds.find(t => {
+                            const tSiafi = normSiafi(t.numTedSiafi);
+                            return normS && tSiafi && normS === tSiafi;
+                        });
+                    }, 'SIAFI');
+                } catch (err) {
+                    console.error('Erro na importação:', err);
+                    showToast('❌ Erro ao importar: ' + err.message, 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Detectar scroll horizontal em table-wrappers
+        function checkTableScrolls() {
+            document.querySelectorAll('.table-wrapper').forEach(wrapper => {
+                if (wrapper.scrollWidth > wrapper.clientWidth) {
+                    wrapper.classList.add('has-scroll');
+                } else {
+                    wrapper.classList.remove('has-scroll');
+                }
+            });
+            try { refreshFrozenColumnsAllTables(); } catch(e) {}
+        }
+
+        // ===== CONGELAMENTO GLOBAL DE COLUNAS (exceto colunas de data) =====
+        function isDateLikeHeaderLabel(label) {
+            const txt = String(label || '').trim().toUpperCase();
+            if (!txt) return false;
+            if (/\bDATA\b/.test(txt)) return true;
+            if (/\b(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\/?\d{0,4}\b/.test(txt)) return true;
+            if (/^\d{1,2}[\/-]\d{2,4}$/.test(txt)) return true;
+            return false;
+        }
+
+        function getLeafHeaderLabels(table) {
+            const thead = table && table.tHead;
+            if (!thead || !thead.rows || !thead.rows.length) return [];
+
+            const rows = Array.from(thead.rows);
+            const grid = [];
+            rows.forEach((row, rIdx) => {
+                if (!grid[rIdx]) grid[rIdx] = [];
+                let cIdx = 0;
+                Array.from(row.cells).forEach(cell => {
+                    while (grid[rIdx][cIdx]) cIdx++;
+                    const rs = Number(cell.rowSpan || 1);
+                    const cs = Number(cell.colSpan || 1);
+                    for (let rr = 0; rr < rs; rr++) {
+                        if (!grid[rIdx + rr]) grid[rIdx + rr] = [];
+                        for (let cc = 0; cc < cs; cc++) {
+                            grid[rIdx + rr][cIdx + cc] = cell;
+                        }
+                    }
+                    cIdx += cs;
+                });
+            });
+
+            const lastRow = grid[grid.length - 1] || [];
+            return lastRow.map(c => (c ? c.textContent : '') || '');
+        }
+
+        function clearFrozenStyles(table) {
+            if (!table) return;
+            table.querySelectorAll('.sticky-freeze').forEach(cell => {
+                cell.classList.remove('sticky-freeze', 'sticky-freeze-last');
+                cell.style.left = '';
+                cell.style.background = '';
+            });
+        }
+
+        function clearYearDividerStyles(table) {
+            if (!table) return;
+            table.querySelectorAll('.year-divider-cell, .year-divider-group').forEach(cell => {
+                cell.classList.remove('year-divider-cell', 'year-divider-group');
+            });
+        }
+
+        function applyYearDividersToTable(table) {
+            if (!table || !table.tHead || !table.tHead.rows || !table.tHead.rows.length) return;
+            clearYearDividerStyles(table);
+
+            const headRows = Array.from(table.tHead.rows);
+            if (!headRows.length) return;
+
+            // Encontrar a linha que contém os grupos de ano (células com colspan > 1)
+            const yearRow = headRows.find(r => Array.from(r.cells).some(c => Number(c.colSpan || 1) > 1));
+            if (!yearRow) return;
+
+            // Mapear posições lógicas respeitando rowspan/colspan
+            const occupancy = [];
+            const yearStarts = [];
+            headRows.forEach((row, rIdx) => {
+                if (!occupancy[rIdx]) occupancy[rIdx] = [];
+                let logical = 0;
+
+                Array.from(row.cells).forEach(cell => {
+                    while (occupancy[rIdx][logical]) logical++;
+
+                    const cs = Number(cell.colSpan || 1);
+                    const rs = Number(cell.rowSpan || 1);
+                    const start = logical;
+
+                    if (row === yearRow && cs > 1) {
+                        yearStarts.push(start);
+                        cell.classList.add('year-divider-group');
+                    }
+
+                    for (let rr = 0; rr < rs; rr++) {
+                        if (!occupancy[rIdx + rr]) occupancy[rIdx + rr] = [];
+                        for (let cc = 0; cc < cs; cc++) {
+                            occupancy[rIdx + rr][start + cc] = true;
+                        }
+                    }
+
+                    logical += cs;
+                });
+            });
+
+            if (!yearStarts.length) return;
+
+            // Marcar divisão na linha folha de meses (última linha do thead), quando existir
+            const row2 = table.tHead.rows[table.tHead.rows.length - 1];
+            if (row2 && row2.cells && row2.cells.length) {
+                const firstYearStart = yearStarts[0];
+                yearStarts.forEach(start => {
+                    const idx = start - firstYearStart;
+                    const cell = row2.cells[idx];
+                    if (cell) cell.classList.add('year-divider-cell');
+                });
+            }
+
+            // Marcar divisão no corpo/rodapé respeitando colspan
+            const sections = [];
+            if (table.tBodies) sections.push(...Array.from(table.tBodies));
+            if (table.tFoot) sections.push(table.tFoot);
+
+            sections.forEach(section => {
+                Array.from(section.rows || []).forEach(row => {
+                    let l = 0;
+                    Array.from(row.cells || []).forEach(cell => {
+                        if (yearStarts.includes(l)) {
+                            cell.classList.add('year-divider-cell');
+                        }
+                        l += Number(cell.colSpan || 1);
+                    });
+                });
+            });
+        }
+
+        function applyFrozenColumnsToTable(table) {
+            if (!table) return;
+            clearFrozenStyles(table);
+
+            const labels = getLeafHeaderLabels(table);
+            const totalCols = labels.length || (table.rows[0] ? table.rows[0].cells.length : 0);
+            if (!totalCols) return;
+
+            const firstDateIdx = labels.findIndex(isDateLikeHeaderLabel);
+            const freezeCount = firstDateIdx === -1 ? totalCols : firstDateIdx;
+            if (freezeCount <= 0) return;
+
+            // Calcular larguras por índice lógico percorrendo TODAS as linhas do thead
+            // com grid de ocupância → necessário porque colunas fixas têm rowspan="2"
+            // e NfO aparecem na última linha do thead.
+            const colWidths = [];
+            if (table.tHead && table.tHead.rows.length) {
+                const occ = [];
+                Array.from(table.tHead.rows).forEach((row, rIdx) => {
+                    if (!occ[rIdx]) occ[rIdx] = [];
+                    let log = 0;
+                    Array.from(row.cells).forEach(cell => {
+                        while (occ[rIdx][log]) log++;
+                        const cs = Number(cell.colSpan || 1);
+                        const rs = Number(cell.rowSpan || 1);
+                        const w = Math.ceil(cell.getBoundingClientRect().width) || 0;
+                        // Só registrar a largura se ainda não foi preenchida (primeira vez que vemos esse índice)
+                        for (let k = 0; k < cs; k++) {
+                            if (!colWidths[log + k]) colWidths[log + k] = w / cs;
+                        }
+                        for (let rr = 0; rr < rs; rr++) {
+                            if (!occ[rIdx + rr]) occ[rIdx + rr] = [];
+                            for (let cc = 0; cc < cs; cc++) occ[rIdx + rr][log + cc] = true;
+                        }
+                        log += cs;
+                    });
+                });
+            } else {
+                // Fallback: usar primeira linha do tbody
+                const fbRow = table.tBodies && table.tBodies[0] && table.tBodies[0].rows[0];
+                if (!fbRow) return;
+                let log = 0;
+                Array.from(fbRow.cells).forEach(cell => {
+                    const cs = Number(cell.colSpan || 1);
+                    const w = Math.ceil(cell.getBoundingClientRect().width) || 0;
+                    for (let k = 0; k < cs; k++) colWidths[log + k] = w / cs;
+                    log += cs;
+                });
+            }
+
+            // Calcular offsets acumulados
+            const leftOffsets = [];
+            let acc = 0;
+            for (let i = 0; i < freezeCount; i++) {
+                leftOffsets[i] = acc;
+                acc += (colWidths[i] || 0);
+            }
+
+            const applyCell = (cell, logicalStart, colSpan) => {
+                if (!cell) return;
+                const cs = colSpan || 1;
+                // Congelar célula apenas se ela estiver TOTALMENTE dentro da área congelada
+                if (logicalStart < 0 || (logicalStart + cs) > freezeCount) return;
+                cell.classList.add('sticky-freeze');
+                //? a última célula congelada se vai até o limite da área congelada
+                if ((logicalStart + cs) === freezeCount) cell.classList.add('sticky-freeze-last');
+                cell.style.left = leftOffsets[logicalStart] + 'px';
+                const bg = window.getComputedStyle(cell).backgroundColor;
+                if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+                    cell.style.background = bg;
+                } else {
+                    const rowBg = cell.parentElement ? window.getComputedStyle(cell.parentElement).backgroundColor : '';
+                    if (rowBg && rowBg !== 'rgba(0, 0, 0, 0)' && rowBg !== 'transparent') {
+                        cell.style.background = rowBg;
+                    } else if (cell.tagName === 'TH') {
+                        cell.style.background = 'var(--primary-gradient)';
+                    } else {
+                        cell.style.background = 'var(--surface, #ffffff)';
+                    }
+                }
+            };
+
+            // THEAD: respeitar colspan/rowspan com grid de ocupância
+            if (table.tHead && table.tHead.rows) {
+                const occupancy = [];
+                Array.from(table.tHead.rows).forEach((row, rIdx) => {
+                    if (!occupancy[rIdx]) occupancy[rIdx] = [];
+                    let logical = 0;
+
+                    Array.from(row.cells).forEach(cell => {
+                        while (occupancy[rIdx][logical]) logical++;
+
+                        const cs = Number(cell.colSpan || 1);
+                        const rs = Number(cell.rowSpan || 1);
+                        const start = logical;
+
+                        applyCell(cell, start, cs);
+
+                        for (let rr = 0; rr < rs; rr++) {
+                            if (!occupancy[rIdx + rr]) occupancy[rIdx + rr] = [];
+                            for (let cc = 0; cc < cs; cc++) {
+                                occupancy[rIdx + rr][start + cc] = true;
+                            }
+                        }
+
+                        logical = start + cs;
+                    });
+                });
+            }
+
+            // TBODY/TFOOT: usar grid de ocupância por linha para suportar colspan
+            const sections = [];
+            if (table.tBodies) Array.from(table.tBodies).forEach(s => sections.push(s));
+            if (table.tFoot) sections.push(table.tFoot);
+
+            sections.forEach(section => {
+                Array.from(section.rows || []).forEach(row => {
+                    let logical = 0;
+                    Array.from(row.cells).forEach(cell => {
+                        const cs = Number(cell.colSpan || 1);
+                        applyCell(cell, logical, cs);
+                        logical += cs;
+                    });
+                });
+            });
+        }
+
+        function refreshFrozenColumnsAllTables() {
+            document.querySelectorAll('table.tabela-padrao').forEach(table => {
+                if (table.classList.contains('rg-table')) return;
+                try { applyFrozenColumnsToTable(table); } catch(e) {}
+                try { applyYearDividersToTable(table); } catch(e) {}
+            });
+        }
+
+        // Observer para detectar mudanças no DOM
+        const resizeObserver = new ResizeObserver(checkTableScrolls);
+
+        // ===== TEMA (somente claro) =====
+        // Tema escuro foi desativado por pedido do usuário: ignorar preferência salva e
+        // prefers-color-scheme do sistema, e limpar qualquer 'dark' salvo de sessões
+        // anteriores (senão quem tinha escolhido escuro antes ficaria preso nele).
+        function initTheme() {
+            const savedTheme = localStorage.getItem('ted_theme');
+            if (savedTheme === 'dark') localStorage.removeItem('ted_theme');
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+
+        // Inicializar Lucide Icons
+        function initLucideIcons() {
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+            } else if (window.lucide && typeof lucide.replace === 'function') {
+                lucide.replace({ 'stroke-width': 1.5, width: 18, height: 18 });
+            }
+        }
+
+        // ===== LOGIN SCREEN HELPERS (inline, não depende de módulos) =====
+        function showLoginScreen() {
+            var el = document.getElementById('loginScreen');
+            if (el) el.style.display = 'flex';
+        }
+        function hideLoginScreen() {
+            var el = document.getElementById('loginScreen');
+            if (el) el.style.display = 'none';
+        }
+        // Alias for module compatibility
+        function showLoginModal() { showLoginScreen(); }
+        function hideLoginModal() { hideLoginScreen(); }
+        window.showLoginModal = showLoginScreen;
+        window.hideLoginModal = hideLoginScreen;
+
+        function setLoginError(msg) {
+            var el = document.getElementById('loginError');
+            if (!el) return;
+            if (msg) { el.style.display = 'block'; el.textContent = msg; }
+            else { el.style.display = 'none'; el.textContent = ''; }
+        }
+        function setLoginSuccess(msg) {
+            var el = document.getElementById('loginSuccess');
+            if (!el) return;
+            if (msg) { el.style.display = 'block'; el.textContent = msg; }
+            else { el.style.display = 'none'; el.textContent = ''; }
+        }
+        function setLoginStatus(msg) {
+            var el = document.getElementById('loginStatus');
+            if (el) el.textContent = msg || '';
+        }
+
+        // Wait for a window property to be available
+        function waitForGlobal(name, timeout) {
+            return new Promise(function(resolve) {
+                var start = Date.now();
+                (function check() {
+                    if (window[name]) return resolve(true);
+                    if (Date.now() - start > (timeout || 8000)) return resolve(false);
+                    setTimeout(check, 200);
+                })();
+            });
+        }
+
+        // Login handler (inline → works even if app.js not loaded yet)
+        async function doLogin() {
+            setLoginError('');
+            setLoginSuccess('');
+            var email = (document.getElementById('modal_login_email') || {}).value || '';
+            var password = (document.getElementById('modal_login_password') || {}).value || '';
+            if (!email.trim() || !password.trim()) { setLoginError('Informe email e senha.'); return; }
+            setLoginStatus('Conectando...');
+            var ok = await waitForGlobal('authSignIn', 8000);
+            if (!ok) { setLoginError('Firebase não carregou. Verifique sua conexão.'); setLoginStatus(''); return; }
+            try {
+                var user = await window.authSignIn(email.trim(), password.trim());
+                if (user) {
+                    setLoginSuccess('Login realizado!');
+                    setLoginStatus('');
+                    hideLoginScreen();
+                    // authOnStateChanged in app.js will update admin UI
+                }
+            } catch (e) {
+                console.error('doLogin error', e);
+                var msg = 'Erro ao entrar.';
+                if (e && e.code) {
+                    if (e.code === 'auth/user-not-found') msg = 'Usuário não encontrado.';
+                    else if (e.code === 'auth/wrong-password') msg = 'Senha incorreta.';
+                    else if (e.code === 'auth/invalid-email') msg = 'Email inválido.';
+                    else if (e.code === 'auth/invalid-credential') msg = 'Credenciais inválidas.';
+                    else if (e.code === 'auth/too-many-requests') msg = 'Muitas tentativas. Tente mais tarde.';
+                    else msg = e.code + ': ' + (e.message || '');
+                }
+                setLoginError(msg);
+                setLoginStatus('');
+            }
+        }
+        window.doLogin = doLogin;
+
+        async function doPasswordReset() {
+            var email = ((document.getElementById('modal_login_email') || {}).value || '').trim();
+            if (!email) {
+                setLoginError('Digite seu e-mail acima para receber o link de redefinição.');
+                return;
+            }
+            setLoginError('');
+            setLoginStatus('Enviando link...');
+            try {
+                var ok = await waitForGlobal('authSendPasswordReset', 5000);
+                if (!ok) { setLoginError('Firebase não carregou. Verifique sua conexão.'); setLoginStatus(''); return; }
+                await window.authSendPasswordReset(email);
+                setLoginSuccess('Link enviado para ' + email + '. Verifique sua caixa de entrada.');
+                setLoginStatus('');
+            } catch(e) {
+                setLoginStatus('');
+                if (e && e.code === 'auth/user-not-found') {
+                    setLoginError('Nenhuma conta encontrada com este e-mail.');
+                } else if (e && e.code === 'auth/invalid-email') {
+                    setLoginError('E-mail inválido.');
+                } else {
+                    setLoginError('Erro ao enviar link: ' + (e && e.message ? e.message : e));
+                }
+            }
+        }
+        window.doPasswordReset = doPasswordReset;
+
+        function showChangePasswordModal() {
+            var m = document.getElementById('changePasswordModal');
+            if (!m) return;
+            // Limpar campos e mensagens
+            ['changePwCurrent','changePwNew','changePwConfirm'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.value = '';
+            });
+            var err = document.getElementById('changePwError');
+            var ok = document.getElementById('changePwSuccess');
+            if (err) { err.style.display = 'none'; err.textContent = ''; }
+            if (ok) { ok.style.display = 'none'; ok.textContent = ''; }
+            m.style.display = 'flex';
+        }
+        window.showChangePasswordModal = showChangePasswordModal;
+
+        function hideChangePasswordModal() {
+            var m = document.getElementById('changePasswordModal');
+            if (m) m.style.display = 'none';
+        }
+        window.hideChangePasswordModal = hideChangePasswordModal;
+
+        async function doChangePassword() {
+            var errEl = document.getElementById('changePwError');
+            var okEl = document.getElementById('changePwSuccess');
+            function setErr(msg) { if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; } if (okEl) okEl.style.display = 'none'; }
+            function setOk(msg) { if (okEl) { okEl.textContent = msg; okEl.style.display = 'block'; } if (errEl) errEl.style.display = 'none'; }
+
+            var current = (document.getElementById('changePwCurrent') || {}).value || '';
+            var novo = (document.getElementById('changePwNew') || {}).value || '';
+            var confirma = (document.getElementById('changePwConfirm') || {}).value || '';
+
+            if (!current) { setErr('Informe a senha atual.'); return; }
+            if (novo.length < 6) { setErr('A nova senha deve ter pelo menos 6 caracteres.'); return; }
+            if (novo !== confirma) { setErr('A nova senha e a confirmação não coincidem.'); return; }
+
+            try {
+                var ok = await waitForGlobal('authChangePassword', 5000);
+                if (!ok) { setErr('Firebase não carregou. Verifique sua conexão.'); return; }
+                await window.authChangePassword(current, novo);
+                setOk('Senha alterada com sucesso!');
+                // Limpar campos
+                ['changePwCurrent','changePwNew','changePwConfirm'].forEach(function(id) {
+                    var el = document.getElementById(id); if (el) el.value = '';
+                });
+                setTimeout(hideChangePasswordModal, 2000);
+            } catch(e) {
+                if (e && e.code === 'auth/wrong-password') setErr('Senha atual incorreta.');
+                else if (e && e.code === 'auth/weak-password') setErr('Nova senha muito fraca. Use pelo menos 6 caracteres.');
+                else if (e && e.code === 'auth/requires-recent-login') setErr('Por segurança, faça logout e login novamente antes de trocar a senha.');
+                else setErr('Erro ao alterar senha: ' + (e && e.message ? e.message : e));
+            }
+        }
+        window.doChangePassword = doChangePassword;
+
+        // Force create admin (disabled)
+        function doForceCreateAdmin() {
+            showToast('Operação não permitida.', 'warning');
+            return;
+        }
+        window.doForceCreateAdmin = doForceCreateAdmin;
+
+        // Logout: sair do modo admin e voltar para leitura
+        // Limpa o estado local e volta para a tela de login bloqueante — chamada em
+        // todo caminho de saída (sucesso, falha ou exceção no signOut).
+        function _voltarParaTelaDeLogin() {
+            window.currentUser = null;
+            window.currentUserProfile = null;
+            // Não deixar dados do usuário anterior residentes em memória após logout.
+            if (window.dados) { window.dados.teds = []; window.dados.proxiId = 1; }
+            window.tedSelecionado = null;
+            try { atualizarDashboard(); } catch(e) {}
+            try { atualizarListaTEDs(); } catch(e) {}
+            try { atualizarSeletorTED(); } catch(e) {}
+            updateAdminUI(false);
+            showLoginScreen();
+        }
+
+        function doLogout() {
+            try {
+                if (window.authSignOut) {
+                    window.authSignOut().then(function() {
+                        _voltarParaTelaDeLogin();
+                        showToast('Sessão encerrada. Faça login para continuar.', 'info');
+                    }).catch(function() {
+                        _voltarParaTelaDeLogin();
+                    });
+                } else {
+                    _voltarParaTelaDeLogin();
+                }
+            } catch(e) {
+                _voltarParaTelaDeLogin();
+            }
+        }
+        window.doLogout = doLogout;
+
+        // Atualizar UI baseado no perfil (admin / editor / leitor)
+        function updateAdminUI(isAdmin) {
+            var profile = window.currentUserProfile;
+            var role = profile ? (profile.role || 'leitor') : 'leitor';
+            var canEdit = role === 'admin' || role === 'editor';
+            var isAdminRole = role === 'admin';
+
+            var modeEl = document.getElementById('modeIndicator');
+            var loginBtn = document.getElementById('btnAdminLogin');
+            var logoutBtn = document.getElementById('btnAdminLogout');
+            var changePwBtn = document.getElementById('btnChangePassword');
+            var cloudCtrl = document.getElementById('adminCloudControls');
+            var adminPanel = document.getElementById('adminPanel');
+            var adminLoggedAs = document.getElementById('adminLoggedAs');
+            var tabConfig = document.getElementById('tab-config');
+            var tabRelatorios = document.getElementById('tab-relatorios');
+
+            // Indicador de modo
+            if (isAdminRole) {
+                if (modeEl) { modeEl.textContent = '🔑 Admin'; modeEl.style.background = '#dcfce7'; modeEl.style.color = '#166534'; }
+            } else if (role === 'editor') {
+                var upLabel = (profile && profile.upRestrita) ? ' (' + profile.upRestrita + ')' : '';
+                if (modeEl) { modeEl.textContent = '✏️ Editor' + upLabel; modeEl.style.background = '#fef9c3'; modeEl.style.color = '#854d0e'; }
+            } else {
+                if (modeEl) { modeEl.textContent = '📖 Leitura'; modeEl.style.background = '#e0e7ff'; modeEl.style.color = '#3730a3'; }
+            }
+
+            var isLoggedIn = !!profile;
+            var linkChangePw = document.getElementById('linkChangePassword');
+            // Botões de login/logout
+            if (isLoggedIn) {
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+                if (changePwBtn) changePwBtn.style.display = 'inline-block';
+                if (linkChangePw) linkChangePw.style.display = 'inline';
+            } else {
+                if (loginBtn) loginBtn.style.display = 'inline-block';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+                if (changePwBtn) changePwBtn.style.display = 'none';
+                if (linkChangePw) linkChangePw.style.display = 'none';
+            }
+
+            // Controles de cloud e painel admin: somente admin
+            if (cloudCtrl) cloudCtrl.style.display = isAdminRole ? 'flex' : 'none';
+            if (adminPanel) adminPanel.style.display = isAdminRole ? 'block' : 'none';
+
+            // Aba Configurações: somente admin
+            if (tabConfig) {
+                if (isAdminRole) {
+                    tabConfig.classList.remove('auto-style-001');
+                    tabConfig.style.display = '';
+                } else {
+                    tabConfig.classList.add('auto-style-001');
+                    tabConfig.style.display = 'none';
+                }
+            }
+            if (tabRelatorios) tabRelatorios.style.display = '';
+
+            // Nome do usuário logado
+            if (adminLoggedAs && profile) {
+                adminLoggedAs.textContent = (profile.displayName || profile.email || '→');
+            }
+
+            // Botões de edição: habilitados para admin e editor
+            enableEditButtons(canEdit);
+
+            // Re-renderizar cards de aditivos/apostilamentos se houver TED selecionado,
+            // pois o innerHTML é recriado e perde o estado aplicado por enableEditButtons
+            if (window.tedSelecionado) {
+                try { exibirInformacoesTED(); } catch(e) {}
+            }
+
+            // Restrição por UP: se editor com upRestrita definida
+            if (canEdit && !isAdminRole && profile && profile.upRestrita) {
+                applyUpRestriction(profile.upRestrita);
+            }
+        }
+        window.updateAdminUI = updateAdminUI;
+
+        // Aplica restrição de edição ao TED selecionado quando o usuário tem UP restrita
+        function applyUpRestriction(upRestrita) {
+            if (!window.tedSelecionado) return;
+            var tedUp = window.tedSelecionado.upResponsavel || window.tedSelecionado.up || '';
+            if (tedUp && tedUp !== upRestrita) {
+                enableEditButtons(false);
+                showToast('Você só pode editar TEDs da UP ' + upRestrita, 'warning');
+            }
+        }
+        window.applyUpRestriction = applyUpRestriction;
+
+        // Habilitar/desabilitar TODOS os botões e formulários de edição
+        function enableEditButtons(enabled) {
+            // Todos os seletores de botões que modificam dados
+            var selectors = [
+                // TED level
+                '[onclick*="editarTED"]',
+                '[onclick*="deletarTED"]',
+                '[onclick*="excluirTED"]',
+                '#tab-novo',
+                // Info edit
+                '[onclick*="toggleEditarInfo"]',
+                '[onclick*="salvarEdicaoInfo"]',
+                // Aditivos / Apostilamentos (unificado)
+                '.btn-add-aditivo',
+                '[onclick*="confirmarAlteracao"]',
+                '[onclick*="removerAlteracao"]',
+                '[onclick*="restaurarAlteracao"]',
+                '.aditivo-edit-btn',
+                '.aditivo-del-btn',
+                '.aditivo-restore-btn',
+                '[onclick*="abrirModalAditivo"]',
+                '[onclick*="confirmarAditivo"]',
+                '[onclick*="removerAditivo"]',
+                '[onclick*="abrirModalApostilamento"]',
+                '[onclick*="confirmarApostilamento"]',
+                '[onclick*="removerApostilamento"]',
+                // Objetos
+                '[onclick*="adicionarObjeto"]',
+                '[onclick*="editarObjeto"]',
+                '[onclick*="removerObjeto"]',
+                // Metas
+                '[onclick*="adicionarMeta"]',
+                '[onclick*="editarMeta"]',
+                '[onclick*="removerMeta"]',
+                // Físico
+                '[onclick*="adicionarFisico"]',
+                '[onclick*="editarFisico"]',
+                '[onclick*="removerFisico"]',
+                '[onclick*="entregas_remover"]',
+                // Exec Física
+                '[onclick*="adicionarExecFisica"]',
+                '[onclick*="removerExecFisica"]',
+                // Financeiro
+                '[onclick*="adicionarFinanceiro"]',
+                '[onclick*="editarFinanceiro"]',
+                '[onclick*="removerFinanceiro"]',
+                // Exec Financeira
+                '[onclick*="adicionarExecFinanceira"]',
+                '[onclick*="removerExecFinanceira"]',
+                // Recursos Gerais
+                '[onclick*="adicionarRecursoGeral"]',
+                '[onclick*="removerRecursoGeral"]',
+                // Cloud save
+                '[onclick*="salvarNoCloud"]',
+                // Force admin
+                '[onclick*="forceCreateAdmin"]'
+            ];
+            selectors.forEach(function(sel) {
+                try {
+                    document.querySelectorAll(sel).forEach(function(el) {
+                        el.disabled = !enabled;
+                        el.style.opacity = enabled ? '1' : '0.5';
+                        el.style.pointerEvents = enabled ? 'auto' : 'none';
+                    });
+                } catch(e) {}
+            });
+
+            // Modal edit/delete buttons
+            try {
+                document.querySelectorAll('#modalDetalhes .btn').forEach(function(b) {
+                    var txt = (b.textContent || '').toLowerCase();
+                    if (txt.includes('editar') || txt.includes('deletar')) {
+                        b.disabled = !enabled;
+                        b.style.opacity = enabled ? '1' : '0.5';
+                        b.style.pointerEvents = enabled ? 'auto' : 'none';
+                    }
+                });
+            } catch(e) {}
+
+            // Formulários de criação: não desabilitar (criarTED usa salvarDados que valida role)
+            // CSV/JSON imports: desabilitar file inputs
+            try {
+                document.querySelectorAll('[onchange*="importar"]').forEach(function(el) {
+                    el.disabled = !enabled;
+                    if (el.parentElement && el.parentElement.tagName === 'LABEL') {
+                        el.parentElement.style.opacity = enabled ? '1' : '0.5';
+                        el.parentElement.style.pointerEvents = enabled ? 'auto' : 'none';
+                    }
+                });
+            } catch(e) {}
+
+            // Bloquear click-to-edit nas células das tabelas de execução
+            window._readOnlyMode = !enabled;
+        }
+        window.enableEditButtons = enableEditButtons;
+
+        // MutationObserver: reaplicar bloqueio quando botões dinâmicos são criados
+        (function() {
+            var _reapplyTimer = null;
+            var observer = new MutationObserver(function() {
+                // Debounce: reagir após 300ms de estabilidade
+                clearTimeout(_reapplyTimer);
+                _reapplyTimer = setTimeout(function() {
+                    if (window._readOnlyMode) {
+                        enableEditButtons(false);
+                    }
+                    try { refreshFrozenColumnsAllTables(); } catch(e) {}
+                }, 300);
+            });
+            // Observar todo o container principal
+            document.addEventListener('DOMContentLoaded', function() {
+                var container = document.querySelector('.container');
+                if (container) {
+                    observer.observe(container, { childList: true, subtree: true });
+                }
+            });
+        })();
+
+        function renderRelatoriosSimples() {
+            const container = document.getElementById('relatoriosContainer');
+            if (!container) return;
+            const teds = (dados && dados.teds) ? dados.teds : [];
+            if (!teds.length) {
+                container.innerHTML = '<p style="color:var(--color-text-secondary);">Nenhum TED encontrado.</p>';
+                return;
+            }
+
+            const fmtVal = v => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const fmtDate = d => {
+                if (!d) return '';
+                try {
+                    return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
+                } catch(e) { return d; }
+            };
+
+            let html = '<h3 style="margin:0 0 0.75rem;font-size:14px;color:var(--color-text-secondary);">' +
+                teds.length + ' TEDs</h3>';
+            html += '<div style="overflow-x:auto;">';
+            html += '<table class="tabela-padrao" style="width:100%;">';
+            html += '<thead><tr>' +
+                '<th>TED</th><th>Objeto</th><th>UP</th><th>Status</th>' +
+                '<th>Valor TED</th><th>Recebido</th><th>Saldo</th>' +
+                '<th>Exec. Financeira</th><th>Exec. Física</th>' +
+                '<th>Início Vigência</th><th>Fim Vigência</th>' +
+                '</tr></thead><tbody>';
+
+            teds.forEach(t => {
+                const status = (getDisplayStatus ? (getDisplayStatus(t) || {}).text : t.situacaoTED) || '';
+                const valorTed = t.valorTed || 0;
+                const recebido = t.gasto || 0;
+                const saldo = recebido - valorTed;
+                const saldoStr = saldo < 0
+                    ? '<span style="color:#A32D2D;">− R$ ' + fmtVal(Math.abs(saldo)) + '</span>'
+                    : '<span style="color:#3B6D11;">R$ ' + fmtVal(saldo) + '</span>';
+
+                const totalFin = (t.execFinanceiras || []).reduce((s, e) => s + (Number(e.valor) || 0), 0);
+                const pctFin = valorTed > 0 ? Math.round(totalFin / valorTed * 100) : 0;
+
+                const totalFisPlan = (t.fisicos || []).reduce((s, f) => s + (Number(f.qtde) || 0), 0);
+                const totalFisReal = (t.execFisicas || []).reduce((s, e) => s + (Number(e.qtde) || 0), 0);
+                const pctFis = totalFisPlan > 0 ? Math.round(totalFisReal / totalFisPlan * 100) : 0;
+
+                html += '<tr>' +
+                    '<td style="white-space:nowrap;">' + (t.numTed || '') + '</td>' +
+                    '<td>' + (t.objetivo || t.objeto || '') + '</td>' +
+                    '<td>' + (t.upResponsavel || t.up || '') + '</td>' +
+                    '<td><span style="font-size:11px;padding:2px 8px;border-radius:999px;background:#E6F1FB;color:#0C447C;">' + status + '</span></td>' +
+                    '<td style="text-align:right;font-family:monospace;">R$ ' + fmtVal(valorTed) + '</td>' +
+                    '<td style="text-align:right;font-family:monospace;color:#3B6D11;">R$ ' + fmtVal(recebido) + '</td>' +
+                    '<td style="text-align:right;">' + saldoStr + '</td>' +
+                    '<td style="text-align:center;">' + pctFin + '%</td>' +
+                    '<td style="text-align:center;">' + pctFis + '%</td>' +
+                    '<td style="white-space:nowrap;">' + fmtDate(t.inicioVigencia) + '</td>' +
+                    '<td style="white-space:nowrap;">' + fmtDate(t.fimVigencia) + '</td>' +
+                    '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // =====================================================================
+        // RELATÓRIO: Previsto por TED / ND / UP / Ano
+        // =====================================================================
+
+        // Estado: objeto com conjuntos de valores SELECIONADOS (string).
+        // Chave ausente ou null = todos selecionados (inicializado sob demanda).
+        // Usamos sempre strings para comparação (evita bug number vs string).
+        var _relSel = { teds: null, nds: null, ups: null, anos: null };
+
+        function _relGetOpcoes() {
+            var teds = (dados && dados.teds) ? dados.teds : [];
+            var allTeds = [], allNDs = [], allUPs = [], allAnos = [];
+            teds.forEach(function(t) {
+                var tedLabel = (t.numTed || String(t.id || '')).trim();
+                if (tedLabel && allTeds.indexOf(tedLabel) === -1) allTeds.push(tedLabel);
+                (t.financeiros || []).forEach(function(f) {
+                    var nd  = String(f.numero || '').trim();
+                    var up  = String(f.up || f.ug || '').trim();
+                    var ano = String(Number(f.anoDesc));   // sempre string
+                    if (nd && allNDs.indexOf(nd) === -1) allNDs.push(nd);
+                    if (up && allUPs.indexOf(up) === -1) allUPs.push(up);
+                    if (ano !== 'NaN' && ano !== '0' && allAnos.indexOf(ano) === -1) allAnos.push(ano);
+                });
+            });
+            allTeds.sort();
+            allNDs.sort();
+            allUPs.sort();
+            allAnos.sort(function(a, b) { return Number(a) - Number(b); });
+            return { teds: allTeds, nds: allNDs, ups: allUPs, anos: allAnos };
+        }
+
+        // Garante que _relSel[chave] é um array (copia todas as opções se ainda for null)
+        function _relEnsureArray(chave) {
+            if (_relSel[chave] === null) {
+                _relSel[chave] = _relGetOpcoes()[chave].slice();
+            }
+        }
+
+        function _relLabelResumo(chave) {
+            var opcoes = _relGetOpcoes()[chave];
+            var sel = _relSel[chave];
+            if (sel === null || sel.length === opcoes.length) return 'Todos';
+            if (sel.length === 0) return 'Nenhum';
+            if (sel.length === 1) return sel[0];
+            return sel.length + ' selecionados';
+        }
+
+        function _relAtualizarLabel(chave) {
+            var ids = { teds: 'relFiltroTEDLabel', nds: 'relFiltroNDLabel', ups: 'relFiltroUPLabel', anos: 'relFiltroAnoLabel' };
+            var el = document.getElementById(ids[chave]);
+            if (el) el.textContent = _relLabelResumo(chave);
+        }
+
+        function _relPopularMenu(menuId, chave) {
+            var menu = document.getElementById(menuId);
+            if (!menu) return;
+            var opcoes = _relGetOpcoes()[chave];
+            var sel = _relSel[chave];   // null = todos
+            var html = '<div class="rel-menu-acoes">'
+                + '<button type="button" onclick="_relSelTodos(\'' + chave + '\',\'' + menuId + '\')">Todos</button>'
+                + '<button type="button" onclick="_relSelNenhum(\'' + chave + '\',\'' + menuId + '\')">Nenhum</button>'
+                + '</div>';
+            opcoes.forEach(function(op) {
+                var marcado = (sel === null || sel.indexOf(op) !== -1);
+                var opEsc = op.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                html += '<label class="rel-menu-item">'
+                    + '<input type="checkbox" ' + (marcado ? 'checked' : '') + ' onchange="_relToggleItem(\'' + chave + '\',\'' + menuId + '\',\'' + opEsc + '\',this.checked)">'
+                    + '<span>' + op + '</span>'
+                    + '</label>';
+            });
+            menu.innerHTML = html;
+        }
+
+        function _relToggleItem(chave, menuId, valor, marcado) {
+            _relEnsureArray(chave);
+            var sel = _relSel[chave];
+            if (marcado) {
+                if (sel.indexOf(valor) === -1) sel.push(valor);
+            } else {
+                _relSel[chave] = sel.filter(function(v) { return v !== valor; });
+            }
+            // Se todos marcados novamente, simplifica para null
+            var opcoes = _relGetOpcoes()[chave];
+            if (_relSel[chave] && _relSel[chave].length === opcoes.length) _relSel[chave] = null;
+            _relAtualizarLabel(chave);
+            renderizarRelatorioNDUP();
+        }
+
+        function _relSelTodos(chave, menuId) {
+            _relSel[chave] = null;
+            _relAtualizarLabel(chave);
+            _relPopularMenu(menuId, chave);
+            renderizarRelatorioNDUP();
+        }
+
+        function _relSelNenhum(chave, menuId) {
+            _relSel[chave] = [];
+            _relAtualizarLabel(chave);
+            _relPopularMenu(menuId, chave);
+            renderizarRelatorioNDUP();
+        }
+
+        function toggleRelFiltro(menuId) {
+            var chaveMap = {
+                relFiltroTEDMenu: 'teds',
+                relFiltroNDMenu:  'nds',
+                relFiltroUPMenu:  'ups',
+                relFiltroAnoMenu: 'anos'
+            };
+            var chave = chaveMap[menuId];
+            var menu = document.getElementById(menuId);
+            if (!menu) return;
+            var jaAberto = menu.classList.contains('open');
+            document.querySelectorAll('.rel-multiselect-menu.open').forEach(function(m) { m.classList.remove('open'); });
+            if (!jaAberto) {
+                _relPopularMenu(menuId, chave);
+                menu.classList.add('open');
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.rel-multiselect')) {
+                document.querySelectorAll('.rel-multiselect-menu.open').forEach(function(m) { m.classList.remove('open'); });
+            }
+        });
+
+        function limparFiltrosRelatorioNDUP() {
+            _relSel = { teds: null, nds: null, ups: null, anos: null };
+            ['relFiltroTEDLabel','relFiltroNDLabel','relFiltroUPLabel','relFiltroAnoLabel'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = 'Todos';
+            });
+            renderizarRelatorioNDUP();
+        }
+
+        // Retorna true se o valor (string) passa pelo filtro do chave
+        function _relPassaFiltro(chave, valorStr) {
+            var sel = _relSel[chave];
+            if (sel === null) return true;
+            return sel.indexOf(valorStr) !== -1;
+        }
+
+        function renderizarRelatorioNDUP() {
+            var container = document.getElementById('tabelaRelatorioNDUP');
+            if (!container) return;
+
+            var teds = (dados && dados.teds) ? dados.teds : [];
+            var fmt = function(v) { return (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); };
+
+            // Agrupar dados: chave = "TED||ND||UP"
+            var grupos = {};
+            var anosSet = {};
+
+            teds.forEach(function(t) {
+                var tedLabel = (t.numTed || String(t.id || '')).trim();
+                if (!_relPassaFiltro('teds', tedLabel)) return;
+
+                financeirosVigentes(t).forEach(function(f) {
+                    var nd   = String(f.numero || '').trim();
+                    var up   = String(f.up || f.ug || '').trim();
+                    var anoN = Number(f.anoDesc);
+                    var ano  = String(anoN);   // string para comparação uniforme
+                    var val  = parseNumber(f.valor) || 0;
+
+                    if (!_relPassaFiltro('nds',  nd))  return;
+                    if (!_relPassaFiltro('ups',  up))  return;
+                    if (!_relPassaFiltro('anos', ano)) return;
+                    if (isNaN(anoN) || anoN <= 0) return;
+
+                    var key = tedLabel + '||' + nd + '||' + up;
+                    if (!grupos[key]) grupos[key] = { ted: tedLabel, nd: nd, up: up, anos: {} };
+                    grupos[key].anos[ano] = (grupos[key].anos[ano] || 0) + val;
+                    anosSet[ano] = true;
+                });
+            });
+
+            // anosSet tem chaves string; ordenar numericamente e manter como string
+            var anosOrdenados = Object.keys(anosSet).sort(function(a, b) { return Number(a) - Number(b); });
+
+            var linhas = Object.values(grupos);
+            linhas.sort(function(a, b) {
+                if (a.ted < b.ted) return -1;
+                if (a.ted > b.ted) return 1;
+                if (a.nd < b.nd) return -1;
+                if (a.nd > b.nd) return 1;
+                return (a.up < b.up) ? -1 : 1;
+            });
+
+            if (!linhas.length) {
+                container.innerHTML = '<p style="color:var(--text-light);font-size:0.8rem;padding:0.5rem 0;">Nenhum dado encontrado para os filtros selecionados.</p>';
+                return;
+            }
+
+            // Calcular totais por ano
+            var totaisAnos = {};
+            anosOrdenados.forEach(function(ano) { totaisAnos[ano] = 0; });
+            linhas.forEach(function(l) {
+                anosOrdenados.forEach(function(ano) { totaisAnos[ano] += (l.anos[ano] || 0); });
+            });
+
+            // Calcular rowspan para TED e ND (mesclagem de células)
+            // Para cada linha, determinar se deve emitir célula TED e/ou ND (com rowspan)
+            var rowspanTED = [];  // rowspan a usar na linha i para coluna TED (0 = não emitir)
+            var rowspanND  = [];  // idem para ND
+
+            for (var i = 0; i < linhas.length; i++) {
+                // TED: contar quantas linhas consecutivas têm o mesmo TED
+                if (i === 0 || linhas[i].ted !== linhas[i-1].ted) {
+                    var span = 1;
+                    while (i + span < linhas.length && linhas[i + span].ted === linhas[i].ted) span++;
+                    rowspanTED[i] = span;
+                } else {
+                    rowspanTED[i] = 0;
+                }
+                // ND: contar quantas linhas consecutivas têm mesmo TED+ND
+                if (i === 0 || linhas[i].ted !== linhas[i-1].ted || linhas[i].nd !== linhas[i-1].nd) {
+                    var spanND = 1;
+                    while (i + spanND < linhas.length
+                           && linhas[i + spanND].ted === linhas[i].ted
+                           && linhas[i + spanND].nd === linhas[i].nd) spanND++;
+                    rowspanND[i] = spanND;
+                } else {
+                    rowspanND[i] = 0;
+                }
+            }
+
+            // Montar HTML
+            var html = '<table class="tabela-padrao rel-ndupano-tabela" style="min-width:600px;width:100%;">';
+            html += '<thead><tr>'
+                + '<th class="col-rel-ted">TED</th>'
+                + '<th class="col-rel-nd">ND</th>'
+                + '<th class="col-rel-up">UP</th>';
+            anosOrdenados.forEach(function(ano) {
+                html += '<th class="col-rel-ano">' + ano + '</th>';
+            });
+            html += '</tr></thead><tbody>';
+
+            linhas.forEach(function(l, i) {
+                html += '<tr>';
+
+                // Célula TED (com rowspan ou omitida)
+                if (rowspanTED[i] > 0) {
+                    html += '<td rowspan="' + rowspanTED[i] + '" class="rel-td-merged rel-td-ted">'
+                        + (l.ted || '—') + '</td>';
+                }
+
+                // Célula ND (com rowspan ou omitida)
+                if (rowspanND[i] > 0) {
+                    html += '<td rowspan="' + rowspanND[i] + '" class="rel-td-merged rel-td-nd">'
+                        + (l.nd || '—') + '</td>';
+                }
+
+                // UP (nunca mesclada)
+                html += '<td style="white-space:nowrap;">' + (l.up || '—') + '</td>';
+
+                anosOrdenados.forEach(function(ano) {
+                    var v = l.anos[ano] || 0;
+                    html += '<td style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:12px;">'
+                        + (v ? fmt(v) : '<span style="color:var(--text-light);">—</span>')
+                        + '</td>';
+                });
+
+                html += '</tr>';
+            });
+
+            // Linha de totais
+            html += '<tr class="rel-total-row">'
+                + '<td colspan="3" style="font-weight:600;font-size:12px;">Total</td>';
+            anosOrdenados.forEach(function(ano) {
+                html += '<td style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:600;">'
+                    + fmt(totaisAnos[ano]) + '</td>';
+            });
+            html += '</tr></tbody></table>';
+
+            html = '<p style="font-size:0.75rem;color:var(--text-light);margin:0 0 0.5rem;">'
+                + linhas.length + ' linha(s) · ' + anosOrdenados.length + ' ano(s)</p>' + html;
+
+            container.innerHTML = html;
+            if (typeof initLucideIcons === 'function') initLucideIcons();
+        }
+
+        function _inicializarRelatorioNDUP() {
+            renderizarRelatorioNDUP();
+        }
+
+        // Monta os dados brutos do relatório ND/UP (reutilizado por Excel e PDF)
+        function _relBuildDados() {
+            var teds = (dados && dados.teds) ? dados.teds : [];
+            var fmt  = function(v) { return (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); };
+            var grupos = {};
+            var anosSet = {};
+
+            teds.forEach(function(t) {
+                var tedLabel = (t.numTed || String(t.id || '')).trim();
+                if (!_relPassaFiltro('teds', tedLabel)) return;
+                financeirosVigentes(t).forEach(function(f) {
+                    var nd   = String(f.numero || '').trim();
+                    var up   = String(f.up || f.ug || '').trim();
+                    var anoN = Number(f.anoDesc);
+                    var ano  = String(anoN);
+                    var val  = parseNumber(f.valor) || 0;
+                    if (!_relPassaFiltro('nds',  nd))  return;
+                    if (!_relPassaFiltro('ups',  up))  return;
+                    if (!_relPassaFiltro('anos', ano)) return;
+                    if (isNaN(anoN) || anoN <= 0) return;
+                    var key = tedLabel + '||' + nd + '||' + up;
+                    if (!grupos[key]) grupos[key] = { ted: tedLabel, nd: nd, up: up, anos: {} };
+                    grupos[key].anos[ano] = (grupos[key].anos[ano] || 0) + val;
+                    anosSet[ano] = true;
+                });
+            });
+
+            var anosOrdenados = Object.keys(anosSet).sort(function(a, b) { return Number(a) - Number(b); });
+            var linhas = Object.values(grupos);
+            linhas.sort(function(a, b) {
+                if (a.ted !== b.ted) return a.ted < b.ted ? -1 : 1;
+                if (a.nd  !== b.nd)  return a.nd  < b.nd  ? -1 : 1;
+                return a.up < b.up ? -1 : 1;
+            });
+
+            var totais = {};
+            anosOrdenados.forEach(function(ano) { totais[ano] = 0; });
+            linhas.forEach(function(l) {
+                anosOrdenados.forEach(function(ano) { totais[ano] += (l.anos[ano] || 0); });
+            });
+
+            return { linhas: linhas, anosOrdenados: anosOrdenados, totais: totais, fmt: fmt };
+        }
+
+        function exportarRelatorioNDUPExcel() {
+            var d = _relBuildDados();
+            if (!d.linhas.length) { showToast('Nenhum dado para exportar.', 'info'); return; }
+
+            loadSheetJS().then(function(XLSX) {
+                var rows = [];
+                // Cabeçalho
+                var header = ['TED', 'ND', 'UP'].concat(d.anosOrdenados);
+                rows.push(header);
+                // Dados
+                d.linhas.forEach(function(l) {
+                    var row = [l.ted, l.nd, l.up];
+                    d.anosOrdenados.forEach(function(ano) { row.push(l.anos[ano] || 0); });
+                    rows.push(row);
+                });
+                // Total
+                var totRow = ['Total', '', ''];
+                d.anosOrdenados.forEach(function(ano) { totRow.push(d.totais[ano] || 0); });
+                rows.push(totRow);
+
+                var ws = XLSX.utils.aoa_to_sheet(rows);
+
+                // Largura das colunas
+                var cols = [{ wch: 22 }, { wch: 14 }, { wch: 12 }];
+                d.anosOrdenados.forEach(function() { cols.push({ wch: 18 }); });
+                ws['!cols'] = cols;
+
+                var wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Previsto ND-UP');
+                XLSX.writeFile(wb, 'previsto_nd_up_ano.xlsx');
+            }).catch(function(e) {
+                showToast('Erro ao gerar Excel: ' + (e && e.message ? e.message : e), 'danger');
+            });
+        }
+
+        function exportarRelatorioNDUPPDF() {
+            var d = _relBuildDados();
+            if (!d.linhas.length) { showToast('Nenhum dado para exportar.', 'info'); return; }
+
+            // Construir cabeçalho de filtros ativos para exibir no PDF
+            var filtroTexto = [];
+            ['teds','nds','ups','anos'].forEach(function(chave) {
+                var sel = _relSel[chave];
+                var labels = { teds: 'TED', nds: 'ND', ups: 'UP', anos: 'Ano' };
+                if (sel !== null && sel.length > 0) {
+                    filtroTexto.push(labels[chave] + ': ' + sel.join(', '));
+                }
+            });
+            var filtroStr = filtroTexto.length ? filtroTexto.join(' | ') : 'Todos';
+
+            // Colunas do ano como th
+            var thAnos = d.anosOrdenados.map(function(a) { return '<th>' + a + '</th>'; }).join('');
+            // Linhas de dados com mesclagem visual (rowspan)
+            var rowspanTED = [], rowspanND = [];
+            for (var i = 0; i < d.linhas.length; i++) {
+                if (i === 0 || d.linhas[i].ted !== d.linhas[i-1].ted) {
+                    var s = 1;
+                    while (i + s < d.linhas.length && d.linhas[i+s].ted === d.linhas[i].ted) s++;
+                    rowspanTED[i] = s;
+                } else { rowspanTED[i] = 0; }
+                if (i === 0 || d.linhas[i].ted !== d.linhas[i-1].ted || d.linhas[i].nd !== d.linhas[i-1].nd) {
+                    var sn = 1;
+                    while (i + sn < d.linhas.length && d.linhas[i+sn].ted === d.linhas[i].ted && d.linhas[i+sn].nd === d.linhas[i].nd) sn++;
+                    rowspanND[i] = sn;
+                } else { rowspanND[i] = 0; }
+            }
+
+            var tbody = '';
+            d.linhas.forEach(function(l, i) {
+                tbody += '<tr>';
+                if (rowspanTED[i] > 0) tbody += '<td rowspan="' + rowspanTED[i] + '" style="font-weight:600;background:#f0f4fa;border-right:2px solid #c6d6f5;">' + (l.ted || '—') + '</td>';
+                if (rowspanND[i]  > 0) tbody += '<td rowspan="' + rowspanND[i]  + '" style="background:#f8f9fa;border-right:2px solid #e5e7eb;">' + (l.nd  || '—') + '</td>';
+                tbody += '<td>' + (l.up || '—') + '</td>';
+                d.anosOrdenados.forEach(function(ano) {
+                    var v = l.anos[ano] || 0;
+                    tbody += '<td style="text-align:right;">' + (v ? d.fmt(v) : '—') + '</td>';
+                });
+                tbody += '</tr>';
+            });
+            // linha de total
+            tbody += '<tr style="background:#e8f0fe;font-weight:700;">'
+                + '<td colspan="3">Total</td>';
+            d.anosOrdenados.forEach(function(ano) {
+                tbody += '<td style="text-align:right;">' + d.fmt(d.totais[ano]) + '</td>';
+            });
+            tbody += '</tr>';
+
+            var html = '<!doctype html><html><head><meta charset="utf-8">'
+                + '<title>Previsto por TED / ND / UP / Ano</title>'
+                + '<style>'
+                + '@page{size:A4 landscape;margin:10mm}'
+                + 'body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;padding:4px}'
+                + 'h2{margin:0 0 4px;font-size:14px;color:#0C447C}'
+                + '.filtros{font-size:10px;color:#555;margin-bottom:8px}'
+                + 'table{border-collapse:collapse;width:100%}'
+                + 'th,td{border:1px solid #ccc;padding:4px 6px;vertical-align:middle}'
+                + 'th{background:#0C447C;color:#fff;text-align:center}'
+                + 'td{white-space:nowrap}'
+                + 'tbody tr:nth-child(even) td{background:#f9f9f9}'
+                + '</style>'
+                + '</head><body>'
+                + '<h2>Previsto por TED / ND / UP / Ano</h2>'
+                + '<div class="filtros">Filtros: ' + filtroStr + '</div>'
+                + '<table><thead><tr><th>TED</th><th>ND</th><th>UP</th>' + thAnos + '</tr></thead>'
+                + '<tbody>' + tbody + '</tbody></table>'
+                + '</body></html>';
+
+            var win = window.open('', '_blank');
+            if (!win) { showToast('Pop-up bloqueado pelo navegador. Permita pop-ups para esta página.', 'danger'); return; }
+            win.document.write(html);
+            win.document.close();
+            win.focus();
+            setTimeout(function() {
+                try {
+                    win.print();
+                    setTimeout(function() { try { win.close(); } catch(e) {} }, 800);
+                } catch(e) { console.error(e); }
+            }, 600);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  RELATÓRIOS — sistema refatorado
+        // ═══════════════════════════════════════════════════════════
+
+        window._relState = { ativo: 'cadastro', filtros: { teds: [], ups: [], anos: [], meses: [] } };
+
+        const _REL_TITULOS = {
+            cadastro:     'Cadastro completo dos TEDs',
+            ndupano:      'Previsto por TED / ND / UP / Ano',
+            mensal:       'Relatório mensal',
+            painel:       'Painel executivo',
+            alertas:      'Alertas e pendências',
+            execvsplan:   'Execução vs. previsto',
+            execfisica:   'Execução física consolidada',
+            saldoano:     'Saldo a receber por ano',
+            rastreonf:    'Rastreamento de notas fiscais',
+            faturamento:  'Relatório de Faturamento'
+        };
+
+        // Estado dos filtros globais (Set de valores selecionados, null = todos)
+        window._relGlobSel = { teds: null, ups: null, anos: null, meses: null };
+
+        function toggleRelGlobFiltro(menuId, btnId) {
+            // Fechar outros menus abertos
+            ['relGlobTEDMenu','relGlobUPMenu','relGlobAnoMenu','relGlobMESMenu'].forEach(id => {
+                if (id !== menuId) { const m = document.getElementById(id); if (m) m.classList.remove('open'); }
+            });
+            const menu = document.getElementById(menuId);
+            if (menu) menu.classList.toggle('open');
+            // Fechar ao clicar fora
+            setTimeout(() => {
+                const handler = (e) => {
+                    const btn = document.getElementById(btnId);
+                    if (!menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+                        menu.classList.remove('open');
+                        document.removeEventListener('click', handler);
+                    }
+                };
+                document.addEventListener('click', handler);
+            }, 0);
+        }
+
+        function _relGlobPopularMenu(menuId, chave, itens) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            const sel = window._relGlobSel[chave];
+            let html = `<div class="rel-menu-acoes">
+              <button onclick="_relGlobSelTodos('${chave}','${menuId}')">Todos</button>
+              <button onclick="_relGlobSelNenhum('${chave}','${menuId}')">Nenhum</button>
+            </div>`;
+            itens.forEach(v => {
+                const checked = (!sel || sel.has(String(v))) ? 'checked' : '';
+                html += `<label class="rel-menu-item"><input type="checkbox" value="${v}" ${checked} onchange="_relGlobOnChange('${chave}','${menuId}')"> ${v}</label>`;
+            });
+            menu.innerHTML = html;
+        }
+
+        function _relGlobSelTodos(chave, menuId) {
+            window._relGlobSel[chave] = null;
+            const menu = document.getElementById(menuId);
+            if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+            _relGlobAtualizarLabel(chave);
+            onFiltroGlobalChange();
+        }
+
+        function _relGlobSelNenhum(chave, menuId) {
+            window._relGlobSel[chave] = new Set();
+            const menu = document.getElementById(menuId);
+            if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+            _relGlobAtualizarLabel(chave);
+            onFiltroGlobalChange();
+        }
+
+        function _relGlobOnChange(chave, menuId) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            const marcados = Array.from(menu.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+            const todos    = Array.from(menu.querySelectorAll('input[type=checkbox]')).map(cb => cb.value);
+            window._relGlobSel[chave] = marcados.length === todos.length ? null : new Set(marcados);
+            _relGlobAtualizarLabel(chave);
+            onFiltroGlobalChange();
+        }
+
+        const _REL_GLOB_LABELS = { teds: 'TED', ups: 'UP', anos: 'Ano', meses: 'Mês' };
+        const _REL_GLOB_BTN_LABELS = { teds: 'relGlobTEDLabel', ups: 'relGlobUPLabel', anos: 'relGlobAnoLabel', meses: 'relGlobMESLabel' };
+        const _REL_GLOB_BTN_IDS   = { teds: 'relGlobTEDBtn',   ups: 'relGlobUPBtn',   anos: 'relGlobAnoBtn',   meses: 'relGlobMESBtn' };
+
+        function _relGlobAtualizarLabel(chave) {
+            const sel = window._relGlobSel[chave];
+            const labelEl = document.getElementById(_REL_GLOB_BTN_LABELS[chave]);
+            const btnEl   = document.getElementById(_REL_GLOB_BTN_IDS[chave]);
+            const base = _REL_GLOB_LABELS[chave];
+            if (!labelEl) return;
+            if (!sel) { labelEl.textContent = base; if (btnEl) btnEl.classList.remove('active'); }
+            else if (sel.size === 0) { labelEl.textContent = base + ' (0)'; if (btnEl) btnEl.classList.add('active'); }
+            else { labelEl.textContent = base + ' (' + sel.size + ')'; if (btnEl) btnEl.classList.add('active'); }
+        }
+
+        const _MESES_NOMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+        function inicializarFiltrosGlobais() {
+            const teds = (dados && dados.teds) ? dados.teds : [];
+            const upsSet = new Set(), anosSet = new Set(), mesesSet = new Set();
+            teds.forEach(t => {
+                if (t.up || t.upResponsavel) upsSet.add(t.up || t.upResponsavel);
+                const addAnoMes = v => {
+                    if (!v) return;
+                    const d = new Date(v + 'T00:00:00');
+                    if (!isNaN(d)) { anosSet.add(d.getFullYear()); }
+                };
+                addAnoMes(t.inicioVigencia); addAnoMes(t.fimVigencia);
+                (t.execFinanceiras || []).forEach(e => addAnoMes(e.data));
+                // Meses das entregas físicas para filtro de faturamento
+                (t.fisicos || []).forEach(f => {
+                    if (f.mesFinal) mesesSet.add(parseInt(f.mesFinal));
+                    (f.entregas || []).forEach(e => {
+                        if (e.data) { const d = new Date(e.data + 'T00:00:00'); if (!isNaN(d)) mesesSet.add(d.getMonth() + 1); }
+                    });
+                });
+            });
+            const tedItens  = teds.map(t => t.numTed || t.id);
+            const upItens   = Array.from(upsSet).sort();
+            const anoItens  = Array.from(anosSet).sort((a,b) => b - a);
+            const mesItens  = Array.from(mesesSet).sort((a,b) => a - b).map(m => ({ val: m, label: `${String(m).padStart(2,'0')} - ${_MESES_NOMES[m-1]}` }));
+            _relGlobPopularMenu('relGlobTEDMenu', 'teds', tedItens);
+            _relGlobPopularMenu('relGlobUPMenu',  'ups',  upItens);
+            _relGlobPopularMenu('relGlobAnoMenu', 'anos', anoItens);
+            _relGlobPopularMenuObj('relGlobMESMenu', 'meses', mesItens);
+            // Mostrar/ocultar filtro de Mês conforme relatório ativo
+            _atualizarVisibilidadeFiltroMes();
+        }
+
+        function _atualizarVisibilidadeFiltroMes() {
+            const wrap = document.getElementById('relGlobMESWrap');
+            if (!wrap) return;
+            const ativo = window._relState ? window._relState.ativo : '';
+            wrap.style.display = (ativo === 'faturamento') ? '' : 'none';
+        }
+
+        // Versão de popularMenu para itens com val/label distintos
+        function _relGlobPopularMenuObj(menuId, chave, itens) {
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            const sel = window._relGlobSel[chave];
+            let html = `<div class="rel-menu-acoes">
+              <button onclick="_relGlobSelTodos('${chave}','${menuId}')">Todos</button>
+              <button onclick="_relGlobSelNenhum('${chave}','${menuId}')">Nenhum</button>
+            </div>`;
+            itens.forEach(it => {
+                const v = String(it.val);
+                const checked = (!sel || sel.has(v)) ? 'checked' : '';
+                html += `<label class="rel-menu-item"><input type="checkbox" value="${v}" ${checked} onchange="_relGlobOnChange('${chave}','${menuId}')"> ${it.label}</label>`;
+            });
+            menu.innerHTML = html;
+        }
+
+        function lerFiltrosGlobais() {
+            const s = window._relGlobSel;
+            return {
+                teds:  s.teds  ? Array.from(s.teds)  : [],
+                ups:   s.ups   ? Array.from(s.ups)   : [],
+                anos:  s.anos  ? Array.from(s.anos).map(Number)  : [],
+                meses: s.meses ? Array.from(s.meses).map(Number) : []
+            };
+        }
+
+        function limparFiltrosGlobais() {
+            window._relGlobSel = { teds: null, ups: null, anos: null, meses: null };
+            ['teds','ups','anos','meses'].forEach(chave => {
+                const menuId = { teds:'relGlobTEDMenu', ups:'relGlobUPMenu', anos:'relGlobAnoMenu', meses:'relGlobMESMenu' }[chave];
+                const menu = document.getElementById(menuId);
+                if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+                _relGlobAtualizarLabel(chave);
+            });
+            onFiltroGlobalChange();
+        }
+
+        function onFiltroGlobalChange() {
+            window._relState.filtros = lerFiltrosGlobais();
+            renderRelatorioAtivo();
+        }
+
+        function filtrarTeds() {
+            const s = window._relGlobSel || { teds: null, ups: null, anos: null };
+            let lista = (dados && dados.teds) ? dados.teds : [];
+            if (s.teds) lista = lista.filter(t => s.teds.has(String(t.numTed || t.id)));
+            if (s.ups)  lista = lista.filter(t => s.ups.has(t.up || t.upResponsavel || ''));
+            if (s.anos) lista = lista.filter(t => {
+                const ini = t.inicioVigencia ? new Date(t.inicioVigencia + 'T00:00:00').getFullYear() : null;
+                const fim = t.fimVigencia    ? new Date(t.fimVigencia + 'T00:00:00').getFullYear()    : null;
+                return s.anos.has(ini) || s.anos.has(fim);
+            });
+            return lista;
+        }
+
+        function ativarRelatorio(id, cardEl) {
+            document.querySelectorAll('.rel-card').forEach(c => c.classList.remove('rel-card-ativo'));
+            if (cardEl) cardEl.classList.add('rel-card-ativo');
+            window._relState.ativo = id;
+            const titulo = document.getElementById('relPreviewTitle');
+            if (titulo) titulo.textContent = _REL_TITULOS[id] || id;
+            _atualizarVisibilidadeFiltroMes();
+            renderRelatorioAtivo();
+        }
+
+        function atualizarRelatorioAtivo() {
+            inicializarFiltrosGlobais();
+            renderRelatorioAtivo();
+        }
+
+        function renderRelatorioAtivo() {
+            const corpo = document.getElementById('relPreviewBody');
+            if (!corpo) return;
+            const id = window._relState ? window._relState.ativo : 'cadastro';
+            corpo.innerHTML = '<p style="font-size:0.8rem;color:var(--text-muted);padding:0.5rem 0;">Carregando...</p>';
+            try {
+                switch (id) {
+                    case 'cadastro':   renderRelCadastro(corpo);   break;
+                    case 'ndupano':    renderRelNdUpAno(corpo);     break;
+                    case 'mensal':     renderRelMensal(corpo);      break;
+                    case 'painel':     renderRelPainel(corpo);      break;
+                    case 'alertas':    renderRelAlertas(corpo);     break;
+                    case 'execvsplan': renderRelExecVsPlan(corpo);  break;
+                    case 'execfisica': renderRelExecFisica(corpo);  break;
+                    case 'saldoano':   renderRelSaldoAno(corpo);    break;
+                    case 'rastreonf':    renderRelRastreioNF(corpo);      break;
+                    case 'faturamento':  renderRelFaturamento(corpo);     break;
+                    default:             corpo.innerHTML = '<p>Relatório não encontrado.</p>';
+                }
+            } catch(e) {
+                corpo.innerHTML = `<p style="color:var(--danger);font-size:0.8rem;">Erro ao gerar relatório: ${e.message}</p>`;
+                console.error('renderRelatorioAtivo:', e);
+            }
+        }
+
+        // ── Relatório ND/UP/Ano dentro do preview ─────────────────
+        function renderRelNdUpAno(corpo) {
+            // Reutiliza a função legada que popula #tabelaRelatorioNDUP (hidden)
+            // e copia o resultado para o corpo do preview
+            try {
+                _inicializarRelatorioNDUP();
+                setTimeout(function() {
+                    const src = document.getElementById('tabelaRelatorioNDUP');
+                    if (src) corpo.innerHTML = src.innerHTML || '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum dado.</p>';
+                }, 200);
+            } catch(e) {
+                corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum dado para exibir.</p>';
+            }
+        }
+
+        // ── Relatório 1: Cadastro completo ───────────────────────
+        function renderRelCadastro(corpo, modoTabela) {
+            const teds = filtrarTeds();
+            if (!teds.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum TED encontrado.</p>'; return; }
+            const fmt = v => v ? new Date(v + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+            const fmtVal = v => (parseFloat(v)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            const usarTabela = !!modoTabela;
+
+            const toggleHtml = `
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">
+                <p style="font-size:0.75rem;color:var(--text-muted);margin:0;">${teds.length} TED(s)</p>
+                <div style="display:flex;gap:4px;">
+                  <button onclick="renderRelCadastro(document.getElementById('relPreviewBody'), false)"
+                    style="padding:3px 10px;font-size:0.72rem;border-radius:4px;border:1px solid var(--border);cursor:pointer;
+                           background:${!usarTabela ? 'var(--primary)' : 'var(--surface)'};
+                           color:${!usarTabela ? '#fff' : 'var(--text)'};">
+                    Cards
+                  </button>
+                  <button onclick="renderRelCadastro(document.getElementById('relPreviewBody'), true)"
+                    style="padding:3px 10px;font-size:0.72rem;border-radius:4px;border:1px solid var(--border);cursor:pointer;
+                           background:${usarTabela ? 'var(--primary)' : 'var(--surface)'};
+                           color:${usarTabela ? '#fff' : 'var(--text)'};">
+                    Tabela
+                  </button>
+                </div>
+              </div>`;
+
+            if (usarTabela) {
+                const cols = [
+                    { label: 'Nº TED',            fn: t => t.numTed || '—' },
+                    { label: 'Plano Trabalho',     fn: t => t.planoTrabalho || '—' },
+                    { label: 'Código Plano',       fn: t => t.codigoPlano || '—' },
+                    { label: 'Nº TED SIAFI',       fn: t => t.numTedSiafi || '—', mono: true },
+                    { label: 'Nota Sistema',       fn: t => t.notaSistema || '—' },
+                    { label: 'UP Responsável',     fn: t => t.upResponsavel || '—' },
+                    { label: 'UG/EG Executora',    fn: t => t.ugExecutora || t.egExecutora || '—' },
+                    { label: 'Unid. Descentraliz.',fn: t => t.unidadeDesc || '—' },
+                    { label: 'UG Descentraliz.',   fn: t => t.ugDesc || '—' },
+                    { label: 'Objetivo / Objeto',  fn: t => t.objetivo || t.objeto || '—', wrap: true },
+                    { label: 'Início Vigência',    fn: t => fmt(t.inicioVigencia) },
+                    { label: 'Vigência (meses)',   fn: t => {
+                        const alts = t.alteracoes || [...(t.aditivos||[]),...(t.apostilamentos||[])];
+                        const mesesAdit = alts.filter(a=>a.tipo==='aditivo').reduce((s,a)=>s+(a.meses||0),0);
+                        return ((parseInt(t.vigencia)||0) + mesesAdit) || '—';
+                    }},
+                    { label: 'Fim Vigência',       fn: t => {
+                        const alts = t.alteracoes || [...(t.aditivos||[]),...(t.apostilamentos||[])];
+                        const aditivos = alts.filter(a=>a.tipo==='aditivo');
+                        const mesesAdit = aditivos.reduce((s,a)=>s+(a.meses||0),0);
+                        if (aditivos.length > 0 && t.inicioVigencia) {
+                            const d = new Date(t.inicioVigencia + 'T00:00:00');
+                            d.setMonth(d.getMonth() + (parseInt(t.vigencia)||0) + mesesAdit);
+                            return d.toLocaleDateString('pt-BR') + ' ✦';
+                        }
+                        return fmt(t.fimVigencia);
+                    }},
+                    { label: '1ª Descentraliz.',   fn: t => fmt(t.primeiraDescentralizacao) },
+                    { label: 'Entrega / Denúncia', fn: t => fmt(t.dataEntregaDenuncia || t.dataEntrega) },
+                    { label: 'Prazo Rel. Final',   fn: t => fmt(t.prazoRelatorio) },
+                    { label: 'Entrega Rel. Final', fn: t => fmt(t.entregaRelatorio) },
+                    { label: 'Aditivos / Apost.',  fn: t => {
+                        const alts = t.alteracoes || [...(t.aditivos||[]),...(t.apostilamentos||[])];
+                        const nad = alts.filter(a=>a.tipo==='aditivo').length;
+                        const nap = alts.filter(a=>a.tipo==='apostilamento').length;
+                        const mesesAdit = alts.filter(a=>a.tipo==='aditivo').reduce((s,a)=>s+(a.meses||0),0);
+                        if (!nad && !nap) return '—';
+                        return [nad > 0 ? `${nad} adit. (+${mesesAdit}m)` : '', nap > 0 ? `${nap} apost.` : ''].filter(Boolean).join(', ');
+                    }},
+                    { label: 'Situação',           fn: t => {
+                        const s = _calcularStatusTed(t);
+                        const bc = s==='Em execução'?'#166534':s==='Encerrado'?'#185FA5':'#991b1b';
+                        const bg = s==='Em execução'?'#dcfce7':s==='Encerrado'?'#dbeafe':'#fee2e2';
+                        return `<span style="font-size:0.7rem;font-weight:600;padding:1px 7px;border-radius:20px;background:${bg};color:${bc};">${s}</span>`;
+                    }},
+                    { label: 'Valor Previsto',     fn: t => 'R$ ' + fmtVal(financeirosVigentes(t).reduce((s,f)=>s+(parseFloat(f.valor)||0),0)), mono: true, right: true },
+                    { label: 'Recebido',           fn: t => 'R$ ' + fmtVal((t.recursosGerais||[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0)), mono: true, right: true },
+                    { label: 'Saldo',              fn: t => {
+                        const prev = financeirosVigentes(t).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                        const rec  = (t.recursosGerais||[]).reduce((s,r)=>s+(parseFloat(r.valor)||0),0);
+                        const saldo = prev - rec;
+                        return `<span style="color:${saldo<0?'#991b1b':'#185FA5'};">R$ ${fmtVal(saldo)}</span>`;
+                    }, mono: true, right: true },
+                ];
+
+                let thead = '<tr>' + cols.map(c =>
+                    `<th style="white-space:nowrap;padding:6px 8px;font-size:0.7rem;font-weight:600;text-align:${c.right?'right':'left'};border-bottom:2px solid var(--border);">${c.label}</th>`
+                ).join('') + '</tr>';
+
+                let tbody = teds.map(t => {
+                    const cells = cols.map(c => {
+                        const val = c.fn(t);
+                        const style = [
+                            c.mono ? "font-family:'IBM Plex Mono',monospace;" : '',
+                            c.right ? 'text-align:right;' : '',
+                            c.wrap ? 'white-space:normal;min-width:180px;max-width:260px;' : 'white-space:nowrap;',
+                            'padding:5px 8px;font-size:0.75rem;border-bottom:1px solid var(--border);'
+                        ].join('');
+                        return `<td style="${style}">${val}</td>`;
+                    }).join('');
+                    return `<tr style="vertical-align:middle;">${cells}</tr>`;
+                }).join('');
+
+                corpo.innerHTML = toggleHtml +
+                    `<div style="overflow-x:auto;">
+                       <table class="tabela-padrao" style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+                         <thead style="background:var(--surface-alt,#f8fafc);">${thead}</thead>
+                         <tbody>${tbody}</tbody>
+                       </table>
+                       <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.4rem;">✦ Fim de vigência prorrogado por aditivo.</p>
+                     </div>`;
+                return;
+            }
+
+            let html = toggleHtml;
+
+            teds.forEach(t => {
+                const status = _calcularStatusTed(t);
+                const bc = status === 'Em execução' ? '#166534' : status === 'Encerrado' ? '#185FA5' : '#991b1b';
+                const bcBg = status === 'Em execução' ? '#dcfce7' : status === 'Encerrado' ? '#dbeafe' : '#fee2e2';
+
+                const alteracoes = t.alteracoes || [...(t.aditivos || []), ...(t.apostilamentos || [])];
+                const aditivos = alteracoes.filter(a => a.tipo === 'aditivo');
+                const apostilamentos = alteracoes.filter(a => a.tipo === 'apostilamento');
+                const totalAditivoMeses = aditivos.filter(a => !a.excluido).reduce((s, a) => s + (a.meses || 0), 0);
+
+                const vigenciaMeses = (parseInt(t.vigencia) || 0) + totalAditivoMeses;
+
+                let fimVigenciaExib = fmt(t.fimVigencia);
+                let fimVigenciaExtra = '';
+                if (aditivos.length > 0 && t.inicioVigencia) {
+                    const dInicio = new Date(t.inicioVigencia + 'T00:00:00');
+                    if (!isNaN(dInicio.getTime())) {
+                        const dFim = new Date(dInicio);
+                        dFim.setMonth(dFim.getMonth() + vigenciaMeses);
+                        fimVigenciaExib = dFim.toLocaleDateString('pt-BR') + ' <span style="font-size:0.7rem;background:#dbeafe;color:#1e40af;padding:1px 5px;border-radius:3px;font-weight:600;">Prorrogado</span>';
+                        fimVigenciaExtra = `<span style="font-size:0.7rem;color:var(--text-muted);">Original: ${fmt(t.fimVigencia)} · +${totalAditivoMeses} meses</span>`;
+                    }
+                }
+
+                const valPrev = financeirosVigentes(t).reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+                const valRecebido = (t.recursosGerais || []).reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+                const valSaldo = valPrev - valRecebido;
+
+                const numAlt = aditivos.filter(a => !a.excluido).length + apostilamentos.filter(a => !a.excluido).length;
+                const altResumo = numAlt === 0 ? '—'
+                    : [aditivos.filter(a => !a.excluido).length > 0 ? `${aditivos.filter(a => !a.excluido).length} aditivo${aditivos.filter(a => !a.excluido).length > 1 ? 's' : ''} (+${totalAditivoMeses} meses)` : '',
+                       apostilamentos.filter(a => !a.excluido).length > 0 ? `${apostilamentos.filter(a => !a.excluido).length} apostilamento${apostilamentos.filter(a => !a.excluido).length > 1 ? 's' : ''}` : '']
+                      .filter(Boolean).join(', ');
+
+                html += `
+                <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:1.2rem;overflow:hidden;">
+                  <!-- cabeçalho do card -->
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1rem;background:var(--surface-alt,#f8fafc);border-bottom:1px solid var(--border);">
+                    <span style="font-size:0.95rem;font-weight:700;color:var(--primary);">${t.numTed || '—'}</span>
+                    <span style="font-size:0.75rem;font-weight:600;padding:2px 10px;border-radius:20px;background:${bcBg};color:${bc};">${status}</span>
+                  </div>
+                  <!-- corpo em grid -->
+                  <div style="padding:0.8rem 1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.5rem 1.2rem;">
+
+                    <div style="grid-column:1/-1;">
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Objetivo / Objeto</div>
+                      <div style="font-size:0.82rem;color:var(--text);line-height:1.4;">${t.objetivo || t.objeto || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Plano de Trabalho</div>
+                      <div style="font-size:0.82rem;">${t.planoTrabalho || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Código do Plano</div>
+                      <div style="font-size:0.82rem;">${t.codigoPlano || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Nº TED - SIAFI</div>
+                      <div style="font-size:0.82rem;font-family:'IBM Plex Mono',monospace;">${t.numTedSiafi || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Nota do Sistema</div>
+                      <div style="font-size:0.82rem;">${t.notaSistema || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">UP Responsável</div>
+                      <div style="font-size:0.82rem;">${t.upResponsavel || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">UG / EG Executora</div>
+                      <div style="font-size:0.82rem;">${t.ugExecutora || t.egExecutora || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Unidade Descentralizadora</div>
+                      <div style="font-size:0.82rem;">${t.unidadeDesc || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">UG Descentralizadora</div>
+                      <div style="font-size:0.82rem;">${t.ugDesc || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Início da Vigência</div>
+                      <div style="font-size:0.82rem;">${fmt(t.inicioVigencia)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Vigência (meses)</div>
+                      <div style="font-size:0.82rem;">${vigenciaMeses || '—'}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Fim da Vigência</div>
+                      <div style="font-size:0.82rem;">${fimVigenciaExib}${fimVigenciaExtra ? '<br>' + fimVigenciaExtra : ''}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">1ª Descentralização</div>
+                      <div style="font-size:0.82rem;">${fmt(t.primeiraDescentralizacao)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Data Entrega / Denúncia</div>
+                      <div style="font-size:0.82rem;">${fmt(t.dataEntregaDenuncia || t.dataEntrega)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Prazo Relatório Final</div>
+                      <div style="font-size:0.82rem;">${fmt(t.prazoRelatorio)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Entrega Relatório Final</div>
+                      <div style="font-size:0.82rem;">${fmt(t.entregaRelatorio)}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Aditivos / Apostilamentos</div>
+                      <div style="font-size:0.82rem;">${altResumo}</div>
+                    </div>
+
+                    <div>
+                      <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);letter-spacing:.04em;">Situação</div>
+                      <div style="font-size:0.82rem;">${t.statusTED || t.status || '—'}</div>
+                    </div>
+
+                  </div>
+                  <!-- rodapé financeiro -->
+                  <div style="display:flex;gap:0;border-top:1px solid var(--border);">
+                    <div style="flex:1;padding:0.5rem 1rem;border-right:1px solid var(--border);">
+                      <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);">Valor Previsto</div>
+                      <div style="font-size:0.82rem;font-family:'IBM Plex Mono',monospace;font-weight:600;">R$ ${fmtVal(valPrev)}</div>
+                    </div>
+                    <div style="flex:1;padding:0.5rem 1rem;border-right:1px solid var(--border);">
+                      <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);">Recebido</div>
+                      <div style="font-size:0.82rem;font-family:'IBM Plex Mono',monospace;font-weight:600;color:#166534;">R$ ${fmtVal(valRecebido)}</div>
+                    </div>
+                    <div style="flex:1;padding:0.5rem 1rem;">
+                      <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);">Saldo</div>
+                      <div style="font-size:0.82rem;font-family:'IBM Plex Mono',monospace;font-weight:600;color:${valSaldo < 0 ? '#991b1b' : '#185FA5'};">R$ ${fmtVal(valSaldo)}</div>
+                    </div>
+                  </div>
+                </div>`;
+            });
+
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 2: Mensal ──────────────────────────────────
+        function renderRelMensal(corpo) {
+            const teds = filtrarTeds();
+            const grupos = {};
+            teds.forEach(t => {
+                if (!t.inicioVigencia) return;
+                const d = new Date(t.inicioVigencia + 'T00:00:00');
+                const chave = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                if (!grupos[chave]) grupos[chave] = [];
+                grupos[chave].push(t);
+            });
+            const chaves = Object.keys(grupos).sort().reverse();
+            if (!chaves.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum dado encontrado.</p>'; return; }
+            let html = '';
+            const fmt = v => v ? new Date(v + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+            chaves.forEach(chave => {
+                const [ano, mes] = chave.split('-');
+                const nomeMes = new Date(parseInt(ano), parseInt(mes)-1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                html += `<h4 style="font-size:0.82rem;font-weight:600;margin:1rem 0 0.4rem;color:var(--text-muted);text-transform:capitalize;">${nomeMes}</h4>
+                <table class="tabela-padrao" style="width:100%;margin-bottom:0.5rem;">
+                  <thead><tr><th>TED</th><th>Objeto</th><th>UP</th><th>Início</th><th>Fim</th><th>Status</th></tr></thead><tbody>`;
+                grupos[chave].forEach(t => {
+                    const status = _calcularStatusTed(t);
+                    const bc = status === 'Em execução' ? 'rel-badge-ok' : status === 'Encerrado' ? 'rel-badge-info' : 'rel-badge-danger';
+                    const obj = (t.objeto || t.objetivo || '');
+                    html += `<tr>
+                      <td><strong>${t.numTed || '—'}</strong></td>
+                      <td style="font-size:0.78rem;">${obj.substring(0,60)}${obj.length>60?'…':''}</td>
+                      <td>${t.up || t.upResponsavel || '—'}</td>
+                      <td>${fmt(t.inicioVigencia)}</td><td>${fmt(t.fimVigencia)}</td>
+                      <td><span class="rel-badge ${bc}">${status}</span></td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+            });
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 3: Painel executivo ────────────────────────
+        function renderRelPainel(corpo) {
+            const teds = filtrarTeds();
+            const fmtVal = (v, dec=2) => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+            let totalPrevisto=0, totalRecebido=0, emExecucao=0, vencidos=0;
+            teds.forEach(t => {
+                const status = _calcularStatusTed(t);
+                if (status === 'Em execução') emExecucao++;
+                if (status === 'Vencido') vencidos++;
+                totalPrevisto += financeirosVigentes(t).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                totalRecebido += (t.execFinanceiras||[]).reduce((s,e)=>{ const v=parseFloat(e.valor||e.valorRealizado)||0; return s+(v>0?v:0); },0);
+            });
+            const pct = totalPrevisto > 0 ? ((totalRecebido/totalPrevisto)*100).toFixed(1) : 0;
+            const alertas = _calcularAlertas(teds);
+            let html = `<div class="rel-kpi-grid">
+              <div class="rel-kpi-card"><div class="rel-kpi-label">Total de TEDs</div><div class="rel-kpi-val" style="color:var(--primary)">${teds.length}</div><div class="rel-kpi-sub">${emExecucao} em execução</div></div>
+              <div class="rel-kpi-card"><div class="rel-kpi-label">Orçamento previsto</div><div class="rel-kpi-val">R$ ${fmtVal(totalPrevisto/1e6,1)}M</div><div class="rel-kpi-sub">Soma cadastros financeiros</div></div>
+              <div class="rel-kpi-card"><div class="rel-kpi-label">Total recebido</div><div class="rel-kpi-val" style="color:#166534">R$ ${fmtVal(totalRecebido/1e6,1)}M</div><div class="rel-kpi-sub">${pct}% executado</div></div>
+              <div class="rel-kpi-card"><div class="rel-kpi-label">Alertas ativos</div><div class="rel-kpi-val" style="color:#991b1b">${alertas.length}</div><div class="rel-kpi-sub">${vencidos} vigência(s) vencida(s)</div></div>
+            </div>
+            <h4 style="font-size:0.8rem;font-weight:600;margin:0 0 0.5rem;color:var(--text-muted);">Execução financeira por TED</h4>
+            <div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:500px;width:100%;">
+              <thead><tr><th>TED</th><th>UP</th><th>Status</th><th style="min-width:140px;">Execução</th></tr></thead><tbody>`;
+            teds.slice(0,20).forEach(t => {
+                const prev = financeirosVigentes(t).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                const rec  = (t.execFinanceiras||[]).reduce((s,e)=>{ const v=parseFloat(e.valor||e.valorRealizado)||0; return s+(v>0?v:0); },0);
+                const pctTed = prev>0?Math.min((rec/prev*100),100):0;
+                const status = _calcularStatusTed(t);
+                const bc = status==='Em execução'?'rel-badge-ok':status==='Encerrado'?'rel-badge-info':'rel-badge-danger';
+                const corBarra = pctTed>=80?'#166534':pctTed>=40?'#185FA5':'#991b1b';
+                html += `<tr>
+                  <td><strong>${t.numTed||t.id}</strong></td>
+                  <td>${t.up||t.upResponsavel||'—'}</td>
+                  <td><span class="rel-badge ${bc}">${status}</span></td>
+                  <td><div class="rel-bar-wrap"><div class="rel-bar-bg"><div class="rel-bar-fill" style="width:${pctTed.toFixed(0)}%;background:${corBarra};"></div></div><span class="rel-bar-val">${pctTed.toFixed(0)}%</span></div></td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 4: Alertas ─────────────────────────────────
+        function _calcularAlertas(teds) {
+            const hoje = new Date();
+            const alertas = [];
+            teds.forEach(t => {
+                const numTed = t.numTed || t.id;
+                if (t.fimVigencia) {
+                    const fim = new Date(t.fimVigencia + 'T00:00:00');
+                    if (!isNaN(fim) && fim < hoje) {
+                        alertas.push({ tipo: 'danger', ted: numTed, msg: 'Vigência vencida em ' + fim.toLocaleDateString('pt-BR') });
+                    } else if (!isNaN(fim)) {
+                        const diasRestantes = (fim - hoje) / 86400000;
+                        if (diasRestantes <= 60) {
+                            const prev = financeirosVigentes(t).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+                            const rec  = (t.execFinanceiras||[]).reduce((s,e)=>{ const v=parseFloat(e.valor||e.valorRealizado)||0; return s+(v>0?v:0); },0);
+                            const pct  = prev>0?(rec/prev*100):0;
+                            if (pct < 20) alertas.push({ tipo: 'warn', ted: numTed, msg: `Encerrando em ${Math.round(diasRestantes)}d com ${pct.toFixed(0)}% executado` });
+                        }
+                    }
+                }
+                if (!(t.execFinanceiras||[]).length && !(t.financeiros||[]).length) {
+                    alertas.push({ tipo: 'info', ted: numTed, msg: 'Nenhum lançamento financeiro cadastrado' });
+                }
+            });
+            return alertas;
+        }
+
+        function renderRelAlertas(corpo) {
+            const alertas = _calcularAlertas(filtrarTeds());
+            if (!alertas.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">✓ Nenhum alerta encontrado.</p>'; return; }
+            const iconMap = { danger:'🔴', warn:'🟡', info:'🔵' };
+            const bcMap   = { danger:'rel-badge-danger', warn:'rel-badge-warn', info:'rel-badge-info' };
+            const lblMap  = { danger:'Crítico', warn:'Atenção', info:'Info' };
+            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.7rem;">${alertas.length} alerta(s)</p>
+            <table class="tabela-padrao" style="width:100%;">
+              <thead><tr><th>Tipo</th><th>TED</th><th>Descrição</th></tr></thead><tbody>`;
+            alertas.forEach(a => {
+                html += `<tr><td><span class="rel-badge ${bcMap[a.tipo]}">${iconMap[a.tipo]} ${lblMap[a.tipo]}</span></td><td><strong>${a.ted}</strong></td><td style="font-size:0.8rem;">${a.msg}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 5: Execução vs. previsto ───────────────────
+        function renderRelExecVsPlan(corpo) {
+            const fmtVal = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+            const porMes = {};
+            filtrarTeds().forEach(t => {
+                (t.execFinanceiras||[]).forEach(e => {
+                    if (!e.data) return;
+                    const d = new Date(e.data + 'T00:00:00');
+                    const chave = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                    if (!porMes[chave]) porMes[chave] = { recebido: 0 };
+                    const v = parseFloat(e.valor||e.valorRealizado)||0;
+                    if (v > 0) porMes[chave].recebido += v;
+                });
+            });
+            const meses = Object.keys(porMes).sort();
+            if (!meses.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Sem dados de execução financeira.</p>'; return; }
+            const maxVal = Math.max(...meses.map(m => porMes[m].recebido));
+            let html = `<h4 style="font-size:0.8rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted);">Recebimentos mensais</h4>
+            <div style="display:flex;align-items:flex-end;gap:6px;height:120px;margin-bottom:6px;">`;
+            meses.forEach(m => {
+                const v = porMes[m].recebido;
+                const pct = maxVal>0?(v/maxVal*100):0;
+                html += `<div title="R$ ${fmtVal(v)}" style="flex:1;min-width:18px;background:var(--primary);border-radius:3px 3px 0 0;height:${pct}%;opacity:0.85;"></div>`;
+            });
+            html += `</div><div style="display:flex;gap:6px;margin-bottom:1rem;">`;
+            meses.forEach(m => {
+                const [ano, mes] = m.split('-');
+                html += `<div style="flex:1;text-align:center;font-size:0.58rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;">${mes}/${ano.substring(2)}</div>`;
+            });
+            html += `</div><table class="tabela-padrao" style="width:100%;"><thead><tr><th>Mês/Ano</th><th style="text-align:right;">Total recebido (R$)</th></tr></thead><tbody>`;
+            let total = 0;
+            meses.forEach(m => {
+                const [ano, mes] = m.split('-');
+                const nomeMes = new Date(parseInt(ano), parseInt(mes)-1, 1).toLocaleDateString('pt-BR', { month: 'short' });
+                const v = porMes[m].recebido; total += v;
+                html += `<tr><td>${nomeMes.replace('.','')}./${ano}</td><td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">R$ ${fmtVal(v)}</td></tr>`;
+            });
+            html += `<tr style="font-weight:700;background:var(--bg-secondary);"><td>Total</td><td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">R$ ${fmtVal(total)}</td></tr></tbody></table>`;
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 6: Execução física consolidada ─────────────
+        function renderRelExecFisica(corpo) {
+            const rows = [];
+            filtrarTeds().forEach(t => {
+                const numTed = t.numTed || t.id;
+                (t.fisicos||[]).forEach(f => {
+                    const prev = parseFloat(f.quantidadePrevista||f.qtdPrevista||0);
+                    const ent  = parseFloat(f.quantidadeEntregue||f.qtdEntregue||0);
+                    const pct  = prev>0?Math.min((ent/prev*100),100):0;
+                    rows.push({ ted: numTed, objeto: f.objeto||f.descricao||'—', unidade: f.unidade||'—', prev, ent, pct });
+                });
+                (t.execFisicas||[]).forEach(ef => {
+                    const prev = parseFloat(ef.qtdPrevista||0);
+                    const ent  = parseFloat(ef.qtdEntregue||0);
+                    rows.push({ ted: numTed, objeto: ef.objeto||ef.descricao||'—', unidade: ef.unidade||'—', prev, ent, pct: prev>0?Math.min((ent/prev*100),100):0 });
+                });
+            });
+            if (!rows.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum dado de execução física encontrado.</p>'; return; }
+            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.6rem;">${rows.length} item(ns)</p>
+            <div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:500px;width:100%;">
+              <thead><tr><th>TED</th><th>Objeto</th><th>Und</th><th style="text-align:right;">Previsto</th><th style="text-align:right;">Entregue</th><th style="min-width:130px;">Avanço</th></tr></thead><tbody>`;
+            rows.forEach(r => {
+                const corBarra = r.pct>=80?'#166534':r.pct>=40?'#185FA5':'#991b1b';
+                html += `<tr>
+                  <td><strong>${r.ted}</strong></td><td style="font-size:0.78rem;">${r.objeto}</td><td>${r.unidade}</td>
+                  <td style="text-align:right;">${r.prev.toLocaleString('pt-BR')}</td>
+                  <td style="text-align:right;">${r.ent.toLocaleString('pt-BR')}</td>
+                  <td><div class="rel-bar-wrap"><div class="rel-bar-bg"><div class="rel-bar-fill" style="width:${r.pct.toFixed(0)}%;background:${corBarra};"></div></div><span class="rel-bar-val">${r.pct.toFixed(0)}%</span></div></td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 7: Saldo a receber por ano ─────────────────
+        function renderRelSaldoAno(corpo) {
+            const fmt = v => (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+            const porAno = {};
+            filtrarTeds().forEach(t => {
+                financeirosVigentes(t).forEach(f => {
+                    const ano = parseInt(f.anoDesc||(f.data?new Date(f.data+'T00:00:00').getFullYear():null));
+                    if (!isNaN(ano)) { if (!porAno[ano]) porAno[ano]={previsto:0,recebido:0,devolvido:0}; porAno[ano].previsto+=parseFloat(f.valor)||0; }
+                });
+                (t.execFinanceiras||[]).forEach(e => {
+                    if (!e.data) return;
+                    const ano = new Date(e.data+'T00:00:00').getFullYear();
+                    if (!porAno[ano]) porAno[ano]={previsto:0,recebido:0,devolvido:0};
+                    const v = parseFloat(e.valor||e.valorRealizado)||0;
+                    if (v>0) porAno[ano].recebido+=v; else if (v<0) porAno[ano].devolvido+=Math.abs(v);
+                });
+            });
+            const anos = Object.keys(porAno).map(Number).sort();
+            if (!anos.length) { corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Sem dados financeiros.</p>'; return; }
+            let html = `<div style="overflow-x:auto;"><table class="tabela-padrao" style="min-width:500px;width:100%;">
+              <thead><tr><th>Ano</th><th style="text-align:right;">Previsto (R$)</th><th style="text-align:right;">Recebido (R$)</th><th style="text-align:right;">Devolvido (R$)</th><th style="text-align:right;">Saldo a receber (R$)</th></tr></thead><tbody>`;
+            let totP=0,totR=0,totD=0;
+            anos.forEach(ano => {
+                const d = porAno[ano];
+                const saldo = d.previsto-d.recebido+d.devolvido;
+                totP+=d.previsto; totR+=d.recebido; totD+=d.devolvido;
+                const corSaldo = saldo>0?'#1e40af':'#991b1b';
+                html += `<tr><td><strong>${ano}</strong></td>
+                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(d.previsto)}</td>
+                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(d.recebido)}</td>
+                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(d.devolvido)}</td>
+                  <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:${corSaldo};font-weight:600;">${fmt(saldo)}</td>
+                </tr>`;
+            });
+            const totSaldo = totP-totR+totD;
+            html += `<tr style="font-weight:700;background:var(--bg-secondary);">
+              <td>Total</td>
+              <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(totP)}</td>
+              <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(totR)}</td>
+              <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmt(totD)}</td>
+              <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;font-weight:700;">${fmt(totSaldo)}</td>
+            </tr></tbody></table></div>`;
+            corpo.innerHTML = html;
+        }
+
+        // ── Relatório 8: Rastreamento de NF ──────────────────────
+        function renderRelRastreioNF(corpo) {
+            corpo.innerHTML = `<div class="rel-busca-nf-wrap">
+              <input type="text" id="relNfInput" placeholder="Digite número da NF, objeto ou valor..." oninput="filtrarRastreioNF(this.value)" />
+              <button type="button" class="btn-rel-sm" onclick="filtrarRastreioNF(document.getElementById('relNfInput').value)">Buscar</button>
+            </div>
+            <div id="relNfResultados"><p style="font-size:0.8rem;color:var(--text-muted);">Digite para buscar notas fiscais em todos os TEDs.</p></div>`;
+        }
+
+        function filtrarRastreioNF(termo) {
+            const res = document.getElementById('relNfResultados');
+            if (!res) return;
+            if (!termo || termo.trim().length < 2) { res.innerHTML = '<p style="font-size:0.8rem;color:var(--text-muted);">Digite ao menos 2 caracteres.</p>'; return; }
+            const t = termo.toLowerCase().trim();
+            const rows = [];
+            filtrarTeds().forEach(ted => {
+                const numTed = ted.numTed || ted.id;
+                const buscar = (arr) => arr.forEach(f => {
+                    const nf  = String(f.nf||f.notaFiscal||'').toLowerCase();
+                    const obj = String(f.objeto||f.descricao||'').toLowerCase();
+                    const val = String(f.valor||f.valorNF||'').toLowerCase();
+                    if (nf.includes(t)||obj.includes(t)||val.includes(t))
+                        rows.push({ ted: numTed, nf: f.nf||f.notaFiscal||'—', objeto: f.objeto||f.descricao||'—', data: f.data||'—', valor: f.valor||f.valorNF||'—' });
+                });
+                buscar(ted.fisicos||[]);
+                buscar(ted.execFisicas||[]);
+            });
+            if (!rows.length) { res.innerHTML = `<p style="font-size:0.8rem;color:var(--text-muted);">Nenhum resultado para "<strong>${termo}</strong>".</p>`; return; }
+            const fmtD = v => (v&&v!=='—')?new Date(v+'T00:00:00').toLocaleDateString('pt-BR'):'—';
+            const fmtV = v => { const n=parseFloat(v); return isNaN(n)?(v||'—'):n.toLocaleString('pt-BR',{minimumFractionDigits:2}); };
+            let html = `<p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 0.5rem;">${rows.length} resultado(s)</p>
+            <table class="tabela-padrao" style="width:100%;"><thead><tr><th>TED</th><th>NF</th><th>Objeto</th><th>Data</th><th style="text-align:right;">Valor (R$)</th></tr></thead><tbody>`;
+            rows.forEach(r => {
+                html += `<tr><td><strong>${r.ted}</strong></td><td>${r.nf}</td><td style="font-size:0.78rem;">${r.objeto}</td><td>${fmtD(r.data)}</td><td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">${fmtV(r.valor)}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            res.innerHTML = html;
+        }
+
+        // ── Utilitário: status do TED ────────────────────────────
+        function _calcularStatusTed(t) {
+            if (typeof statusBadge === 'function') {
+                try {
+                    const badge = statusBadge(t);
+                    if (badge) { const match = badge.match(/>([^<]+)</); if (match) return match[1].trim(); }
+                } catch(e) {}
+            }
+            if (typeof getDisplayStatus === 'function') {
+                try { const s = getDisplayStatus(t); if (s && s.text) return s.text; } catch(e) {}
+            }
+            const hoje = new Date();
+            if (t.fimVigencia) {
+                const fim = new Date(t.fimVigencia + 'T00:00:00');
+                if (!isNaN(fim) && fim < hoje) return 'Vencido';
+            }
+            if (t.dataAssinatura || t.inicioVigencia) return 'Em execução';
+            return 'Indefinido';
+        }
+
+        // ── Exportar PDF do relatório ativo em tela ──────────────
+        function exportarRelatoriosPDF() {
+            const corpo = document.getElementById('relPreviewBody');
+            if (!corpo || !corpo.innerHTML.trim()) {
+                showToast('Nenhum relatório em tela para exportar.', 'info'); return;
+            }
+            const tituloEl = document.getElementById('relPreviewTitle');
+            const titulo = tituloEl ? tituloEl.textContent : 'Relatório';
+
+            // Resumo dos filtros ativos
+            const s = window._relGlobSel || {};
+            const partesFiltro = [];
+            if (s.teds && s.teds.size > 0) partesFiltro.push('TED: ' + Array.from(s.teds).join(', '));
+            if (s.ups  && s.ups.size  > 0) partesFiltro.push('UP: '  + Array.from(s.ups).join(', '));
+            if (s.anos && s.anos.size > 0) partesFiltro.push('Ano: ' + Array.from(s.anos).join(', '));
+            if (s.meses && s.meses.size > 0) partesFiltro.push('Mês: ' + Array.from(s.meses).join(', '));
+            const filtroStr = partesFiltro.length ? partesFiltro.join(' | ') : 'Todos';
+
+            const styles = `
+                @page { size: A4 landscape; margin: 10mm; }
+                body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; padding: 6px; -webkit-print-color-adjust: exact; }
+                h1 { margin: 0 0 3px; font-size: 15px; color: #0C447C; }
+                .filtros { font-size: 10px; color: #555; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #ddd; }
+                table { border-collapse: collapse; width: 100%; font-size: 10px; }
+                th, td { border: 1px solid #ccc; padding: 4px 5px; text-align: left; vertical-align: top; }
+                th { background: #0C447C; color: #fff; }
+                tbody tr:nth-child(even) td { background: #f9f9f9; }
+                .fat-fase-block, .fat-fase-body { display: block !important; }
+                .fat-fase-head { display: flex; gap: 8px; font-weight: 700; margin: 8px 0 4px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+                .fat-badge { border: 1px solid #ccc; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 700; }
+                .fat-table { width: 100%; border-collapse: collapse; }
+                .fat-table th, .fat-table td { border: 1px solid #ccc; padding: 3px 5px; font-size: 10px; }
+                .fat-entrega-item { display: flex; gap: 6px; font-size: 9px; margin-bottom: 2px; }
+                .fat-kpi-row { display: flex; gap: 10px; margin-bottom: 8px; }
+                .fat-kpi { border: 1px solid #ccc; padding: 5px 8px; flex: 1; }
+                .fat-kpi-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #555; }
+                .fat-kpi-value { font-size: 13px; font-weight: 700; }
+                .fat-totais { display: flex; gap: 10px; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 6px; }
+                [onclick], button, .filter-btn, .btn-rel-sm, .fat-tip a { display: none !important; }
+                .fat-tip { display: none !important; }
+                @media print { .no-print { display: none !important; } }
+            `;
+
+            const win = window.open('', '_blank');
+            if (!win) { showToast('Pop-up bloqueado. Permita pop-ups para esta página.', 'danger'); return; }
+            win.document.write(`<!doctype html><html><head><meta charset="utf-8">
+                <title>${titulo}</title><style>${styles}</style></head><body>
+                <h1>${titulo}</h1>
+                <div class="filtros">Filtros: ${filtroStr}</div>
+                ${corpo.innerHTML}
+                </body></html>`);
+            win.document.close();
+            win.focus();
+            setTimeout(() => {
+                try { win.print(); setTimeout(() => { try { win.close(); } catch(e) {} }, 800); } catch(e) {}
+            }, 600);
+        }
+
+        // ── Relatório de Faturamento ─────────────────────────────
+        function renderRelFaturamento(corpo) {
+            const s     = window._relGlobSel || {};
+            const todos = (dados && dados.teds) ? dados.teds : [];
+            const fmtVal   = v => (parseFloat(v)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const fmtMesAno = d => { if (!d) return '—'; const dt = d instanceof Date ? d : new Date(d); return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }); };
+            const fmtQtde  = v => (parseFloat(v)||0).toLocaleString('pt-BR', { maximumFractionDigits: 4 });
+            const normalizar = str => String(str||'').toLowerCase().trim();
+
+            // Filtrar TEDs
+            let tedsFiltrados = todos;
+            if (s.teds) tedsFiltrados = tedsFiltrados.filter(t => s.teds.has(String(t.numTed || t.id)));
+            if (s.ups)  tedsFiltrados = tedsFiltrados.filter(t => s.ups.has(t.up || t.upResponsavel || ''));
+
+            if (!tedsFiltrados.length) {
+                corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;padding:1rem;">Nenhum TED encontrado com os filtros selecionados.</p>';
+                return;
+            }
+
+            // Coletar linhas de faturamento de todos os TEDs filtrados
+            // linha: { ted, up, objeto, fase, dataPrevista, qtdePlan, valorUnit, valorPrev, entregas:[{data,qtde,nf,valorReal}], qtdeReal, valorReal, status }
+            const linhasAll = [];
+            tedsFiltrados.forEach(ted => {
+                const objetos = ted.objetos || [];
+                const mapaValorUnit = {};
+                objetos.forEach(o => {
+                    const k = normalizar(o.objeto);
+                    if (k) mapaValorUnit[k] = parseNumber(o.valorUnitario) || 0;
+                });
+                const hoje = new Date();
+                (ted.fisicos || []).forEach(f => {
+                    const objKey    = normalizar(f.objeto);
+                    const qtdePlan  = parseNumber(f.qtde) || 0;
+                    const valorUnit = mapaValorUnit[objKey] || 0;
+                    const valorPrev = qtdePlan * valorUnit;
+
+                    let dataPrevista = null;
+                    try {
+                        if (f.anoFinal && f.mesFinal) dataPrevista = new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
+                        else if (f.mFinal != null && ted.primeiraDescentralizacao) {
+                            const base = new Date(ted.primeiraDescentralizacao + 'T00:00:00');
+                            base.setMonth(base.getMonth() + parseInt(f.mFinal)); base.setDate(28);
+                            dataPrevista = base;
+                        }
+                    } catch(e) {}
+
+                    const entregas = (Array.isArray(f.entregas) ? f.entregas : []).map(ent => {
+                        const qtd = parseNumber(ent.quantidade != null ? ent.quantidade : ent.qtde) || 0;
+                        let dataEnt = null;
+                        try { if (ent.data) dataEnt = new Date(ent.data + 'T00:00:00'); } catch(e) {}
+                        return { data: dataEnt, qtde: qtd, nf: ent.nf || '', valorReal: qtd * valorUnit };
+                    });
+
+                    // Filtro por Mês: manter linha se mesFinal ou mês de alguma entrega bater
+                    if (s.meses && s.meses.size > 0) {
+                        const mesPrev = dataPrevista ? dataPrevista.getMonth() + 1 : null;
+                        const mesesEntregas = entregas.map(e => e.data ? e.data.getMonth() + 1 : null).filter(Boolean);
+                        const mesOk = (mesPrev && s.meses.has(String(mesPrev))) || mesesEntregas.some(m => s.meses.has(String(m)));
+                        if (!mesOk) return;
+                    }
+                    // Filtro por Ano
+                    if (s.anos && s.anos.size > 0) {
+                        const anoPrev = dataPrevista ? dataPrevista.getFullYear() : null;
+                        const anosEntregas = entregas.map(e => e.data ? e.data.getFullYear() : null).filter(Boolean);
+                        const anoOk = (anoPrev && s.anos.has(String(anoPrev))) || anosEntregas.some(a => s.anos.has(String(a)));
+                        if (!anoOk) return;
+                    }
+
+                    const qtdeReal  = entregas.reduce((s, e) => s + e.qtde, 0);
+                    const valorReal = qtdeReal * valorUnit;
+                    let status = 'planejado';
+                    if (qtdeReal >= qtdePlan && qtdePlan > 0) status = 'pago';
+                    else if (qtdeReal > 0) status = 'em-curso';
+                    else if (dataPrevista && dataPrevista < hoje) status = 'atrasado';
+
+                    linhasAll.push({ ted: ted.numTed || ted.id, up: ted.up || ted.upResponsavel || '—', objeto: f.objeto || '—', fase: f.fase || '—', dataPrevista, qtdePlan, valorUnit, valorPrev, entregas, qtdeReal, valorReal, status });
+                });
+            });
+
+            if (!linhasAll.length) {
+                corpo.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;padding:1rem;">Nenhuma linha de faturamento encontrada com os filtros aplicados.</p>';
+                return;
+            }
+
+            // KPIs globais
+            const totPrev = linhasAll.reduce((s, l) => s + l.valorPrev, 0);
+            const totReal = linhasAll.reduce((s, l) => s + l.valorReal, 0);
+            const pct     = totPrev > 0 ? Math.min((totReal / totPrev) * 100, 999).toFixed(1) : '0.0';
+            const delta   = totReal - totPrev;
+            const kpiHtml = `
+            <div class="fat-kpi-row">
+              <div class="fat-kpi"><div class="fat-kpi-label">Total Previsto</div><div class="fat-kpi-value">R$ ${fmtVal(totPrev)}</div><div class="fat-kpi-sub">${linhasAll.length} linha(s) · ${tedsFiltrados.length} TED(s)</div></div>
+              <div class="fat-kpi"><div class="fat-kpi-label">Total Faturado</div><div class="fat-kpi-value">R$ ${fmtVal(totReal)}</div><div class="fat-kpi-delta ${delta>=0?'pos':'neg'}">${delta>=0?'▲':'▼'} R$ ${fmtVal(Math.abs(delta))} ${delta>=0?'acima':'abaixo'} do previsto</div></div>
+              <div class="fat-kpi"><div class="fat-kpi-label">% Executado</div><div class="fat-kpi-value">${pct}%</div><div class="fat-kpi-sub">do total previsto</div></div>
+            </div>`;
+
+            // Tabela
+            const statusLabel = { pago:'PAGO', planejado:'PLAN.', atrasado:'ATRASO', 'em-curso':'EM CURSO' };
+            const rowsHtml = linhasAll.map(l => {
+                const entStr = l.entregas.length
+                    ? l.entregas.map(e => `${fmtMesAno(e.data)} · ${fmtQtde(e.qtde)} un · R$ ${fmtVal(e.valorReal)}${e.nf ? ' · NF: '+e.nf : ''}`).join('<br>')
+                    : '<span style="color:var(--text-muted);font-style:italic;">Sem entrega</span>';
+                const dataReal = l.entregas.filter(e=>e.data).map(e=>e.data).reduce((a,b)=>a>b?a:b, null);
+                let deltaDataHtml = '';
+                if (l.dataPrevista && dataReal) {
+                    const diffMes = Math.round((dataReal - l.dataPrevista) / (1000*60*60*24*30));
+                    if (diffMes === 0) deltaDataHtml = '<span class="fat-delta-data zero">No prazo</span>';
+                    else if (diffMes > 0) deltaDataHtml = `<span class="fat-delta-data neg">${diffMes}m atraso</span>`;
+                    else deltaDataHtml = `<span class="fat-delta-data pos">${Math.abs(diffMes)}m adiant.</span>`;
+                } else if (!dataReal && l.dataPrevista && l.dataPrevista < new Date()) {
+                    const diffMes = Math.round((new Date() - l.dataPrevista) / (1000*60*60*24*30));
+                    deltaDataHtml = `<span class="fat-delta-data neg">${diffMes}m s/ entrega</span>`;
+                }
+                return `<tr>
+                  <td style="font-weight:600;">${l.ted}</td>
+                  <td>${l.up}</td>
+                  <td>Fase ${l.fase}</td>
+                  <td>${l.objeto}</td>
+                  <td style="text-align:center;">${fmtMesAno(l.dataPrevista)}</td>
+                  <td style="text-align:right;font-family:monospace;">${fmtQtde(l.qtdePlan)}</td>
+                  <td style="text-align:right;font-family:monospace;">R$ ${fmtVal(l.valorUnit)}</td>
+                  <td style="text-align:right;font-family:monospace;">R$ ${fmtVal(l.valorPrev)}</td>
+                  <td style="font-size:0.72rem;">${entStr}</td>
+                  <td style="text-align:right;font-family:monospace;color:#166534;">R$ ${fmtVal(l.valorReal)}</td>
+                  <td style="text-align:center;">${deltaDataHtml}</td>
+                  <td style="text-align:center;"><span class="fat-badge ${l.status}">${statusLabel[l.status]||l.status}</span></td>
+                </tr>`;
+            }).join('');
+
+            const totRow = `<tr style="background:var(--surface-alt);font-weight:700;">
+              <td colspan="7">Total</td>
+              <td style="text-align:right;font-family:monospace;">R$ ${fmtVal(totPrev)}</td>
+              <td></td>
+              <td style="text-align:right;font-family:monospace;color:#166534;">R$ ${fmtVal(totReal)}</td>
+              <td colspan="2" style="text-align:right;font-family:monospace;color:${delta>=0?'#166534':'#A32D2D'};">${delta>=0?'+':'-'}R$ ${fmtVal(Math.abs(delta))}</td>
+            </tr>`;
+
+            const tabelaHtml = `<div style="overflow-x:auto;margin-top:12px;">
+              <table class="tabela-padrao" style="min-width:1100px;font-size:0.75rem;">
+                <thead><tr>
+                  <th>TED</th><th>UP</th><th>Fase</th><th>Objeto</th>
+                  <th>Previsto (mês)</th><th style="text-align:right;">Qtde Plan.</th>
+                  <th style="text-align:right;">Val. Unit.</th><th style="text-align:right;">Val. Prev.</th>
+                  <th>Entregas Realizadas</th><th style="text-align:right;">Val. Real.</th>
+                  <th>Δ Datas</th><th>Status</th>
+                </tr></thead>
+                <tbody>${rowsHtml}</tbody>
+                <tfoot>${totRow}</tfoot>
+              </table>
+            </div>`;
+
+            corpo.innerHTML = kpiHtml + tabelaHtml;
+        }
+
+        function exportarRelatorioFaturamentoExcel() {
+            const corpo = document.getElementById('relPreviewBody');
+            if (!corpo) return;
+            const tabela = corpo.querySelector('table');
+            if (!tabela) { showToast('Gere o relatório antes de exportar.', 'info'); return; }
+            loadSheetJS().then(XLSX => {
+                const ws = XLSX.utils.table_to_sheet(tabela);
+                ws['!cols'] = [8,8,6,20,10,10,12,12,30,12,10,10].map(w => ({ wch: w }));
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Faturamento');
+                XLSX.writeFile(wb, 'relatorio_faturamento.xlsx');
+            }).catch(e => showToast('Erro ao gerar Excel: ' + (e && e.message ? e.message : e), 'danger'));
+        }
+
+        // ── Exportar Excel do relatório ativo ────────────────────
+        function exportarRelatoriosExcel() {
+            const ativo = window._relState ? window._relState.ativo : '';
+            // Relatórios com exportação Excel própria
+            if (ativo === 'ndupano') { try { exportarRelatorioNDUPExcel(); } catch(e) {} return; }
+            if (ativo === 'faturamento') { try { exportarRelatorioFaturamentoExcel(); } catch(e) {} return; }
+
+            // Exportação genérica: extrai dados da tabela em tela
+            const corpo = document.getElementById('relPreviewBody');
+            if (!corpo) { showToast('Nenhum relatório em tela.', 'info'); return; }
+            const tabela = corpo.querySelector('table');
+            if (!tabela) { showToast('Este relatório não tem tabela exportável para Excel.', 'info'); return; }
+
+            loadSheetJS().then(XLSX => {
+                const tituloEl = document.getElementById('relPreviewTitle');
+                const titulo = tituloEl ? tituloEl.textContent.slice(0, 28) : 'Relatorio';
+                const ws = XLSX.utils.table_to_sheet(tabela);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, titulo);
+                XLSX.writeFile(wb, titulo.replace(/[^a-zA-Z0-9]/g, '_') + '.xlsx');
+            }).catch(e => { showToast('Erro ao gerar Excel: ' + (e && e.message ? e.message : e), 'danger'); });
+        }
+
+        // Modo leitura ativado por padrão (permanece assim até login bem-sucedido)
+        window._readOnlyMode = true;
+
+        // Iniciar ao carregar a página
+        window.onload = function() {
+            // Login é obrigatório: a tela de login já vem visível por padrão no HTML
+            // (evita flash do dashboard), mas reforçamos aqui por segurança.
+            showLoginScreen();
+            initTheme();
+            inicializar();
+            checkTableScrolls();
+            initLucideIcons();
+
+            // Aplicar máscaras de formatação nos inputs do formulário
+            document.querySelectorAll('input.mask-numero').forEach(applyNumberMaskToInput);
+            document.querySelectorAll('input.mask-moeda').forEach(applyCurrencyMaskToInput);
+            document.querySelectorAll('input.mask-data').forEach(applyDateMaskToInput);
+
+            window.addEventListener('resize', function() {
+                try { refreshFrozenColumnsAllTables(); } catch(e) {}
+            });
+            // Observar wrappers de tabela
+            document.querySelectorAll('.table-wrapper').forEach(w => resizeObserver.observe(w));
+            // Iniciar em modo LEITURA (sem login)
+            updateAdminUI(false);
+            // Atualizar status do Firebase no fundo
+            waitForGlobal('authSignIn', 10000).then(function(ok) {
+                if (ok) setLoginStatus('Pronto para login.');
+                else setLoginStatus('Firebase não disponível. Verifique conexão.');
+            });
+        };
+    
+
+/* --- extracted script 3 --- */
+
+        // After 5s check if firebase loaded; if not, show diagnostic
+        setTimeout(function() {
+            if (!window.firebaseApp) {
+                console.error('[Diag] firebase-init.js não carregou após 5s.');
+                console.error('[Diag] window.firebaseApp=', window.firebaseApp);
+                console.error('[Diag] window.authSignIn=', window.authSignIn);
+                console.error('[Diag] location.protocol=', location.protocol);
+                // Try to give user actionable info
+                var status = document.getElementById('loginStatus');
+                if (status) {
+                    status.style.color = '#dc2626';
+                    status.innerHTML = 'Firebase não carregou. <br><small>Abra o console do navegador (F12) para ver o erro.</small>';
+                }
+            }
+        }, 5000);
+    
+
+/* --- extracted script 4 --- */
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initLucideIcons();
+
+            // Versão visível no rodapé da sidebar: com vários usuários, "máquina numa build
+            // antiga" é a causa nº 1 de "o outro salvou e não aparece aqui" — dá pra comparar
+            // as máquinas de bate-pronto em vez de adivinhar.
+            try {
+                const vEl = document.getElementById('appVersionLabel');
+                if (vEl) vEl.textContent = 'v' + (window.APP_BUILD_VERSION || '?');
+            } catch (e) {}
+
+            // ── MELHORIA 5: Rodapé de rastreabilidade ──────────────
+            _injetarRodapeAbas();
+        });
+
+        // ── MELHORIA 5: TED_META e injeção de rodapés ──────────────────────
+        const TED_META = {
+            lastUpdated: '2026-05-13T14:37',
+            responsible: 'Maj Silva',
+            planVersion: '022/2025',
+        };
+
+        function _injetarRodapeAbas() {
+            const dt = new Date(TED_META.lastUpdated);
+            const dtFmt = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const html = `Última atualização: <time datetime="${TED_META.lastUpdated}">${dtFmt}</time> · Responsável: <b>${TED_META.responsible}</b> · Versão do plano: ${TED_META.planVersion}`;
+            document.querySelectorAll('.tab-footer[data-tab-footer]').forEach(el => { el.innerHTML = html; });
+        }
+
+        // ── MELHORIA 1: Painel de Saúde da Execução ────────────────────────
+        function renderPainelSaude() {
+            const el = document.getElementById('painelSaudeExecucao');
+            if (!el) return;
+            const ted = window.tedSelecionado;
+            if (!ted) { el.innerHTML = ''; return; }
+
+            // Físico
+            const fisicos = ted.fisicos || [];
+            const execs = ted.execFisicas || [];
+            const qtdeTotal = fisicos.reduce((s, f) => s + (parseNumber(f.qtde) || 0), 0);
+            const qtdeEntregue = execs.reduce((s, e) => s + (parseNumber(e.qtde) || 0), 0);
+            const pctFisico = qtdeTotal > 0 ? (qtdeEntregue / qtdeTotal) * 100 : 0;
+
+            // Financeiro
+            const recursosGerais = ted.recursosGerais || [];
+            const totalRecebido = recursosGerais.reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+            const valorTed = parseNumber(ted.valorTed) || 0;
+            const pctFinanceiro = valorTed > 0 ? (totalRecebido / valorTed) * 100 : 0;
+
+            // Prazo consumido
+            let pctPrazo = 0;
+            if (ted.inicioVigencia) {
+                const alteracoes = ted.alteracoes || [];
+                const aditivos = alteracoes.filter(a => a.tipo === 'aditivo' && !a.excluido);
+                const totalAditivoMeses = aditivos.reduce((s, a) => s + (a.meses || 0), 0);
+                const vigTotalMeses = (parseInt(ted.vigencia) || 0) + totalAditivoMeses;
+                if (vigTotalMeses > 0) {
+                    const dInicio = new Date(normalizarData(ted.inicioVigencia) + 'T00:00:00');
+                    const dFim = new Date(dInicio); dFim.setMonth(dFim.getMonth() + vigTotalMeses);
+                    const hoje = new Date(); hoje.setHours(0,0,0,0);
+                    const diasTotais = Math.max(1, Math.round((dFim - dInicio) / 86400000));
+                    const diasDecorridos = Math.max(0, Math.round((hoje - dInicio) / 86400000));
+                    pctPrazo = Math.min(100, (diasDecorridos / diasTotais) * 100);
+                }
+            }
+
+            // Status automático
+            let statusHtml = '';
+            if (Math.abs(pctFisico - pctPrazo) <= 5 && Math.abs(pctFinanceiro - pctPrazo) <= 5) {
+                statusHtml = '<span class="saude-pill ritmo">No ritmo</span>';
+            } else if (pctFisico < pctPrazo - 10) {
+                statusHtml = '<span class="saude-pill atrasado">Físico atrasado em relação ao prazo</span>';
+            } else if (pctFinanceiro < pctFisico - 10) {
+                statusHtml = '<span class="saude-pill risco">Financeiro abaixo do físico</span>';
+            } else {
+                statusHtml = '<span class="saude-pill ritmo">No ritmo</span>';
+            }
+
+            const barra = (pct, cor) => `
+                <div class="saude-bar-track">
+                    <div class="saude-bar-fill" style="width:${Math.min(100,pct).toFixed(1)}%;background:${cor};"></div>
+                </div>`;
+
+            el.innerHTML = `
+                <div class="saude-card">
+                    <div class="saude-title">Saúde da Execução</div>
+                    <div class="saude-row">
+                        <span class="saude-label">Físico</span>
+                        ${barra(pctFisico, '#c07a1c')}
+                        <span class="saude-pct">${pctFisico.toFixed(1).replace('.',',')}%</span>
+                    </div>
+                    <div class="saude-row">
+                        <span class="saude-label">Financeiro</span>
+                        ${barra(pctFinanceiro, '#185FA5')}
+                        <span class="saude-pct">${pctFinanceiro.toFixed(1).replace('.',',')}%</span>
+                    </div>
+                    <div class="saude-row">
+                        <span class="saude-label">Prazo</span>
+                        ${barra(pctPrazo, '#64748b')}
+                        <span class="saude-pct">${pctPrazo.toFixed(1).replace('.',',')}%</span>
+                    </div>
+                    <div class="saude-status">${statusHtml}</div>
+                </div>`;
+        }
+
+        // Chamar renderPainelSaude após exibirInformacoesTED — hookar na função existente
+        (function() {
+            const _orig = window.exibirInformacoesTED || null;
+            // Substituímos via patch na inicialização quando a função já existe
+            const _patch = function() {
+                if (_orig) _orig.apply(this, arguments);
+                try { renderPainelSaude(); } catch(e) {}
+            };
+            // Como exibirInformacoesTED está em escopo closure, usamos MutationObserver
+            // para detectar quando o painel de KPIs é atualizado
+            const kpiGrid = document.querySelector('.kpi-grid');
+            if (kpiGrid) {
+                new MutationObserver(function() {
+                    try { renderPainelSaude(); } catch(e) {}
+                }).observe(kpiGrid, { childList: true, subtree: true, characterData: true });
+            }
+            // Também observar o container de KPI de valor (muda ao selecionar TED)
+            const obsTarget = document.getElementById('kpi_valorTed');
+            if (obsTarget) {
+                new MutationObserver(function() {
+                    try { renderPainelSaude(); } catch(e) {}
+                }).observe(obsTarget, { childList: true, subtree: true, characterData: true });
+            }
+        })();
+
+        // ── MELHORIA 2: Reconciliação Faturado × Recebido ──────────────────
+        // Injetada dentro de renderFaturamento via patch após fat-kpi-row
+        (function() {
+            const _patchFat = setInterval(function() {
+                const container = document.getElementById('faturamentoContainer');
+                if (!container) return;
+                // Observar mudanças no container de faturamento
+                clearInterval(_patchFat);
+                new MutationObserver(function() {
+                    try { _injetarReconciliacao(); } catch(e) {}
+                }).observe(container, { childList: true });
+            }, 500);
+        })();
+
+        function _injetarReconciliacao() {
+            const container = document.getElementById('faturamentoContainer');
+            if (!container) return;
+            if (container.querySelector('.reconciliacao-card')) return; // já injetado
+            const kpiRow = container.querySelector('.fat-kpi-row');
+            if (!kpiRow) return;
+
+            const ted = window.tedSelecionado;
+            if (!ted) return;
+
+            // Calcular faturamento físico
+            const linhas = computarLinhasFaturamento ? computarLinhasFaturamento(ted) : [];
+            let fatFisico = 0;
+            linhas.forEach(l => { fatFisico += (l.valorReal || 0); });
+
+            // Calcular recebimento financeiro
+            const recursosGerais = ted.recursosGerais || [];
+            const recFinanceiro = recursosGerais.reduce((s, r) => s + (parseFloat(r.valor) || 0), 0);
+
+            const diff = fatFisico - recFinanceiro;
+            const fmtVal = v => Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            const card = document.createElement('div');
+            card.className = 'reconciliacao-card';
+            card.innerHTML = `
+                <div class="reconciliacao-title">Reconciliação: Faturamento Físico × Recebimento Financeiro</div>
+                <div class="reconciliacao-sub">São eixos distintos — saiba a diferença</div>
+                <div class="reconciliacao-cols">
+                    <div class="reconciliacao-col">
+                        <div class="reconciliacao-col-label">Faturamento Físico</div>
+                        <div class="reconciliacao-col-value" style="color:#3B6D11;">R$ ${fmtVal(fatFisico)}</div>
+                        <div class="reconciliacao-col-sub">Entregas registradas × valor unitário do objeto</div>
+                    </div>
+                    <div class="reconciliacao-divider"></div>
+                    <div class="reconciliacao-col">
+                        <div class="reconciliacao-col-label">Recebimento Financeiro</div>
+                        <div class="reconciliacao-col-value" style="color:#185FA5;">R$ ${fmtVal(recFinanceiro)}</div>
+                        <div class="reconciliacao-col-sub">Descentralizações recebidas (Recursos Gerais)</div>
+                    </div>
+                </div>
+                <div class="reconciliacao-diff">
+                    Diferença: <b>R$ ${fmtVal(diff)}</b>
+                    <span class="reconciliacao-diff-note"> — representa taxas, ajustes e timing entre emissão NF e liquidação SIAFI.</span>
+                </div>`;
+            kpiRow.insertAdjacentElement('afterend', card);
+        }
+
+        // ── MELHORIA 3: .status-tag unificado ──────────────────────────────
+        // As classes são injetadas via CSS (ver styles.css). Já existem .status-badge
+        // no sistema; .status-tag é adicionado como camada complementar no CSS.
+    
