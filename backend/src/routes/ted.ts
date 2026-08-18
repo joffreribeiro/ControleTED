@@ -121,7 +121,7 @@ router.post('/:id/physical-milestone', authMiddleware, async (req: AuthRequest, 
       `INSERT INTO physical_milestones (ted_id, description, target_percentage, planned_date, status)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [tedId, description, target_percentage, planned_date, PAGAMENTO_STATUS.PENDENTE]
+      [tedId, description, target_percentage, planned_date, 'PENDENTE']
     );
 
     res.status(201).json(result.rows[0]);
