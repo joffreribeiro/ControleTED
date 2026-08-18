@@ -1229,6 +1229,11 @@
                         <div id="wrapperCadFin" class="table-wrapper">
                             <!-- Barra de ações acima da tabela -->
                             <div class="table-actions-bar">
+                                <span class="cf-modo-seg" id="cfModoSeg">
+                                    <button type="button" class="on" data-modo="vig" onclick="setCfModoView('vig')" title="Só o que vale hoje — bate com os totais">Vigente</button>
+                                    <button type="button" data-modo="cmp" onclick="setCfModoView('cmp')" title="Mostra a trilha: valor anterior, chip do aditivo/apostilamento e suprimidos">Comparado</button>
+                                    <button type="button" data-modo="org" onclick="setCfModoView('org')" title="Reconstrói o TED como estava antes de qualquer aditivo/apostilamento">Original</button>
+                                </span>
                                 <button type="button" class="btn-toggle-months" id="toggle-months-cadFin" data-expanded="0" onclick="toggleMonthCols('cadFin', this)">Ver detalhes mensais</button>
                                 <button type="button" class="section-add-btn" onclick="abrirModalFinanceiro()">+ Adicionar</button>
                             </div>
@@ -1285,6 +1290,9 @@
                         </div>
                         <div class="detalhe-secao-body">
 
+                        <!-- Faixa de conciliação: Previsto original x vigente, quando um aditivo/apostilamento os difere -->
+                        <div id="execfin-recon-banner"></div>
+
                         <!-- KPIs de Execução Financeira (preenchidos por JS) -->
                         <div id="execfin-kpis-container"></div>
 
@@ -1339,6 +1347,9 @@
                             <h3 class="detalhe-secao-titulo"><i data-lucide="landmark" class="inline-icon-sm"></i> Recursos Gerais IMBEL <span class="section-count-badge" id="count-recgeral">0</span></h3>
                         </div>
                         <div class="detalhe-secao-body">
+
+                        <!-- Faixa de conciliação: Previsto original x vigente, quando um aditivo/apostilamento os difere -->
+                        <div id="recgeral-recon-banner"></div>
 
                         <!-- KPIs Recursos Gerais (preenchidos por JS) -->
                         <div id="recgeral-kpis-container"></div>

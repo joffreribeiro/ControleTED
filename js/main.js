@@ -8252,13 +8252,14 @@
               </div>
             </div>`;
         }
-        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded, origemAlt) {
+        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded, origemAlt, modo) {
             // Fallback: se não vier o casamento robusto, usa só o ID (comportamento antigo)
             if (typeof isFinExcluded !== 'function') {
                 const _ids = excludedFinIds || new Set();
                 isFinExcluded = (f) => f.id != null && _ids.has(String(f.id));
             }
             excludedFinIds = excludedFinIds || new Set();
+            modo = modo || 'vig';
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
             // Chip de atribuição: identifica qual aditivo/apostilamento originou a alteração/supressão
@@ -8316,11 +8317,29 @@
                 if (!grupos[chave]) { grupos[chave] = { label, items: [] }; grupoOrdem.push(chave); }
                 grupos[chave].items.push(f);
             });
+            const isOrg = modo === 'org';
+            const isCmp = modo === 'cmp';
+            // Valor "de antes" de uma linha alterada, usado no modo Original para reconstruir
+            // o TED como estava no documento assinado.
+            const valorAntigoDe = (f) => {
+                const m = modMapFin[matchKeyFin(f)];
+                return (m && m.valor) ? Number(m.valor.de || 0) : (parseNumber(f.valor) || 0);
+            };
+
             let rowsHtml = '';
             grupoOrdem.forEach(chave => {
                 const grp = grupos[chave];
-                const activeItems = grp.items.filter(f => !isFinExcluded(f));
-                const subTotal = activeItems.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
+                // Partição das linhas do grupo conforme o modo:
+                //  - vig/cmp: vigentes (não suprimidas) x suprimidas (fora das somas).
+                //  - org: exclui o que só existe por causa de um aditivo/apostilamento ativo
+                //    (isAdded) e devolve o que foi suprimido ao grupo normal — nada fica "fora".
+                const itensVigentesGrp = isOrg
+                    ? grp.items.filter(f => !addSetFin.has(matchKeyFin(f)))
+                    : grp.items.filter(f => !isFinExcluded(f));
+                const itensSuprimidosGrp = isOrg ? [] : grp.items.filter(f => isFinExcluded(f));
+
+                const activeItems = itensVigentesGrp;
+                const subTotal = activeItems.reduce((s, f) => s + (isOrg ? valorAntigoDe(f) : (parseNumber(f.valor) || 0)), 0);
                 const subFmt = subTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 const subRecebido = activeItems.reduce((s, f) => {
                     const valorLinha = parseNumber(f.valor) || 0;
@@ -8331,6 +8350,15 @@
                 const grpId = 'cfgrp_' + chave;
                 // group header row (fixed cols + Gantt spacers)
                 const nGantt = meses.length;
+                // No modo Original não há "recebido" — é uma reconstrução histórica, não um
+                // acompanhamento financeiro em curso.
+                const subtotalHtml = isOrg
+                    ? `<span class="cf-grp-subtotal"><span class="cf-grp-subtotal-total">R$ ${subFmt}</span></span>`
+                    : `<span class="cf-grp-subtotal">
+                                <span class="cf-grp-subtotal-recebido">R$ ${subRecebidoFmt}</span>
+                                <span class="cf-grp-subtotal-sep">/</span>
+                                <span class="cf-grp-subtotal-total">R$ ${subFmt}</span>
+                            </span>`;
                 rowsHtml += `<tr class="cf-grp-tr-head" data-grp="${grpId}" onclick="toggleGrupoCadFin('${grpId}', this)">
                     <td colspan="${7 + nGantt}" style="padding:0; border:none;">
                         <div class="cf-grp-head">
@@ -8339,11 +8367,7 @@
                                 <span class="mes-pill">${grp.label}</span>
                                 <span class="cf-grp-count">${activeItems.length} lançamento${activeItems.length !== 1 ? 's' : ''}</span>
                             </div>
-                            <span class="cf-grp-subtotal">
-                                <span class="cf-grp-subtotal-recebido">R$ ${subRecebidoFmt}</span>
-                                <span class="cf-grp-subtotal-sep">/</span>
-                                <span class="cf-grp-subtotal-total">R$ ${subFmt}</span>
-                            </span>
+                            ${subtotalHtml}
                         </div>
                     </td>
                 </tr>`;
@@ -8360,28 +8384,42 @@
                     const isAdded = addSetFin.has(mKey);
                     const isExcluded = isFinExcluded(f);
                     const isAlterada = !isExcluded && !isAdded && mods && (mods.valor || mods.m);
-                    const trClass = (isExcluded ? ' linha-excluida-aditivo' : (isAdded ? ' linha-adicionada-aditivo' : (isAlterada ? ' linha-alterada-aditivo' : ''))) + (supGroupId ? ' cf-sup-item' : '');
+                    // Modo Original: do ponto de vista do documento assinado nada "mudou" ainda —
+                    // sem faixa lateral, sem chip, linha neutra.
+                    const trClass = (isOrg ? '' : (isExcluded ? ' linha-excluida-aditivo' : (isAdded ? ' linha-adicionada-aditivo' : (isAlterada ? ' linha-alterada-aditivo' : '')))) + (supGroupId ? ' cf-sup-item' : '');
                     const supAttr = supGroupId ? ` data-supgroup="${supGroupId}"` : '';
                     const ndCat = _cfNdCategoria(numeroDisplay);
                     const upCat = _cfUpCategoria(f.up || f.ug || '');
                     const upRaw = String(f.up || f.ug || '');
                     const pct = pctRecebidoMap.get(f) ?? 0;
-                    const valorFaltante = Math.max(0, valorNum * (1 - pct / 100));
+                    // Valor "efetivo" da linha no modo atual: no Original, uma linha alterada
+                    // mostra o valor de ANTES; nos demais modos é o valor vigente hoje.
+                    const effValorNum = (isOrg && mods && mods.valor) ? Number(mods.valor.de || 0) : valorNum;
+                    const valorFaltante = Math.max(0, effValorNum * (1 - pct / 100));
                     const faltanteFmt = valorFaltante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    // Linha suprimida: valor sempre tachado em bloco simples (não há "de -> para" —
-                    // ela deixou de existir), sem a formatação de célula alterada.
-                    const tdValor = isExcluded
+                    // Linha suprimida (fora do Original): valor tachado em bloco simples — não há
+                    // "de -> para", ela deixou de existir. Alterada: no Comparado mostra a trilha
+                    // "de -> para"; no Vigente e no Original, só o valor efetivo do modo.
+                    const tdValor = (isExcluded && !isOrg)
                         ? `<span class="col-valor-sup">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>`
-                        : (mods && mods.valor
-                            ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '')
-                            : renderValorRealFmt(valorNum));
-                    const chip = (isExcluded || isAdded || isAlterada) ? chipAltHtml : '';
-                    const tdM = (!isExcluded && mods && mods.m) ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
-                    if (!isExcluded && mods && mods.m && window._cfStartDate) {
+                        : (!isOrg && mods && mods.valor
+                            ? (isCmp
+                                ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '')
+                                : renderValorRealFmt(valorNum))
+                            : renderValorRealFmt(effValorNum));
+                    const chip = (!isOrg && (isExcluded || isAdded || isAlterada)) ? chipAltHtml : '';
+                    const tdM = (!isOrg && mods && mods.m)
+                        ? (isCmp ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? ''))
+                        : ((isOrg && mods && mods.m) ? (mods.m.de ?? '') : (f.m ?? ''));
+                    if (isCmp && mods && mods.m && window._cfStartDate) {
                         const dOldMes = new Date(window._cfStartDate);
                         dOldMes.setMonth(dOldMes.getMonth() + (Number(mods.m.de) || 0));
                         const oldMesDescStr = `${mesesNome[dOldMes.getMonth()]}/${dOldMes.getFullYear()}`;
                         mesDescStr = `<span class="celula-alterada-aditivo"><span class="val-antigo">${oldMesDescStr}</span><span class="val-novo">${mesDescStr}</span></span>`;
+                    } else if (isOrg && mods && mods.m && window._cfStartDate) {
+                        const dOldMes = new Date(window._cfStartDate);
+                        dOldMes.setMonth(dOldMes.getMonth() + (Number(mods.m.de) || 0));
+                        mesDescStr = `${mesesNome[dOldMes.getMonth()]}/${dOldMes.getFullYear()}`;
                     }
                     let html = `<tr class="cf-grp-data-row${trClass}" data-grprow="${grpId}"${supAttr}>
                         <td class="col-nd"><span class="nd-tag ${ndCat}">${formatarNDComPontos(numeroDisplay)}</span>${chip}</td>
@@ -8390,7 +8428,7 @@
                         <td class="col-mes">${mesDescStr}</td>
                         <td class="col-valor" style="text-align:center;">${tdValor}</td>
                         <td class="col-percent">
-                            ${isExcluded
+                            ${(isOrg || isExcluded)
                                 ? '<span class="pill" style="color:#94a3b8;">—</span>'
                                 : (valorFaltante <= 0
                                     ? '<span class="saldo-receber saldo-receber--zero">Recebido</span>'
@@ -8400,24 +8438,28 @@
                             <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
                             <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
                         </td>`;
-                    // Gantt cells
+                    // Gantt cells: no Comparado mostra a célula antiga (tachada) ao lado da nova;
+                    // no Original a linha "mora" só na posição antiga; no Vigente, só na atual.
                     let oldMesDesc2 = null, oldAnoDesc2 = null;
-                    if (!isExcluded && mods && mods.m && window._cfStartDate) {
+                    if (mods && mods.m && window._cfStartDate) {
                         const dOld = new Date(window._cfStartDate);
                         dOld.setMonth(dOld.getMonth() + (Number(mods.m.de) || 0));
                         oldMesDesc2 = dOld.getMonth() + 1;
                         oldAnoDesc2 = dOld.getFullYear();
                     }
+                    const effMesAtual = (isOrg && oldMesDesc2 !== null) ? oldMesDesc2 : parseInt(f.mesDesc);
+                    const effAnoAtual = (isOrg && oldAnoDesc2 !== null) ? oldAnoDesc2 : parseInt(f.anoDesc);
+                    const showOldCell = isCmp && oldMesDesc2 !== null;
                     meses.forEach((mesInfo) => {
-                        const estaNoMes = parseInt(f.mesDesc) === mesInfo.mes && parseInt(f.anoDesc) === mesInfo.fullYear;
-                        const estaNoMesAntigo = oldMesDesc2 !== null && oldMesDesc2 === mesInfo.mes && oldAnoDesc2 === mesInfo.fullYear;
+                        const estaNoMes = effMesAtual === mesInfo.mes && effAnoAtual === mesInfo.fullYear;
+                        const estaNoMesAntigo = showOldCell && oldMesDesc2 === mesInfo.mes && oldAnoDesc2 === mesInfo.fullYear;
                         if (estaNoMes && estaNoMesAntigo) {
-                            html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${effValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                         } else if (estaNoMes) {
-                            if (oldMesDesc2 !== null) {
-                                html += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            if (showOldCell) {
+                                html += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${effValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                             } else {
-                                html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                                html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${effValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                             }
                         } else if (estaNoMesAntigo) {
                             const oldValor = mods && mods.valor ? Number(mods.valor.de || 0) : valorNum;
@@ -8430,15 +8472,12 @@
                     return html;
                 };
 
-                const itensVigentesGrp = grp.items.filter(f => !isFinExcluded(f));
-                const itensSuprimidosGrp = grp.items.filter(f => isFinExcluded(f));
-
                 itensVigentesGrp.forEach(f => { rowsHtml += renderLinhaCf(f); });
 
-                // Bloco recolhido para as linhas suprimidas — em vez de espalhar cada uma
-                // tachada por inteiro na tabela, mostra um resumo com o total removido e
-                // permite expandir para conferir cada lançamento individualmente.
-                if (itensSuprimidosGrp.length) {
+                // Bloco recolhido para as linhas suprimidas — só existe no modo Comparado: no
+                // Vigente elas nem entram nas somas nem precisam poluir a tela, e no Original
+                // elas já voltam a ser linhas normais (não "suprimidas").
+                if (isCmp && itensSuprimidosGrp.length) {
                     const totalSup = itensSuprimidosGrp.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
                     const totalSupFmt = totalSup.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                     const supToggleId = grpId + '_sup';
@@ -8476,6 +8515,63 @@
             const isOpen = car && car.textContent === '▾';
             rows.forEach(r => r.style.display = isOpen ? 'none' : '');
             if (car) car.textContent = isOpen ? '▸' : '▾';
+        }
+
+        // Modo de exibição do Cadastro Financeiro:
+        //  - vig (padrão): só o que vale hoje, sem trilha — o subtotal fecha com o Previsto
+        //    das outras tabelas porque usa a mesma fonte (financeirosVigentes).
+        //  - cmp: trilha completa — valor anterior/novo, chip do aditivo/apostilamento e
+        //    bloco recolhido com o que foi suprimido.
+        //  - org: reconstrói o TED como estava antes de qualquer aditivo/apostilamento —
+        //    útil para conferir contra o documento assinado.
+        window._cfModoView = 'vig';
+        function setCfModoView(modo) {
+            window._cfModoView = modo;
+            document.querySelectorAll('#cfModoSeg button').forEach(b => {
+                b.classList.toggle('on', b.getAttribute('data-modo') === modo);
+            });
+            try { atualizarTabelaFinanceira(); } catch (e) { console.warn(e); }
+        }
+
+        // Faixa de conciliação exibida no topo da Execução Financeira e do Recursos Gerais
+        // IMBEL: quando um aditivo/apostilamento suprime lançamentos do Cadastro Financeiro,
+        // o Previsto dessas tabelas cai em relação ao total original — em vez de deixar essa
+        // diferença como uma dúvida silenciosa, a faixa explicita os dois números e a origem.
+        function renderFinReconBanner(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const ted = window.tedSelecionado;
+            if (!ted) { container.innerHTML = ''; return; }
+
+            const todos = ted.financeiros || [];
+            const vigentes = financeirosVigentes(ted);
+            const totalOriginal = todos.reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+            const totalVigente = vigentes.reduce((s, f) => s + (parseFloat(f.valor) || 0), 0);
+            const delta = totalVigente - totalOriginal;
+
+            if (Math.abs(delta) < 0.01) { container.innerHTML = ''; return; }
+
+            const mapa = mapaSupressaoFinanceira(ted);
+            const nSuprimidos = todos.filter(f => mapa.get(f) === true).length;
+            const origem = obterOrigemAlteracaoTabela('financeiros');
+            const fmt = v => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            let origemHtml = '';
+            if (origem) {
+                const isAditivo = origem.tipo === 'aditivo';
+                const label = isAditivo ? `${origem.ordinal}º Aditivo` : `${origem.ordinal}º Apostilamento`;
+                const dataStr = origem.data ? _fmtData(origem.data) : '';
+                const supStr = nSuprimidos ? ` · ${nSuprimidos} lançamento${nSuprimidos !== 1 ? 's' : ''} suprimido${nSuprimidos !== 1 ? 's' : ''}` : '';
+                origemHtml = `<span class="fin-recon-item"><span class="k">Origem</span><span class="v" style="font-size:12.5px">${label}${dataStr ? ' · ' + dataStr : ''}${supStr}</span></span>`;
+            }
+
+            container.innerHTML = `<div class="fin-recon-banner">
+                <span class="fin-recon-item"><span class="k">Previsto original</span><span class="v">R$ ${fmt(totalOriginal)}</span></span>
+                <span class="fin-recon-arrow">→</span>
+                <span class="fin-recon-item"><span class="k">Previsto vigente</span><span class="v">R$ ${fmt(totalVigente)}</span></span>
+                <span class="fin-recon-item"><span class="k">Efeito das alterações</span><span class="v delta">${delta < 0 ? '− ' : '+ '}R$ ${fmt(Math.abs(delta))}</span></span>
+                ${origemHtml}
+            </div>`;
         }
 
         function atualizarTabelaFinanceira() {
@@ -8655,7 +8751,7 @@
             } catch(e) { console.warn('cf kpis error', e); }
 
             // Renderizar linhas agrupadas por Mês Desc.
-            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, undefined, isFinExcluded, origemAltFin);
+            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, undefined, isFinExcluded, origemAltFin, window._cfModoView || 'vig');
 
             // Se não houver linhas visíveis, mostrar placeholder
             tbody.innerHTML = rowsHtml || '<tr><td colspan="67" class="auto-style-014">Nenhum cadastro financeiro</td></tr>';
@@ -10564,6 +10660,8 @@
                 const tableEl = tbody.closest('table');
                 if (!tableEl) { console.warn('tabelaExecFinanceira table parent not found'); return; }
 
+                try { renderFinReconBanner('execfin-recon-banner'); } catch (e) { console.warn(e); }
+
                 const resumoPrev       = document.getElementById('resExecPrevisto');
                 const resumoReceberAnt = document.getElementById('resExecReceberAnterior');
                 const resumoRecebido   = document.getElementById('resExecRecebido');
@@ -11676,6 +11774,7 @@
             if (!tbody || !tableEl) return;
 
             try { popularFiltrosRecGeral(); } catch(e) {}
+            try { renderFinReconBanner('recgeral-recon-banner'); } catch (e) { console.warn(e); }
 
             if (!window.tedSelecionado) {
                 tbody.innerHTML = '<tr><td colspan="67" style="text-align:center;padding:1rem;">Selecione um TED</td></tr>';

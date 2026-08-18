@@ -43,7 +43,10 @@
       "Bash('/c/Program Files/nodejs/node.exe' -e ' *)",
       "Bash(git show *)",
       "Bash(git reset *)",
-      "Bash(cp \"C:/Users/Joffre/AppData/Local/Temp/tedcmp/dl_main.js\" js/main.js)"
+      "Bash(cp \"C:/Users/Joffre/AppData/Local/Temp/tedcmp/dl_main.js\" js/main.js)",
+      "Bash(rm -rf /tmp/tedcmp /tmp/maindiff.txt 2>/dev/null; echo done)",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_cf_modo.js\")",
+      "Bash(rm -f \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_cf_modo.js\")"
     ]
   }
 }
