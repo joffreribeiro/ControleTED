@@ -13058,6 +13058,10 @@
                 const values = registros[i];
                 const obj = {};
                 headers.forEach((h, idx) => {
+                    // Coluna sem cabeçalho criaria a chave "" — o Firestore recusa o documento
+                    // inteiro ("Document fields must not be empty") quando esse objeto acaba
+                    // gravado dentro de um TED.
+                    if (String(h || '').trim() === '') return;
                     let val = values[idx] || '';
                     const low = String(h).trim().toLowerCase();
                     // Não converter para número campos conhecidos que representam ND/numero/transferência (preservar formato exatamente como na planilha)
@@ -13944,7 +13948,12 @@
                         for (let i = 1; i < registros.length; i++) {
                             const values = registros[i];
                             const obj = {};
-                            headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
+                            // Cabeçalho em branco (coluna vazia / ";" sobrando no fim da linha)
+                            // viraria a chave "" no objeto. Esta linha original é guardada em
+                            // `origem` e vai parar dentro do TED gravado no Firestore, que recusa
+                            // o documento INTEIRO com "Document fields must not be empty" —
+                            // travando o salvamento de todos os TEDs do lote.
+                            headers.forEach((h, idx) => { if (String(h || '').trim() !== '') obj[h] = values[idx] || ''; });
                             rows.push(obj);
                         }
 
@@ -14520,7 +14529,9 @@
                     for (let i = 1; i < registros.length; i++) {
                         const values = registros[i];
                         const campos = {};
-                        headers.forEach((h, idx) => { campos[h] = values[idx] || ''; });
+                        // Ver nota no outro importador: cabeçalho em branco viraria a chave ""
+                        // e o Firestore recusa o documento inteiro na hora de salvar.
+                        headers.forEach((h, idx) => { if (String(h || '').trim() !== '') campos[h] = values[idx] || ''; });
                         rows.push({ campos, raw: JSON.stringify(values) });
                     }
 

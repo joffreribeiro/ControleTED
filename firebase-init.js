@@ -232,6 +232,27 @@ window.firestoreOnCollectionSnapshot = function(collPath, cb) {
 // culpando "bloqueador de anúncios", que quase nunca é a causa real (o normal é
 // permission-denied por perfil sem papel de escrita, ou rede indisponível).
 window.firestoreUltimoErroEscrita = null;
+
+// O Firestore recusa o documento INTEIRO se qualquer objeto aninhado tiver um campo de nome
+// vazio ("Document fields must not be empty"). Isso chegava aqui pelas importações de
+// planilha: uma coluna sem cabeçalho (ou um ";" sobrando no fim da linha) virava a chave ""
+// na cópia da linha original guardada em `origem`. Um único TED assim derrubava o lote e
+// travava o salvamento de todos os outros. As importações já não geram mais isso, mas a
+// limpeza fica aqui como rede de segurança — inclusive para dados que já estão em memória.
+function _limparChavesVazias(valor) {
+  if (Array.isArray(valor)) return valor.map(_limparChavesVazias);
+  if (valor && typeof valor === 'object') {
+    const limpo = {};
+    Object.keys(valor).forEach(k => {
+      if (String(k || '').trim() === '') return;
+      limpo[k] = _limparChavesVazias(valor[k]);
+    });
+    return limpo;
+  }
+  return valor;
+}
+window._limparChavesVazias = _limparChavesVazias;
+
 window._registrarErroEscrita = function(e, origem) {
   try {
     window.firestoreUltimoErroEscrita = {
@@ -252,7 +273,7 @@ window.firestoreBatchSet = async function(collPath, docs) {
     for (const d of docs) {
       const id = (d && (d.id || d._docId)) ? String(d.id || d._docId) : String(Date.now()) + Math.floor(Math.random()*1000);
       const ref = fsDoc(db, ...parts, id);
-      const copy = Object.assign({}, d);
+      const copy = _limparChavesVazias(Object.assign({}, d));
       // ensure id is stored as property
       copy.id = parseInt(id) || id;
       batch.set(ref, copy);
@@ -297,7 +318,7 @@ window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
   const snapshots = docs.map(d => {
     if (d == null) return { original: d, clone: null, erro: 'documento nulo/indefinido' };
     try {
-      return { original: d, clone: JSON.parse(JSON.stringify(d)), erro: null };
+      return { original: d, clone: _limparChavesVazias(JSON.parse(JSON.stringify(d))), erro: null };
     } catch (e) {
       return { original: d, clone: null, erro: 'não foi possível clonar (provável referência circular ou valor não serializável): ' + (e && e.message) };
     }
