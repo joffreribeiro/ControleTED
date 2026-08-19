@@ -64,7 +64,9 @@
       "mcp__visualize__show_widget",
       "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse8.js\")",
       "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse9.js\")",
-      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse10.js\")"
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse10.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" --check firebase-init.js)",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" --check app.js)"
     ]
   }
 }

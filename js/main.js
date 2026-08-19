@@ -12738,6 +12738,37 @@
             return await _executarSalvamento();
         }
 
+        // Traduz a falha de gravação no motivo REAL, em vez do palpite genérico de
+        // "bloqueador de anúncios" que a versão anterior mostrava para qualquer erro —
+        // isso mandava o usuário caçar o problema no lugar errado. O erro do Firestore é
+        // registrado por firebase-init.js em window.firestoreUltimoErroEscrita.
+        function _mensagemErroSalvar(erroDireto) {
+            let code = null, detalhe = '';
+            try {
+                const reg = window.firestoreUltimoErroEscrita;
+                // Só usar o registro se for desta tentativa (últimos 60s); um erro antigo
+                // não pode explicar a falha de agora.
+                if (reg && (Date.now() - (reg.at || 0)) < 60000) { code = reg.code; detalhe = reg.message || ''; }
+            } catch (e) {}
+            if (!code && erroDireto) { code = erroDireto.code || null; detalhe = erroDireto.message || String(erroDireto); }
+
+            if (code === 'permission-denied') {
+                const email = (window.currentUser && window.currentUser.email) || 'seu usuário';
+                return '🔒 Sem permissão para gravar (' + email + ').\n\nO Firestore recusou a escrita. Causas possíveis: seu perfil ainda não foi criado na coleção "users", seu papel é "leitor" (só admin/editor gravam) ou a conta está desativada. Peça a um administrador para verificar. Nada foi perdido — os dados continuam nesta tela.';
+            }
+            if (code === 'unavailable' || code === 'deadline-exceeded' || (erroDireto && erroDireto.message === 'timeout')) {
+                return '📶 Sem conexão com o servidor. Suas alterações ficaram na fila e serão enviadas sozinhas quando a internet voltar — não feche o sistema antes disso.';
+            }
+            if (code === 'unauthenticated') {
+                return '🔑 Sua sessão expirou. Saia e entre novamente para retomar o salvamento.';
+            }
+            if (code === 'invalid-argument' || code === 'not-found') {
+                return '❌ O servidor recusou os dados (' + code + '). Abra o console (F12) para o detalhe técnico e avise o suporte.';
+            }
+            return 'Erro ao salvar dados' + (code ? ' (' + code + ')' : '') + '. Tentando novamente em breve...'
+                 + (detalhe ? '\n\nDetalhe: ' + detalhe.slice(0, 200) : '');
+        }
+
         async function _executarSalvamento() {
             if (_salvandoEmAndamento) {
                 // Já existe um commit em voo: marcar pendência para re-executar ao final,
@@ -12870,7 +12901,7 @@
                         if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
                         const iconEl = document.getElementById('cloudStatusIcon');
                         if (iconEl) { iconEl.style.color = 'var(--danger)'; iconEl.title = 'Falha ao salvar no Firestore'; }
-                        showToast('Erro ao salvar dados (possível bloqueador de anúncios/firewall). Tentando novamente em breve...', 'danger');
+                        showToast(_mensagemErroSalvar(), 'danger');
                     }
                 } else {
                     console.warn('Firestore batch helper not available; dados not persisted.');
@@ -12883,7 +12914,7 @@
                 // usuário precisa saber que ainda não confirmou no servidor.
                 console.warn('Erro salvando no Firestore', e);
                 if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
-                showToast('Erro ao salvar dados. Tentando novamente em breve...', 'danger');
+                showToast(_mensagemErroSalvar(e), 'danger');
             } finally {
                 _salvandoEmAndamento = false;
                 try { window._salvandoEmAndamento = false; } catch(e) {}

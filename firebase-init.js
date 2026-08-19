@@ -227,6 +227,22 @@ window.firestoreOnCollectionSnapshot = function(collPath, cb) {
   }
 };
 
+// Último erro de gravação, para o app poder dizer ao usuário o QUE falhou. Sem isso toda
+// falha virava um `false` sem contexto e a interface tinha que adivinhar o motivo — vinha
+// culpando "bloqueador de anúncios", que quase nunca é a causa real (o normal é
+// permission-denied por perfil sem papel de escrita, ou rede indisponível).
+window.firestoreUltimoErroEscrita = null;
+window._registrarErroEscrita = function(e, origem) {
+  try {
+    window.firestoreUltimoErroEscrita = {
+      code: (e && e.code) ? String(e.code) : null,
+      message: (e && e.message) ? String(e.message) : String(e),
+      origem: origem || null,
+      at: Date.now()
+    };
+  } catch (_) { /* nunca deixar o diagnóstico derrubar a gravação */ }
+};
+
 window.firestoreBatchSet = async function(collPath, docs) {
   try {
     if (!Array.isArray(docs)) return false;
@@ -245,6 +261,7 @@ window.firestoreBatchSet = async function(collPath, docs) {
     return true;
   } catch (e) {
     console.warn('firestoreBatchSet error', e);
+    window._registrarErroEscrita(e, 'firestoreBatchSet:' + collPath);
     return false;
   }
 };
@@ -361,6 +378,7 @@ window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
       // salvos normalmente, e só o(s) documento(s) realmente problemático(s) falha(m) —
       // isolados e registrados, sem arrastar os demais.
       console.warn('[firestoreBatchSetTedsGuarded] commit em lote falhou — tentando gravar cada TED individualmente para isolar o problema.', e);
+      window._registrarErroEscrita(e, 'firestoreBatchSetTedsGuarded:lote');
       for (const item of aGravar) {
         try {
           await fsSetDoc(fsDoc(db, 'teds', item.id), item.copy);
@@ -368,6 +386,7 @@ window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
           resultado.revs[item.id] = item.revNova;
         } catch (e2) {
           console.error('[firestoreBatchSetTedsGuarded] TED ' + item.id + ' falhou mesmo gravado individualmente — pulado. Documento que tentamos gravar:', item.copy, e2);
+          window._registrarErroEscrita(e2, 'firestoreBatchSetTedsGuarded:ted/' + item.id);
           resultado.pulados.push(item.id);
         }
       }
