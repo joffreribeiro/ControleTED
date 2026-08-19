@@ -46,7 +46,25 @@
       "Bash(cp \"C:/Users/Joffre/AppData/Local/Temp/tedcmp/dl_main.js\" js/main.js)",
       "Bash(rm -rf /tmp/tedcmp /tmp/maindiff.txt 2>/dev/null; echo done)",
       "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_cf_modo.js\")",
-      "Bash(rm -f \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_cf_modo.js\")"
+      "Bash(rm -f \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_cf_modo.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse2.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse3.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse4.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse5.js\")",
+      "Bash(rm -f \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse5.js\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/_extracted5.js\")",
+      "Bash(cd \"C:\\Users\\Joffre\\Documents\\GitHub\\ControleTED\" && \"/c/Program Files/nodejs/node.exe\" --check js/main.js *)",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('.claude/settings.local.json','utf8'\\)\\); console.log\\('JSON OK'\\)\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse6.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse7.js\")",
+      "Bash(rm -f \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse7.js\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/_extracted7.js\")",
+      "Bash(node servidor.js)",
+      "Bash(curl -s http://localhost:5000/api/health)",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse8.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse9.js\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" \"C:/Users/Joffre/AppData/Local/Temp/claude/C--Users-Joffre-Documents-GitHub-ControleTED/19aa6ebc-4987-4526-898c-6d36147b688d/scratchpad/test_repasse10.js\")"
     ]
   }
 }

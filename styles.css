@@ -4214,6 +4214,12 @@ table.ef-table tbody td.right  { text-align: right; }
 .up-pill.fi { background: #dcfce7; color: #15803d; }
 .up-pill.ua { background: #fce7f3; color: #9d174d; }
 .up-pill.outros { background: #f3f4f6; color: #374151; }
+/* UGs adicionais (usadas em Repasse às UGs) — mesmas cores de .up-badge-fe/fjf/fpv já
+   existentes em outras telas, só que no formato pill; fmce ganha uma cor própria. */
+.up-pill.fe   { background: #F4F4F2; color: #5F5E5A; }
+.up-pill.fjf  { background: #E6F1FB; color: #0C447C; }
+.up-pill.fpv  { background: #E6F1FB; color: #0C447C; }
+.up-pill.fmce { background: #f3e8ff; color: #7e22ce; }
 
 /* Group header row */
 .cf-grp-head {
@@ -4367,6 +4373,18 @@ table.ef-table tbody td.right  { text-align: right; }
 }
 .cf-chip-alt.tipo-aditivo { background:#dcfce7; color:#15803d; }
 .cf-chip-alt.tipo-apostilamento { background:#dbeafe; color:#1d4ed8; }
+
+/* Legenda da seção Repasse às UGs */
+.legenda-repasse { display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--color-text-secondary); padding:10px 2px 0; }
+.legenda-repasse span { display:inline-flex; align-items:center; gap:6px; }
+.legenda-repasse .dot { width:9px; height:9px; border-radius:3px; display:inline-block; }
+
+/* Indicador inline (Cadastro Financeiro, coluna A Receber): mostra se o valor pendente
+   já está em caixa na SEDE (aguardando só o repasse interno) ou se ainda depende do
+   repassador — sem precisar abrir a seção Repasse às UGs pra saber. */
+.repasse-hint { display:inline-block; margin-left:5px; font-size:9px; cursor:help; vertical-align:1px; }
+.repasse-hint.pronto  { color:#854F0B; }
+.repasse-hint.aguarda { color:#A32D2D; opacity:.55; }
 
 /* Interruptor Vigente / Comparado / Original do Cadastro Financeiro */
 .cf-modo-seg {

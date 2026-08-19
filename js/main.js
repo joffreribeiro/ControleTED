@@ -8262,6 +8262,11 @@
             modo = modo || 'vig';
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
+            // Reaproveita o cálculo da seção "Repasse às UGs" pra avisar, linha a linha, se o
+            // que falta a receber já está em caixa na SEDE (só falta repassar internamente) ou
+            // se ainda depende do repassador — calculado uma vez pro render inteiro, não por linha.
+            const repasseDados = (modo !== 'org' && window.tedSelecionado) ? calcularRepasseUGs(window.tedSelecionado) : null;
+
             // Chip de atribuição: identifica qual aditivo/apostilamento originou a alteração/supressão
             const chipAltHtml = (() => {
                 if (!origemAlt) return '';
@@ -8397,6 +8402,16 @@
                     const effValorNum = (isOrg && mods && mods.valor) ? Number(mods.valor.de || 0) : valorNum;
                     const valorFaltante = Math.max(0, effValorNum * (1 - pct / 100));
                     const faltanteFmt = valorFaltante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    // "Tem crédito na SEDE?" — só faz sentido pra UGs que dependem de repasse
+                    // interno (não a própria UA) e quando ainda falta receber algo desta linha.
+                    const repasseStatusLinha = (repasseDados && valorFaltante > 0.01 && upRaw.toUpperCase() !== SEDE_UG_SIGLA)
+                        ? repasseDados.statusPorNdUg.get(normalizarND(numeroDisplay) + '||' + upRaw.toUpperCase())
+                        : null;
+                    const repasseBadge = repasseStatusLinha === 'pronto'
+                        ? `<span class="repasse-hint pronto" title="A SEDE já tem esse valor em caixa — falta só o repasse interno para ${upRaw}">●</span>`
+                        : (repasseStatusLinha === 'aguarda'
+                            ? `<span class="repasse-hint aguarda" title="A SEDE ainda não recebeu do repassador o suficiente para cobrir este valor">●</span>`
+                            : '');
                     // Linha suprimida (fora do Original): valor tachado em bloco simples — não há
                     // "de -> para", ela deixou de existir. Alterada: no Comparado mostra a trilha
                     // "de -> para"; no Vigente e no Original, só o valor efetivo do modo.
@@ -8432,7 +8447,7 @@
                                 ? '<span class="pill" style="color:#94a3b8;">—</span>'
                                 : (valorFaltante <= 0
                                     ? '<span class="saldo-receber saldo-receber--zero">Recebido</span>'
-                                    : `<span class="saldo-receber">R$ ${faltanteFmt}</span>`)}
+                                    : `<span class="saldo-receber">R$ ${faltanteFmt}</span>${repasseBadge}`)}
                         </td>
                         <td class="col-acao">
                             <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
@@ -8827,6 +8842,9 @@
 
             // Reinicializar ícones Lucide
             initLucideIcons();
+
+            // O Planejado por UG (usado no Repasse às UGs) vem daqui — manter em sincronia
+            try { atualizarTabelaRepasseUGs(); } catch(e) {}
         }
 
         // EXECU→fO FINANCEIRA
@@ -11124,6 +11142,9 @@
                     }
                 }
             } catch(e) {}
+
+            // O Repassado por UG (usado no Repasse às UGs) vem daqui — manter em sincronia
+            try { atualizarTabelaRepasseUGs(); } catch(e) {}
         }
 
         // Renderiza (ou limpa) o bloco de 4 KPIs acima da tabela de Execução Financeira
@@ -12058,6 +12079,458 @@
             } catch(e){}
 
             try { initLucideIcons(); } catch(e){}
+
+            // O Recebido na SEDE (usado no Repasse às UGs) vem daqui — manter em sincronia
+            try { atualizarTabelaRepasseUGs(); } catch(e) {}
+        }
+
+        // ── Repasse às UGs ───────────────────────────────────────────────────────
+        // O repassador credita o TED inteiro na SEDE (UG 168003 = sigla 'UA'); só depois
+        // a SEDE repassa internamente pra cada UG de execução. Esta função não introduz
+        // nenhum dado novo — cruza três coisas que já existem:
+        //   Planejado  = Cadastro Financeiro (financeirosVigentes), por ND × UG
+        //   Repassado  = Execução Financeira (execFinanceiras), por ND × UG — a mesma
+        //                planilha do Tesouro Gerencial já trazia a coluna Favorecido/UG
+        //                (ver importarExecFinanceira / mapaUP)
+        //   Recebido na SEDE = Recursos Gerais IMBEL (recursosGerais), só por ND — é o
+        //                extrato da própria 168003, sem separar por UG
+        // Pendente = Planejado − Repassado. "Pronto p/ repassar" ou "Aguarda repassador"
+        // depende de a SEDE já ter, EM CAIXA para aquela ND, o suficiente para cobrir a
+        // linha — não há uma ordem "correta" de prioridade entre UGs quando o caixa não
+        // cobre todas ao mesmo tempo, então cada linha é avaliada contra o saldo cheio,
+        // não contra um saldo sendo consumido sequencialmente: é uma leitura informativa
+        // ("dá pra mandar isso hoje?"), não uma fila de pagamento.
+        // Código da SEDE (168002) — quem recebe o crédito do repassador e distribui às
+        // demais UGs. A UA (168003) é uma UG normal como as outras, NÃO é a SEDE — a
+        // SEDE não tem sigla própria no sistema, usa o código direto.
+        const SEDE_UG_SIGLA = '168002';
+
+        // Categoria de cor por UG — cobre as 6 UGs da IMBEL (fi/ua já existem em .up-pill;
+        // fe/fjf/fpv/fmce são novas, ver styles.css).
+        function _repasseUgCategoria(ug) {
+            const u = String(ug || '').trim().toUpperCase();
+            if (u === 'FI') return 'fi';
+            if (u === 'UA') return 'ua';
+            if (u === 'FE') return 'fe';
+            if (u === 'FJF') return 'fjf';
+            if (u === 'FPV') return 'fpv';
+            if (u === 'FMCE') return 'fmce';
+            return 'outros';
+        }
+
+        function calcularRepasseUGs(ted) {
+            if (!ted) return null;
+
+            const planejado = financeirosVigentes(ted);
+            const execs = ted.execFinanceiras || [];
+            const recGerais = ted.recursosGerais || [];
+
+            const porNd = {}; // ndKey -> { label, ugs: { UG: {planejado, repassado} } }
+            const ordemNd = [];
+            const getNd = (ndRaw) => {
+                const k = normalizarND(ndRaw);
+                if (!k) return null;
+                if (!porNd[k]) { porNd[k] = { label: formatarNDComPontos(ndRaw), ugs: {} }; ordemNd.push(k); }
+                return porNd[k];
+            };
+            const getUg = (ndEntry, ugRaw) => {
+                const ug = String(ugRaw || '').trim().toUpperCase();
+                if (!ug) return null;
+                if (!ndEntry.ugs[ug]) ndEntry.ugs[ug] = { planejado: 0, repassado: 0 };
+                return ndEntry.ugs[ug];
+            };
+
+            planejado.forEach(f => {
+                const nd = getNd(f.numero || f.nd);
+                const ug = nd && getUg(nd, f.up || f.ug);
+                if (ug) ug.planejado += parseNumber(f.valor) || 0;
+            });
+            execs.forEach(e => {
+                const nd = getNd(e.nd || e.numero);
+                const ug = nd && getUg(nd, e.up || e.ug);
+                if (ug) ug.repassado += parseNumber(e.valor) || 0;
+            });
+
+            const recebidoPorNd = {};
+            const recGeraisPorNd = {}; // ndKey -> [lançamentos do Recursos Gerais], pro histórico por depósito
+            recGerais.forEach(r => {
+                const k = normalizarND(r.nd);
+                if (!k) return;
+                recebidoPorNd[k] = (recebidoPorNd[k] || 0) + (parseNumber(r.valor) || 0);
+                if (!recGeraisPorNd[k]) recGeraisPorNd[k] = [];
+                recGeraisPorNd[k].push(r);
+            });
+
+            const statusPorNdUg = new Map(); // 'ndKey||UG' -> status, pra outras telas (ex.: Cadastro Financeiro) consultarem sem recalcular
+
+            const grupos = ordemNd
+                .filter(k => Object.keys(porNd[k].ugs).length > 0)
+                .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+                .map(k => {
+                    const entry = porNd[k];
+                    const recebidoNd = recebidoPorNd[k] || 0;
+                    // Saldo ainda não alocado a NENHUMA UG: recebido na SEDE menos tudo que já foi
+                    // reconhecido/repassado — incluindo o realizado da própria UA. Uma vez que o
+                    // Tesouro Gerencial registra 3.145 como realizado da UA, esse valor já está
+                    // "comprometido" (contabilmente falando), mesmo que o dinheiro nunca tenha saído
+                    // fisicamente da conta da SEDE — não é mais parte do saldo livre pra alocar.
+                    const repassadoTotalNd = Object.values(entry.ugs).reduce((s, u) => s + u.repassado, 0);
+                    let saldoRestante = Math.max(0, recebidoNd - repassadoTotalNd);
+
+                    // A alocação do saldo entre as UGs (incluindo a própria UA — reconhecer o
+                    // realizado dela também é uma ação pendente, só que contábil em vez de uma
+                    // transferência física) é sequencial, em ordem alfabética da sigla só pra ser
+                    // determinística — a SEDE decide na prática quem processa primeiro, isto é só
+                    // uma estimativa de "dá pra fazer isso hoje sem faltar caixa depois". Checar
+                    // cada linha contra o saldo CHEIO (sem descontar) superestimaria: duas linhas
+                    // poderiam aparecer "prontas" mesmo que juntas superem o caixa disponível.
+                    const ugs = Object.keys(entry.ugs).sort().map(ug => {
+                        const u = entry.ugs[ug];
+                        const pendente = Math.max(0, u.planejado - u.repassado);
+                        let status;
+                        if (pendente <= 0.01) {
+                            status = 'completo';
+                        } else if (saldoRestante + 0.01 >= pendente) {
+                            status = 'pronto';
+                            saldoRestante -= pendente;
+                        } else {
+                            status = 'aguarda';
+                        }
+                        statusPorNdUg.set(k + '||' + ug, status);
+                        return { ug, planejado: u.planejado, repassado: u.repassado, pendente, status };
+                    });
+
+                    // Fila FIFO: cada crédito recebido (Recursos Gerais) entra como um "lote"
+                    // com saldo próprio, na ordem em que chegou. Cada repasse registrado
+                    // (Execução Financeira) — processado também em ordem cronológica, junto com
+                    // os créditos, numa única linha do tempo — consome saldo do lote MAIS ANTIGO
+                    // primeiro (mesma lógica do "A Receber" do Cadastro Financeiro: o saldo mais
+                    // velho é sempre o primeiro a ser abatido). Uma devolução (repasse negativo)
+                    // devolve o valor como um novo lote disponível, na data em que aconteceu.
+                    // Isso não é uma suposição solta — é a reconstrução exata da regra que a
+                    // usuária descreveu: "sempre diminuindo o primeiro valor que tem saldo".
+                    const ndNorm = k;
+                    // Entrada = soma ao saldo da SEDE (crédito recebido, ou UG devolvendo à SEDE).
+                    // Saída = sai do saldo (repasse a uma UG, ou SEDE devolvendo ao concedente).
+                    const ehEntrada = ev => (ev.tipo === 'recebimento' && ev.valor > -0.01) || (ev.tipo === 'repasse' && ev.valor < -0.01);
+                    const eventosOrdenados = [
+                        ...(recGeraisPorNd[k] || []).map(r => ({ tipo: 'recebimento', data: r.data, valor: parseNumber(r.valor) || 0 })),
+                        ...execs
+                            .filter(e => normalizarND(e.nd || e.numero) === ndNorm)
+                            .map(e => ({ tipo: 'repasse', data: e.data, valor: parseNumber(e.valor) || 0, ug: String(e.up || e.ug || '').trim().toUpperCase() }))
+                            .filter(e => e.ug)
+                    ].sort((a, b) => {
+                        const cmpData = String(a.data || '').localeCompare(String(b.data || ''));
+                        if (cmpData !== 0) return cmpData;
+                        // Mesma data: entradas antes de saídas. Sem isso, uma UG devolvendo à SEDE
+                        // e a SEDE devolvendo ao concedente no mesmo dia não se anulavam — a saída
+                        // era processada primeiro, não achava saldo, era descartada, e a entrada
+                        // sobrava como "ainda no saldo" (caso real: ND 44.90.14, R$ 41,50).
+                        return (ehEntrada(a) ? 0 : 1) - (ehEntrada(b) ? 0 : 1);
+                    });
+
+                    const fila = []; // lotes de crédito ainda com saldo: {data, valor, restante, porUg: [], devolvidoRepassadorEm: []}
+                    eventosOrdenados.forEach(ev => {
+                        if (ehEntrada(ev)) {
+                            fila.push({
+                                data: ev.data, valor: Math.abs(ev.valor), restante: Math.abs(ev.valor), porUg: [],
+                                devolucao: ev.tipo === 'repasse' ? ev.ug : null,
+                                devolvidoRepassadorEm: []
+                            });
+                        } else {
+                            const destinoUg = ev.tipo === 'repasse' ? ev.ug : null;
+                            let falta = Math.abs(ev.valor);
+                            for (const lote of fila) {
+                                if (falta <= 0.01) break;
+                                if (lote.restante <= 0.01) continue;
+                                const consumido = Math.min(lote.restante, falta);
+                                lote.restante -= consumido;
+                                // Cada consumo vira sua própria entrada (não soma por UG) pra
+                                // conseguir mostrar a data de CADA repasse, não só do recebimento.
+                                if (destinoUg) lote.porUg.push({ ug: destinoUg, valor: consumido, data: ev.data });
+                                else lote.devolvidoRepassadorEm.push({ data: ev.data, valor: consumido });
+                                falta -= consumido;
+                            }
+                            // `falta` > 0 aqui significaria saída maior que todo o saldo já
+                            // recebido até a data dela — não deveria acontecer com dados
+                            // consistentes; se acontecer, fica sem lote pra atribuir (não inventa).
+                        }
+                    });
+
+                    // Sugestão (não é fato registrado): pra cada lote que ainda tem saldo, indica
+                    // a quais UGs esse dinheiro iria, distribuindo pelo que cada uma ainda tem a
+                    // receber segundo o Cadastro Financeiro. Segue a mesma fila FIFO — o lote mais
+                    // antigo atende primeiro — e a UG com maior pendência é servida antes, já que
+                    // não há dado real dizendo a ordem de um repasse que ainda não aconteceu.
+                    const pendentePorUg = ugs
+                        .filter(u => u.pendente > 0.01)
+                        .map(u => ({ ug: u.ug, restante: u.pendente }))
+                        .sort((a, b) => b.restante - a.restante);
+                    fila.forEach(lote => {
+                        lote.sugestao = [];
+                        let disponivel = lote.restante;
+                        for (const alvo of pendentePorUg) {
+                            if (disponivel <= 0.01) break;
+                            if (alvo.restante <= 0.01) continue;
+                            const aloca = Math.min(alvo.restante, disponivel);
+                            alvo.restante -= aloca;
+                            disponivel -= aloca;
+                            lote.sugestao.push({ ug: alvo.ug, valor: aloca });
+                        }
+                    });
+
+                    const eventos = fila
+                        .map(lote => ({
+                            data: lote.data, valor: lote.valor, devolucao: lote.devolucao,
+                            repassado: lote.valor - lote.restante,
+                            pendente: lote.restante,
+                            devolvidoRepassadorEm: lote.devolvidoRepassadorEm,
+                            porUg: lote.porUg,
+                            sugestao: lote.sugestao
+                        }))
+                        .sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')));
+
+                    return {
+                        ndKey: k,
+                        ndLabel: entry.label,
+                        recebidoNd,
+                        totalPlanejado: ugs.reduce((s, u) => s + u.planejado, 0),
+                        totalRepassado: ugs.reduce((s, u) => s + u.repassado, 0),
+                        totalPendente: ugs.reduce((s, u) => s + u.pendente, 0),
+                        saldoDisponivel: Math.max(0, recebidoNd - repassadoTotalNd),
+                        eventos,
+                        ugs
+                    };
+                });
+
+            const totalRecebidoSede = recGerais.reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
+            // "Repassado às UGs" é só o que saiu pra outras unidades — o realizado da própria
+            // UA não é um repasse.
+            const totalRepassado = grupos.reduce((s, g) =>
+                s + g.ugs.filter(u => u.ug !== SEDE_UG_SIGLA).reduce((s2, u) => s2 + u.repassado, 0), 0);
+            const somaPorStatus = (status) => grupos.reduce((s, g) =>
+                s + g.ugs.filter(u => u.status === status).reduce((s2, u) => s2 + u.pendente, 0), 0);
+            const totalPronto = somaPorStatus('pronto');
+            const totalAguarda = somaPorStatus('aguarda');
+
+            return { totalRecebidoSede, totalRepassado, totalPronto, totalAguarda, grupos, statusPorNdUg };
+        }
+
+        function atualizarTabelaRepasseUGs() {
+            const container = document.getElementById('repasseugs-container');
+            const kpiWrap = document.getElementById('repasseugs-kpis-container');
+            const countBadge = document.getElementById('count-repasseugs');
+            if (!container || !kpiWrap) return;
+
+            const fmt = v => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            if (!window.tedSelecionado) {
+                kpiWrap.innerHTML = '';
+                container.innerHTML = '<p class="auto-style-014" style="padding:1rem;">Selecione um TED</p>';
+                if (countBadge) countBadge.textContent = '0';
+                return;
+            }
+
+            const dados = calcularRepasseUGs(window.tedSelecionado);
+            const nLinhasPendentes = dados.grupos.reduce((s, g) => s + g.ugs.filter(u => u.pendente > 0.01).length, 0);
+            if (countBadge) countBadge.textContent = String(nLinhasPendentes);
+
+            if (!dados.grupos.length) {
+                kpiWrap.innerHTML = '';
+                container.innerHTML = '<p class="auto-style-014" style="padding:1rem;">Nenhum lançamento planejado para UG diferente da SEDE (UA) — nada a repassar.</p>';
+                return;
+            }
+
+            kpiWrap.innerHTML = `<div class="execfin-kpis" style="margin-bottom:16px;">
+                <div class="execfin-kpi lead-blue">
+                    <div class="execfin-kpi-label">Recebido na SEDE</div>
+                    <div class="execfin-kpi-val"><span class="cur">R$</span>${fmt(dados.totalRecebidoSede)}</div>
+                    <div class="execfin-kpi-sub">Recursos Gerais IMBEL &middot; ${SEDE_UG_SIGLA}</div>
+                </div>
+                <div class="execfin-kpi lead-green">
+                    <div class="execfin-kpi-label">Já repassado às UGs</div>
+                    <div class="execfin-kpi-val green"><span class="cur">R$</span>${fmt(dados.totalRepassado)}</div>
+                    <div class="execfin-kpi-sub">${dados.totalRecebidoSede > 0 ? (Math.min(100, dados.totalRepassado / dados.totalRecebidoSede * 100)).toFixed(1) : '0,0'}% do recebido</div>
+                    <div class="execfin-kpi-bar"><div class="execfin-kpi-bar-fill" style="width:${dados.totalRecebidoSede > 0 ? Math.min(100, dados.totalRepassado / dados.totalRecebidoSede * 100) : 0}%;background:#639922;"></div></div>
+                </div>
+                <div class="execfin-kpi lead-amber">
+                    <div class="execfin-kpi-label">Pronto para repassar</div>
+                    <div class="execfin-kpi-val" style="color:#854F0B;"><span class="cur">R$</span>${fmt(dados.totalPronto)}</div>
+                    <div class="execfin-kpi-sub">já em caixa na SEDE</div>
+                </div>
+                <div class="execfin-kpi lead-red">
+                    <div class="execfin-kpi-label">Aguardando o repassador</div>
+                    <div class="execfin-kpi-val red"><span class="cur">R$</span>${fmt(dados.totalAguarda)}</div>
+                    <div class="execfin-kpi-sub">planejado, ainda não creditado</div>
+                </div>
+            </div>`;
+
+            const statusLabel = { completo: 'Completo', pronto: 'Pronto p/ repassar', aguarda: 'Aguarda repassador' };
+            const statusClass = { completo: 'badge-regular', pronto: 'badge-acima', aguarda: 'badge-critico' };
+
+            let rowsHtml = '';
+            dados.grupos.forEach(g => {
+                const ndCat = _cfNdCategoria(g.ndLabel);
+                rowsHtml += `<tr class="cf-grp-tr-head">
+                    <td colspan="6">
+                        <div class="cf-grp-head">
+                            <div class="cf-grp-head-left">
+                                <span class="nd-tag ${ndCat}">${g.ndLabel}</span>
+                            </div>
+                            <span class="cf-grp-subtotal">
+                                <span class="cf-grp-subtotal-recebido">R$ ${fmt(g.totalRepassado)}</span>
+                                <span class="cf-grp-subtotal-sep">/</span>
+                                <span class="cf-grp-subtotal-total">R$ ${fmt(g.totalPlanejado)}</span>
+                            </span>
+                        </div>
+                    </td>
+                </tr>`;
+                g.ugs.forEach(u => {
+                    const upCat = _repasseUgCategoria(u.ug);
+                    // Pra própria UA (SEDE) "repassar" não existe — o que fica pendente é só
+                    // reconhecer/registrar aquele valor como realizado dela.
+                    const label = (u.status === 'pronto' && u.ug === SEDE_UG_SIGLA) ? 'Pronto p/ reconhecer' : statusLabel[u.status];
+                    rowsHtml += `<tr class="cf-grp-data-row">
+                        <td></td>
+                        <td><span class="up-pill ${upCat}">${u.ug}</span></td>
+                        <td class="col-valor">${fmt(u.planejado)}</td>
+                        <td class="col-valor">${fmt(u.repassado)}</td>
+                        <td class="col-valor">${fmt(u.pendente)}</td>
+                        <td><span class="${statusClass[u.status]}">${label}</span></td>
+                    </tr>`;
+                });
+
+                // Linha do tempo: cada crédito recebido na SEDE (Recursos Gerais) e cada
+                // repasse/devolução já registrado (Execução Financeira), em ordem cronológica.
+                // Cada linha é um crédito recebido (lote), com quanto dele já foi repassado —
+                // apurado consumindo o saldo mais antigo primeiro (FIFO), a cada repasse
+                // registrado processado na sua própria data cronológica junto com os créditos.
+                if (g.eventos.length) {
+                    const histId = 'hist_' + g.ndKey;
+                    rowsHtml += `<tr class="cf-grp-tr-head" onclick="toggleGrupoCadFin('${histId}', this)">
+                        <td colspan="6" style="padding:0;border:none;">
+                            <div class="cf-grp-head">
+                                <div class="cf-grp-head-left">
+                                    <span class="cf-grp-toggle" id="${histId}_arrow">▶</span>
+                                    <span style="font-size:12px;color:var(--color-text-secondary);font-weight:600;">Histórico de créditos recebidos (${g.eventos.length})</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                    // Tabela aninhada (table-layout próprio, isolado da tabela de fora) em vez
+                    // de linhas com colspan parcial — colspans parciais (2+1+3) misturados com
+                    // as linhas normais de UG faziam o table-layout:auto do navegador recalcular
+                    // a largura das colunas com base em TODO o conteúdo da tabela de fora, o que
+                    // descolava a tabela inteira com muitos lançamentos. Uma tabela aninhada tem
+                    // sua própria caixa de layout e não sofre com isso.
+                    let histRowsHtml = '';
+                    g.eventos.forEach(lote => {
+                        const origemTitle = lote.devolucao
+                            ? `Devolução da UG ${lote.devolucao}`
+                            : `Recebido na SEDE (${SEDE_UG_SIGLA})`;
+                        // Um lote pode ter sido repassado a mais de uma UG (ou parte repassada,
+                        // parte devolvida ao repassador) — cada destino vira sua própria linha,
+                        // com Data/Recebido repetidos e o Saldo só na última linha do lote.
+                        const destinos = [
+                            ...lote.porUg.map(u => ({
+                                valor: u.valor, data: u.data,
+                                html: `<span class="up-pill ${_repasseUgCategoria(u.ug)}">${u.ug}</span>`
+                            })),
+                            ...lote.devolvidoRepassadorEm.map(d => ({
+                                valor: d.valor, data: d.data,
+                                html: `<span style="color:#A32D2D;">devolvido ao repassador</span>`
+                            })),
+                            // Sugestão pro que ainda não foi repassado — visualmente distinta
+                            // (itálico, tracejado) pra não se confundir com repasse já ocorrido.
+                            ...(lote.sugestao || []).map(s => ({
+                                valor: s.valor, data: null, sugerido: true,
+                                html: `<span class="up-pill ${_repasseUgCategoria(s.ug)}" style="opacity:.55;">${s.ug}</span><span style="color:var(--color-text-muted);font-style:italic;margin-left:4px;">sugerido</span>`
+                            }))
+                        ];
+                        const saldoHtml = lote.pendente > 0.01
+                            ? `<span style="color:#854F0B;" title="Ainda não foi repassado a nenhuma UG nem devolvido ao repassador — continua disponível pra repassar">R$ ${fmt(lote.pendente)}</span>`
+                            : '<span style="color:var(--color-text-muted);">—</span>';
+                        const nLinhas = Math.max(1, destinos.length);
+                        // Data e Recebido são do lote inteiro, não de cada destino — mescla essas
+                        // células (rowspan) em vez de repetir o valor em cada linha do lote.
+                        const dataCell = `<td rowspan="${nLinhas}" style="padding:6px 10px;color:var(--color-text-secondary);vertical-align:top;">${lote.data ? _fmtData(lote.data) : '—'}</td>`;
+                        const recebidoCell = `<td rowspan="${nLinhas}" class="col-valor" style="padding:6px 10px;vertical-align:top;" title="${origemTitle}">R$ ${fmt(lote.valor)}</td>`;
+                        const borderTop = 'border-top:1px solid var(--color-border);';
+
+                        if (!destinos.length) {
+                            histRowsHtml += `<tr style="${borderTop}">
+                                ${dataCell}${recebidoCell}
+                                <td class="col-valor" style="padding:6px 10px;color:var(--color-text-muted);">—</td>
+                                <td style="padding:6px 10px;color:var(--color-text-muted);">—</td>
+                                <td style="padding:6px 10px;color:var(--color-text-muted);">—</td>
+                                <td class="col-valor" style="padding:6px 10px;">${saldoHtml}</td>
+                            </tr>`;
+                        } else {
+                            destinos.forEach((d, i) => {
+                                // Numa linha de sugestão nada foi repassado ainda: o valor fica na
+                                // coluna Saldo (esmaecido), não na coluna Repassado.
+                                const repassadoCel = d.sugerido
+                                    ? '<td class="col-valor" style="padding:6px 10px;color:var(--color-text-muted);">—</td>'
+                                    : `<td class="col-valor" style="padding:6px 10px;">R$ ${fmt(d.valor)}</td>`;
+                                const saldoCel = d.sugerido
+                                    ? `<td class="col-valor" style="padding:6px 10px;color:#854F0B;opacity:.7;">R$ ${fmt(d.valor)}</td>`
+                                    : `<td class="col-valor" style="padding:6px 10px;">${i === destinos.length - 1 ? saldoHtml : ''}</td>`;
+                                histRowsHtml += `<tr style="${i === 0 ? borderTop : ''}">
+                                    ${i === 0 ? dataCell + recebidoCell : ''}
+                                    ${repassadoCel}
+                                    <td style="padding:6px 10px;color:var(--color-text-secondary);">${d.data ? _fmtData(d.data) : '—'}</td>
+                                    <td style="padding:6px 10px;">${d.html}</td>
+                                    ${saldoCel}
+                                </tr>`;
+                            });
+                        }
+                    });
+                    rowsHtml += `<tr class="cf-grp-data-row" data-grprow="${histId}" style="display:none;">
+                        <td colspan="6" style="padding:4px 10px 10px;">
+                            <table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px;">
+                                <colgroup>
+                                    <col style="width:13%;"><col style="width:18%;"><col style="width:15%;"><col style="width:13%;"><col style="width:23%;"><col style="width:18%;">
+                                </colgroup>
+                                <thead>
+                                    <tr style="border-bottom:1px solid var(--color-border);">
+                                        <th style="text-align:left;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Data</th>
+                                        <th style="text-align:right;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Recebido</th>
+                                        <th style="text-align:right;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Repassado</th>
+                                        <th style="text-align:left;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Data repasse</th>
+                                        <th style="text-align:left;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Destino</th>
+                                        <th style="text-align:right;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Saldo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${histRowsHtml}</tbody>
+                            </table>
+                        </td>
+                    </tr>`;
+                }
+            });
+
+            container.innerHTML = `<div class="table-wrapper">
+                <table class="tabela-padrao cf-grp-table">
+                    <thead>
+                        <tr>
+                            <th class="col-nd">ND</th>
+                            <th class="col-up">UG destino</th>
+                            <th class="col-valor">Planejado</th>
+                            <th class="col-valor">Repassado</th>
+                            <th class="col-valor">Pendente</th>
+                            <th>Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+            </div>
+            <div class="legenda-repasse">
+                <span><i class="dot" style="background:#3B6D11;"></i>Completo</span>
+                <span><i class="dot" style="background:#854F0B;"></i>Pronto para repassar — já em caixa na SEDE</span>
+                <span><i class="dot" style="background:#A32D2D;"></i>Aguarda repassador — SEDE ainda não recebeu o suficiente</span>
+            </div>
+            <div class="legenda-repasse" style="border-top:1px dashed var(--color-border);margin-top:8px;padding-top:8px;">
+                <span style="opacity:.8;">No histórico de créditos: <b>saldo</b> = chegou e ainda não foi repassado nem devolvido, continua disponível &middot; <b style="color:#A32D2D;">devolvido ao repassador</b> = a SEDE mandou esse valor de volta ao concedente (lançamento negativo no Recursos Gerais) &middot; <b style="font-style:italic;">sugerido</b> = destino provável do saldo, calculado pelo que cada UG ainda tem a receber no Cadastro Financeiro — é uma projeção, não um repasse registrado.</span>
+            </div>`;
         }
 
         function _recgeralRenderKpis(data) {
