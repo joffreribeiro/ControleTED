@@ -5667,7 +5667,24 @@ table.ef-table tbody td.right  { text-align: right; }
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: #0C2A47;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
 }
+/* O .empty-state global é feito para tela cheia (padding 2.5rem, centralizado, ícone
+   de 96px) e dentro destes cards pequenos abre um vão grande entre o título e o texto.
+   Aqui ele vira uma nota curta, encostada no topo. O !important é necessário porque o
+   padding vem inline do JS (renderProximasEntregas e afins, em js/main.js). */
+#dashboard .proxima-col .empty-state {
+    display: block;
+    padding: 0 !important;
+    text-align: left;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+}
+/* Conteúdo com dados (tabelas/listas) também encosta no topo, sem esticar junto com
+   o card mais alto da linha. */
+#dashboard .proxima-col > div { flex: 0 0 auto; }
 
 /* Distribuição por Status (donut) */
 #dashboard .status-donut-card {
