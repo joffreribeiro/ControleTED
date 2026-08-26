@@ -15825,11 +15825,11 @@
         };
 
         // Estado dos filtros globais (Set de valores selecionados, null = todos)
-        window._relGlobSel = { teds: null, ups: null, anos: null, meses: null };
+        window._relGlobSel = { teds: null, ups: null, anos: null, meses: null, status: null };
 
         function toggleRelGlobFiltro(menuId, btnId) {
             // Fechar outros menus abertos
-            ['relGlobTEDMenu','relGlobUPMenu','relGlobAnoMenu','relGlobMESMenu'].forEach(id => {
+            ['relGlobTEDMenu','relGlobUPMenu','relGlobAnoMenu','relGlobMESMenu','relGlobStatusMenu'].forEach(id => {
                 if (id !== menuId) { const m = document.getElementById(id); if (m) m.classList.remove('open'); }
             });
             const menu = document.getElementById(menuId);
@@ -15888,9 +15888,9 @@
             onFiltroGlobalChange();
         }
 
-        const _REL_GLOB_LABELS = { teds: 'TED', ups: 'UP', anos: 'Ano', meses: 'Mês' };
-        const _REL_GLOB_BTN_LABELS = { teds: 'relGlobTEDLabel', ups: 'relGlobUPLabel', anos: 'relGlobAnoLabel', meses: 'relGlobMESLabel' };
-        const _REL_GLOB_BTN_IDS   = { teds: 'relGlobTEDBtn',   ups: 'relGlobUPBtn',   anos: 'relGlobAnoBtn',   meses: 'relGlobMESBtn' };
+        const _REL_GLOB_LABELS = { teds: 'TED', ups: 'UP', anos: 'Ano', meses: 'Mês', status: 'Status' };
+        const _REL_GLOB_BTN_LABELS = { teds: 'relGlobTEDLabel', ups: 'relGlobUPLabel', anos: 'relGlobAnoLabel', meses: 'relGlobMESLabel', status: 'relGlobStatusLabel' };
+        const _REL_GLOB_BTN_IDS   = { teds: 'relGlobTEDBtn',   ups: 'relGlobUPBtn',   anos: 'relGlobAnoBtn',   meses: 'relGlobMESBtn',   status: 'relGlobStatusBtn' };
 
         function _relGlobAtualizarLabel(chave) {
             const sel = window._relGlobSel[chave];
@@ -15907,9 +15907,10 @@
 
         function inicializarFiltrosGlobais() {
             const teds = (dados && dados.teds) ? dados.teds : [];
-            const upsSet = new Set(), anosSet = new Set(), mesesSet = new Set();
+            const upsSet = new Set(), anosSet = new Set(), mesesSet = new Set(), statusSet = new Set();
             teds.forEach(t => {
                 if (t.up || t.upResponsavel) upsSet.add(t.up || t.upResponsavel);
+                try { const st = _calcularStatusTed(t); if (st && st !== '-') statusSet.add(st); } catch(e) {}
                 const addAnoMes = v => {
                     if (!v) return;
                     const d = new Date(v + 'T00:00:00');
@@ -15929,9 +15930,11 @@
             const upItens   = Array.from(upsSet).sort();
             const anoItens  = Array.from(anosSet).sort((a,b) => b - a);
             const mesItens  = Array.from(mesesSet).sort((a,b) => a - b).map(m => ({ val: m, label: `${String(m).padStart(2,'0')} - ${_MESES_NOMES[m-1]}` }));
+            const statusItens = Array.from(statusSet).sort();
             _relGlobPopularMenu('relGlobTEDMenu', 'teds', tedItens);
             _relGlobPopularMenu('relGlobUPMenu',  'ups',  upItens);
             _relGlobPopularMenu('relGlobAnoMenu', 'anos', anoItens);
+            _relGlobPopularMenu('relGlobStatusMenu', 'status', statusItens);
             _relGlobPopularMenuObj('relGlobMESMenu', 'meses', mesItens);
             // Mostrar/ocultar filtro de Mês conforme relatório ativo
             _atualizarVisibilidadeFiltroMes();
@@ -15964,17 +15967,18 @@
         function lerFiltrosGlobais() {
             const s = window._relGlobSel;
             return {
-                teds:  s.teds  ? Array.from(s.teds)  : [],
-                ups:   s.ups   ? Array.from(s.ups)   : [],
-                anos:  s.anos  ? Array.from(s.anos).map(Number)  : [],
-                meses: s.meses ? Array.from(s.meses).map(Number) : []
+                teds:   s.teds   ? Array.from(s.teds)   : [],
+                ups:    s.ups    ? Array.from(s.ups)    : [],
+                anos:   s.anos   ? Array.from(s.anos).map(Number)  : [],
+                meses:  s.meses  ? Array.from(s.meses).map(Number) : [],
+                status: s.status ? Array.from(s.status) : []
             };
         }
 
         function limparFiltrosGlobais() {
-            window._relGlobSel = { teds: null, ups: null, anos: null, meses: null };
-            ['teds','ups','anos','meses'].forEach(chave => {
-                const menuId = { teds:'relGlobTEDMenu', ups:'relGlobUPMenu', anos:'relGlobAnoMenu', meses:'relGlobMESMenu' }[chave];
+            window._relGlobSel = { teds: null, ups: null, anos: null, meses: null, status: null };
+            ['teds','ups','anos','meses','status'].forEach(chave => {
+                const menuId = { teds:'relGlobTEDMenu', ups:'relGlobUPMenu', anos:'relGlobAnoMenu', meses:'relGlobMESMenu', status:'relGlobStatusMenu' }[chave];
                 const menu = document.getElementById(menuId);
                 if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
                 _relGlobAtualizarLabel(chave);
@@ -15988,7 +15992,7 @@
         }
 
         function filtrarTeds() {
-            const s = window._relGlobSel || { teds: null, ups: null, anos: null };
+            const s = window._relGlobSel || { teds: null, ups: null, anos: null, status: null };
             let lista = (dados && dados.teds) ? dados.teds : [];
             if (s.teds) lista = lista.filter(t => s.teds.has(String(t.numTed || t.id)));
             if (s.ups)  lista = lista.filter(t => s.ups.has(t.up || t.upResponsavel || ''));
@@ -15997,6 +16001,7 @@
                 const fim = t.fimVigencia    ? new Date(t.fimVigencia + 'T00:00:00').getFullYear()    : null;
                 return s.anos.has(ini) || s.anos.has(fim);
             });
+            if (s.status) lista = lista.filter(t => s.status.has(_calcularStatusTed(t)));
             return lista;
         }
 
@@ -16643,6 +16648,7 @@
             if (s.teds && s.teds.size > 0) partesFiltro.push('TED: ' + Array.from(s.teds).join(', '));
             if (s.ups  && s.ups.size  > 0) partesFiltro.push('UP: '  + Array.from(s.ups).join(', '));
             if (s.anos && s.anos.size > 0) partesFiltro.push('Ano: ' + Array.from(s.anos).join(', '));
+            if (s.status && s.status.size > 0) partesFiltro.push('Status: ' + Array.from(s.status).join(', '));
             if (s.meses && s.meses.size > 0) partesFiltro.push('Mês: ' + Array.from(s.meses).join(', '));
             const filtroStr = partesFiltro.length ? partesFiltro.join(' | ') : 'Todos';
 
@@ -16864,6 +16870,10 @@
             // Exportação genérica: extrai dados da tabela em tela
             const corpo = document.getElementById('relPreviewBody');
             if (!corpo) { showToast('Nenhum relatório em tela.', 'info'); return; }
+            // Cadastro completo pode estar em modo "Cards" (sem tabela) — força tabela para exportar
+            if (ativo === 'cadastro' && !corpo.querySelector('table')) {
+                try { renderRelCadastro(corpo, true); } catch(e) {}
+            }
             const tabela = corpo.querySelector('table');
             if (!tabela) { showToast('Este relatório não tem tabela exportável para Excel.', 'info'); return; }
 
