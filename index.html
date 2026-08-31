@@ -801,8 +801,9 @@
                                 <input type="date" id="fimVigencia" readonly class="auto-style-012">
                             </div>
                             <div class="form-group auto-style-008">
-                                <label>1ª Descentralização</label>
-                                <input type="date" id="primeiraDescentralizacao">
+                                <label>1ª Descentralização (automática)</label>
+                                <input type="date" id="primeiraDescentralizacao" readonly class="auto-style-012"
+                                       title="Preenchida automaticamente: último dia do primeiro mês com lançamento em Recursos Gerais IMBEL">
                             </div>
                         </div>
                     </div>
@@ -1039,9 +1040,10 @@
                                     <input type="date" class="ted-info-input auto-style-001" id="edit_fimVigencia" readonly>
                                 </div>
                                 <div>
-                                    <div class="field-label">1ª Descentralização</div>
+                                    <div class="field-label">1ª Descentralização (automática)</div>
                                     <div class="field-value" id="info_primeiraDescentralizacao">—</div>
-                                    <input type="date" class="ted-info-input auto-style-001" id="edit_primeiraDescentralizacao">
+                                    <input type="date" class="ted-info-input auto-style-001" id="edit_primeiraDescentralizacao" readonly
+                                           title="Preenchida automaticamente: último dia do primeiro mês com lançamento em Recursos Gerais IMBEL">
                                 </div>
                                 <div>
                                     <div class="field-label">Vigência Atual (meses)</div>
@@ -1974,7 +1976,7 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260723g"></script>
+    <script src="js/main.js?v=20260831a"></script>
 
     <!-- Identidade da versão empacotada NESTA build (index.html + js/main.js + app.js +
          firebase-init.js). Bump manual sempre que uma correção/versão for lançada — deve

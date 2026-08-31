@@ -885,6 +885,71 @@
             return dataStr; // Retorna original se não reconhecer
         }
 
+        // ── 1ª Descentralização (automática) ─────────────────────────────────
+        // A data deixou de ser digitada: ela é derivada dos lançamentos de
+        // Recursos Gerais IMBEL. Regra: último dia do primeiro mês em que existe
+        // descentralização. Ex.: 1º recurso em 20/10/2026 → 31/10/2026.
+        function calcularPrimeiraDescentralizacaoAuto(ted) {
+            const recs = (ted && ted.recursosGerais) || [];
+            let menor = null;
+            recs.forEach(r => {
+                const iso = normalizarData(r && r.data);
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+                if (!menor || iso < menor) menor = iso;
+            });
+            if (!menor) return '';
+            const ano = parseInt(menor.slice(0, 4), 10);
+            const mes = parseInt(menor.slice(5, 7), 10);
+            // Dia 0 do mês seguinte = último dia do mês corrente
+            const ultimoDia = new Date(ano, mes, 0).getDate();
+            return `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+        }
+
+        // Grava a data derivada no TED (e o mês/ano de referência usados pelos
+        // cálculos de cronograma). Retorna true se o valor mudou. Quando ainda não
+        // há nenhum lançamento em Recursos Gerais o valor anterior é preservado.
+        function aplicarPrimeiraDescentralizacaoAuto(ted) {
+            if (!ted) return false;
+            const nova = calcularPrimeiraDescentralizacaoAuto(ted);
+            if (!nova) return false;
+            const anterior = ted.primeiraDescentralizacao || '';
+            ted.primeiraDescentralizacao = nova;
+            ted.primeiroAnoDesc = parseInt(nova.slice(0, 4), 10);
+            ted.primeiroMesDesc = parseInt(nova.slice(5, 7), 10);
+            return nova !== anterior;
+        }
+
+        // Reaplica a regra no TED aberto e propaga: as datas de metas/físicos são
+        // contadas a partir da 1ª descentralização, então mudá-la exige recalcular.
+        function sincronizarPrimeiraDescentralizacao() {
+            if (!window.tedSelecionado) return false;
+            if (!aplicarPrimeiraDescentralizacaoAuto(window.tedSelecionado)) return false;
+            try { recalcularMesesBaseadosEmDescentralizacao(); } catch (e) { console.warn(e); }
+            try { exibirInformacoesTED(); } catch (e) {}
+            return true;
+        }
+
+        // Base para as contas de "mês N" a partir da 1ª descentralização. Como a
+        // data derivada cai sempre no último dia do mês, somar meses direto nela
+        // estouraria para o mês seguinte (31/10 + 4 meses → 03/03). Por isso a base
+        // é sempre o dia 1º — mesmo critério já usado no fallback mês/ano.
+        function dataBaseDescentralizacao(valor) {
+            const iso = normalizarData(valor);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return new Date(NaN);
+            return new Date(parseInt(iso.slice(0, 4), 10), parseInt(iso.slice(5, 7), 10) - 1, 1);
+        }
+
+        // Soma N meses à 1ª descentralização considerando apenas o mês: mês 10 + 4 = fevereiro,
+        // e a data resultante é o último dia desse mês (29/02 em ano bissexto). Evita o
+        // estouro do Date nativo, que levaria 31/10 + 4 meses para 03/03.
+        function somarMesesDescentralizacao(base, meses) {
+            const d = (base instanceof Date) ? base : dataBaseDescentralizacao(base);
+            const n = parseInt(meses, 10);
+            if (!d || isNaN(d.getTime()) || isNaN(n)) return new Date(NaN);
+            // dia 0 do mês seguinte ao alvo = último dia do mês alvo
+            return new Date(d.getFullYear(), d.getMonth() + n + 1, 0);
+        }
+
         // Inicializar
         function inicializar() {
             // Inicialização simplificada — placeholder sem listener Firestore
@@ -1231,11 +1296,13 @@
         async function criarTED(event) {
             event.preventDefault();
 
-            // Extrair mês e ano da data de descentralização
-            const dataDesc = document.getElementById('primeiraDescentralizacao').value;
-            const dateObj = new Date(dataDesc + 'T00:00:00');
-            const primeiroMesDesc = dateObj.getMonth() + 1; // getMonth() retorna 0-11
-            const primeiroAnoDesc = dateObj.getFullYear();
+            // A 1ª descentralização é automática: último dia do primeiro mês com
+            // lançamento em Recursos Gerais IMBEL. No cadastro ainda não existe
+            // nenhum lançamento, então nasce vazia e é preenchida assim que o
+            // primeiro recurso geral for registrado (ou importado).
+            const dataDesc = '';
+            const primeiroMesDesc = null;
+            const primeiroAnoDesc = null;
 
             // garantir cálculo de prazo/status do formulário de criação
             try { calcularPrazoRelatorioCreate(); } catch(e) {}
@@ -2698,6 +2765,10 @@
             ted.financeiros = ted.financeiros || [];
             ted.execFinanceiras = ted.execFinanceiras || [];
             ted.recursosGerais = ted.recursosGerais || [];
+            // 1ª Descentralização é derivada dos Recursos Gerais IMBEL (último dia do
+            // primeiro mês com lançamento). Normalizar aqui alinha também os TEDs
+            // legados, cuja data foi digitada à mão.
+            aplicarPrimeiraDescentralizacaoAuto(ted);
             // IDs em itens financeiros legados (atribuídos uma única vez e preservados)
             let _nextFinId = Date.now();
             ted.financeiros.forEach(f => { if (f && f.id == null) f.id = _nextFinId++; });
@@ -2867,8 +2938,7 @@
                     if (f.anoFinal && f.mesFinal) {
                         dataPrevista = new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
                     } else if (f.mFinal != null && ted.primeiraDescentralizacao) {
-                        const base = new Date(ted.primeiraDescentralizacao + 'T00:00:00');
-                        base.setMonth(base.getMonth() + parseInt(f.mFinal));
+                        const base = somarMesesDescentralizacao(ted.primeiraDescentralizacao, f.mFinal);
                         base.setDate(28);
                         dataPrevista = base;
                     }
@@ -3157,7 +3227,7 @@
             // Determinar data base (meses) usando mesma lógica da tabela
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -3166,8 +3236,7 @@
 
             const meses = [];
             for (let i = 0; i < 60; i++) {
-                const d = new Date(startDate);
-                d.setMonth(d.getMonth() + i);
+                const d = somarMesesDescentralizacao(startDate, i);
                 const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({ label: `${mes}/${ano2}`, date: new Date(d) });
@@ -3906,7 +3975,9 @@
             // Recalcular Fim de Vigência automaticamente
             calcularFimVigenciaEdit();
             window.tedSelecionado.fimVigencia = document.getElementById('edit_fimVigencia').value;
-            window.tedSelecionado.primeiraDescentralizacao = document.getElementById('edit_primeiraDescentralizacao').value;
+            // 1ª Descentralização não é mais editável: é derivada dos Recursos
+            // Gerais IMBEL, então apenas reaplicamos a regra automática.
+            aplicarPrimeiraDescentralizacaoAuto(window.tedSelecionado);
             // Novos campos
             window.tedSelecionado.situacaoTED = document.getElementById('edit_situacaoTED').value;
             window.tedSelecionado.dataEntregaDenuncia = document.getElementById('edit_dataEntregaDenuncia').value;
@@ -4514,17 +4585,17 @@
             if (isNaN(mInicio) && isNaN(mFinal)) return;
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { return; }
             const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
             if (!isNaN(mInicio)) {
-                const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+                const dI = somarMesesDescentralizacao(startDate, mInicio);
                 document.getElementById('modalMetaMesInicio').value = `${nomesMeses[dI.getMonth()]}/${dI.getFullYear()}`;
             }
             if (!isNaN(mFinal)) {
-                const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+                const dF = somarMesesDescentralizacao(startDate, mFinal);
                 document.getElementById('modalMetaMesFinal').value = `${nomesMeses[dF.getMonth()]}/${dF.getFullYear()}`;
             }
         }
@@ -5482,7 +5553,7 @@
                     // Calcular campos derivados baseados em M para itens novos ou alterados
                     let startDateCalc;
                     if (window.tedSelecionado.primeiraDescentralizacao) {
-                        startDateCalc = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                        startDateCalc = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
                     } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                         startDateCalc = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
                     }
@@ -5491,8 +5562,7 @@
                         const origM = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].m : null;
                         if (isNewRow || origM === null || Number(item.m) !== Number(origM)) {
                             if (startDateCalc) {
-                                const dCalc = new Date(startDateCalc);
-                                dCalc.setMonth(dCalc.getMonth() + Number(item.m));
+                                const dCalc = somarMesesDescentralizacao(startDateCalc, Number(item.m));
                                 item.mesDesc = dCalc.getMonth() + 1;
                                 item.anoDesc = dCalc.getFullYear();
                             }
@@ -5503,8 +5573,7 @@
                         if (item.mInicio !== undefined && !isNaN(Number(item.mInicio))) {
                             const origMI = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].mInicio : null;
                             if (isNewRow || origMI === null || Number(item.mInicio) !== Number(origMI)) {
-                                const dI = new Date(startDateCalc);
-                                dI.setMonth(dI.getMonth() + Number(item.mInicio));
+                                const dI = somarMesesDescentralizacao(startDateCalc, Number(item.mInicio));
                                 item.mesInicio = dI.getMonth() + 1;
                                 item.anoInicio = dI.getFullYear();
                             }
@@ -5512,8 +5581,7 @@
                         if (item.mFinal !== undefined && !isNaN(Number(item.mFinal))) {
                             const origMF = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].mFinal : null;
                             if (isNewRow || origMF === null || Number(item.mFinal) !== Number(origMF)) {
-                                const dF = new Date(startDateCalc);
-                                dF.setMonth(dF.getMonth() + Number(item.mFinal));
+                                const dF = somarMesesDescentralizacao(startDateCalc, Number(item.mFinal));
                                 item.mesFinal = dF.getMonth() + 1;
                                 item.anoFinal = dF.getFullYear();
                             }
@@ -6529,17 +6597,17 @@
             if (isNaN(mInicio) && isNaN(mFinal)) return;
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { return; }
             const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
             if (!isNaN(mInicio)) {
-                const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+                const dI = somarMesesDescentralizacao(startDate, mInicio);
                 document.getElementById('modalFisicoCadMesInicio').value = `${nomesMeses[dI.getMonth()]}/${dI.getFullYear()}`;
             }
             if (!isNaN(mFinal)) {
-                const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+                const dF = somarMesesDescentralizacao(startDate, mFinal);
                 document.getElementById('modalFisicoCadMesFinal').value = `${nomesMeses[dF.getMonth()]}/${dF.getFullYear()}`;
             }
         }
@@ -6597,13 +6665,13 @@
 
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
 
-            const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
-            const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+            const dI = somarMesesDescentralizacao(startDate, mInicio);
+            const dF = somarMesesDescentralizacao(startDate, mFinal);
 
             if (!window.tedSelecionado.metas) window.tedSelecionado.metas = [];
             if (window._editandoMetaId) window.tedSelecionado.metas = window.tedSelecionado.metas.filter(x => x.id !== window._editandoMetaId);
@@ -6731,7 +6799,7 @@
             // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -6740,8 +6808,7 @@
 
             const meses = [];
             for (let i = 0; i < 60; i++) {
-                const d = new Date(startDate);
-                d.setMonth(d.getMonth() + i);
+                const d = somarMesesDescentralizacao(startDate, i);
                 const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({ 
@@ -6797,7 +6864,7 @@
             // Calcular MM/AAAA dinamicamente a partir da 1ª descentralização e offsets M
             let baseDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                baseDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             }
@@ -6815,11 +6882,9 @@
                 const mesesNomes = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
                 
                 if (baseDate && !isNaN(meta.mInicio) && !isNaN(meta.mFinal)) {
-                    const dI = new Date(baseDate);
-                    dI.setMonth(dI.getMonth() + meta.mInicio);
+                    const dI = somarMesesDescentralizacao(baseDate, meta.mInicio);
                     inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
-                    const dF = new Date(baseDate);
-                    dF.setMonth(dF.getMonth() + meta.mFinal);
+                    const dF = somarMesesDescentralizacao(baseDate, meta.mFinal);
                     finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
                 } else if (meta.mesInicio && meta.anoInicio && meta.mesFinal && meta.anoFinal) {
                     // Fallback para dados já armazenados com anoInicio/anoFinal
@@ -6984,13 +7049,13 @@
 
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
 
-            const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
-            const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
+            const dI = somarMesesDescentralizacao(startDate, mInicio);
+            const dF = somarMesesDescentralizacao(startDate, mFinal);
 
             if (window._editandoFisicoId) window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(x => x.id !== window._editandoFisicoId);
 
@@ -7149,7 +7214,7 @@
             // ── base date ───────────────────────────────────────────────────
             let baseDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                baseDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -7215,8 +7280,7 @@
             // meses para Gantt (mantido igual ao original)
             const meses = [];
             for (let i = 0; i < 60; i++) {
-                const d = new Date(baseDate);
-                d.setMonth(d.getMonth() + i);
+                const d = somarMesesDescentralizacao(baseDate, i);
                 const mesLabel = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({ label: `${mesLabel}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth()+1 });
@@ -7278,13 +7342,13 @@
                 // período
                 let inicioStr = '—', finalStr = '—';
                 if (baseDate && f.mInicio != null && !isNaN(f.mInicio)) {
-                    const dI = new Date(baseDate); dI.setMonth(dI.getMonth() + parseInt(f.mInicio));
+                    const dI = somarMesesDescentralizacao(baseDate, parseInt(f.mInicio));
                     inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
                 } else if (f.mesInicio && f.anoInicio) {
                     inicioStr = `${mesesNomes[(f.mesInicio||1)-1]}/${f.anoInicio}`;
                 }
                 if (baseDate && f.mFinal != null && !isNaN(f.mFinal)) {
-                    const dF = new Date(baseDate); dF.setMonth(dF.getMonth() + parseInt(f.mFinal));
+                    const dF = somarMesesDescentralizacao(baseDate, parseInt(f.mFinal));
                     finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
                 } else if (f.mesFinal && f.anoFinal) {
                     finalStr = `${mesesNomes[(f.mesFinal||1)-1]}/${f.anoFinal}`;
@@ -7355,8 +7419,8 @@
                         if (mods && (mods.mInicio || mods.mFinal) && baseDate) {
                             const mIniOrig = mods.mInicio ? Number(mods.mInicio.de) : mIni;
                             const mFinOrig = mods.mFinal  ? Number(mods.mFinal.de)  : mFin;
-                            const dIO = new Date(baseDate); dIO.setMonth(dIO.getMonth() + mIniOrig);
-                            const dFO = new Date(baseDate); dFO.setMonth(dFO.getMonth() + mFinOrig);
+                            const dIO = somarMesesDescentralizacao(baseDate, mIniOrig);
+                            const dFO = somarMesesDescentralizacao(baseDate, mFinOrig);
                             const inicioOrig = `${mesesNomes[dIO.getMonth()]}/${dIO.getFullYear()}`;
                             const finalOrig  = `${mesesNomes[dFO.getMonth()]}/${dFO.getFullYear()}`;
                             return `<div class="ef-periodo-datas"><span class="val-antigo">${inicioOrig} → ${finalOrig}</span></div><div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div>`;
@@ -7477,7 +7541,7 @@
             // Base do cronograma (60 meses)
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -7486,8 +7550,7 @@
 
             const meses = [];
             for (let i = 0; i < 60; i++) {
-                const d = new Date(startDate);
-                d.setMonth(d.getMonth() + i);
+                const d = somarMesesDescentralizacao(startDate, i);
                 const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth() + 1, fullYear: d.getFullYear() });
@@ -7951,11 +8014,11 @@
             if (isNaN(m)) return;
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { return; }
-            const d = new Date(startDate); d.setMonth(d.getMonth() + m);
+            const d = somarMesesDescentralizacao(startDate, m);
             const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
             document.getElementById('modalFinanceiroMesDesc').value = `${nomesMeses[d.getMonth()]}/${d.getFullYear()}`;
         }
@@ -8018,12 +8081,12 @@
 
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { errEl.textContent = '⚠️ Defina a 1ª descentralização.'; errEl.classList.add('open'); return; }
 
-            const d = new Date(startDate); d.setMonth(d.getMonth() + m);
+            const d = somarMesesDescentralizacao(startDate, m);
             const mesDesc = d.getMonth() + 1;
             const anoDesc = d.getFullYear();
 
@@ -9410,7 +9473,7 @@
                 const anos = [];
                 if (t.inicioVigencia) anos.push(new Date(t.inicioVigencia + 'T00:00:00').getFullYear());
                 if (t.fimVigencia) anos.push(new Date(t.fimVigencia + 'T00:00:00').getFullYear());
-                if (t.primeiraDescentralizacao) anos.push(new Date(t.primeiraDescentralizacao + 'T00:00:00').getFullYear());
+                if (t.primeiraDescentralizacao) anos.push(dataBaseDescentralizacao(t.primeiraDescentralizacao).getFullYear());
                 (t.financeiros || []).forEach(f => { if (f.anoDesc) anos.push(Number(f.anoDesc)); });
                 (t.execFinanceiras || []).forEach(e => { if (e.data) { const y = new Date(e.data + 'T00:00:00').getFullYear(); if (!isNaN(y)) anos.push(y); }});
                 return anos.some(a => selectedAnos.includes(a));
@@ -9560,10 +9623,8 @@
                     const baseDate = t.primeiraDescentralizacao || t.inicioVigencia || null;
                     if (baseDate && !isNaN(parseInt(m.mInicio)) && !isNaN(parseInt(m.mFinal))) {
                         try {
-                            const dI = new Date(baseDate + 'T00:00:00');
-                            const dF = new Date(baseDate + 'T00:00:00');
-                            dI.setMonth(dI.getMonth() + parseInt(m.mInicio));
-                            dF.setMonth(dF.getMonth() + parseInt(m.mFinal));
+                            const dI = somarMesesDescentralizacao(baseDate, m.mInicio);
+                            const dF = somarMesesDescentralizacao(baseDate, m.mFinal);
                             inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
                             finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
                         } catch(e) { inicioStr = ''; finalStr = ''; }
@@ -9597,10 +9658,8 @@
                     const baseDate = t.primeiraDescentralizacao || t.inicioVigencia || null;
                     if (baseDate && !isNaN(parseInt(f.mInicio)) && !isNaN(parseInt(f.mFinal))) {
                         try {
-                            const dI = new Date(baseDate + 'T00:00:00');
-                            const dF = new Date(baseDate + 'T00:00:00');
-                            dI.setMonth(dI.getMonth() + parseInt(f.mInicio));
-                            dF.setMonth(dF.getMonth() + parseInt(f.mFinal));
+                            const dI = somarMesesDescentralizacao(baseDate, f.mInicio);
+                            const dF = somarMesesDescentralizacao(baseDate, f.mFinal);
                             inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
                             finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
                         } catch(e) { inicioStr = ''; finalStr = ''; }
@@ -9887,9 +9946,9 @@
                 if (f.anoFinal && f.mesFinal) return new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
                 if (f.mFinal != null) {
                     const base = ted && ted.primeiraDescentralizacao
-                        ? new Date(ted.primeiraDescentralizacao + 'T00:00:00')
+                        ? dataBaseDescentralizacao(ted.primeiraDescentralizacao)
                         : (ted && ted.primeiroAnoDesc && ted.primeiroMesDesc ? new Date(ted.primeiroAnoDesc, ted.primeiroMesDesc - 1, 1) : null);
-                    if (base) { const d = new Date(base); d.setMonth(d.getMonth() + parseInt(f.mFinal)); return d; }
+                    if (base) { const d = somarMesesDescentralizacao(base, parseInt(f.mFinal)); return d; }
                 }
                 return null;
             };
@@ -10666,7 +10725,7 @@
                 // ── datas base ──────────────────────────────────────────────
                 let startDate;
                 if (window.tedSelecionado.primeiraDescentralizacao) {
-                    startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                    startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
                 } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                     startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
                 } else {
@@ -10676,8 +10735,7 @@
                 const today = new Date();
                 const meses = [];
                 for (let i = 0; i < 60; i++) {
-                    const d = new Date(startDate);
-                    d.setMonth(d.getMonth() + i);
+                    const d = somarMesesDescentralizacao(startDate, i);
                     const mesLabel = d.toLocaleString('pt-BR', {month:'short'}).replace('.','').toUpperCase();
                     const ano2 = String(d.getFullYear()).slice(-2);
                     const isCurrent = d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
@@ -11201,7 +11259,7 @@
             const execs = (window.tedSelecionado.execFinanceiras || []).filter(e => String(e.nd || e.numero) === String(nd) && String(e.up || e.ug) === String(up));
             if (!execs.length) { showToast(`Nenhum lançamento mensal encontrado para ND: ${nd} / UP: ${up}`, 'info'); return; }
             let startDate;
-            if (window.tedSelecionado.primeiraDescentralizacao) startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+            if (window.tedSelecionado.primeiraDescentralizacao) startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             else startDate = new Date();
             const mesesPt = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
@@ -11241,7 +11299,7 @@
             // Calcular a data correspondente ao índice do mês
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -11249,8 +11307,7 @@
                 return;
             }
             
-            const d = new Date(startDate);
-            d.setMonth(d.getMonth() + indiceMes);
+            const d = somarMesesDescentralizacao(startDate, indiceMes);
             const dataFormatada = d.toISOString().split('T')[0];
             
             // Buscar execuções existentes neste mês para este objeto
@@ -11306,7 +11363,7 @@
             // Calcular a data correspondente ao índice do mês
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -11314,8 +11371,7 @@
                 return;
             }
             
-            const d = new Date(startDate);
-            d.setMonth(d.getMonth() + indiceMes);
+            const d = somarMesesDescentralizacao(startDate, indiceMes);
 
             // Buscar execuções existentes neste mês para este ND/UP
             const execs = window.tedSelecionado.execFinanceiras || [];
@@ -11461,7 +11517,7 @@
             if (!window.tedSelecionado) return;
             const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
             if (!dataDesc) return;
-            const startDate = new Date(dataDesc + 'T00:00:00');
+            const startDate = dataBaseDescentralizacao(dataDesc);
             if (isNaN(startDate.getTime())) return;
 
             // Recalcular metas
@@ -11469,14 +11525,12 @@
                 const mI = parseInt(m.mInicio);
                 const mF = parseInt(m.mFinal);
                 if (!isNaN(mI)) {
-                    const d = new Date(startDate);
-                    d.setMonth(d.getMonth() + mI);
+                    const d = somarMesesDescentralizacao(startDate, mI);
                     m.mesInicio = d.getMonth() + 1;
                     m.anoInicio = d.getFullYear();
                 }
                 if (!isNaN(mF)) {
-                    const d = new Date(startDate);
-                    d.setMonth(d.getMonth() + mF);
+                    const d = somarMesesDescentralizacao(startDate, mF);
                     m.mesFinal = d.getMonth() + 1;
                     m.anoFinal = d.getFullYear();
                 }
@@ -11487,14 +11541,12 @@
                 const mI = parseInt(f.mInicio);
                 const mF = parseInt(f.mFinal);
                 if (!isNaN(mI)) {
-                    const d = new Date(startDate);
-                    d.setMonth(d.getMonth() + mI);
+                    const d = somarMesesDescentralizacao(startDate, mI);
                     f.mesInicio = d.getMonth() + 1;
                     f.anoInicio = d.getFullYear();
                 }
                 if (!isNaN(mF)) {
-                    const d = new Date(startDate);
-                    d.setMonth(d.getMonth() + mF);
+                    const d = somarMesesDescentralizacao(startDate, mF);
                     f.mesFinal = d.getMonth() + 1;
                     f.anoFinal = d.getFullYear();
                 }
@@ -11504,8 +11556,7 @@
             (window.tedSelecionado.financeiros || []).forEach(fin => {
                 const m = parseInt(fin.m);
                 if (!isNaN(m)) {
-                    const d = new Date(startDate);
-                    d.setMonth(d.getMonth() + m);
+                    const d = somarMesesDescentralizacao(startDate, m);
                     fin.mesDesc = d.getMonth() + 1;
                     fin.anoDesc = d.getFullYear();
                 }
@@ -11576,6 +11627,7 @@
 
             window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
             window.tedSelecionado.recursosGerais.push({ id: Date.now(), nd, nc, valor, data });
+            sincronizarPrimeiraDescentralizacao();
             salvarDados();
             atualizarTabelaRecursosGerais();
             showToast('Recurso Geral adicionado com sucesso!', 'success');
@@ -11592,6 +11644,7 @@
             const recs = window.tedSelecionado.recursosGerais || [];
             if (indice < 0 || indice >= recs.length) return;
             recs.splice(indice, 1);
+            sincronizarPrimeiraDescentralizacao();
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarTabelaRecursosGerais();
         }
@@ -11601,7 +11654,7 @@
 
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -11609,8 +11662,7 @@
                 return;
             }
 
-            const d = new Date(startDate);
-            d.setMonth(d.getMonth() + indiceMes);
+            const d = somarMesesDescentralizacao(startDate, indiceMes);
 
             const recs = window.tedSelecionado.recursosGerais || [];
             const ndNorm = normalizarND(nd);
@@ -11772,7 +11824,7 @@
             // Timeline 60 meses
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao+'T00:00:00');
+                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc-1, 1);
             } else {
@@ -11794,8 +11846,7 @@
 
             const meses = [];
             for (let i=0; i<60; i++) {
-                const d = new Date(startDate);
-                d.setMonth(d.getMonth()+i);
+                const d = somarMesesDescentralizacao(startDate, i);
                 const mesLabel = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({
@@ -14399,6 +14450,9 @@
                         });
                     });
 
+                    // A 1ª descentralização acompanha o extrato importado
+                    aplicarPrimeiraDescentralizacaoAuto(ted);
+
                     countTeds++;
                     countItens += itens.length;
                 });
@@ -16732,8 +16786,7 @@
                     try {
                         if (f.anoFinal && f.mesFinal) dataPrevista = new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
                         else if (f.mFinal != null && ted.primeiraDescentralizacao) {
-                            const base = new Date(ted.primeiraDescentralizacao + 'T00:00:00');
-                            base.setMonth(base.getMonth() + parseInt(f.mFinal)); base.setDate(28);
+                            const base = somarMesesDescentralizacao(ted.primeiraDescentralizacao, f.mFinal); base.setDate(28);
                             dataPrevista = base;
                         }
                     } catch(e) {}
