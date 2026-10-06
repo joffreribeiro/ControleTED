@@ -13745,6 +13745,32 @@
             }, 'Confirmar');
         }
 
+        // Localiza a coluna com o número da NC (ex.: 2026NC000123). O nome do cabeçalho varia
+        // conforme o relatório do Tesouro Gerencial ("NC", "Doc", "Documento"...), então além
+        // do cabeçalho confere o CONTEÚDO: a coluna escolhida precisa ter valores no padrão
+        // ANO + "NC" + dígitos. Sem isso, "Funcional" (contém "nc") seria confundida com a NC.
+        function detectarColunaNC(headers, registros) {
+            const reNC = /\d{4}NC\d{4,}/i;
+            const pontuar = (idx) => {
+                let hits = 0;
+                for (let i = 1; i < registros.length; i++) {
+                    if (reNC.test(String(registros[i][idx] || ''))) hits++;
+                }
+                return hits;
+            };
+            let melhor = null, melhorHits = 0;
+            headers.forEach((h, idx) => {
+                const hits = pontuar(idx);
+                if (hits > melhorHits) { melhor = h; melhorHits = hits; }
+            });
+            if (melhor) return melhor;
+            // Sem nenhuma célula no padrão: cai no critério antigo, só pelo nome do cabeçalho
+            for (const h of headers) {
+                if (h && String(h).trim().toLowerCase() === 'nc') return h;
+            }
+            return null;
+        }
+
         function importarRecursosGerais(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -13780,10 +13806,7 @@
                     const colND    = findCol(['natureza', 'despes']) || findCol(['natureza']);
                     const colValor = findCol(['valor', 'linha']) || findCol(['valor']);
                     const colData  = findCol(['emissao', 'dia']) || findCol(['emiss', 'dia']) || findCol(['dia']);
-                    const colNC = (function(){
-                        for (const h of headers) {
-                            if (h && String(h).trim().toLowerCase() === 'nc') return h;
-                        }
+                    const colNC = detectarColunaNC(headers, registros) || (function(){
                         for (const h of headers) {
                             const low = String(h || '').toLowerCase();
                             if (low.indexOf('nc') > -1 && low.indexOf('natureza') === -1 && low.indexOf('transfer') === -1) return h;
