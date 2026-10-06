@@ -1012,9 +1012,33 @@ window.testFirestoreConnection = async function() {
                 role: isFirstUser ? 'admin' : 'leitor',
                 displayName: user.displayName || ''
               };
-              // Salvar perfil no Firestore para consultas futuras
+              // Salvar perfil no Firestore para consultas futuras.
+              //
+              // ATENÇÃO — impasse conhecido no primeiro acesso: firestore.rules só deixa o
+              // próprio usuário CRIAR o seu documento com role 'leitor' (a criação como
+              // 'admin' exige já ser admin, o que ninguém é enquanto não existe perfil
+              // nenhum). Antes esta gravação falhava em silêncio no `catch` abaixo: a tela
+              // mostrava "admin", mas users/{uid} nunca era criado — e como as regras exigem
+              // que esse documento exista para gravar qualquer dado, TODO save passava a
+              // falhar com permission-denied, sem explicação para o usuário.
+              //
+              // Agora: grava sempre o que a regra aceita e avisa em alto e bom som quando o
+              // papel precisa ser ajustado por um administrador no Console do Firebase.
               if (window.firestoreSetDoc) {
-                window.firestoreSetDoc('users/' + user.uid, window.currentUserProfile).catch(e => console.warn('Erro salvando perfil', e));
+                const perfilParaGravar = Object.assign({}, window.currentUserProfile, { role: 'leitor' });
+                window.firestoreSetDoc('users/' + user.uid, perfilParaGravar)
+                  .then(() => {
+                    if (isFirstUser) {
+                      console.warn('[perfil] Primeiro usuário: users/' + user.uid + ' foi criado como "leitor" porque as regras não permitem auto-promoção a admin.');
+                      showToast('⚠️ Seu perfil foi criado como LEITOR (somente leitura), então o sistema ainda não consegue salvar.\n\nPara liberar: no Console do Firebase → Firestore → coleção "users" → documento "' + user.uid + '" → mude o campo "role" para "admin". Depois recarregue esta página.', 'warning');
+                    } else {
+                      showToast('⚠️ Você entrou como LEITOR (somente leitura) porque ainda não tem perfil com permissão. Peça a um administrador para liberar seu acesso de escrita.', 'warning');
+                    }
+                  })
+                  .catch(e => {
+                    console.warn('Erro salvando perfil', e);
+                    showToast('❌ Não foi possível criar seu perfil de acesso (' + ((e && e.code) || 'erro desconhecido') + '). Enquanto isso, o sistema não conseguirá salvar. Avise um administrador — seu ID é ' + user.uid, 'danger');
+                  });
               }
             }
 

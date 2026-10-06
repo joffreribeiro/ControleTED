@@ -801,8 +801,9 @@
                                 <input type="date" id="fimVigencia" readonly class="auto-style-012">
                             </div>
                             <div class="form-group auto-style-008">
-                                <label>1ª Descentralização</label>
-                                <input type="date" id="primeiraDescentralizacao">
+                                <label>1ª Descentralização (automática)</label>
+                                <input type="date" id="primeiraDescentralizacao" readonly class="auto-style-012"
+                                       title="Preenchida automaticamente: último dia do primeiro mês com lançamento em Recursos Gerais IMBEL">
                             </div>
                         </div>
                     </div>
@@ -1039,9 +1040,10 @@
                                     <input type="date" class="ted-info-input auto-style-001" id="edit_fimVigencia" readonly>
                                 </div>
                                 <div>
-                                    <div class="field-label">1ª Descentralização</div>
+                                    <div class="field-label">1ª Descentralização (automática)</div>
                                     <div class="field-value" id="info_primeiraDescentralizacao">—</div>
-                                    <input type="date" class="ted-info-input auto-style-001" id="edit_primeiraDescentralizacao">
+                                    <input type="date" class="ted-info-input auto-style-001" id="edit_primeiraDescentralizacao" readonly
+                                           title="Preenchida automaticamente: último dia do primeiro mês com lançamento em Recursos Gerais IMBEL">
                                 </div>
                                 <div>
                                     <div class="field-label">Vigência Atual (meses)</div>
@@ -1229,6 +1231,11 @@
                         <div id="wrapperCadFin" class="table-wrapper">
                             <!-- Barra de ações acima da tabela -->
                             <div class="table-actions-bar">
+                                <span class="cf-modo-seg" id="cfModoSeg">
+                                    <button type="button" class="on" data-modo="vig" onclick="setCfModoView('vig')" title="Só o que vale hoje — bate com os totais">Vigente</button>
+                                    <button type="button" data-modo="cmp" onclick="setCfModoView('cmp')" title="Mostra a trilha: valor anterior, chip do aditivo/apostilamento e suprimidos">Comparado</button>
+                                    <button type="button" data-modo="org" onclick="setCfModoView('org')" title="Reconstrói o TED como estava antes de qualquer aditivo/apostilamento">Original</button>
+                                </span>
                                 <button type="button" class="btn-toggle-months" id="toggle-months-cadFin" data-expanded="0" onclick="toggleMonthCols('cadFin', this)">Ver detalhes mensais</button>
                                 <button type="button" class="section-add-btn" onclick="abrirModalFinanceiro()">+ Adicionar</button>
                             </div>
@@ -1378,6 +1385,20 @@
                         </div>
                     </div>
 
+                    <!-- REPASSE ÀS UGs (cruza Cadastro Financeiro, Execução Financeira e Recursos
+                         Gerais IMBEL — nenhum cadastro novo, só uma leitura combinada) -->
+                    <div class="detalhe-secao">
+                        <div class="detalhe-secao-header">
+                            <h3 class="detalhe-secao-titulo"><i data-lucide="repeat" class="inline-icon-sm"></i> Repasse às UGs <span class="section-count-badge" id="count-repasseugs">0</span></h3>
+                        </div>
+                        <div class="detalhe-secao-body">
+                            <div id="repasseugs-kpis-container"></div>
+                            <div id="repasseugs-container">
+                                <p class="auto-style-014" style="padding:1rem;">Selecione um TED</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Resumo Anual -->
                     <div class="detalhe-secao">
                         <h3 class="detalhe-secao-titulo"><i data-lucide="bar-chart" class="inline-icon-sm"></i> Resumo Anual</h3>
@@ -1479,6 +1500,13 @@
         <span id="relGlobAnoLabel">Ano</span>
       </button>
       <div class="filter-menu" id="relGlobAnoMenu"></div>
+    </div>
+
+    <div class="rel-filtro-item" style="position:relative;">
+      <button type="button" class="filter-btn" id="relGlobStatusBtn" onclick="toggleRelGlobFiltro('relGlobStatusMenu', 'relGlobStatusBtn')">
+        <span id="relGlobStatusLabel">Status</span>
+      </button>
+      <div class="filter-menu" id="relGlobStatusMenu"></div>
     </div>
 
     <div class="rel-filtro-item" id="relGlobMESWrap" style="position:relative;display:none;">
@@ -1948,7 +1976,7 @@
     </div>
 
     <!-- main.js deve rodar antes dos módulos para que window.dados exista quando app.js carregar -->
-    <script src="js/main.js?v=20260723g"></script>
+    <script src="js/main.js?v=20260831a"></script>
 
     <!-- Identidade da versão empacotada NESTA build (index.html + js/main.js + app.js +
          firebase-init.js). Bump manual sempre que uma correção/versão for lançada — deve

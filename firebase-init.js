@@ -227,6 +227,43 @@ window.firestoreOnCollectionSnapshot = function(collPath, cb) {
   }
 };
 
+// Último erro de gravação, para o app poder dizer ao usuário o QUE falhou. Sem isso toda
+// falha virava um `false` sem contexto e a interface tinha que adivinhar o motivo — vinha
+// culpando "bloqueador de anúncios", que quase nunca é a causa real (o normal é
+// permission-denied por perfil sem papel de escrita, ou rede indisponível).
+window.firestoreUltimoErroEscrita = null;
+
+// O Firestore recusa o documento INTEIRO se qualquer objeto aninhado tiver um campo de nome
+// vazio ("Document fields must not be empty"). Isso chegava aqui pelas importações de
+// planilha: uma coluna sem cabeçalho (ou um ";" sobrando no fim da linha) virava a chave ""
+// na cópia da linha original guardada em `origem`. Um único TED assim derrubava o lote e
+// travava o salvamento de todos os outros. As importações já não geram mais isso, mas a
+// limpeza fica aqui como rede de segurança — inclusive para dados que já estão em memória.
+function _limparChavesVazias(valor) {
+  if (Array.isArray(valor)) return valor.map(_limparChavesVazias);
+  if (valor && typeof valor === 'object') {
+    const limpo = {};
+    Object.keys(valor).forEach(k => {
+      if (String(k || '').trim() === '') return;
+      limpo[k] = _limparChavesVazias(valor[k]);
+    });
+    return limpo;
+  }
+  return valor;
+}
+window._limparChavesVazias = _limparChavesVazias;
+
+window._registrarErroEscrita = function(e, origem) {
+  try {
+    window.firestoreUltimoErroEscrita = {
+      code: (e && e.code) ? String(e.code) : null,
+      message: (e && e.message) ? String(e.message) : String(e),
+      origem: origem || null,
+      at: Date.now()
+    };
+  } catch (_) { /* nunca deixar o diagnóstico derrubar a gravação */ }
+};
+
 window.firestoreBatchSet = async function(collPath, docs) {
   try {
     if (!Array.isArray(docs)) return false;
@@ -236,7 +273,7 @@ window.firestoreBatchSet = async function(collPath, docs) {
     for (const d of docs) {
       const id = (d && (d.id || d._docId)) ? String(d.id || d._docId) : String(Date.now()) + Math.floor(Math.random()*1000);
       const ref = fsDoc(db, ...parts, id);
-      const copy = Object.assign({}, d);
+      const copy = _limparChavesVazias(Object.assign({}, d));
       // ensure id is stored as property
       copy.id = parseInt(id) || id;
       batch.set(ref, copy);
@@ -245,6 +282,7 @@ window.firestoreBatchSet = async function(collPath, docs) {
     return true;
   } catch (e) {
     console.warn('firestoreBatchSet error', e);
+    window._registrarErroEscrita(e, 'firestoreBatchSet:' + collPath);
     return false;
   }
 };
@@ -280,7 +318,7 @@ window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
   const snapshots = docs.map(d => {
     if (d == null) return { original: d, clone: null, erro: 'documento nulo/indefinido' };
     try {
-      return { original: d, clone: JSON.parse(JSON.stringify(d)), erro: null };
+      return { original: d, clone: _limparChavesVazias(JSON.parse(JSON.stringify(d))), erro: null };
     } catch (e) {
       return { original: d, clone: null, erro: 'não foi possível clonar (provável referência circular ou valor não serializável): ' + (e && e.message) };
     }
@@ -361,6 +399,7 @@ window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
       // salvos normalmente, e só o(s) documento(s) realmente problemático(s) falha(m) —
       // isolados e registrados, sem arrastar os demais.
       console.warn('[firestoreBatchSetTedsGuarded] commit em lote falhou — tentando gravar cada TED individualmente para isolar o problema.', e);
+      window._registrarErroEscrita(e, 'firestoreBatchSetTedsGuarded:lote');
       for (const item of aGravar) {
         try {
           await fsSetDoc(fsDoc(db, 'teds', item.id), item.copy);
@@ -368,6 +407,7 @@ window.firestoreBatchSetTedsGuarded = async function(docs, basesRev, autor) {
           resultado.revs[item.id] = item.revNova;
         } catch (e2) {
           console.error('[firestoreBatchSetTedsGuarded] TED ' + item.id + ' falhou mesmo gravado individualmente — pulado. Documento que tentamos gravar:', item.copy, e2);
+          window._registrarErroEscrita(e2, 'firestoreBatchSetTedsGuarded:ted/' + item.id);
           resultado.pulados.push(item.id);
         }
       }

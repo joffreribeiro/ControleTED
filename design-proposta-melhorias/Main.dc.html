@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+    :root {
+      --color-primary:        #0C447C;
+      --color-primary-mid:    #185FA5;
+      --color-primary-bg:     #E6F1FB;
+      --color-primary-border: #85B7EB;
+      --color-success:        #639922;
+      --color-success-bg:     #EAF3DE;
+      --color-danger:         #A32D2D;
+      --color-danger-bg:      #FCEBEB;
+      --color-warning:        #854F0B;
+      --color-warning-bg:     #FAEEDA;
+      --color-text:           #1a1a1a;
+      --color-text-secondary: #6b6b6b;
+      --color-text-muted:     #9b9b9b;
+      --color-bg:             #F0F2F5;
+      --color-card:           #ffffff;
+      --color-surface:        #F8F9FA;
+      --font-mono:            'IBM Plex Mono', 'Courier New', monospace;
+    }
+    body { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+    a { color: var(--color-primary-mid); }
+    a:hover { color: var(--color-primary); }
+
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .sev-alto  { background: var(--color-danger-bg);  color: var(--color-danger); }
+    .sev-alto  .badge-dot { background: #c94040; }
+    .sev-medio { background: var(--color-warning-bg); color: var(--color-warning); }
+    .sev-medio .badge-dot { background: #c07a1c; }
+    .sev-baixo { background: var(--color-primary-bg); color: var(--color-primary); }
+    .sev-baixo .badge-dot { background: var(--color-primary-mid); }
+
+    .card { background: var(--color-card); border-radius: 10px; border: 1px solid rgba(0,0,0,0.07); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .mono { font-family: var(--font-mono); }
+  </style>
+</helmet>
+
+<div style="width: 860px; min-height: 2180px; background: var(--color-bg); padding: 44px 48px 60px; color: var(--color-text);">
+
+  <!-- Header -->
+  <div style="margin-bottom: 30px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+      <span style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-primary-mid);">Controle TED</span>
+      <span style="width: 3px; height: 3px; border-radius: 50%; background: var(--color-text-muted);"></span>
+      <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted);">Análise técnica do sistema</span>
+    </div>
+    <h1 style="font-size: 28px; font-weight: 700; line-height: 1.25; margin-bottom: 10px; max-width: 620px;">Diagnóstico do sistema e propostas de melhoria</h1>
+    <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary); max-width: 640px;">
+      Leitura do repositório atual (frontend React, protótipo legado, wrapper Android e o experimento
+      "Modo Campo") para mapear os pontos que mais pesam na experiência hoje — e como resolvê-los sem
+      abandonar o que já está funcionando.
+    </p>
+  </div>
+
+  <!-- Summary chips -->
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 34px;">
+    <div class="card" style="padding: 16px 18px;">
+      <p class="mono" style="font-size: 22px; font-weight: 700; color: var(--color-danger); line-height: 1;">3</p>
+      <p style="font-size: 11.5px; color: var(--color-text-muted); margin-top: 6px; line-height: 1.4;">linguagens visuais distintas convivendo no repo</p>
+    </div>
+    <div class="card" style="padding: 16px 18px;">
+      <p class="mono" style="font-size: 22px; font-weight: 700; color: var(--color-warning); line-height: 1;">0</p>
+      <p style="font-size: 11.5px; color: var(--color-text-muted); margin-top: 6px; line-height: 1.4;">media queries no CSS de produção do app real</p>
+    </div>
+    <div class="card" style="padding: 16px 18px;">
+      <p class="mono" style="font-size: 22px; font-weight: 700; color: var(--color-primary-mid); line-height: 1;">2</p>
+      <p style="font-size: 11.5px; color: var(--color-text-muted); margin-top: 6px; line-height: 1.4;">telas mobile prontas, mas nunca ligadas ao app</p>
+    </div>
+  </div>
+
+  <!-- O que é o sistema hoje -->
+  <div class="card" style="padding: 20px 24px; margin-bottom: 34px;">
+    <p style="font-size: 13px; font-weight: 700; margin-bottom: 12px;">O que existe hoje, em três camadas</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; gap: 12px; align-items: baseline;">
+        <span class="mono" style="font-size: 11px; color: var(--color-primary-mid); width: 132px; flex-shrink: 0;">frontend/</span>
+        <span style="font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.5;">React + Vite + Tailwind. É o app "de verdade" — Dashboard, TED em detalhe, cadastro. Tipografia IBM Plex, azul institucional, cards e badges consistentes.</span>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: baseline;">
+        <span class="mono" style="font-size: 11px; color: var(--color-warning); width: 132px; flex-shrink: 0;">index.html raiz</span>
+        <span style="font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.5;">Protótipo estático antigo. O próprio <span class="mono">ARCHITECTURE.md</span> do repo marca como "não usar em produção" — mas é ele que vira o APK Android (ver achado #1).</span>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: baseline;">
+        <span class="mono" style="font-size: 11px; color: var(--color-danger); width: 132px; flex-shrink: 0;">mockup-mobile/</span>
+        <span style="font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.5;">Experimento "Modo Campo" — tela pensada para registrar execução em campo, offline-first. Boa ideia, mas isolada: outra tipografia (Fraunces/Nunito), outros ícones (Lucide), sem link nenhum com o app real.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Achados -->
+  <p style="font-size: 15px; font-weight: 700; margin-bottom: 14px;">Principais achados</p>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 34px;">
+
+    <div class="card" style="padding: 16px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13.5px; font-weight: 700;">O APK Android empacota a interface errada</span>
+        <span class="badge sev-alto"><span class="badge-dot"></span>Alto impacto</span>
+      </div>
+      <p style="font-size: 12.5px; line-height: 1.65; color: var(--color-text-secondary);">
+        <span class="mono" style="font-size: 11.5px;">scripts/build-www.js</span> copia
+        <span class="mono" style="font-size: 11.5px;">index.html</span>, <span class="mono" style="font-size: 11.5px;">app.js</span> e
+        <span class="mono" style="font-size: 11.5px;">styles.css</span> — exatamente os arquivos que
+        <span class="mono" style="font-size: 11.5px;">ARCHITECTURE.md</span> lista como legado. O frontend React
+        (o dashboard que os usuários web usam) nunca entra no build do Capacitor. Quem instala o app Android hoje
+        vê um sistema diferente do que existe na web.
+      </p>
+    </div>
+
+    <div class="card" style="padding: 16px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13.5px; font-weight: 700;">Três identidades visuais para um produto só</span>
+        <span class="badge sev-alto"><span class="badge-dot"></span>Alto impacto</span>
+      </div>
+      <p style="font-size: 12.5px; line-height: 1.65; color: var(--color-text-secondary);">
+        App real: IBM Plex Sans/Mono + azul <span class="mono" style="font-size: 11.5px;">#0C447C</span>.
+        "Modo Campo": Fraunces + Nunito Sans + ícones Lucide. Protótipo legado: outra folha de estilo própria.
+        Não existe um token compartilhado entre eles — qualquer peça nova herda uma das três linguagens por acaso,
+        não por decisão.
+      </p>
+    </div>
+
+    <div class="card" style="padding: 16px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13.5px; font-weight: 700;">O dashboard real não se adapta a telas pequenas</span>
+        <span class="badge sev-medio"><span class="badge-dot"></span>Médio impacto</span>
+      </div>
+      <p style="font-size: 12.5px; line-height: 1.65; color: var(--color-text-secondary);">
+        <span class="mono" style="font-size: 11.5px;">globals.css</span> não tem nenhuma
+        <span class="mono" style="font-size: 11.5px;">@media</span> query. A sidebar é fixa em 228px e o padding
+        de página é 28px fixo — em qualquer viewport. Isso é aceitável para um SPA só-desktop, mas o produto já é
+        empacotado como app Android via Capacitor.
+      </p>
+    </div>
+
+    <div class="card" style="padding: 16px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13.5px; font-weight: 700;">Ícones em emoji no lugar de um sistema visual</span>
+        <span class="badge sev-medio"><span class="badge-dot"></span>Médio impacto</span>
+      </div>
+      <p style="font-size: 12.5px; line-height: 1.65; color: var(--color-text-secondary);">
+        Sidebar e alertas usam emoji (📊 📋 ⏰ 💸) como ícone. Renderização varia por sistema operacional e fonte,
+        e não acompanha peso/cor do texto ao redor. O próprio "Modo Campo" já resolveu isso com um pacote de ícones
+        vetoriais — é só uma questão de estender essa escolha para o resto do app.
+      </p>
+    </div>
+
+    <div class="card" style="padding: 16px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13.5px; font-weight: 700;">Navegação lateral muito enxuta para o que o sistema já tem</span>
+        <span class="badge sev-medio"><span class="badge-dot"></span>Médio impacto</span>
+      </div>
+      <p style="font-size: 12.5px; line-height: 1.65; color: var(--color-text-secondary);">
+        O menu tem só "Dashboard" e "Novo TED", mas o sistema já tem Login e Registro — ou seja, é multiusuário.
+        Não há um lugar para relatórios, exportação ou configuração de conta, então tudo isso hoje não tem endereço
+        na interface.
+      </p>
+    </div>
+
+    <div class="card" style="padding: 16px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13.5px; font-weight: 700;">Alertas somem ao sair do Dashboard, sem busca global</span>
+        <span class="badge sev-baixo"><span class="badge-dot"></span>Baixo impacto</span>
+      </div>
+      <p style="font-size: 12.5px; line-height: 1.65; color: var(--color-text-secondary);">
+        Os "Alertas Inteligentes" (TED vencido, orçamento no limite, física × financeira descompassada) são
+        calculados só na tela do Dashboard e não aparecem em nenhum outro lugar do app. Também não existe forma de
+        buscar um TED por número ou título fora da lista principal.
+      </p>
+    </div>
+
+    <div class="card" style="padding: 16px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13.5px; font-weight: 700;">Botões de ação na tela de detalhes sem função</span>
+        <span class="badge sev-baixo"><span class="badge-dot"></span>Baixo impacto</span>
+      </div>
+      <p style="font-size: 12.5px; line-height: 1.65; color: var(--color-text-secondary);">
+        Em <span class="mono" style="font-size: 11.5px;">TEDDetails.tsx</span>, os botões "+ Adicionar Marco" e
+        "+ Adicionar Item" existem visualmente mas não têm <span class="mono" style="font-size: 11.5px;">onClick</span>.
+        A interface promete uma ação que ainda não foi implementada.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Propostas -->
+  <p style="font-size: 15px; font-weight: 700; margin-bottom: 14px;">O que este canvas propõe</p>
+  <p style="font-size: 12.5px; line-height: 1.6; color: var(--color-text-secondary); margin-bottom: 16px; max-width: 700px;">
+    Duas peças ao lado, no mesmo canvas, mostram a direção — sem inventar uma estética nova: os dois mockups usam
+    exatamente os tokens (cores, tipografia, componentes) que já existem em <span class="mono" style="font-size: 11.5px;">frontend/src/styles/globals.css</span>.
+  </p>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <div class="card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+      <div>
+        <p style="font-size: 13px; font-weight: 700; margin-bottom: 4px;">Dashboard — proposta</p>
+        <p style="font-size: 12px; color: var(--color-text-secondary); line-height: 1.5;">
+          Busca e sino de notificações no topo, ícones vetoriais no lugar dos emoji, variação vs. mês anterior
+          nos cards, tabela com ordenação e paginação, e menu lateral com Relatórios e Configurações.
+        </p>
+      </div>
+      <span style="font-size: 20px; color: var(--color-primary-mid); flex-shrink: 0;">→</span>
+    </div>
+    <div class="card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+      <div>
+        <p style="font-size: 13px; font-weight: 700; margin-bottom: 4px;">Modo Campo — integrado</p>
+        <p style="font-size: 12px; color: var(--color-text-secondary); line-height: 1.5;">
+          A mesma tela de registro em campo, remontada com a tipografia e as cores do app real — mostrando como
+          promovê-la de protótipo isolado a uma tela de fato do produto.
+        </p>
+      </div>
+      <span style="font-size: 20px; color: var(--color-primary-mid); flex-shrink: 0;">→</span>
+    </div>
+  </div>
+
+  <p style="font-size: 11.5px; color: var(--color-text-muted); line-height: 1.6; margin-top: 30px; max-width: 700px;">
+    Este documento é uma direção visual e de produto. A decisão de religar <span class="mono">build:www</span> ao
+    <span class="mono">frontend/</span> — e o esforço que isso leva — precisa de validação técnica da equipe antes
+    de virar tarefa.
+  </p>
+
+</div>
+</x-dc>
+</body>
+</html>

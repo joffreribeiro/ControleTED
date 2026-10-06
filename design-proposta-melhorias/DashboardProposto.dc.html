@@ -1,0 +1,342 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+    :root {
+      --color-primary:        #0C447C;
+      --color-primary-mid:    #185FA5;
+      --color-primary-light:  #378ADD;
+      --color-primary-bg:     #E6F1FB;
+      --color-primary-border: #85B7EB;
+      --color-success:        #639922;
+      --color-success-bg:     #EAF3DE;
+      --color-danger:         #A32D2D;
+      --color-danger-bg:      #FCEBEB;
+      --color-warning:        #854F0B;
+      --color-warning-bg:     #FAEEDA;
+      --color-text:           #1a1a1a;
+      --color-text-secondary: #6b6b6b;
+      --color-text-muted:     #9b9b9b;
+      --color-bg:             #F0F2F5;
+      --color-card:           #ffffff;
+      --color-surface:        #F8F9FA;
+      --font-mono:            'IBM Plex Mono', 'Courier New', monospace;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px; color: var(--color-text); }
+    a { color: var(--color-primary-mid); text-decoration: none; }
+    a:hover { color: var(--color-primary); }
+
+    .card { background: var(--color-card); border-radius: 10px; border: 1px solid rgba(0,0,0,0.07); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 6px; color: rgba(255,255,255,0.62); font-size: 12.5px; font-weight: 400; width: 100%; white-space: nowrap; }
+    .nav-item.active { background: rgba(255,255,255,0.17); color: #fff; font-weight: 600; border-left: 2px solid rgba(255,255,255,0.75); padding-left: 6px; }
+    .nav-item svg { flex-shrink: 0; }
+    .nav-group-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.32); padding: 0 8px; margin-bottom: 3px; }
+
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .badge-execucao     { background: var(--color-primary-bg); color: var(--color-primary); }
+    .badge-execucao .badge-dot { background: var(--color-primary-mid); }
+    .badge-concluido    { background: var(--color-success-bg); color: #2d5a0a; }
+    .badge-concluido .badge-dot { background: var(--color-success); }
+    .badge-planejamento { background: var(--color-warning-bg); color: var(--color-warning); }
+    .badge-planejamento .badge-dot { background: #c07a1c; }
+
+    .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .stat-value { font-size: 21px; font-weight: 700; color: var(--color-text); line-height: 1.2; margin-bottom: 3px; font-family: var(--font-mono); }
+    .trend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; }
+    .trend-up { color: var(--color-success); }
+    .trend-down { color: var(--color-danger); }
+
+    .progress-bar { height: 6px; background: var(--color-primary-bg); border-radius: 6px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 6px; }
+    .progress-fill-blue { background: var(--color-primary-mid); }
+    .progress-fill-green { background: var(--color-success); }
+
+    .th-sort { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: var(--color-primary-bg); color: var(--color-primary); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px; border-bottom: 2px solid var(--color-primary-border); white-space: nowrap; text-align: left; }
+    tbody tr { border-bottom: 1px solid rgba(0,0,0,0.055); }
+    tbody tr:nth-child(even) { background: #FAFBFC; }
+    tbody td { padding: 12px 14px; font-size: 13px; vertical-align: middle; }
+    .td-mono { font-family: var(--font-mono); font-size: 12px; }
+
+    .pg-btn { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #d1d5db; background: var(--color-card); color: var(--color-text-secondary); cursor: pointer; }
+    .pg-btn.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; font-weight: 600; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 1220px; background: var(--color-bg); display: flex; overflow: hidden;">
+
+  <!-- ── Sidebar ── -->
+  <aside style="width: 228px; flex-shrink: 0; background: var(--color-primary); padding: 14px 10px; display: flex; flex-direction: column; height: 100%;">
+
+    <div style="width: 32px; height: 28px; margin-bottom: 10px;"></div>
+
+    <div style="margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 14px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.13); border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg viewBox="0 0 100 100" width="26" height="26">
+            <rect x="30" y="70" width="40" height="12" rx="1" fill="rgba(255,255,255,0.85)"/>
+            <rect x="20" y="55" width="15" height="12" rx="1" fill="rgba(255,255,255,0.7)"/>
+            <rect x="42" y="55" width="15" height="12" rx="1" fill="rgba(255,255,255,0.7)"/>
+            <rect x="65" y="55" width="15" height="12" rx="1" fill="rgba(255,255,255,0.7)"/>
+            <rect x="30" y="40" width="15" height="12" rx="1" fill="rgba(255,255,255,0.5)"/>
+            <rect x="55" y="40" width="15" height="12" rx="1" fill="rgba(255,255,255,0.5)"/>
+            <rect x="25" y="28" width="12" height="9"  rx="1" fill="rgba(255,255,255,0.38)"/>
+            <rect x="44" y="28" width="12" height="9"  rx="1" fill="rgba(255,255,255,0.38)"/>
+            <rect x="63" y="28" width="12" height="9"  rx="1" fill="rgba(255,255,255,0.38)"/>
+          </svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 13.5px; font-weight: 700; color: #fff; line-height: 1.2;">Controle TED</span>
+          <span style="font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.9px; color: rgba(255,255,255,0.4);">Gestão de Termos</span>
+        </div>
+      </div>
+    </div>
+
+    <nav style="flex: 1;">
+      <div style="margin-bottom: 16px;">
+        <div class="nav-group-label">Principal</div>
+        <div class="nav-item active">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="6.5" height="6.5" rx="1.2"/><rect x="11" y="2.5" width="6.5" height="6.5" rx="1.2"/><rect x="2.5" y="11" width="6.5" height="6.5" rx="1.2"/><rect x="11" y="11" width="6.5" height="6.5" rx="1.2"/></svg>
+          <span>Dashboard</span>
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <div class="nav-group-label">Gestão</div>
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2.5h6l3.5 3.5V17a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5Z"/><path d="M10.5 8v5M8 10.5h5"/></svg>
+          <span>Novo TED</span>
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <div class="nav-group-label">Análise</div>
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V9M9.5 17V3M16 17v-6"/></svg>
+          <span>Relatórios</span>
+        </div>
+      </div>
+      <div>
+        <div class="nav-group-label">Conta</div>
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="17" y2="6"/><circle cx="12.5" cy="6" r="1.8"/><line x1="3" y1="10" x2="17" y2="10"/><circle cx="7" cy="10" r="1.8"/><line x1="3" y1="14" x2="17" y2="14"/><circle cx="13.5" cy="14" r="1.8"/></svg>
+          <span>Configurações</span>
+        </div>
+      </div>
+    </nav>
+
+    <div style="margin-top: 8px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.12);">
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <div style="width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700;">CM</div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 12px; font-weight: 500; color: #fff;">Carla Menezes</span>
+          <span style="font-size: 11px; color: rgba(255,255,255,0.42);">Sair</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%;">
+
+    <!-- Topbar (novo) -->
+    <div style="height: 56px; flex-shrink: 0; background: var(--color-card); border-bottom: 1px solid rgba(0,0,0,0.07); display: flex; align-items: center; gap: 14px; padding: 0 24px;">
+      <div style="flex: 1; max-width: 360px; display: flex; align-items: center; gap: 8px; background: var(--color-surface); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 7px 12px;">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#9b9b9b" stroke-width="1.8" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="16" y1="16" x2="12.7" y2="12.7"/></svg>
+        <span style="font-size: 12.5px; color: var(--color-text-muted);">Buscar TED por número, título...</span>
+      </div>
+      <div style="flex: 1;"></div>
+      <div style="position: relative; width: 32px; height: 32px; border-radius: 8px; background: var(--color-surface); display: flex; align-items: center; justify-content: center;">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#4b5563" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8a5 5 0 0 1 10 0c0 3.2 1.2 4.4 1.7 5H3.3c.5-.6 1.7-1.8 1.7-5Z"/><path d="M8.3 15.5a1.9 1.9 0 0 0 3.4 0"/></svg>
+        <span style="position: absolute; top: -3px; right: -3px; width: 15px; height: 15px; border-radius: 50%; background: var(--color-danger); color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-card);">3</span>
+      </div>
+    </div>
+
+    <div style="flex: 1; padding: 24px 28px; overflow: hidden;">
+
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <div>
+          <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 3px;">Dashboard</h1>
+          <p style="font-size: 13px; color: var(--color-text-muted);">Termos de Execução Descentralizada</p>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 5px; padding: 8px 18px; border-radius: 7px; background: var(--color-primary); color: #fff; font-size: 13px; font-weight: 600;">+ Novo TED</div>
+      </div>
+
+      <!-- Stat cards com tendência -->
+      <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 18px;">
+        <div class="card" style="padding: 18px 20px;">
+          <p class="stat-label" style="color: var(--color-primary-mid);">Orçamento Total</p>
+          <p class="stat-value">R$ 4.280.000,00</p>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 12px; color: var(--color-text-muted);">18 TEDs cadastrados</p>
+            <span class="trend trend-up"><svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 13 9 8 12 11 16 5"/><polyline points="12 5 16 5 16 9"/></svg>4,2%</span>
+          </div>
+        </div>
+        <div class="card" style="padding: 18px 20px;">
+          <p class="stat-label" style="color: var(--color-success);">Total Executado</p>
+          <p class="stat-value">R$ 2.616.400,00</p>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 12px; color: var(--color-text-muted);">61,1% do orçamento</p>
+            <span class="trend trend-up"><svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 13 9 8 12 11 16 5"/><polyline points="12 5 16 5 16 9"/></svg>7,8%</span>
+          </div>
+        </div>
+        <div class="card" style="padding: 18px 20px;">
+          <p class="stat-label" style="color: #854F0B;">Em Execução</p>
+          <p class="stat-value">11</p>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 12px; color: var(--color-text-muted);">de 18 total</p>
+            <span class="trend" style="color: var(--color-text-muted);">— 0%</span>
+          </div>
+        </div>
+        <div class="card" style="padding: 18px 20px;">
+          <p class="stat-label" style="color: var(--color-danger);">Concluídos</p>
+          <p class="stat-value">5</p>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <p style="font-size: 12px; color: var(--color-text-muted);">de 18 total</p>
+            <span class="trend trend-down"><svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 9 12 12 9 16 15"/><polyline points="12 15 16 15 16 11"/></svg>2,1%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panels -->
+      <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 14px; margin-bottom: 18px;">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 13px 18px; border-bottom: 1px solid rgba(0,0,0,0.06);">
+            <span style="font-size: 13px; font-weight: 700;">Distribuição por Status</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 18px; padding: 16px 18px;">
+            <div style="width: 78px; height: 78px; border-radius: 50%; flex-shrink: 0; position: relative; background: conic-gradient(#185FA5 0% 61%, #639922 61% 89%, #c07a1c 89% 100%);">
+              <div style="position: absolute; inset: 12px; background: var(--color-card); border-radius: 50%;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; flex: 1;">
+              <div style="display: flex; justify-content: space-between;"><span style="display:flex; align-items:center; gap:7px; color: var(--color-text-secondary);"><i style="width:8px;height:8px;border-radius:2px;background:#185FA5;display:inline-block;"></i>EXECUÇÃO</span><span class="td-mono" style="font-weight:600;">11</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="display:flex; align-items:center; gap:7px; color: var(--color-text-secondary);"><i style="width:8px;height:8px;border-radius:2px;background:#639922;display:inline-block;"></i>CONCLUÍDO</span><span class="td-mono" style="font-weight:600;">5</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="display:flex; align-items:center; gap:7px; color: var(--color-text-secondary);"><i style="width:8px;height:8px;border-radius:2px;background:#c07a1c;display:inline-block;"></i>PLANEJAMENTO</span><span class="td-mono" style="font-weight:600;">2</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 13px 18px; border-bottom: 1px solid rgba(0,0,0,0.06);">
+            <span style="font-size: 13px; font-weight: 700;">Alertas Inteligentes</span>
+            <span style="font-size: 11px; color: var(--color-text-muted);">3 ativos</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; padding: 8px;">
+            <div style="display: flex; gap: 10px; padding: 9px 8px; align-items: flex-start;">
+              <div style="width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--color-danger-bg); color: var(--color-danger);">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 6v4.5l3 2"/></svg>
+              </div>
+              <div><div style="font-size: 12px; font-weight: 600;">TED-2025-014 vence em 6 dias</div><div style="font-size: 11px; color: var(--color-text-muted); margin-top: 1px;">Execução física em 58%</div></div>
+            </div>
+            <div style="display: flex; gap: 10px; padding: 9px 8px; align-items: flex-start;">
+              <div style="width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--color-warning-bg); color: var(--color-warning);">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6.5"/><line x1="10" y1="6.5" x2="10" y2="13.5"/></svg>
+              </div>
+              <div><div style="font-size: 12px; font-weight: 600;">TED-2025-009 próximo do orçamento</div><div style="font-size: 11px; color: var(--color-text-muted); margin-top: 1px;">92% do orçamento já executado</div></div>
+            </div>
+            <div style="display: flex; gap: 10px; padding: 9px 8px; align-items: flex-start;">
+              <div style="width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--color-primary-bg); color: var(--color-primary);">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V9M9.5 17V3M16 17v-6"/></svg>
+              </div>
+              <div><div style="font-size: 12px; font-weight: 600;">TED-2025-002 com descompasso física × financeira</div><div style="font-size: 11px; color: var(--color-text-muted); margin-top: 1px;">Física 34% vs. financeira 61%</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter row -->
+      <div style="display: flex; gap: 4px; margin-bottom: 12px; align-items: center;">
+        <div style="padding: 4px 11px; border-radius: 5px; font-size: 11px; font-weight: 600; background: var(--color-primary); color: #fff;">TODOS</div>
+        <div style="padding: 4px 11px; border-radius: 5px; font-size: 11px; background: var(--color-card); color: var(--color-text-secondary); box-shadow: 0 1px 2px rgba(0,0,0,0.06);">EXECUÇÃO</div>
+        <div style="padding: 4px 11px; border-radius: 5px; font-size: 11px; background: var(--color-card); color: var(--color-text-secondary); box-shadow: 0 1px 2px rgba(0,0,0,0.06);">PLANEJAMENTO</div>
+        <div style="padding: 4px 11px; border-radius: 5px; font-size: 11px; background: var(--color-card); color: var(--color-text-secondary); box-shadow: 0 1px 2px rgba(0,0,0,0.06);">CONCLUÍDO</div>
+        <span style="font-size: 12px; color: var(--color-text-muted); margin-left: auto;">18 registros</span>
+      </div>
+
+      <!-- Table -->
+      <div class="card" style="overflow: hidden;">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="th-sort">Nº TED <svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="5 8 10 3 15 8"/><polyline points="5 12 10 17 15 12"/></svg></span></th>
+              <th>Título / Descrição</th>
+              <th>Status</th>
+              <th><span class="th-sort">Prazo <svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="5 8 10 3 15 8"/><polyline points="5 12 10 17 15 12"/></svg></span></th>
+              <th>Exec. Física</th>
+              <th>Orçamento</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-mono" style="color: var(--color-text-secondary);">TED-2025-014</td>
+              <td><div style="font-weight: 600;">Fardamento operacional — Lote 3</div><div style="font-size: 11px; color: var(--color-text-muted);">Ministério da Defesa</div></td>
+              <td><span class="badge badge-execucao"><span class="badge-dot"></span>EXECUÇÃO</span></td>
+              <td class="td-mono" style="font-weight: 700; color: var(--color-danger);">6d</td>
+              <td><div style="display:flex; align-items:center; gap:8px;"><div class="progress-bar" style="flex:1;"><div class="progress-fill progress-fill-blue" style="width:58%;"></div></div><span class="td-mono" style="font-size:11px;">58%</span></div></td>
+              <td class="td-mono" style="font-weight: 600;">R$ 420.000</td>
+            </tr>
+            <tr>
+              <td class="td-mono" style="color: var(--color-text-secondary);">TED-2025-011</td>
+              <td><div style="font-weight: 600;">Requalificação de postos de saúde</div><div style="font-size: 11px; color: var(--color-text-muted);">Ministério da Saúde</div></td>
+              <td><span class="badge badge-execucao"><span class="badge-dot"></span>EXECUÇÃO</span></td>
+              <td class="td-mono" style="font-weight: 700; color: var(--color-warning);">22d</td>
+              <td><div style="display:flex; align-items:center; gap:8px;"><div class="progress-bar" style="flex:1;"><div class="progress-fill progress-fill-blue" style="width:41%;"></div></div><span class="td-mono" style="font-size:11px;">41%</span></div></td>
+              <td class="td-mono" style="font-weight: 600;">R$ 890.000</td>
+            </tr>
+            <tr>
+              <td class="td-mono" style="color: var(--color-text-secondary);">TED-2025-009</td>
+              <td><div style="font-weight: 600;">Equipamentos de proteção individual</div><div style="font-size: 11px; color: var(--color-text-muted);">Ministério da Defesa</div></td>
+              <td><span class="badge badge-execucao"><span class="badge-dot"></span>EXECUÇÃO</span></td>
+              <td class="td-mono" style="font-weight: 400; color: var(--color-text-secondary);">104d</td>
+              <td><div style="display:flex; align-items:center; gap:8px;"><div class="progress-bar" style="flex:1;"><div class="progress-fill progress-fill-blue" style="width:76%;"></div></div><span class="td-mono" style="font-size:11px;">76%</span></div></td>
+              <td class="td-mono" style="font-weight: 600;">R$ 310.000</td>
+            </tr>
+            <tr>
+              <td class="td-mono" style="color: var(--color-text-secondary);">TED-2025-002</td>
+              <td><div style="font-weight: 600;">Modernização de laboratórios regionais</div><div style="font-size: 11px; color: var(--color-text-muted);">Ministério da Educação</div></td>
+              <td><span class="badge badge-planejamento"><span class="badge-dot"></span>PLANEJAMENTO</span></td>
+              <td class="td-mono" style="font-weight: 400; color: var(--color-text-secondary);">198d</td>
+              <td><div style="display:flex; align-items:center; gap:8px;"><div class="progress-bar" style="flex:1;"><div class="progress-fill progress-fill-blue" style="width:34%;"></div></div><span class="td-mono" style="font-size:11px;">34%</span></div></td>
+              <td class="td-mono" style="font-weight: 600;">R$ 1.150.000</td>
+            </tr>
+            <tr>
+              <td class="td-mono" style="color: var(--color-text-secondary);">TED-2024-037</td>
+              <td><div style="font-weight: 600;">Requalificação de frota — Região Sul</div><div style="font-size: 11px; color: var(--color-text-muted);">Ministério dos Transportes</div></td>
+              <td><span class="badge badge-concluido"><span class="badge-dot"></span>CONCLUÍDO</span></td>
+              <td class="td-mono" style="color: var(--color-text-secondary);">Encerrado</td>
+              <td><div style="display:flex; align-items:center; gap:8px;"><div class="progress-bar" style="flex:1;"><div class="progress-fill progress-fill-blue" style="width:100%;"></div></div><span class="td-mono" style="font-size:11px;">100%</span></div></td>
+              <td class="td-mono" style="font-weight: 600;">R$ 610.000</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Paginação (nova) -->
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid rgba(0,0,0,0.07); background: var(--color-surface);">
+          <span style="font-size: 11.5px; color: var(--color-text-muted);">Mostrando 1–5 de 18 registros</span>
+          <div style="display: flex; gap: 5px;">
+            <div class="pg-btn">‹</div>
+            <div class="pg-btn active">1</div>
+            <div class="pg-btn">2</div>
+            <div class="pg-btn">3</div>
+            <div class="pg-btn">›</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

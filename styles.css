@@ -4214,6 +4214,12 @@ table.ef-table tbody td.right  { text-align: right; }
 .up-pill.fi { background: #dcfce7; color: #15803d; }
 .up-pill.ua { background: #fce7f3; color: #9d174d; }
 .up-pill.outros { background: #f3f4f6; color: #374151; }
+/* UGs adicionais (usadas em Repasse às UGs) — mesmas cores de .up-badge-fe/fjf/fpv já
+   existentes em outras telas, só que no formato pill; fmce ganha uma cor própria. */
+.up-pill.fe   { background: #F4F4F2; color: #5F5E5A; }
+.up-pill.fjf  { background: #E6F1FB; color: #0C447C; }
+.up-pill.fpv  { background: #E6F1FB; color: #0C447C; }
+.up-pill.fmce { background: #f3e8ff; color: #7e22ce; }
 
 /* Group header row */
 .cf-grp-head {
@@ -4320,20 +4326,29 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-total-card .cf-total-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #3b82f6; }
 
 /* aditivo changed row highlight inside cf-grp-table */
+.cf-grp-table tbody tr.linha-adicionada-aditivo { box-shadow: inset 3px 0 0 #22c55e; }
 .cf-grp-table tbody tr.linha-adicionada-aditivo td { background: #f0fdf4; }
-.cf-grp-table tbody tr.linha-excluida-aditivo td { background: rgba(239,68,68,0.06) !important; }
-/* Forçar o tachado a atravessar elementos inline-block (nd-tag, up-pill, spans de valor)
-   e manter o texto legível (cinza escuro, sem opacity apagando a linha toda) */
-.cf-grp-table tbody tr.linha-excluida-aditivo td,
-.cf-grp-table tbody tr.linha-excluida-aditivo td * {
-    text-decoration: line-through !important;
-    text-decoration-color: #ef4444 !important;
-    text-decoration-thickness: 2px !important;
-    color: #64748b !important;
+.cf-grp-table tbody tr.linha-alterada-aditivo { box-shadow: inset 3px 0 0 #f59e0b; }
+.cf-grp-table tbody tr.linha-alterada-aditivo td { background: #fffaf0; }
+/* Linha SUPRIMIDA por aditivo/apostilamento: fora de toda soma. Antes o risco cobria
+   a linha inteira (ND, UP, botões inclusive), o que virava ruído — sete células
+   tachadas para comunicar um único fato. Agora: opacidade reduzida + faixa lateral
+   cinza para o estado, e o tachado fica só no valor (que é o dado que efetivamente
+   deixou de valer). */
+.cf-grp-table tbody tr.linha-excluida-aditivo {
+    opacity: 0.6;
+    box-shadow: inset 3px 0 0 #94a3b8;
 }
-/* O × inicial não deve ser riscado e fica maior */
+.cf-grp-table tbody tr.linha-excluida-aditivo td { background: rgba(148,163,184,0.07) !important; color: #64748b !important; }
+.cf-grp-table tbody tr.linha-excluida-aditivo td .col-valor-sup,
+.cf-grp-table tbody tr.linha-excluida-aditivo td .col-valor-sup * {
+    text-decoration: line-through !important;
+    text-decoration-color: #94a3b8 !important;
+    text-decoration-thickness: 2px !important;
+}
+/* O × inicial não deve ser riscado */
 .cf-grp-table tbody tr.linha-excluida-aditivo td:first-child::before {
-    content: '×'; color: #ef4444; font-weight: 700; margin-right: 4px; font-size: 15px;
+    content: '×'; color: #94a3b8; font-weight: 700; margin-right: 4px; font-size: 13px;
     text-decoration: none !important; display: inline-block;
 }
 /* Pills da ND/UP em estado "removido": dessaturar para reforçar visual */
@@ -4341,6 +4356,48 @@ table.ef-table tbody td.right  { text-align: right; }
 .cf-grp-table tbody tr.linha-excluida-aditivo td .up-pill {
     filter: grayscale(1);
 }
+/* Linhas suprimidas ficam escondidas por padrão dentro do bloco recolhido */
+.cf-grp-table tbody tr.cf-sup-item { display: none; }
+/* Bloco recolhido "N lançamentos suprimidos" */
+.cf-grp-sup-toggle {
+    background: #fbfcfe; color: #64748b; font-size: 0.72rem; cursor: pointer; user-select: none;
+}
+.cf-grp-sup-toggle:hover { background: #f4f7fb; }
+.cf-grp-sup-toggle td { padding: 5px 12px !important; border-bottom: 1px solid #f1f4f8; }
+.cf-grp-sup-toggle .car { display:inline-block; width:10px; }
+.cf-grp-sup-toggle b { color: #b91c1c; font-variant-numeric: tabular-nums; }
+/* Chip de atribuição (qual aditivo/apostilamento originou a alteração) */
+.cf-chip-alt {
+    display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.3px;
+    padding:1px 5px; border-radius:4px; margin-left:5px; cursor:help; vertical-align:1px;
+}
+.cf-chip-alt.tipo-aditivo { background:#dcfce7; color:#15803d; }
+.cf-chip-alt.tipo-apostilamento { background:#dbeafe; color:#1d4ed8; }
+
+/* Legenda da seção Repasse às UGs */
+.legenda-repasse { display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--color-text-secondary); padding:10px 2px 0; }
+.legenda-repasse span { display:inline-flex; align-items:center; gap:6px; }
+.legenda-repasse .dot { width:9px; height:9px; border-radius:3px; display:inline-block; }
+
+/* Indicador inline (Cadastro Financeiro, coluna A Receber): mostra se o valor pendente
+   já está em caixa na SEDE (aguardando só o repasse interno) ou se ainda depende do
+   repassador — sem precisar abrir a seção Repasse às UGs pra saber. */
+.repasse-hint { display:inline-block; margin-left:5px; font-size:9px; cursor:help; vertical-align:1px; }
+.repasse-hint.pronto  { color:#854F0B; }
+.repasse-hint.aguarda { color:#A32D2D; opacity:.55; }
+
+/* Interruptor Vigente / Comparado / Original do Cadastro Financeiro */
+.cf-modo-seg {
+    display: inline-flex; border: 1px solid var(--border, #e2e8f0); border-radius: 8px;
+    overflow: hidden; background: var(--bg-secondary, #fff); margin-right: auto;
+}
+.cf-modo-seg button {
+    border: 0; background: transparent; padding: 5px 13px; font-size: 12px;
+    color: var(--text-secondary, #64748b); cursor: pointer; font-weight: 600; font-family: inherit;
+}
+.cf-modo-seg button + button { border-left: 1px solid var(--border, #e2e8f0); }
+.cf-modo-seg button.on { background: var(--primary, #0c447c); color: #fff; }
+.table-actions-bar:has(.cf-modo-seg) { justify-content: flex-start; gap: 10px; }
 
 /* ============================================================
    ABAS INTERNAS — DETALHES TED (dt-tab-*)
@@ -5610,7 +5667,24 @@ table.ef-table tbody td.right  { text-align: right; }
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: #0C2A47;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
 }
+/* O .empty-state global é feito para tela cheia (padding 2.5rem, centralizado, ícone
+   de 96px) e dentro destes cards pequenos abre um vão grande entre o título e o texto.
+   Aqui ele vira uma nota curta, encostada no topo. O !important é necessário porque o
+   padding vem inline do JS (renderProximasEntregas e afins, em js/main.js). */
+#dashboard .proxima-col .empty-state {
+    display: block;
+    padding: 0 !important;
+    text-align: left;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+}
+/* Conteúdo com dados (tabelas/listas) também encosta no topo, sem esticar junto com
+   o card mais alto da linha. */
+#dashboard .proxima-col > div { flex: 0 0 auto; }
 
 /* Distribuição por Status (donut) */
 #dashboard .status-donut-card {

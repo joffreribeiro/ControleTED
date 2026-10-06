@@ -885,71 +885,6 @@
             return dataStr; // Retorna original se não reconhecer
         }
 
-        // ── 1ª Descentralização (automática) ─────────────────────────────────
-        // A data deixou de ser digitada: ela é derivada dos lançamentos de
-        // Recursos Gerais IMBEL. Regra: último dia do primeiro mês em que existe
-        // descentralização. Ex.: 1º recurso em 20/10/2026 → 31/10/2026.
-        function calcularPrimeiraDescentralizacaoAuto(ted) {
-            const recs = (ted && ted.recursosGerais) || [];
-            let menor = null;
-            recs.forEach(r => {
-                const iso = normalizarData(r && r.data);
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
-                if (!menor || iso < menor) menor = iso;
-            });
-            if (!menor) return '';
-            const ano = parseInt(menor.slice(0, 4), 10);
-            const mes = parseInt(menor.slice(5, 7), 10);
-            // Dia 0 do mês seguinte = último dia do mês corrente
-            const ultimoDia = new Date(ano, mes, 0).getDate();
-            return `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
-        }
-
-        // Grava a data derivada no TED (e o mês/ano de referência usados pelos
-        // cálculos de cronograma). Retorna true se o valor mudou. Quando ainda não
-        // há nenhum lançamento em Recursos Gerais o valor anterior é preservado.
-        function aplicarPrimeiraDescentralizacaoAuto(ted) {
-            if (!ted) return false;
-            const nova = calcularPrimeiraDescentralizacaoAuto(ted);
-            if (!nova) return false;
-            const anterior = ted.primeiraDescentralizacao || '';
-            ted.primeiraDescentralizacao = nova;
-            ted.primeiroAnoDesc = parseInt(nova.slice(0, 4), 10);
-            ted.primeiroMesDesc = parseInt(nova.slice(5, 7), 10);
-            return nova !== anterior;
-        }
-
-        // Reaplica a regra no TED aberto e propaga: as datas de metas/físicos são
-        // contadas a partir da 1ª descentralização, então mudá-la exige recalcular.
-        function sincronizarPrimeiraDescentralizacao() {
-            if (!window.tedSelecionado) return false;
-            if (!aplicarPrimeiraDescentralizacaoAuto(window.tedSelecionado)) return false;
-            try { recalcularMesesBaseadosEmDescentralizacao(); } catch (e) { console.warn(e); }
-            try { exibirInformacoesTED(); } catch (e) {}
-            return true;
-        }
-
-        // Base para as contas de "mês N" a partir da 1ª descentralização. Como a
-        // data derivada cai sempre no último dia do mês, somar meses direto nela
-        // estouraria para o mês seguinte (31/10 + 4 meses → 03/03). Por isso a base
-        // é sempre o dia 1º — mesmo critério já usado no fallback mês/ano.
-        function dataBaseDescentralizacao(valor) {
-            const iso = normalizarData(valor);
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return new Date(NaN);
-            return new Date(parseInt(iso.slice(0, 4), 10), parseInt(iso.slice(5, 7), 10) - 1, 1);
-        }
-
-        // Soma N meses à 1ª descentralização considerando apenas o mês: mês 10 + 4 = fevereiro,
-        // e a data resultante é o último dia desse mês (29/02 em ano bissexto). Evita o
-        // estouro do Date nativo, que levaria 31/10 + 4 meses para 03/03.
-        function somarMesesDescentralizacao(base, meses) {
-            const d = (base instanceof Date) ? base : dataBaseDescentralizacao(base);
-            const n = parseInt(meses, 10);
-            if (!d || isNaN(d.getTime()) || isNaN(n)) return new Date(NaN);
-            // dia 0 do mês seguinte ao alvo = último dia do mês alvo
-            return new Date(d.getFullYear(), d.getMonth() + n + 1, 0);
-        }
-
         // Inicializar
         function inicializar() {
             // Inicialização simplificada — placeholder sem listener Firestore
@@ -1296,13 +1231,11 @@
         async function criarTED(event) {
             event.preventDefault();
 
-            // A 1ª descentralização é automática: último dia do primeiro mês com
-            // lançamento em Recursos Gerais IMBEL. No cadastro ainda não existe
-            // nenhum lançamento, então nasce vazia e é preenchida assim que o
-            // primeiro recurso geral for registrado (ou importado).
-            const dataDesc = '';
-            const primeiroMesDesc = null;
-            const primeiroAnoDesc = null;
+            // Extrair mês e ano da data de descentralização
+            const dataDesc = document.getElementById('primeiraDescentralizacao').value;
+            const dateObj = new Date(dataDesc + 'T00:00:00');
+            const primeiroMesDesc = dateObj.getMonth() + 1; // getMonth() retorna 0-11
+            const primeiroAnoDesc = dateObj.getFullYear();
 
             // garantir cálculo de prazo/status do formulário de criação
             try { calcularPrazoRelatorioCreate(); } catch(e) {}
@@ -2765,10 +2698,6 @@
             ted.financeiros = ted.financeiros || [];
             ted.execFinanceiras = ted.execFinanceiras || [];
             ted.recursosGerais = ted.recursosGerais || [];
-            // 1ª Descentralização é derivada dos Recursos Gerais IMBEL (último dia do
-            // primeiro mês com lançamento). Normalizar aqui alinha também os TEDs
-            // legados, cuja data foi digitada à mão.
-            aplicarPrimeiraDescentralizacaoAuto(ted);
             // IDs em itens financeiros legados (atribuídos uma única vez e preservados)
             let _nextFinId = Date.now();
             ted.financeiros.forEach(f => { if (f && f.id == null) f.id = _nextFinId++; });
@@ -2938,7 +2867,8 @@
                     if (f.anoFinal && f.mesFinal) {
                         dataPrevista = new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
                     } else if (f.mFinal != null && ted.primeiraDescentralizacao) {
-                        const base = somarMesesDescentralizacao(ted.primeiraDescentralizacao, f.mFinal);
+                        const base = new Date(ted.primeiraDescentralizacao + 'T00:00:00');
+                        base.setMonth(base.getMonth() + parseInt(f.mFinal));
                         base.setDate(28);
                         dataPrevista = base;
                     }
@@ -3227,7 +3157,7 @@
             // Determinar data base (meses) usando mesma lógica da tabela
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -3236,7 +3166,8 @@
 
             const meses = [];
             for (let i = 0; i < 60; i++) {
-                const d = somarMesesDescentralizacao(startDate, i);
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
                 const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({ label: `${mes}/${ano2}`, date: new Date(d) });
@@ -3975,9 +3906,7 @@
             // Recalcular Fim de Vigência automaticamente
             calcularFimVigenciaEdit();
             window.tedSelecionado.fimVigencia = document.getElementById('edit_fimVigencia').value;
-            // 1ª Descentralização não é mais editável: é derivada dos Recursos
-            // Gerais IMBEL, então apenas reaplicamos a regra automática.
-            aplicarPrimeiraDescentralizacaoAuto(window.tedSelecionado);
+            window.tedSelecionado.primeiraDescentralizacao = document.getElementById('edit_primeiraDescentralizacao').value;
             // Novos campos
             window.tedSelecionado.situacaoTED = document.getElementById('edit_situacaoTED').value;
             window.tedSelecionado.dataEntregaDenuncia = document.getElementById('edit_dataEntregaDenuncia').value;
@@ -4585,17 +4514,17 @@
             if (isNaN(mInicio) && isNaN(mFinal)) return;
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { return; }
             const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
             if (!isNaN(mInicio)) {
-                const dI = somarMesesDescentralizacao(startDate, mInicio);
+                const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
                 document.getElementById('modalMetaMesInicio').value = `${nomesMeses[dI.getMonth()]}/${dI.getFullYear()}`;
             }
             if (!isNaN(mFinal)) {
-                const dF = somarMesesDescentralizacao(startDate, mFinal);
+                const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
                 document.getElementById('modalMetaMesFinal').value = `${nomesMeses[dF.getMonth()]}/${dF.getFullYear()}`;
             }
         }
@@ -5553,7 +5482,7 @@
                     // Calcular campos derivados baseados em M para itens novos ou alterados
                     let startDateCalc;
                     if (window.tedSelecionado.primeiraDescentralizacao) {
-                        startDateCalc = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                        startDateCalc = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
                     } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                         startDateCalc = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
                     }
@@ -5562,7 +5491,8 @@
                         const origM = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].m : null;
                         if (isNewRow || origM === null || Number(item.m) !== Number(origM)) {
                             if (startDateCalc) {
-                                const dCalc = somarMesesDescentralizacao(startDateCalc, Number(item.m));
+                                const dCalc = new Date(startDateCalc);
+                                dCalc.setMonth(dCalc.getMonth() + Number(item.m));
                                 item.mesDesc = dCalc.getMonth() + 1;
                                 item.anoDesc = dCalc.getFullYear();
                             }
@@ -5573,7 +5503,8 @@
                         if (item.mInicio !== undefined && !isNaN(Number(item.mInicio))) {
                             const origMI = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].mInicio : null;
                             if (isNewRow || origMI === null || Number(item.mInicio) !== Number(origMI)) {
-                                const dI = somarMesesDescentralizacao(startDateCalc, Number(item.mInicio));
+                                const dI = new Date(startDateCalc);
+                                dI.setMonth(dI.getMonth() + Number(item.mInicio));
                                 item.mesInicio = dI.getMonth() + 1;
                                 item.anoInicio = dI.getFullYear();
                             }
@@ -5581,7 +5512,8 @@
                         if (item.mFinal !== undefined && !isNaN(Number(item.mFinal))) {
                             const origMF = (!isNewRow && arrOrig[idx]) ? arrOrig[idx].mFinal : null;
                             if (isNewRow || origMF === null || Number(item.mFinal) !== Number(origMF)) {
-                                const dF = somarMesesDescentralizacao(startDateCalc, Number(item.mFinal));
+                                const dF = new Date(startDateCalc);
+                                dF.setMonth(dF.getMonth() + Number(item.mFinal));
                                 item.mesFinal = dF.getMonth() + 1;
                                 item.anoFinal = dF.getFullYear();
                             }
@@ -6597,17 +6529,17 @@
             if (isNaN(mInicio) && isNaN(mFinal)) return;
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { return; }
             const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
             if (!isNaN(mInicio)) {
-                const dI = somarMesesDescentralizacao(startDate, mInicio);
+                const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
                 document.getElementById('modalFisicoCadMesInicio').value = `${nomesMeses[dI.getMonth()]}/${dI.getFullYear()}`;
             }
             if (!isNaN(mFinal)) {
-                const dF = somarMesesDescentralizacao(startDate, mFinal);
+                const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
                 document.getElementById('modalFisicoCadMesFinal').value = `${nomesMeses[dF.getMonth()]}/${dF.getFullYear()}`;
             }
         }
@@ -6665,13 +6597,13 @@
 
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
 
-            const dI = somarMesesDescentralizacao(startDate, mInicio);
-            const dF = somarMesesDescentralizacao(startDate, mFinal);
+            const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+            const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
 
             if (!window.tedSelecionado.metas) window.tedSelecionado.metas = [];
             if (window._editandoMetaId) window.tedSelecionado.metas = window.tedSelecionado.metas.filter(x => x.id !== window._editandoMetaId);
@@ -6799,7 +6731,7 @@
             // Usar primeiraDescentralizacao ou primeiroMesDesc/primeiroAnoDesc como referência
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -6808,7 +6740,8 @@
 
             const meses = [];
             for (let i = 0; i < 60; i++) {
-                const d = somarMesesDescentralizacao(startDate, i);
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
                 const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({ 
@@ -6864,7 +6797,7 @@
             // Calcular MM/AAAA dinamicamente a partir da 1ª descentralização e offsets M
             let baseDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                baseDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             }
@@ -6882,9 +6815,11 @@
                 const mesesNomes = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
                 
                 if (baseDate && !isNaN(meta.mInicio) && !isNaN(meta.mFinal)) {
-                    const dI = somarMesesDescentralizacao(baseDate, meta.mInicio);
+                    const dI = new Date(baseDate);
+                    dI.setMonth(dI.getMonth() + meta.mInicio);
                     inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
-                    const dF = somarMesesDescentralizacao(baseDate, meta.mFinal);
+                    const dF = new Date(baseDate);
+                    dF.setMonth(dF.getMonth() + meta.mFinal);
                     finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
                 } else if (meta.mesInicio && meta.anoInicio && meta.mesFinal && meta.anoFinal) {
                     // Fallback para dados já armazenados com anoInicio/anoFinal
@@ -7049,13 +6984,13 @@
 
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { errEl.textContent = '⚠️ Defina a 1ª descentralização no TED.'; errEl.classList.add('open'); return; }
 
-            const dI = somarMesesDescentralizacao(startDate, mInicio);
-            const dF = somarMesesDescentralizacao(startDate, mFinal);
+            const dI = new Date(startDate); dI.setMonth(dI.getMonth() + mInicio);
+            const dF = new Date(startDate); dF.setMonth(dF.getMonth() + mFinal);
 
             if (window._editandoFisicoId) window.tedSelecionado.fisicos = window.tedSelecionado.fisicos.filter(x => x.id !== window._editandoFisicoId);
 
@@ -7214,7 +7149,7 @@
             // ── base date ───────────────────────────────────────────────────
             let baseDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                baseDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                baseDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 baseDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -7280,7 +7215,8 @@
             // meses para Gantt (mantido igual ao original)
             const meses = [];
             for (let i = 0; i < 60; i++) {
-                const d = somarMesesDescentralizacao(baseDate, i);
+                const d = new Date(baseDate);
+                d.setMonth(d.getMonth() + i);
                 const mesLabel = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({ label: `${mesLabel}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth()+1 });
@@ -7342,13 +7278,13 @@
                 // período
                 let inicioStr = '—', finalStr = '—';
                 if (baseDate && f.mInicio != null && !isNaN(f.mInicio)) {
-                    const dI = somarMesesDescentralizacao(baseDate, parseInt(f.mInicio));
+                    const dI = new Date(baseDate); dI.setMonth(dI.getMonth() + parseInt(f.mInicio));
                     inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
                 } else if (f.mesInicio && f.anoInicio) {
                     inicioStr = `${mesesNomes[(f.mesInicio||1)-1]}/${f.anoInicio}`;
                 }
                 if (baseDate && f.mFinal != null && !isNaN(f.mFinal)) {
-                    const dF = somarMesesDescentralizacao(baseDate, parseInt(f.mFinal));
+                    const dF = new Date(baseDate); dF.setMonth(dF.getMonth() + parseInt(f.mFinal));
                     finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
                 } else if (f.mesFinal && f.anoFinal) {
                     finalStr = `${mesesNomes[(f.mesFinal||1)-1]}/${f.anoFinal}`;
@@ -7419,8 +7355,8 @@
                         if (mods && (mods.mInicio || mods.mFinal) && baseDate) {
                             const mIniOrig = mods.mInicio ? Number(mods.mInicio.de) : mIni;
                             const mFinOrig = mods.mFinal  ? Number(mods.mFinal.de)  : mFin;
-                            const dIO = somarMesesDescentralizacao(baseDate, mIniOrig);
-                            const dFO = somarMesesDescentralizacao(baseDate, mFinOrig);
+                            const dIO = new Date(baseDate); dIO.setMonth(dIO.getMonth() + mIniOrig);
+                            const dFO = new Date(baseDate); dFO.setMonth(dFO.getMonth() + mFinOrig);
                             const inicioOrig = `${mesesNomes[dIO.getMonth()]}/${dIO.getFullYear()}`;
                             const finalOrig  = `${mesesNomes[dFO.getMonth()]}/${dFO.getFullYear()}`;
                             return `<div class="ef-periodo-datas"><span class="val-antigo">${inicioOrig} → ${finalOrig}</span></div><div class="ef-periodo-datas">${inicioStr} → ${finalStr}</div>`;
@@ -7541,7 +7477,7 @@
             // Base do cronograma (60 meses)
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -7550,7 +7486,8 @@
 
             const meses = [];
             for (let i = 0; i < 60; i++) {
-                const d = somarMesesDescentralizacao(startDate, i);
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
                 const mes = d.toLocaleString('pt-BR', { month: 'short' }).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({ label: `${mes}/${ano2}`, ano: d.getFullYear(), mes: d.getMonth() + 1, fullYear: d.getFullYear() });
@@ -8014,11 +7951,11 @@
             if (isNaN(m)) return;
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { return; }
-            const d = somarMesesDescentralizacao(startDate, m);
+            const d = new Date(startDate); d.setMonth(d.getMonth() + m);
             const nomesMeses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
             document.getElementById('modalFinanceiroMesDesc').value = `${nomesMeses[d.getMonth()]}/${d.getFullYear()}`;
         }
@@ -8081,12 +8018,12 @@
 
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else { errEl.textContent = '⚠️ Defina a 1ª descentralização.'; errEl.classList.add('open'); return; }
 
-            const d = somarMesesDescentralizacao(startDate, m);
+            const d = new Date(startDate); d.setMonth(d.getMonth() + m);
             const mesDesc = d.getMonth() + 1;
             const anoDesc = d.getFullYear();
 
@@ -8315,20 +8252,14 @@
               </div>
             </div>`;
         }
-        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded, origemAlt, modo) {
+        function _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, excludedFinIds, isFinExcluded, origemAlt) {
             // Fallback: se não vier o casamento robusto, usa só o ID (comportamento antigo)
             if (typeof isFinExcluded !== 'function') {
                 const _ids = excludedFinIds || new Set();
                 isFinExcluded = (f) => f.id != null && _ids.has(String(f.id));
             }
             excludedFinIds = excludedFinIds || new Set();
-            modo = modo || 'vig';
             const mesesNome = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-
-            // Reaproveita o cálculo da seção "Repasse às UGs" pra avisar, linha a linha, se o
-            // que falta a receber já está em caixa na SEDE (só falta repassar internamente) ou
-            // se ainda depende do repassador — calculado uma vez pro render inteiro, não por linha.
-            const repasseDados = (modo !== 'org' && window.tedSelecionado) ? calcularRepasseUGs(window.tedSelecionado) : null;
 
             // Chip de atribuição: identifica qual aditivo/apostilamento originou a alteração/supressão
             const chipAltHtml = (() => {
@@ -8385,29 +8316,11 @@
                 if (!grupos[chave]) { grupos[chave] = { label, items: [] }; grupoOrdem.push(chave); }
                 grupos[chave].items.push(f);
             });
-            const isOrg = modo === 'org';
-            const isCmp = modo === 'cmp';
-            // Valor "de antes" de uma linha alterada, usado no modo Original para reconstruir
-            // o TED como estava no documento assinado.
-            const valorAntigoDe = (f) => {
-                const m = modMapFin[matchKeyFin(f)];
-                return (m && m.valor) ? Number(m.valor.de || 0) : (parseNumber(f.valor) || 0);
-            };
-
             let rowsHtml = '';
             grupoOrdem.forEach(chave => {
                 const grp = grupos[chave];
-                // Partição das linhas do grupo conforme o modo:
-                //  - vig/cmp: vigentes (não suprimidas) x suprimidas (fora das somas).
-                //  - org: exclui o que só existe por causa de um aditivo/apostilamento ativo
-                //    (isAdded) e devolve o que foi suprimido ao grupo normal — nada fica "fora".
-                const itensVigentesGrp = isOrg
-                    ? grp.items.filter(f => !addSetFin.has(matchKeyFin(f)))
-                    : grp.items.filter(f => !isFinExcluded(f));
-                const itensSuprimidosGrp = isOrg ? [] : grp.items.filter(f => isFinExcluded(f));
-
-                const activeItems = itensVigentesGrp;
-                const subTotal = activeItems.reduce((s, f) => s + (isOrg ? valorAntigoDe(f) : (parseNumber(f.valor) || 0)), 0);
+                const activeItems = grp.items.filter(f => !isFinExcluded(f));
+                const subTotal = activeItems.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
                 const subFmt = subTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 const subRecebido = activeItems.reduce((s, f) => {
                     const valorLinha = parseNumber(f.valor) || 0;
@@ -8418,15 +8331,6 @@
                 const grpId = 'cfgrp_' + chave;
                 // group header row (fixed cols + Gantt spacers)
                 const nGantt = meses.length;
-                // No modo Original não há "recebido" — é uma reconstrução histórica, não um
-                // acompanhamento financeiro em curso.
-                const subtotalHtml = isOrg
-                    ? `<span class="cf-grp-subtotal"><span class="cf-grp-subtotal-total">R$ ${subFmt}</span></span>`
-                    : `<span class="cf-grp-subtotal">
-                                <span class="cf-grp-subtotal-recebido">R$ ${subRecebidoFmt}</span>
-                                <span class="cf-grp-subtotal-sep">/</span>
-                                <span class="cf-grp-subtotal-total">R$ ${subFmt}</span>
-                            </span>`;
                 rowsHtml += `<tr class="cf-grp-tr-head" data-grp="${grpId}" onclick="toggleGrupoCadFin('${grpId}', this)">
                     <td colspan="${7 + nGantt}" style="padding:0; border:none;">
                         <div class="cf-grp-head">
@@ -8435,7 +8339,11 @@
                                 <span class="mes-pill">${grp.label}</span>
                                 <span class="cf-grp-count">${activeItems.length} lançamento${activeItems.length !== 1 ? 's' : ''}</span>
                             </div>
-                            ${subtotalHtml}
+                            <span class="cf-grp-subtotal">
+                                <span class="cf-grp-subtotal-recebido">R$ ${subRecebidoFmt}</span>
+                                <span class="cf-grp-subtotal-sep">/</span>
+                                <span class="cf-grp-subtotal-total">R$ ${subFmt}</span>
+                            </span>
                         </div>
                     </td>
                 </tr>`;
@@ -8452,52 +8360,28 @@
                     const isAdded = addSetFin.has(mKey);
                     const isExcluded = isFinExcluded(f);
                     const isAlterada = !isExcluded && !isAdded && mods && (mods.valor || mods.m);
-                    // Modo Original: do ponto de vista do documento assinado nada "mudou" ainda —
-                    // sem faixa lateral, sem chip, linha neutra.
-                    const trClass = (isOrg ? '' : (isExcluded ? ' linha-excluida-aditivo' : (isAdded ? ' linha-adicionada-aditivo' : (isAlterada ? ' linha-alterada-aditivo' : '')))) + (supGroupId ? ' cf-sup-item' : '');
+                    const trClass = (isExcluded ? ' linha-excluida-aditivo' : (isAdded ? ' linha-adicionada-aditivo' : (isAlterada ? ' linha-alterada-aditivo' : ''))) + (supGroupId ? ' cf-sup-item' : '');
                     const supAttr = supGroupId ? ` data-supgroup="${supGroupId}"` : '';
                     const ndCat = _cfNdCategoria(numeroDisplay);
                     const upCat = _cfUpCategoria(f.up || f.ug || '');
                     const upRaw = String(f.up || f.ug || '');
                     const pct = pctRecebidoMap.get(f) ?? 0;
-                    // Valor "efetivo" da linha no modo atual: no Original, uma linha alterada
-                    // mostra o valor de ANTES; nos demais modos é o valor vigente hoje.
-                    const effValorNum = (isOrg && mods && mods.valor) ? Number(mods.valor.de || 0) : valorNum;
-                    const valorFaltante = Math.max(0, effValorNum * (1 - pct / 100));
+                    const valorFaltante = Math.max(0, valorNum * (1 - pct / 100));
                     const faltanteFmt = valorFaltante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    // "Tem crédito na SEDE?" — só faz sentido pra UGs que dependem de repasse
-                    // interno (não a própria UA) e quando ainda falta receber algo desta linha.
-                    const repasseStatusLinha = (repasseDados && valorFaltante > 0.01 && upRaw.toUpperCase() !== SEDE_UG_SIGLA)
-                        ? repasseDados.statusPorNdUg.get(normalizarND(numeroDisplay) + '||' + upRaw.toUpperCase())
-                        : null;
-                    const repasseBadge = repasseStatusLinha === 'pronto'
-                        ? `<span class="repasse-hint pronto" title="A SEDE já tem esse valor em caixa — falta só o repasse interno para ${upRaw}">●</span>`
-                        : (repasseStatusLinha === 'aguarda'
-                            ? `<span class="repasse-hint aguarda" title="A SEDE ainda não recebeu do repassador o suficiente para cobrir este valor">●</span>`
-                            : '');
-                    // Linha suprimida (fora do Original): valor tachado em bloco simples — não há
-                    // "de -> para", ela deixou de existir. Alterada: no Comparado mostra a trilha
-                    // "de -> para"; no Vigente e no Original, só o valor efetivo do modo.
-                    const tdValor = (isExcluded && !isOrg)
+                    // Linha suprimida: valor sempre tachado em bloco simples (não há "de -> para" —
+                    // ela deixou de existir), sem a formatação de célula alterada.
+                    const tdValor = isExcluded
                         ? `<span class="col-valor-sup">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>`
-                        : (!isOrg && mods && mods.valor
-                            ? (isCmp
-                                ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '')
-                                : renderValorRealFmt(valorNum))
-                            : renderValorRealFmt(effValorNum));
-                    const chip = (!isOrg && (isExcluded || isAdded || isAlterada)) ? chipAltHtml : '';
-                    const tdM = (!isOrg && mods && mods.m)
-                        ? (isCmp ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? ''))
-                        : ((isOrg && mods && mods.m) ? (mods.m.de ?? '') : (f.m ?? ''));
-                    if (isCmp && mods && mods.m && window._cfStartDate) {
+                        : (mods && mods.valor
+                            ? formatarCelulaAlterada(valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2}), Number(mods.valor.de || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}), '')
+                            : renderValorRealFmt(valorNum));
+                    const chip = (isExcluded || isAdded || isAlterada) ? chipAltHtml : '';
+                    const tdM = (!isExcluded && mods && mods.m) ? formatarCelulaAlterada(f.m ?? '', mods.m.de, 'number') : (f.m ?? '');
+                    if (!isExcluded && mods && mods.m && window._cfStartDate) {
                         const dOldMes = new Date(window._cfStartDate);
                         dOldMes.setMonth(dOldMes.getMonth() + (Number(mods.m.de) || 0));
                         const oldMesDescStr = `${mesesNome[dOldMes.getMonth()]}/${dOldMes.getFullYear()}`;
                         mesDescStr = `<span class="celula-alterada-aditivo"><span class="val-antigo">${oldMesDescStr}</span><span class="val-novo">${mesDescStr}</span></span>`;
-                    } else if (isOrg && mods && mods.m && window._cfStartDate) {
-                        const dOldMes = new Date(window._cfStartDate);
-                        dOldMes.setMonth(dOldMes.getMonth() + (Number(mods.m.de) || 0));
-                        mesDescStr = `${mesesNome[dOldMes.getMonth()]}/${dOldMes.getFullYear()}`;
                     }
                     let html = `<tr class="cf-grp-data-row${trClass}" data-grprow="${grpId}"${supAttr}>
                         <td class="col-nd"><span class="nd-tag ${ndCat}">${formatarNDComPontos(numeroDisplay)}</span>${chip}</td>
@@ -8506,38 +8390,34 @@
                         <td class="col-mes">${mesDescStr}</td>
                         <td class="col-valor" style="text-align:center;">${tdValor}</td>
                         <td class="col-percent">
-                            ${(isOrg || isExcluded)
+                            ${isExcluded
                                 ? '<span class="pill" style="color:#94a3b8;">—</span>'
                                 : (valorFaltante <= 0
                                     ? '<span class="saldo-receber saldo-receber--zero">Recebido</span>'
-                                    : `<span class="saldo-receber">R$ ${faltanteFmt}</span>${repasseBadge}`)}
+                                    : `<span class="saldo-receber">R$ ${faltanteFmt}</span>`)}
                         </td>
                         <td class="col-acao">
                             <button class="btn-icon-action edit" onclick="editarFinanceiro(${f.id})" title="Editar"><i data-lucide="pencil" class="inline-icon-sm"></i></button>
                             <button class="btn-icon-action delete" onclick="removerFinanceiro(${f.id})" title="Remover"><i data-lucide="trash-2" class="inline-icon-sm"></i></button>
                         </td>`;
-                    // Gantt cells: no Comparado mostra a célula antiga (tachada) ao lado da nova;
-                    // no Original a linha "mora" só na posição antiga; no Vigente, só na atual.
+                    // Gantt cells
                     let oldMesDesc2 = null, oldAnoDesc2 = null;
-                    if (mods && mods.m && window._cfStartDate) {
+                    if (!isExcluded && mods && mods.m && window._cfStartDate) {
                         const dOld = new Date(window._cfStartDate);
                         dOld.setMonth(dOld.getMonth() + (Number(mods.m.de) || 0));
                         oldMesDesc2 = dOld.getMonth() + 1;
                         oldAnoDesc2 = dOld.getFullYear();
                     }
-                    const effMesAtual = (isOrg && oldMesDesc2 !== null) ? oldMesDesc2 : parseInt(f.mesDesc);
-                    const effAnoAtual = (isOrg && oldAnoDesc2 !== null) ? oldAnoDesc2 : parseInt(f.anoDesc);
-                    const showOldCell = isCmp && oldMesDesc2 !== null;
                     meses.forEach((mesInfo) => {
-                        const estaNoMes = effMesAtual === mesInfo.mes && effAnoAtual === mesInfo.fullYear;
-                        const estaNoMesAntigo = showOldCell && oldMesDesc2 === mesInfo.mes && oldAnoDesc2 === mesInfo.fullYear;
+                        const estaNoMes = parseInt(f.mesDesc) === mesInfo.mes && parseInt(f.anoDesc) === mesInfo.fullYear;
+                        const estaNoMesAntigo = oldMesDesc2 !== null && oldMesDesc2 === mesInfo.mes && oldAnoDesc2 === mesInfo.fullYear;
                         if (estaNoMes && estaNoMesAntigo) {
-                            html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${effValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                         } else if (estaNoMes) {
-                            if (showOldCell) {
-                                html += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${effValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                            if (oldMesDesc2 !== null) {
+                                html += `<td class="month-col-cadFin" style="background:#dcfce7; text-align:right; padding-right:0.25rem; font-size:0.7rem; border:2px solid #16a34a;${mmHideCadFin}" title="Novo M: ${f.m}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                             } else {
-                                html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${effValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
+                                html += `<td class="month-col-cadFin" style="background:#e0f2fe; text-align:right; padding-right:0.25rem; font-size:0.7rem;${mmHideCadFin}">${valorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>`;
                             }
                         } else if (estaNoMesAntigo) {
                             const oldValor = mods && mods.valor ? Number(mods.valor.de || 0) : valorNum;
@@ -8550,12 +8430,15 @@
                     return html;
                 };
 
+                const itensVigentesGrp = grp.items.filter(f => !isFinExcluded(f));
+                const itensSuprimidosGrp = grp.items.filter(f => isFinExcluded(f));
+
                 itensVigentesGrp.forEach(f => { rowsHtml += renderLinhaCf(f); });
 
-                // Bloco recolhido para as linhas suprimidas — só existe no modo Comparado: no
-                // Vigente elas nem entram nas somas nem precisam poluir a tela, e no Original
-                // elas já voltam a ser linhas normais (não "suprimidas").
-                if (isCmp && itensSuprimidosGrp.length) {
+                // Bloco recolhido para as linhas suprimidas — em vez de espalhar cada uma
+                // tachada por inteiro na tabela, mostra um resumo com o total removido e
+                // permite expandir para conferir cada lançamento individualmente.
+                if (itensSuprimidosGrp.length) {
                     const totalSup = itensSuprimidosGrp.reduce((s, f) => s + (parseNumber(f.valor) || 0), 0);
                     const totalSupFmt = totalSup.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                     const supToggleId = grpId + '_sup';
@@ -8593,22 +8476,6 @@
             const isOpen = car && car.textContent === '▾';
             rows.forEach(r => r.style.display = isOpen ? 'none' : '');
             if (car) car.textContent = isOpen ? '▸' : '▾';
-        }
-
-        // Modo de exibição do Cadastro Financeiro:
-        //  - vig (padrão): só o que vale hoje, sem trilha — o subtotal fecha com o Previsto
-        //    das outras tabelas porque usa a mesma fonte (financeirosVigentes).
-        //  - cmp: trilha completa — valor anterior/novo, chip do aditivo/apostilamento e
-        //    bloco recolhido com o que foi suprimido.
-        //  - org: reconstrói o TED como estava antes de qualquer aditivo/apostilamento —
-        //    útil para conferir contra o documento assinado.
-        window._cfModoView = 'vig';
-        function setCfModoView(modo) {
-            window._cfModoView = modo;
-            document.querySelectorAll('#cfModoSeg button').forEach(b => {
-                b.classList.toggle('on', b.getAttribute('data-modo') === modo);
-            });
-            try { atualizarTabelaFinanceira(); } catch (e) { console.warn(e); }
         }
 
         function atualizarTabelaFinanceira() {
@@ -8788,7 +8655,7 @@
             } catch(e) { console.warn('cf kpis error', e); }
 
             // Renderizar linhas agrupadas por Mês Desc.
-            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, undefined, isFinExcluded, origemAltFin, window._cfModoView || 'vig');
+            const rowsHtml = _cfRenderGrupos(dadosFiltrados, totalValor, modMapFin, addSetFin, matchKeyFin, meses, anos, mmHideCadFin, tbody, undefined, isFinExcluded, origemAltFin);
 
             // Se não houver linhas visíveis, mostrar placeholder
             tbody.innerHTML = rowsHtml || '<tr><td colspan="67" class="auto-style-014">Nenhum cadastro financeiro</td></tr>';
@@ -8905,9 +8772,6 @@
 
             // Reinicializar ícones Lucide
             initLucideIcons();
-
-            // O Planejado por UG (usado no Repasse às UGs) vem daqui — manter em sincronia
-            try { atualizarTabelaRepasseUGs(); } catch(e) {}
         }
 
         // EXECU→fO FINANCEIRA
@@ -9473,7 +9337,7 @@
                 const anos = [];
                 if (t.inicioVigencia) anos.push(new Date(t.inicioVigencia + 'T00:00:00').getFullYear());
                 if (t.fimVigencia) anos.push(new Date(t.fimVigencia + 'T00:00:00').getFullYear());
-                if (t.primeiraDescentralizacao) anos.push(dataBaseDescentralizacao(t.primeiraDescentralizacao).getFullYear());
+                if (t.primeiraDescentralizacao) anos.push(new Date(t.primeiraDescentralizacao + 'T00:00:00').getFullYear());
                 (t.financeiros || []).forEach(f => { if (f.anoDesc) anos.push(Number(f.anoDesc)); });
                 (t.execFinanceiras || []).forEach(e => { if (e.data) { const y = new Date(e.data + 'T00:00:00').getFullYear(); if (!isNaN(y)) anos.push(y); }});
                 return anos.some(a => selectedAnos.includes(a));
@@ -9623,8 +9487,10 @@
                     const baseDate = t.primeiraDescentralizacao || t.inicioVigencia || null;
                     if (baseDate && !isNaN(parseInt(m.mInicio)) && !isNaN(parseInt(m.mFinal))) {
                         try {
-                            const dI = somarMesesDescentralizacao(baseDate, m.mInicio);
-                            const dF = somarMesesDescentralizacao(baseDate, m.mFinal);
+                            const dI = new Date(baseDate + 'T00:00:00');
+                            const dF = new Date(baseDate + 'T00:00:00');
+                            dI.setMonth(dI.getMonth() + parseInt(m.mInicio));
+                            dF.setMonth(dF.getMonth() + parseInt(m.mFinal));
                             inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
                             finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
                         } catch(e) { inicioStr = ''; finalStr = ''; }
@@ -9658,8 +9524,10 @@
                     const baseDate = t.primeiraDescentralizacao || t.inicioVigencia || null;
                     if (baseDate && !isNaN(parseInt(f.mInicio)) && !isNaN(parseInt(f.mFinal))) {
                         try {
-                            const dI = somarMesesDescentralizacao(baseDate, f.mInicio);
-                            const dF = somarMesesDescentralizacao(baseDate, f.mFinal);
+                            const dI = new Date(baseDate + 'T00:00:00');
+                            const dF = new Date(baseDate + 'T00:00:00');
+                            dI.setMonth(dI.getMonth() + parseInt(f.mInicio));
+                            dF.setMonth(dF.getMonth() + parseInt(f.mFinal));
                             inicioStr = `${mesesNomes[dI.getMonth()]}/${dI.getFullYear()}`;
                             finalStr = `${mesesNomes[dF.getMonth()]}/${dF.getFullYear()}`;
                         } catch(e) { inicioStr = ''; finalStr = ''; }
@@ -9946,9 +9814,9 @@
                 if (f.anoFinal && f.mesFinal) return new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
                 if (f.mFinal != null) {
                     const base = ted && ted.primeiraDescentralizacao
-                        ? dataBaseDescentralizacao(ted.primeiraDescentralizacao)
+                        ? new Date(ted.primeiraDescentralizacao + 'T00:00:00')
                         : (ted && ted.primeiroAnoDesc && ted.primeiroMesDesc ? new Date(ted.primeiroAnoDesc, ted.primeiroMesDesc - 1, 1) : null);
-                    if (base) { const d = somarMesesDescentralizacao(base, parseInt(f.mFinal)); return d; }
+                    if (base) { const d = new Date(base); d.setMonth(d.getMonth() + parseInt(f.mFinal)); return d; }
                 }
                 return null;
             };
@@ -10725,7 +10593,7 @@
                 // ── datas base ──────────────────────────────────────────────
                 let startDate;
                 if (window.tedSelecionado.primeiraDescentralizacao) {
-                    startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                    startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
                 } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                     startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
                 } else {
@@ -10735,7 +10603,8 @@
                 const today = new Date();
                 const meses = [];
                 for (let i = 0; i < 60; i++) {
-                    const d = somarMesesDescentralizacao(startDate, i);
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + i);
                     const mesLabel = d.toLocaleString('pt-BR', {month:'short'}).replace('.','').toUpperCase();
                     const ano2 = String(d.getFullYear()).slice(-2);
                     const isCurrent = d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
@@ -11200,9 +11069,6 @@
                     }
                 }
             } catch(e) {}
-
-            // O Repassado por UG (usado no Repasse às UGs) vem daqui — manter em sincronia
-            try { atualizarTabelaRepasseUGs(); } catch(e) {}
         }
 
         // Renderiza (ou limpa) o bloco de 4 KPIs acima da tabela de Execução Financeira
@@ -11259,7 +11125,7 @@
             const execs = (window.tedSelecionado.execFinanceiras || []).filter(e => String(e.nd || e.numero) === String(nd) && String(e.up || e.ug) === String(up));
             if (!execs.length) { showToast(`Nenhum lançamento mensal encontrado para ND: ${nd} / UP: ${up}`, 'info'); return; }
             let startDate;
-            if (window.tedSelecionado.primeiraDescentralizacao) startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+            if (window.tedSelecionado.primeiraDescentralizacao) startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             else startDate = new Date();
             const mesesPt = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
@@ -11299,7 +11165,7 @@
             // Calcular a data correspondente ao índice do mês
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -11307,7 +11173,8 @@
                 return;
             }
             
-            const d = somarMesesDescentralizacao(startDate, indiceMes);
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + indiceMes);
             const dataFormatada = d.toISOString().split('T')[0];
             
             // Buscar execuções existentes neste mês para este objeto
@@ -11363,7 +11230,7 @@
             // Calcular a data correspondente ao índice do mês
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -11371,7 +11238,8 @@
                 return;
             }
             
-            const d = somarMesesDescentralizacao(startDate, indiceMes);
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + indiceMes);
 
             // Buscar execuções existentes neste mês para este ND/UP
             const execs = window.tedSelecionado.execFinanceiras || [];
@@ -11517,7 +11385,7 @@
             if (!window.tedSelecionado) return;
             const dataDesc = window.tedSelecionado.primeiraDescentralizacao;
             if (!dataDesc) return;
-            const startDate = dataBaseDescentralizacao(dataDesc);
+            const startDate = new Date(dataDesc + 'T00:00:00');
             if (isNaN(startDate.getTime())) return;
 
             // Recalcular metas
@@ -11525,12 +11393,14 @@
                 const mI = parseInt(m.mInicio);
                 const mF = parseInt(m.mFinal);
                 if (!isNaN(mI)) {
-                    const d = somarMesesDescentralizacao(startDate, mI);
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mI);
                     m.mesInicio = d.getMonth() + 1;
                     m.anoInicio = d.getFullYear();
                 }
                 if (!isNaN(mF)) {
-                    const d = somarMesesDescentralizacao(startDate, mF);
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mF);
                     m.mesFinal = d.getMonth() + 1;
                     m.anoFinal = d.getFullYear();
                 }
@@ -11541,12 +11411,14 @@
                 const mI = parseInt(f.mInicio);
                 const mF = parseInt(f.mFinal);
                 if (!isNaN(mI)) {
-                    const d = somarMesesDescentralizacao(startDate, mI);
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mI);
                     f.mesInicio = d.getMonth() + 1;
                     f.anoInicio = d.getFullYear();
                 }
                 if (!isNaN(mF)) {
-                    const d = somarMesesDescentralizacao(startDate, mF);
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + mF);
                     f.mesFinal = d.getMonth() + 1;
                     f.anoFinal = d.getFullYear();
                 }
@@ -11556,7 +11428,8 @@
             (window.tedSelecionado.financeiros || []).forEach(fin => {
                 const m = parseInt(fin.m);
                 if (!isNaN(m)) {
-                    const d = somarMesesDescentralizacao(startDate, m);
+                    const d = new Date(startDate);
+                    d.setMonth(d.getMonth() + m);
                     fin.mesDesc = d.getMonth() + 1;
                     fin.anoDesc = d.getFullYear();
                 }
@@ -11627,7 +11500,6 @@
 
             window.tedSelecionado.recursosGerais = window.tedSelecionado.recursosGerais || [];
             window.tedSelecionado.recursosGerais.push({ id: Date.now(), nd, nc, valor, data });
-            sincronizarPrimeiraDescentralizacao();
             salvarDados();
             atualizarTabelaRecursosGerais();
             showToast('Recurso Geral adicionado com sucesso!', 'success');
@@ -11644,7 +11516,6 @@
             const recs = window.tedSelecionado.recursosGerais || [];
             if (indice < 0 || indice >= recs.length) return;
             recs.splice(indice, 1);
-            sincronizarPrimeiraDescentralizacao();
             try { salvarDadosImediato(); } catch(e) { console.warn('salvarDadosImediato falhou', e); }
             atualizarTabelaRecursosGerais();
         }
@@ -11654,7 +11525,7 @@
 
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao + 'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc - 1, 1);
             } else {
@@ -11662,7 +11533,8 @@
                 return;
             }
 
-            const d = somarMesesDescentralizacao(startDate, indiceMes);
+            const d = new Date(startDate);
+            d.setMonth(d.getMonth() + indiceMes);
 
             const recs = window.tedSelecionado.recursosGerais || [];
             const ndNorm = normalizarND(nd);
@@ -11824,7 +11696,7 @@
             // Timeline 60 meses
             let startDate;
             if (window.tedSelecionado.primeiraDescentralizacao) {
-                startDate = dataBaseDescentralizacao(window.tedSelecionado.primeiraDescentralizacao);
+                startDate = new Date(window.tedSelecionado.primeiraDescentralizacao+'T00:00:00');
             } else if (window.tedSelecionado.primeiroMesDesc && window.tedSelecionado.primeiroAnoDesc) {
                 startDate = new Date(window.tedSelecionado.primeiroAnoDesc, window.tedSelecionado.primeiroMesDesc-1, 1);
             } else {
@@ -11846,7 +11718,8 @@
 
             const meses = [];
             for (let i=0; i<60; i++) {
-                const d = somarMesesDescentralizacao(startDate, i);
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth()+i);
                 const mesLabel = d.toLocaleString('pt-BR',{month:'short'}).replace('.','').toUpperCase();
                 const ano2 = String(d.getFullYear()).slice(-2);
                 meses.push({
@@ -12130,458 +12003,6 @@
             } catch(e){}
 
             try { initLucideIcons(); } catch(e){}
-
-            // O Recebido na SEDE (usado no Repasse às UGs) vem daqui — manter em sincronia
-            try { atualizarTabelaRepasseUGs(); } catch(e) {}
-        }
-
-        // ── Repasse às UGs ───────────────────────────────────────────────────────
-        // O repassador credita o TED inteiro na SEDE (UG 168003 = sigla 'UA'); só depois
-        // a SEDE repassa internamente pra cada UG de execução. Esta função não introduz
-        // nenhum dado novo — cruza três coisas que já existem:
-        //   Planejado  = Cadastro Financeiro (financeirosVigentes), por ND × UG
-        //   Repassado  = Execução Financeira (execFinanceiras), por ND × UG — a mesma
-        //                planilha do Tesouro Gerencial já trazia a coluna Favorecido/UG
-        //                (ver importarExecFinanceira / mapaUP)
-        //   Recebido na SEDE = Recursos Gerais IMBEL (recursosGerais), só por ND — é o
-        //                extrato da própria 168003, sem separar por UG
-        // Pendente = Planejado − Repassado. "Pronto p/ repassar" ou "Aguarda repassador"
-        // depende de a SEDE já ter, EM CAIXA para aquela ND, o suficiente para cobrir a
-        // linha — não há uma ordem "correta" de prioridade entre UGs quando o caixa não
-        // cobre todas ao mesmo tempo, então cada linha é avaliada contra o saldo cheio,
-        // não contra um saldo sendo consumido sequencialmente: é uma leitura informativa
-        // ("dá pra mandar isso hoje?"), não uma fila de pagamento.
-        // Código da SEDE (168002) — quem recebe o crédito do repassador e distribui às
-        // demais UGs. A UA (168003) é uma UG normal como as outras, NÃO é a SEDE — a
-        // SEDE não tem sigla própria no sistema, usa o código direto.
-        const SEDE_UG_SIGLA = '168002';
-
-        // Categoria de cor por UG — cobre as 6 UGs da IMBEL (fi/ua já existem em .up-pill;
-        // fe/fjf/fpv/fmce são novas, ver styles.css).
-        function _repasseUgCategoria(ug) {
-            const u = String(ug || '').trim().toUpperCase();
-            if (u === 'FI') return 'fi';
-            if (u === 'UA') return 'ua';
-            if (u === 'FE') return 'fe';
-            if (u === 'FJF') return 'fjf';
-            if (u === 'FPV') return 'fpv';
-            if (u === 'FMCE') return 'fmce';
-            return 'outros';
-        }
-
-        function calcularRepasseUGs(ted) {
-            if (!ted) return null;
-
-            const planejado = financeirosVigentes(ted);
-            const execs = ted.execFinanceiras || [];
-            const recGerais = ted.recursosGerais || [];
-
-            const porNd = {}; // ndKey -> { label, ugs: { UG: {planejado, repassado} } }
-            const ordemNd = [];
-            const getNd = (ndRaw) => {
-                const k = normalizarND(ndRaw);
-                if (!k) return null;
-                if (!porNd[k]) { porNd[k] = { label: formatarNDComPontos(ndRaw), ugs: {} }; ordemNd.push(k); }
-                return porNd[k];
-            };
-            const getUg = (ndEntry, ugRaw) => {
-                const ug = String(ugRaw || '').trim().toUpperCase();
-                if (!ug) return null;
-                if (!ndEntry.ugs[ug]) ndEntry.ugs[ug] = { planejado: 0, repassado: 0 };
-                return ndEntry.ugs[ug];
-            };
-
-            planejado.forEach(f => {
-                const nd = getNd(f.numero || f.nd);
-                const ug = nd && getUg(nd, f.up || f.ug);
-                if (ug) ug.planejado += parseNumber(f.valor) || 0;
-            });
-            execs.forEach(e => {
-                const nd = getNd(e.nd || e.numero);
-                const ug = nd && getUg(nd, e.up || e.ug);
-                if (ug) ug.repassado += parseNumber(e.valor) || 0;
-            });
-
-            const recebidoPorNd = {};
-            const recGeraisPorNd = {}; // ndKey -> [lançamentos do Recursos Gerais], pro histórico por depósito
-            recGerais.forEach(r => {
-                const k = normalizarND(r.nd);
-                if (!k) return;
-                recebidoPorNd[k] = (recebidoPorNd[k] || 0) + (parseNumber(r.valor) || 0);
-                if (!recGeraisPorNd[k]) recGeraisPorNd[k] = [];
-                recGeraisPorNd[k].push(r);
-            });
-
-            const statusPorNdUg = new Map(); // 'ndKey||UG' -> status, pra outras telas (ex.: Cadastro Financeiro) consultarem sem recalcular
-
-            const grupos = ordemNd
-                .filter(k => Object.keys(porNd[k].ugs).length > 0)
-                .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-                .map(k => {
-                    const entry = porNd[k];
-                    const recebidoNd = recebidoPorNd[k] || 0;
-                    // Saldo ainda não alocado a NENHUMA UG: recebido na SEDE menos tudo que já foi
-                    // reconhecido/repassado — incluindo o realizado da própria UA. Uma vez que o
-                    // Tesouro Gerencial registra 3.145 como realizado da UA, esse valor já está
-                    // "comprometido" (contabilmente falando), mesmo que o dinheiro nunca tenha saído
-                    // fisicamente da conta da SEDE — não é mais parte do saldo livre pra alocar.
-                    const repassadoTotalNd = Object.values(entry.ugs).reduce((s, u) => s + u.repassado, 0);
-                    let saldoRestante = Math.max(0, recebidoNd - repassadoTotalNd);
-
-                    // A alocação do saldo entre as UGs (incluindo a própria UA — reconhecer o
-                    // realizado dela também é uma ação pendente, só que contábil em vez de uma
-                    // transferência física) é sequencial, em ordem alfabética da sigla só pra ser
-                    // determinística — a SEDE decide na prática quem processa primeiro, isto é só
-                    // uma estimativa de "dá pra fazer isso hoje sem faltar caixa depois". Checar
-                    // cada linha contra o saldo CHEIO (sem descontar) superestimaria: duas linhas
-                    // poderiam aparecer "prontas" mesmo que juntas superem o caixa disponível.
-                    const ugs = Object.keys(entry.ugs).sort().map(ug => {
-                        const u = entry.ugs[ug];
-                        const pendente = Math.max(0, u.planejado - u.repassado);
-                        let status;
-                        if (pendente <= 0.01) {
-                            status = 'completo';
-                        } else if (saldoRestante + 0.01 >= pendente) {
-                            status = 'pronto';
-                            saldoRestante -= pendente;
-                        } else {
-                            status = 'aguarda';
-                        }
-                        statusPorNdUg.set(k + '||' + ug, status);
-                        return { ug, planejado: u.planejado, repassado: u.repassado, pendente, status };
-                    });
-
-                    // Fila FIFO: cada crédito recebido (Recursos Gerais) entra como um "lote"
-                    // com saldo próprio, na ordem em que chegou. Cada repasse registrado
-                    // (Execução Financeira) — processado também em ordem cronológica, junto com
-                    // os créditos, numa única linha do tempo — consome saldo do lote MAIS ANTIGO
-                    // primeiro (mesma lógica do "A Receber" do Cadastro Financeiro: o saldo mais
-                    // velho é sempre o primeiro a ser abatido). Uma devolução (repasse negativo)
-                    // devolve o valor como um novo lote disponível, na data em que aconteceu.
-                    // Isso não é uma suposição solta — é a reconstrução exata da regra que a
-                    // usuária descreveu: "sempre diminuindo o primeiro valor que tem saldo".
-                    const ndNorm = k;
-                    // Entrada = soma ao saldo da SEDE (crédito recebido, ou UG devolvendo à SEDE).
-                    // Saída = sai do saldo (repasse a uma UG, ou SEDE devolvendo ao concedente).
-                    const ehEntrada = ev => (ev.tipo === 'recebimento' && ev.valor > -0.01) || (ev.tipo === 'repasse' && ev.valor < -0.01);
-                    const eventosOrdenados = [
-                        ...(recGeraisPorNd[k] || []).map(r => ({ tipo: 'recebimento', data: r.data, valor: parseNumber(r.valor) || 0 })),
-                        ...execs
-                            .filter(e => normalizarND(e.nd || e.numero) === ndNorm)
-                            .map(e => ({ tipo: 'repasse', data: e.data, valor: parseNumber(e.valor) || 0, ug: String(e.up || e.ug || '').trim().toUpperCase() }))
-                            .filter(e => e.ug)
-                    ].sort((a, b) => {
-                        const cmpData = String(a.data || '').localeCompare(String(b.data || ''));
-                        if (cmpData !== 0) return cmpData;
-                        // Mesma data: entradas antes de saídas. Sem isso, uma UG devolvendo à SEDE
-                        // e a SEDE devolvendo ao concedente no mesmo dia não se anulavam — a saída
-                        // era processada primeiro, não achava saldo, era descartada, e a entrada
-                        // sobrava como "ainda no saldo" (caso real: ND 44.90.14, R$ 41,50).
-                        return (ehEntrada(a) ? 0 : 1) - (ehEntrada(b) ? 0 : 1);
-                    });
-
-                    const fila = []; // lotes de crédito ainda com saldo: {data, valor, restante, porUg: [], devolvidoRepassadorEm: []}
-                    eventosOrdenados.forEach(ev => {
-                        if (ehEntrada(ev)) {
-                            fila.push({
-                                data: ev.data, valor: Math.abs(ev.valor), restante: Math.abs(ev.valor), porUg: [],
-                                devolucao: ev.tipo === 'repasse' ? ev.ug : null,
-                                devolvidoRepassadorEm: []
-                            });
-                        } else {
-                            const destinoUg = ev.tipo === 'repasse' ? ev.ug : null;
-                            let falta = Math.abs(ev.valor);
-                            for (const lote of fila) {
-                                if (falta <= 0.01) break;
-                                if (lote.restante <= 0.01) continue;
-                                const consumido = Math.min(lote.restante, falta);
-                                lote.restante -= consumido;
-                                // Cada consumo vira sua própria entrada (não soma por UG) pra
-                                // conseguir mostrar a data de CADA repasse, não só do recebimento.
-                                if (destinoUg) lote.porUg.push({ ug: destinoUg, valor: consumido, data: ev.data });
-                                else lote.devolvidoRepassadorEm.push({ data: ev.data, valor: consumido });
-                                falta -= consumido;
-                            }
-                            // `falta` > 0 aqui significaria saída maior que todo o saldo já
-                            // recebido até a data dela — não deveria acontecer com dados
-                            // consistentes; se acontecer, fica sem lote pra atribuir (não inventa).
-                        }
-                    });
-
-                    // Sugestão (não é fato registrado): pra cada lote que ainda tem saldo, indica
-                    // a quais UGs esse dinheiro iria, distribuindo pelo que cada uma ainda tem a
-                    // receber segundo o Cadastro Financeiro. Segue a mesma fila FIFO — o lote mais
-                    // antigo atende primeiro — e a UG com maior pendência é servida antes, já que
-                    // não há dado real dizendo a ordem de um repasse que ainda não aconteceu.
-                    const pendentePorUg = ugs
-                        .filter(u => u.pendente > 0.01)
-                        .map(u => ({ ug: u.ug, restante: u.pendente }))
-                        .sort((a, b) => b.restante - a.restante);
-                    fila.forEach(lote => {
-                        lote.sugestao = [];
-                        let disponivel = lote.restante;
-                        for (const alvo of pendentePorUg) {
-                            if (disponivel <= 0.01) break;
-                            if (alvo.restante <= 0.01) continue;
-                            const aloca = Math.min(alvo.restante, disponivel);
-                            alvo.restante -= aloca;
-                            disponivel -= aloca;
-                            lote.sugestao.push({ ug: alvo.ug, valor: aloca });
-                        }
-                    });
-
-                    const eventos = fila
-                        .map(lote => ({
-                            data: lote.data, valor: lote.valor, devolucao: lote.devolucao,
-                            repassado: lote.valor - lote.restante,
-                            pendente: lote.restante,
-                            devolvidoRepassadorEm: lote.devolvidoRepassadorEm,
-                            porUg: lote.porUg,
-                            sugestao: lote.sugestao
-                        }))
-                        .sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')));
-
-                    return {
-                        ndKey: k,
-                        ndLabel: entry.label,
-                        recebidoNd,
-                        totalPlanejado: ugs.reduce((s, u) => s + u.planejado, 0),
-                        totalRepassado: ugs.reduce((s, u) => s + u.repassado, 0),
-                        totalPendente: ugs.reduce((s, u) => s + u.pendente, 0),
-                        saldoDisponivel: Math.max(0, recebidoNd - repassadoTotalNd),
-                        eventos,
-                        ugs
-                    };
-                });
-
-            const totalRecebidoSede = recGerais.reduce((s, r) => s + (parseNumber(r.valor) || 0), 0);
-            // "Repassado às UGs" é só o que saiu pra outras unidades — o realizado da própria
-            // UA não é um repasse.
-            const totalRepassado = grupos.reduce((s, g) =>
-                s + g.ugs.filter(u => u.ug !== SEDE_UG_SIGLA).reduce((s2, u) => s2 + u.repassado, 0), 0);
-            const somaPorStatus = (status) => grupos.reduce((s, g) =>
-                s + g.ugs.filter(u => u.status === status).reduce((s2, u) => s2 + u.pendente, 0), 0);
-            const totalPronto = somaPorStatus('pronto');
-            const totalAguarda = somaPorStatus('aguarda');
-
-            return { totalRecebidoSede, totalRepassado, totalPronto, totalAguarda, grupos, statusPorNdUg };
-        }
-
-        function atualizarTabelaRepasseUGs() {
-            const container = document.getElementById('repasseugs-container');
-            const kpiWrap = document.getElementById('repasseugs-kpis-container');
-            const countBadge = document.getElementById('count-repasseugs');
-            if (!container || !kpiWrap) return;
-
-            const fmt = v => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
-            if (!window.tedSelecionado) {
-                kpiWrap.innerHTML = '';
-                container.innerHTML = '<p class="auto-style-014" style="padding:1rem;">Selecione um TED</p>';
-                if (countBadge) countBadge.textContent = '0';
-                return;
-            }
-
-            const dados = calcularRepasseUGs(window.tedSelecionado);
-            const nLinhasPendentes = dados.grupos.reduce((s, g) => s + g.ugs.filter(u => u.pendente > 0.01).length, 0);
-            if (countBadge) countBadge.textContent = String(nLinhasPendentes);
-
-            if (!dados.grupos.length) {
-                kpiWrap.innerHTML = '';
-                container.innerHTML = '<p class="auto-style-014" style="padding:1rem;">Nenhum lançamento planejado para UG diferente da SEDE (UA) — nada a repassar.</p>';
-                return;
-            }
-
-            kpiWrap.innerHTML = `<div class="execfin-kpis" style="margin-bottom:16px;">
-                <div class="execfin-kpi lead-blue">
-                    <div class="execfin-kpi-label">Recebido na SEDE</div>
-                    <div class="execfin-kpi-val"><span class="cur">R$</span>${fmt(dados.totalRecebidoSede)}</div>
-                    <div class="execfin-kpi-sub">Recursos Gerais IMBEL &middot; ${SEDE_UG_SIGLA}</div>
-                </div>
-                <div class="execfin-kpi lead-green">
-                    <div class="execfin-kpi-label">Já repassado às UGs</div>
-                    <div class="execfin-kpi-val green"><span class="cur">R$</span>${fmt(dados.totalRepassado)}</div>
-                    <div class="execfin-kpi-sub">${dados.totalRecebidoSede > 0 ? (Math.min(100, dados.totalRepassado / dados.totalRecebidoSede * 100)).toFixed(1) : '0,0'}% do recebido</div>
-                    <div class="execfin-kpi-bar"><div class="execfin-kpi-bar-fill" style="width:${dados.totalRecebidoSede > 0 ? Math.min(100, dados.totalRepassado / dados.totalRecebidoSede * 100) : 0}%;background:#639922;"></div></div>
-                </div>
-                <div class="execfin-kpi lead-amber">
-                    <div class="execfin-kpi-label">Pronto para repassar</div>
-                    <div class="execfin-kpi-val" style="color:#854F0B;"><span class="cur">R$</span>${fmt(dados.totalPronto)}</div>
-                    <div class="execfin-kpi-sub">já em caixa na SEDE</div>
-                </div>
-                <div class="execfin-kpi lead-red">
-                    <div class="execfin-kpi-label">Aguardando o repassador</div>
-                    <div class="execfin-kpi-val red"><span class="cur">R$</span>${fmt(dados.totalAguarda)}</div>
-                    <div class="execfin-kpi-sub">planejado, ainda não creditado</div>
-                </div>
-            </div>`;
-
-            const statusLabel = { completo: 'Completo', pronto: 'Pronto p/ repassar', aguarda: 'Aguarda repassador' };
-            const statusClass = { completo: 'badge-regular', pronto: 'badge-acima', aguarda: 'badge-critico' };
-
-            let rowsHtml = '';
-            dados.grupos.forEach(g => {
-                const ndCat = _cfNdCategoria(g.ndLabel);
-                rowsHtml += `<tr class="cf-grp-tr-head">
-                    <td colspan="6">
-                        <div class="cf-grp-head">
-                            <div class="cf-grp-head-left">
-                                <span class="nd-tag ${ndCat}">${g.ndLabel}</span>
-                            </div>
-                            <span class="cf-grp-subtotal">
-                                <span class="cf-grp-subtotal-recebido">R$ ${fmt(g.totalRepassado)}</span>
-                                <span class="cf-grp-subtotal-sep">/</span>
-                                <span class="cf-grp-subtotal-total">R$ ${fmt(g.totalPlanejado)}</span>
-                            </span>
-                        </div>
-                    </td>
-                </tr>`;
-                g.ugs.forEach(u => {
-                    const upCat = _repasseUgCategoria(u.ug);
-                    // Pra própria UA (SEDE) "repassar" não existe — o que fica pendente é só
-                    // reconhecer/registrar aquele valor como realizado dela.
-                    const label = (u.status === 'pronto' && u.ug === SEDE_UG_SIGLA) ? 'Pronto p/ reconhecer' : statusLabel[u.status];
-                    rowsHtml += `<tr class="cf-grp-data-row">
-                        <td></td>
-                        <td><span class="up-pill ${upCat}">${u.ug}</span></td>
-                        <td class="col-valor">${fmt(u.planejado)}</td>
-                        <td class="col-valor">${fmt(u.repassado)}</td>
-                        <td class="col-valor">${fmt(u.pendente)}</td>
-                        <td><span class="${statusClass[u.status]}">${label}</span></td>
-                    </tr>`;
-                });
-
-                // Linha do tempo: cada crédito recebido na SEDE (Recursos Gerais) e cada
-                // repasse/devolução já registrado (Execução Financeira), em ordem cronológica.
-                // Cada linha é um crédito recebido (lote), com quanto dele já foi repassado —
-                // apurado consumindo o saldo mais antigo primeiro (FIFO), a cada repasse
-                // registrado processado na sua própria data cronológica junto com os créditos.
-                if (g.eventos.length) {
-                    const histId = 'hist_' + g.ndKey;
-                    rowsHtml += `<tr class="cf-grp-tr-head" onclick="toggleGrupoCadFin('${histId}', this)">
-                        <td colspan="6" style="padding:0;border:none;">
-                            <div class="cf-grp-head">
-                                <div class="cf-grp-head-left">
-                                    <span class="cf-grp-toggle" id="${histId}_arrow">▶</span>
-                                    <span style="font-size:12px;color:var(--color-text-secondary);font-weight:600;">Histórico de créditos recebidos (${g.eventos.length})</span>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>`;
-                    // Tabela aninhada (table-layout próprio, isolado da tabela de fora) em vez
-                    // de linhas com colspan parcial — colspans parciais (2+1+3) misturados com
-                    // as linhas normais de UG faziam o table-layout:auto do navegador recalcular
-                    // a largura das colunas com base em TODO o conteúdo da tabela de fora, o que
-                    // descolava a tabela inteira com muitos lançamentos. Uma tabela aninhada tem
-                    // sua própria caixa de layout e não sofre com isso.
-                    let histRowsHtml = '';
-                    g.eventos.forEach(lote => {
-                        const origemTitle = lote.devolucao
-                            ? `Devolução da UG ${lote.devolucao}`
-                            : `Recebido na SEDE (${SEDE_UG_SIGLA})`;
-                        // Um lote pode ter sido repassado a mais de uma UG (ou parte repassada,
-                        // parte devolvida ao repassador) — cada destino vira sua própria linha,
-                        // com Data/Recebido repetidos e o Saldo só na última linha do lote.
-                        const destinos = [
-                            ...lote.porUg.map(u => ({
-                                valor: u.valor, data: u.data,
-                                html: `<span class="up-pill ${_repasseUgCategoria(u.ug)}">${u.ug}</span>`
-                            })),
-                            ...lote.devolvidoRepassadorEm.map(d => ({
-                                valor: d.valor, data: d.data,
-                                html: `<span style="color:#A32D2D;">devolvido ao repassador</span>`
-                            })),
-                            // Sugestão pro que ainda não foi repassado — visualmente distinta
-                            // (itálico, tracejado) pra não se confundir com repasse já ocorrido.
-                            ...(lote.sugestao || []).map(s => ({
-                                valor: s.valor, data: null, sugerido: true,
-                                html: `<span class="up-pill ${_repasseUgCategoria(s.ug)}" style="opacity:.55;">${s.ug}</span><span style="color:var(--color-text-muted);font-style:italic;margin-left:4px;">sugerido</span>`
-                            }))
-                        ];
-                        const saldoHtml = lote.pendente > 0.01
-                            ? `<span style="color:#854F0B;" title="Ainda não foi repassado a nenhuma UG nem devolvido ao repassador — continua disponível pra repassar">R$ ${fmt(lote.pendente)}</span>`
-                            : '<span style="color:var(--color-text-muted);">—</span>';
-                        const nLinhas = Math.max(1, destinos.length);
-                        // Data e Recebido são do lote inteiro, não de cada destino — mescla essas
-                        // células (rowspan) em vez de repetir o valor em cada linha do lote.
-                        const dataCell = `<td rowspan="${nLinhas}" style="padding:6px 10px;color:var(--color-text-secondary);vertical-align:top;">${lote.data ? _fmtData(lote.data) : '—'}</td>`;
-                        const recebidoCell = `<td rowspan="${nLinhas}" class="col-valor" style="padding:6px 10px;vertical-align:top;" title="${origemTitle}">R$ ${fmt(lote.valor)}</td>`;
-                        const borderTop = 'border-top:1px solid var(--color-border);';
-
-                        if (!destinos.length) {
-                            histRowsHtml += `<tr style="${borderTop}">
-                                ${dataCell}${recebidoCell}
-                                <td class="col-valor" style="padding:6px 10px;color:var(--color-text-muted);">—</td>
-                                <td style="padding:6px 10px;color:var(--color-text-muted);">—</td>
-                                <td style="padding:6px 10px;color:var(--color-text-muted);">—</td>
-                                <td class="col-valor" style="padding:6px 10px;">${saldoHtml}</td>
-                            </tr>`;
-                        } else {
-                            destinos.forEach((d, i) => {
-                                // Numa linha de sugestão nada foi repassado ainda: o valor fica na
-                                // coluna Saldo (esmaecido), não na coluna Repassado.
-                                const repassadoCel = d.sugerido
-                                    ? '<td class="col-valor" style="padding:6px 10px;color:var(--color-text-muted);">—</td>'
-                                    : `<td class="col-valor" style="padding:6px 10px;">R$ ${fmt(d.valor)}</td>`;
-                                const saldoCel = d.sugerido
-                                    ? `<td class="col-valor" style="padding:6px 10px;color:#854F0B;opacity:.7;">R$ ${fmt(d.valor)}</td>`
-                                    : `<td class="col-valor" style="padding:6px 10px;">${i === destinos.length - 1 ? saldoHtml : ''}</td>`;
-                                histRowsHtml += `<tr style="${i === 0 ? borderTop : ''}">
-                                    ${i === 0 ? dataCell + recebidoCell : ''}
-                                    ${repassadoCel}
-                                    <td style="padding:6px 10px;color:var(--color-text-secondary);">${d.data ? _fmtData(d.data) : '—'}</td>
-                                    <td style="padding:6px 10px;">${d.html}</td>
-                                    ${saldoCel}
-                                </tr>`;
-                            });
-                        }
-                    });
-                    rowsHtml += `<tr class="cf-grp-data-row" data-grprow="${histId}" style="display:none;">
-                        <td colspan="6" style="padding:4px 10px 10px;">
-                            <table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px;">
-                                <colgroup>
-                                    <col style="width:13%;"><col style="width:18%;"><col style="width:15%;"><col style="width:13%;"><col style="width:23%;"><col style="width:18%;">
-                                </colgroup>
-                                <thead>
-                                    <tr style="border-bottom:1px solid var(--color-border);">
-                                        <th style="text-align:left;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Data</th>
-                                        <th style="text-align:right;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Recebido</th>
-                                        <th style="text-align:right;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Repassado</th>
-                                        <th style="text-align:left;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Data repasse</th>
-                                        <th style="text-align:left;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Destino</th>
-                                        <th style="text-align:right;padding:4px 10px;font-weight:600;color:var(--color-text-secondary);">Saldo</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${histRowsHtml}</tbody>
-                            </table>
-                        </td>
-                    </tr>`;
-                }
-            });
-
-            container.innerHTML = `<div class="table-wrapper">
-                <table class="tabela-padrao cf-grp-table">
-                    <thead>
-                        <tr>
-                            <th class="col-nd">ND</th>
-                            <th class="col-up">UG destino</th>
-                            <th class="col-valor">Planejado</th>
-                            <th class="col-valor">Repassado</th>
-                            <th class="col-valor">Pendente</th>
-                            <th>Situação</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rowsHtml}</tbody>
-                </table>
-            </div>
-            <div class="legenda-repasse">
-                <span><i class="dot" style="background:#3B6D11;"></i>Completo</span>
-                <span><i class="dot" style="background:#854F0B;"></i>Pronto para repassar — já em caixa na SEDE</span>
-                <span><i class="dot" style="background:#A32D2D;"></i>Aguarda repassador — SEDE ainda não recebeu o suficiente</span>
-            </div>
-            <div class="legenda-repasse" style="border-top:1px dashed var(--color-border);margin-top:8px;padding-top:8px;">
-                <span style="opacity:.8;">No histórico de créditos: <b>saldo</b> = chegou e ainda não foi repassado nem devolvido, continua disponível &middot; <b style="color:#A32D2D;">devolvido ao repassador</b> = a SEDE mandou esse valor de volta ao concedente (lançamento negativo no Recursos Gerais) &middot; <b style="font-style:italic;">sugerido</b> = destino provável do saldo, calculado pelo que cada UG ainda tem a receber no Cadastro Financeiro — é uma projeção, não um repasse registrado.</span>
-            </div>`;
         }
 
         function _recgeralRenderKpis(data) {
@@ -12789,37 +12210,6 @@
             return await _executarSalvamento();
         }
 
-        // Traduz a falha de gravação no motivo REAL, em vez do palpite genérico de
-        // "bloqueador de anúncios" que a versão anterior mostrava para qualquer erro —
-        // isso mandava o usuário caçar o problema no lugar errado. O erro do Firestore é
-        // registrado por firebase-init.js em window.firestoreUltimoErroEscrita.
-        function _mensagemErroSalvar(erroDireto) {
-            let code = null, detalhe = '';
-            try {
-                const reg = window.firestoreUltimoErroEscrita;
-                // Só usar o registro se for desta tentativa (últimos 60s); um erro antigo
-                // não pode explicar a falha de agora.
-                if (reg && (Date.now() - (reg.at || 0)) < 60000) { code = reg.code; detalhe = reg.message || ''; }
-            } catch (e) {}
-            if (!code && erroDireto) { code = erroDireto.code || null; detalhe = erroDireto.message || String(erroDireto); }
-
-            if (code === 'permission-denied') {
-                const email = (window.currentUser && window.currentUser.email) || 'seu usuário';
-                return '🔒 Sem permissão para gravar (' + email + ').\n\nO Firestore recusou a escrita. Causas possíveis: seu perfil ainda não foi criado na coleção "users", seu papel é "leitor" (só admin/editor gravam) ou a conta está desativada. Peça a um administrador para verificar. Nada foi perdido — os dados continuam nesta tela.';
-            }
-            if (code === 'unavailable' || code === 'deadline-exceeded' || (erroDireto && erroDireto.message === 'timeout')) {
-                return '📶 Sem conexão com o servidor. Suas alterações ficaram na fila e serão enviadas sozinhas quando a internet voltar — não feche o sistema antes disso.';
-            }
-            if (code === 'unauthenticated') {
-                return '🔑 Sua sessão expirou. Saia e entre novamente para retomar o salvamento.';
-            }
-            if (code === 'invalid-argument' || code === 'not-found') {
-                return '❌ O servidor recusou os dados (' + code + '). Abra o console (F12) para o detalhe técnico e avise o suporte.';
-            }
-            return 'Erro ao salvar dados' + (code ? ' (' + code + ')' : '') + '. Tentando novamente em breve...'
-                 + (detalhe ? '\n\nDetalhe: ' + detalhe.slice(0, 200) : '');
-        }
-
         async function _executarSalvamento() {
             if (_salvandoEmAndamento) {
                 // Já existe um commit em voo: marcar pendência para re-executar ao final,
@@ -12952,7 +12342,7 @@
                         if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
                         const iconEl = document.getElementById('cloudStatusIcon');
                         if (iconEl) { iconEl.style.color = 'var(--danger)'; iconEl.title = 'Falha ao salvar no Firestore'; }
-                        showToast(_mensagemErroSalvar(), 'danger');
+                        showToast('Erro ao salvar dados (possível bloqueador de anúncios/firewall). Tentando novamente em breve...', 'danger');
                     }
                 } else {
                     console.warn('Firestore batch helper not available; dados not persisted.');
@@ -12965,7 +12355,7 @@
                 // usuário precisa saber que ainda não confirmou no servidor.
                 console.warn('Erro salvando no Firestore', e);
                 if (syncEl) syncEl.textContent = '❌ Erro ao salvar';
-                showToast(_mensagemErroSalvar(e), 'danger');
+                showToast('Erro ao salvar dados. Tentando novamente em breve...', 'danger');
             } finally {
                 _salvandoEmAndamento = false;
                 try { window._salvandoEmAndamento = false; } catch(e) {}
@@ -13109,10 +12499,6 @@
                 const values = registros[i];
                 const obj = {};
                 headers.forEach((h, idx) => {
-                    // Coluna sem cabeçalho criaria a chave "" — o Firestore recusa o documento
-                    // inteiro ("Document fields must not be empty") quando esse objeto acaba
-                    // gravado dentro de um TED.
-                    if (String(h || '').trim() === '') return;
                     let val = values[idx] || '';
                     const low = String(h).trim().toLowerCase();
                     // Não converter para número campos conhecidos que representam ND/numero/transferência (preservar formato exatamente como na planilha)
@@ -13999,12 +13385,7 @@
                         for (let i = 1; i < registros.length; i++) {
                             const values = registros[i];
                             const obj = {};
-                            // Cabeçalho em branco (coluna vazia / ";" sobrando no fim da linha)
-                            // viraria a chave "" no objeto. Esta linha original é guardada em
-                            // `origem` e vai parar dentro do TED gravado no Firestore, que recusa
-                            // o documento INTEIRO com "Document fields must not be empty" —
-                            // travando o salvamento de todos os TEDs do lote.
-                            headers.forEach((h, idx) => { if (String(h || '').trim() !== '') obj[h] = values[idx] || ''; });
+                            headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
                             rows.push(obj);
                         }
 
@@ -14450,9 +13831,6 @@
                         });
                     });
 
-                    // A 1ª descentralização acompanha o extrato importado
-                    aplicarPrimeiraDescentralizacaoAuto(ted);
-
                     countTeds++;
                     countItens += itens.length;
                 });
@@ -14491,32 +13869,6 @@
             }, 'Confirmar');
         }
 
-        // Localiza a coluna com o número da NC (ex.: 2026NC000123). O nome do cabeçalho varia
-        // conforme o relatório do Tesouro Gerencial ("NC", "Doc", "Documento"...), então além
-        // do cabeçalho confere o CONTEÚDO: a coluna escolhida precisa ter valores no padrão
-        // ANO + "NC" + dígitos. Sem isso, "Funcional" (contém "nc") seria confundida com a NC.
-        function detectarColunaNC(headers, registros) {
-            const reNC = /\d{4}NC\d{4,}/i;
-            const pontuar = (idx) => {
-                let hits = 0;
-                for (let i = 1; i < registros.length; i++) {
-                    if (reNC.test(String(registros[i][idx] || ''))) hits++;
-                }
-                return hits;
-            };
-            let melhor = null, melhorHits = 0;
-            headers.forEach((h, idx) => {
-                const hits = pontuar(idx);
-                if (hits > melhorHits) { melhor = h; melhorHits = hits; }
-            });
-            if (melhor) return melhor;
-            // Sem nenhuma célula no padrão: cai no critério antigo, só pelo nome do cabeçalho
-            for (const h of headers) {
-                if (h && String(h).trim().toLowerCase() === 'nc') return h;
-            }
-            return null;
-        }
-
         function importarRecursosGerais(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -14552,7 +13904,10 @@
                     const colND    = findCol(['natureza', 'despes']) || findCol(['natureza']);
                     const colValor = findCol(['valor', 'linha']) || findCol(['valor']);
                     const colData  = findCol(['emissao', 'dia']) || findCol(['emiss', 'dia']) || findCol(['dia']);
-                    const colNC = detectarColunaNC(headers, registros) || (function(){
+                    const colNC = (function(){
+                        for (const h of headers) {
+                            if (h && String(h).trim().toLowerCase() === 'nc') return h;
+                        }
                         for (const h of headers) {
                             const low = String(h || '').toLowerCase();
                             if (low.indexOf('nc') > -1 && low.indexOf('natureza') === -1 && low.indexOf('transfer') === -1) return h;
@@ -14606,9 +13961,7 @@
                     for (let i = 1; i < registros.length; i++) {
                         const values = registros[i];
                         const campos = {};
-                        // Ver nota no outro importador: cabeçalho em branco viraria a chave ""
-                        // e o Firestore recusa o documento inteiro na hora de salvar.
-                        headers.forEach((h, idx) => { if (String(h || '').trim() !== '') campos[h] = values[idx] || ''; });
+                        headers.forEach((h, idx) => { campos[h] = values[idx] || ''; });
                         rows.push({ campos, raw: JSON.stringify(values) });
                     }
 
@@ -15902,11 +15255,11 @@
         };
 
         // Estado dos filtros globais (Set de valores selecionados, null = todos)
-        window._relGlobSel = { teds: null, ups: null, anos: null, meses: null, status: null };
+        window._relGlobSel = { teds: null, ups: null, anos: null, meses: null };
 
         function toggleRelGlobFiltro(menuId, btnId) {
             // Fechar outros menus abertos
-            ['relGlobTEDMenu','relGlobUPMenu','relGlobAnoMenu','relGlobMESMenu','relGlobStatusMenu'].forEach(id => {
+            ['relGlobTEDMenu','relGlobUPMenu','relGlobAnoMenu','relGlobMESMenu'].forEach(id => {
                 if (id !== menuId) { const m = document.getElementById(id); if (m) m.classList.remove('open'); }
             });
             const menu = document.getElementById(menuId);
@@ -15965,9 +15318,9 @@
             onFiltroGlobalChange();
         }
 
-        const _REL_GLOB_LABELS = { teds: 'TED', ups: 'UP', anos: 'Ano', meses: 'Mês', status: 'Status' };
-        const _REL_GLOB_BTN_LABELS = { teds: 'relGlobTEDLabel', ups: 'relGlobUPLabel', anos: 'relGlobAnoLabel', meses: 'relGlobMESLabel', status: 'relGlobStatusLabel' };
-        const _REL_GLOB_BTN_IDS   = { teds: 'relGlobTEDBtn',   ups: 'relGlobUPBtn',   anos: 'relGlobAnoBtn',   meses: 'relGlobMESBtn',   status: 'relGlobStatusBtn' };
+        const _REL_GLOB_LABELS = { teds: 'TED', ups: 'UP', anos: 'Ano', meses: 'Mês' };
+        const _REL_GLOB_BTN_LABELS = { teds: 'relGlobTEDLabel', ups: 'relGlobUPLabel', anos: 'relGlobAnoLabel', meses: 'relGlobMESLabel' };
+        const _REL_GLOB_BTN_IDS   = { teds: 'relGlobTEDBtn',   ups: 'relGlobUPBtn',   anos: 'relGlobAnoBtn',   meses: 'relGlobMESBtn' };
 
         function _relGlobAtualizarLabel(chave) {
             const sel = window._relGlobSel[chave];
@@ -15984,10 +15337,9 @@
 
         function inicializarFiltrosGlobais() {
             const teds = (dados && dados.teds) ? dados.teds : [];
-            const upsSet = new Set(), anosSet = new Set(), mesesSet = new Set(), statusSet = new Set();
+            const upsSet = new Set(), anosSet = new Set(), mesesSet = new Set();
             teds.forEach(t => {
                 if (t.up || t.upResponsavel) upsSet.add(t.up || t.upResponsavel);
-                try { const st = _calcularStatusTed(t); if (st && st !== '-') statusSet.add(st); } catch(e) {}
                 const addAnoMes = v => {
                     if (!v) return;
                     const d = new Date(v + 'T00:00:00');
@@ -16007,11 +15359,9 @@
             const upItens   = Array.from(upsSet).sort();
             const anoItens  = Array.from(anosSet).sort((a,b) => b - a);
             const mesItens  = Array.from(mesesSet).sort((a,b) => a - b).map(m => ({ val: m, label: `${String(m).padStart(2,'0')} - ${_MESES_NOMES[m-1]}` }));
-            const statusItens = Array.from(statusSet).sort();
             _relGlobPopularMenu('relGlobTEDMenu', 'teds', tedItens);
             _relGlobPopularMenu('relGlobUPMenu',  'ups',  upItens);
             _relGlobPopularMenu('relGlobAnoMenu', 'anos', anoItens);
-            _relGlobPopularMenu('relGlobStatusMenu', 'status', statusItens);
             _relGlobPopularMenuObj('relGlobMESMenu', 'meses', mesItens);
             // Mostrar/ocultar filtro de Mês conforme relatório ativo
             _atualizarVisibilidadeFiltroMes();
@@ -16044,18 +15394,17 @@
         function lerFiltrosGlobais() {
             const s = window._relGlobSel;
             return {
-                teds:   s.teds   ? Array.from(s.teds)   : [],
-                ups:    s.ups    ? Array.from(s.ups)    : [],
-                anos:   s.anos   ? Array.from(s.anos).map(Number)  : [],
-                meses:  s.meses  ? Array.from(s.meses).map(Number) : [],
-                status: s.status ? Array.from(s.status) : []
+                teds:  s.teds  ? Array.from(s.teds)  : [],
+                ups:   s.ups   ? Array.from(s.ups)   : [],
+                anos:  s.anos  ? Array.from(s.anos).map(Number)  : [],
+                meses: s.meses ? Array.from(s.meses).map(Number) : []
             };
         }
 
         function limparFiltrosGlobais() {
-            window._relGlobSel = { teds: null, ups: null, anos: null, meses: null, status: null };
-            ['teds','ups','anos','meses','status'].forEach(chave => {
-                const menuId = { teds:'relGlobTEDMenu', ups:'relGlobUPMenu', anos:'relGlobAnoMenu', meses:'relGlobMESMenu', status:'relGlobStatusMenu' }[chave];
+            window._relGlobSel = { teds: null, ups: null, anos: null, meses: null };
+            ['teds','ups','anos','meses'].forEach(chave => {
+                const menuId = { teds:'relGlobTEDMenu', ups:'relGlobUPMenu', anos:'relGlobAnoMenu', meses:'relGlobMESMenu' }[chave];
                 const menu = document.getElementById(menuId);
                 if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
                 _relGlobAtualizarLabel(chave);
@@ -16069,7 +15418,7 @@
         }
 
         function filtrarTeds() {
-            const s = window._relGlobSel || { teds: null, ups: null, anos: null, status: null };
+            const s = window._relGlobSel || { teds: null, ups: null, anos: null };
             let lista = (dados && dados.teds) ? dados.teds : [];
             if (s.teds) lista = lista.filter(t => s.teds.has(String(t.numTed || t.id)));
             if (s.ups)  lista = lista.filter(t => s.ups.has(t.up || t.upResponsavel || ''));
@@ -16078,7 +15427,6 @@
                 const fim = t.fimVigencia    ? new Date(t.fimVigencia + 'T00:00:00').getFullYear()    : null;
                 return s.anos.has(ini) || s.anos.has(fim);
             });
-            if (s.status) lista = lista.filter(t => s.status.has(_calcularStatusTed(t)));
             return lista;
         }
 
@@ -16725,7 +16073,6 @@
             if (s.teds && s.teds.size > 0) partesFiltro.push('TED: ' + Array.from(s.teds).join(', '));
             if (s.ups  && s.ups.size  > 0) partesFiltro.push('UP: '  + Array.from(s.ups).join(', '));
             if (s.anos && s.anos.size > 0) partesFiltro.push('Ano: ' + Array.from(s.anos).join(', '));
-            if (s.status && s.status.size > 0) partesFiltro.push('Status: ' + Array.from(s.status).join(', '));
             if (s.meses && s.meses.size > 0) partesFiltro.push('Mês: ' + Array.from(s.meses).join(', '));
             const filtroStr = partesFiltro.length ? partesFiltro.join(' | ') : 'Todos';
 
@@ -16809,7 +16156,8 @@
                     try {
                         if (f.anoFinal && f.mesFinal) dataPrevista = new Date(parseInt(f.anoFinal), parseInt(f.mesFinal) - 1, 28);
                         else if (f.mFinal != null && ted.primeiraDescentralizacao) {
-                            const base = somarMesesDescentralizacao(ted.primeiraDescentralizacao, f.mFinal); base.setDate(28);
+                            const base = new Date(ted.primeiraDescentralizacao + 'T00:00:00');
+                            base.setMonth(base.getMonth() + parseInt(f.mFinal)); base.setDate(28);
                             dataPrevista = base;
                         }
                     } catch(e) {}
@@ -16946,10 +16294,6 @@
             // Exportação genérica: extrai dados da tabela em tela
             const corpo = document.getElementById('relPreviewBody');
             if (!corpo) { showToast('Nenhum relatório em tela.', 'info'); return; }
-            // Cadastro completo pode estar em modo "Cards" (sem tabela) — força tabela para exportar
-            if (ativo === 'cadastro' && !corpo.querySelector('table')) {
-                try { renderRelCadastro(corpo, true); } catch(e) {}
-            }
             const tabela = corpo.querySelector('table');
             if (!tabela) { showToast('Este relatório não tem tabela exportável para Excel.', 'info'); return; }
 
